@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1195 There is a namespace issue with audit datastreams migrating from legacy to akubra</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1195</span> There is a namespace issue with audit datastreams migrating from legacy to akubra</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Javi Molina</td></tr><tr><th>Created</th><td>2013-07-18 21:20 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.6.2</td></tr><tr><th>Is related to</th><td><a href="FCREPO-796.html">FCREPO-796</a> Fedora objects are not valid xml when using inline datastreams</td></tr></table>
+<h2>Description</h2>
+<p>Hi all,</p>
+
+<p>I am working with fscu to try to migrate from legacy to akubra low level storage.</p>
+
+<p>I configured both lls appropriately and run the command below.</p>
+
+<p>/opt/fedora/fedora-3.6/fcrepo-store-util-0.1.0-SNAPSHOT/bin$ ./fcsu copy legacy akubra</p>
+
+
+<p>Then after sometime (I think it uses a DB to stage the file names to transfer) I can see messages about the transfer progress, however I see messages, like the one at the end of the e-mail, very often after some examination it seems that objects that contain an xml entry for audit:auditTrail won't work and just be ignored by fscu.</p>
+
+<p>Has anyone have some advice on how to make fscu work properly with those entries?</p>
+
+<p>Thanks,<br/>
+Javier</p>
+
+
+
+<p>WARN Error parsing Fedora object; ignoring: 2009/0325/16/31/changeme_70<br/>
+java.io.IOException: Error parsing foxml:xmlContent<br/>
+        at com.github.cwilper.fcrepo.dto.foxml.FOXMLReader.readXMLContent(FOXMLReader.java:220) ~<span class="error">&#91;fcrepo-dto-foxml-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.foxml.FOXMLReader.readDatastreamVersion(FOXMLReader.java:158) ~<span class="error">&#91;fcrepo-dto-foxml-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.foxml.FOXMLReader.readDatastream(FOXMLReader.java:128) ~<span class="error">&#91;fcrepo-dto-foxml-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.foxml.FOXMLReader.readObject(FOXMLReader.java:86) ~<span class="error">&#91;fcrepo-dto-foxml-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.foxml.FOXMLReader.readObject(FOXMLReader.java:70) ~<span class="error">&#91;fcrepo-dto-foxml-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.store.legacy.Util.readObject(Util.java:37) ~<span class="error">&#91;fcrepo-store-legacy-0.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.store.legacy.LegacyFedoraStore$1.computeNext(LegacyFedoraStore.java:188) <span class="error">&#91;fcrepo-store-legacy-0.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.store.legacy.LegacyFedoraStore$1.computeNext(LegacyFedoraStore.java:182) <span class="error">&#91;fcrepo-store-legacy-0.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.google.common.collect.AbstractIterator.tryToComputeNext(AbstractIterator.java:136) <span class="error">&#91;guava-collections-r03.jar:na&#93;</span><br/>
+        at com.google.common.collect.AbstractIterator.hasNext(AbstractIterator.java:131) <span class="error">&#91;guava-collections-r03.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.store.util.commands.BatchObjectCommand.execute(BatchObjectCommand.java:29) <span class="error">&#91;fcrepo-store-util-0.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.store.util.StoreUtil.execute(StoreUtil.java:43) <span class="error">&#91;fcrepo-store-util-0.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.store.util.StoreUtil.main(StoreUtil.java:51) <span class="error">&#91;fcrepo-store-util-0.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+Caused by: java.io.IOException: javax.xml.transform.TransformerException: javax.xml.transform.TransformerException: com.sun.org.apache.xml.internal.utils.WrappedRuntimeException: The prefix "audit" for element "audit:auditTrail" is not bound.<br/>
+        at com.github.cwilper.fcrepo.dto.core.io.XMLUtil.prettyPrint(XMLUtil.java:124) ~<span class="error">&#91;fcrepo-dto-core-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.core.io.XMLUtil.prettyPrint(XMLUtil.java:102) ~<span class="error">&#91;fcrepo-dto-core-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.core.InlineXML.&lt;init&gt;(InlineXML.java:66) ~<span class="error">&#91;fcrepo-dto-core-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.foxml.FOXMLReader.readXMLContent(FOXMLReader.java:218) ~<span class="error">&#91;fcrepo-dto-foxml-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        ... 12 common frames omitted<br/>
+Caused by: javax.xml.transform.TransformerException: javax.xml.transform.TransformerException: com.sun.org.apache.xml.internal.utils.WrappedRuntimeException: The prefix "audit" for element "audit:auditTrail" is not bound.<br/>
+        at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:723) ~<span class="error">&#91;na:1.6.0_27&#93;</span><br/>
+        at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:317) ~<span class="error">&#91;na:1.6.0_27&#93;</span><br/>
+        at com.github.cwilper.fcrepo.dto.core.io.XMLUtil.prettyPrint(XMLUtil.java:119) ~<span class="error">&#91;fcrepo-dto-core-1.1.0-SNAPSHOT.jar:na&#93;</span><br/>
+        ... 15 common frames omitted<br/>
+Caused by: javax.xml.transform.TransformerException: com.sun.org.apache.xml.internal.utils.WrappedRuntimeException: The prefix "audit" for element "audit:auditTrail" is not bound.<br/>
+        at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.getDOM(TransformerImpl.java:550) ~<span class="error">&#91;na:1.6.0_27&#93;</span><br/>
+        at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:713) ~<span class="error">&#91;na:1.6.0_27&#93;</span><br/>
+        ... 17 common frames omitted<br/>
+Caused by: com.sun.org.apache.xml.internal.utils.WrappedRuntimeException: The prefix "audit" for element "audit:auditTrail" is not bound.<br/>
+        at com.sun.org.apache.xalan.internal.xsltc.dom.XSLTCDTMManager.getDTM(XSLTCDTMManager.java:450) ~<span class="error">&#91;na:1.6.0_27&#93;</span><br/>
+        at com.sun.org.apache.xalan.internal.xsltc.dom.XSLTCDTMManager.getDTM(XSLTCDTMManager.java:238) ~<span class="error">&#91;na:1.6.0_27&#93;</span><br/>
+        at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.getDOM(TransformerImpl.java:528) ~<span class="error">&#91;na:1.6.0_27&#93;</span><br/>
+        ... 18 common frames omitted</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12529"><div class="by">Benjamin Armintor, 2013-07-19 21:10 UTC</div><div class="text"><p>Basically the same issue- the audit stream's ns prefix declaration is in the root element on export, which means subsequently pulling just the ds content out yields an invalid document.</p></div></div>
+<div class="comment" id="comment-12542"><div class="by">Javi Molina, 2013-07-26 06:48 UTC</div><div class="text"><p>This is a critical bug, as it is a blocker. I don't know of any possible workaround.</p>
+
+<p>I should be able to test it, should this be fixed during this release cycle. </p>
+
+<p>If it is pushed for a later release I don't know whether I will still working on this area but I think there is more people suffering from it and willing to give it a try.</p>
+</div></div>
+<div class="comment" id="comment-12543"><div class="by">Benjamin Armintor, 2013-07-26 19:52 UTC</div><div class="text"><p>I agree that this is critical, but the problem is not in the Fedora Commons Repository software: It is in the FCSU storage utility, which is released and managed as a separate artifact.  Thus it doesn't impact the Fedora 3.7 release schedule.</p></div></div>
+<div class="comment" id="comment-12825"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1195.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

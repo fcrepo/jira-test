@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3115 Unauthorized users may not delete child resources</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3115</span> Unauthorized users may not delete child resources</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2019-11-07 22:46 UTC</td></tr><tr><th>Updated</th><td>2020-12-18 07:51 UTC</td></tr><tr><th>Resolved</th><td>2020-12-04 17:26 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, fcrepo-6.0.0-alpha-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3525.html">FCREPO-3525</a> Implement http://www.w3.org/ns/oa#PreferContainedDescriptions header handling</td></tr></table>
+<h2>Description</h2>
+<p>Given /fcrepo/rest/resource and  /fcrepo/rest/resource/child:<br/>
+ If  userA has read and write access to resource but no access to child,  userA should not be able to  issue a delete to /fcrepo/rest/resource and delete the child as well.</p>
+
+<p> </p>
+
+<p>So to verify that this is working: </p>
+
+<p>#Create a resource and child<br/>
+ curl -X PUT <a href="http://localhost:8080/fcrepo/rest/resource" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/resource</a> -u fedoraAdmin:secret3<br/>
+ curl -X PUT <a href="http://localhost:8080/fcrepo/rest/resource/child" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/resource/child</a> -u fedoraAdmin:secret3</p>
+<ol>
+	<li>PUT the following ACLs: </li>
+</ol>
+
+
+<p>unrestricted-parent.ttl:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+@prefix webac: &lt;http:<span class="code-comment">//fedora.info/definitions/v4/webac#&gt; .
+</span>@prefix acl: &lt;http:<span class="code-comment">//www.w3.org/ns/auth/acl#&gt; .
+</span>&lt;&gt; a webac:Acl .
+&lt;#auth1&gt; a acl:Authorization;
+acl:mode acl:Read, acl:Write;
+acl:accessTo &lt;/fcrepo/<span class="code-keyword">rest</span>/resource&gt;;
+ acl:agent <span class="code-quote">"testuser"</span>
+ 
+</pre>
+</div></div>
+<p>curl -X PUT <a href="http://localhost:8080/fcrepo/rest/resource/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/resource/fcr:acl</a> -H "Content-Type:text/turtle" -d "@unrestricted-parent.ttl" -u fedoraAdmin:secret3</p>
+
+<p>restricted-child.ttl:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+@prefix webac: &lt;http:<span class="code-comment">//fedora.info/definitions/v4/webac#&gt; . @prefix acl: &lt;http://www.w3.org/ns/auth/acl#&gt; .&lt;&gt; a webac:Acl .&lt;#child&gt; a acl:Authorization; acl:mode acl:Read; acl:accessTo &lt;/fcrepo/<span class="code-keyword">rest</span>/resource/child&gt;; acl:agent <span class="code-quote">"testuser"</span> .
+</span> 
+ 
+
+
+</pre>
+</div></div>
+<p>curl -X PUT <a href="http://localhost:8080/fcrepo/rest/resource/child/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/resource/child/fcr:acl</a> -H "Content-Type:text/turtle" -d "@restricted-child.ttl" -u fedoraAdmin:secret3 -v</p>
+
+<p> </p>
+
+<p>Try to delete the child with the test user - you should get a 403:</p>
+
+<p>curl -X DELETE -u testuser:password1 <a href="http://localhost:8080/fcrepo/rest/resource/child" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/resource/child</a> -v</p>
+
+<p>Now delete the parent: you should also get a 403:</p>
+
+<p>curl -X DELETE -u testuser:password1 <a href="http://localhost:8080/fcrepo/rest/resource" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/resource</a> -v </p>
+
+<p> </p>
+
+<p> </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-21682"><div class="by">Andrew Woods, 2020-11-18 14:29 UTC</div><div class="text"><p>This seems like a Beta-worthy bug to resolve.</p></div></div>
+<div class="comment" id="comment-21754"><div class="by">Jared Whiklo, 2020-11-26 15:36 UTC</div><div class="text"><p>What if the user has access to all their object's direct children, but not a child of a child or a child of a child of a child...you see where I'm going.</p>
+
+<p>Seems like any DELETE will have to traverse the tree, which I'm not a fan of and will have some performance implications.</p></div></div>
+<div class="comment" id="comment-21765"><div class="by">Andrew Woods, 2020-11-30 15:27 UTC</div><div class="text"><p>Sad but true. I think the correct behavior is for the entire DELETE to fail if any of the children in the nested hierarchy are not DELETE-able by the user.</p></div></div>
+<div class="comment" id="comment-21782"><div class="by">Jared Whiklo, 2020-12-02 19:45 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1824" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1824</a></p></div></div>
+<div class="comment" id="comment-21804"><div class="by">Peter Winckles, 2020-12-04 17:26 UTC</div><div class="text"><p>commit: <a href="https://github.com/fcrepo/fcrepo/commit/de618abde6c498e8243084de20e515fba1b1a15d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/de618abde6c498e8243084de20e515fba1b1a15d</a></p></div></div>
+<p><a href="data/FCREPO-3115.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

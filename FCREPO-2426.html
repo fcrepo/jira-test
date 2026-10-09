@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2426 Add support for round-tripping with binaries excluded</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2426</span> Add support for round-tripping with binaries excluded</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2017-04-26 15:11 UTC</td></tr><tr><th>Updated</th><td>2017-05-23 14:33 UTC</td></tr><tr><th>Resolved</th><td>2017-05-22 22:13 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to enable support for round-tripping an export/import with binaries excluded.<br/>
+This will require some further discussion, but options for a solution include:<br/>
+1. Excluding references to binary resources on export so that those references do not cause errors on import.<br/>
+2. Creating placeholder binary resources on import.</p>
+
+<p>See: <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods</a></p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-18698"><div class="by">Esmé Cowles, 2017-05-15 15:04 UTC</div><div class="text"><p>Longshou-</p>
+
+<p>The description mentions not exporting references to the binaries — that seems like the best option to me, since the export is configured to not export binaries, we shouldn't export links to them, either.</p></div></div>
+<div class="comment" id="comment-18754"><div class="by">Situ, Longshou, 2017-05-18 04:31 UTC</div><div class="text"><p>Andrew Woods, Esmé Cowles: I've created a PR to support round-tripping with binaries excluded by not exporting the binary resources: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/82" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/82</a>.</p></div></div>
+<div class="comment" id="comment-18796"><div class="by">Andrew Woods, 2017-05-19 18:31 UTC</div><div class="text"><p>When I run the export as documented in the test scenario <span class="error">&#91;1&#93;</span>, I immediately get the following stacktrace:</p>
+
+<p>&gt; java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -a -d data -m export -r <a href="http://localhost:8686/f4/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest/</a></p>
+
+<p> </p>
+<blockquote><p>INFO 14:30:45.284 (Exporter) Running exporter...<br/>
+ INFO 14:30:45.496 (Exporter) Exporting description: <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a><br/>
+ java.lang.RuntimeException: Export operation failed: unexpected status 405 for <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a><br/>
+ at org.fcrepo.importexport.exporter.Exporter.checkValidResponse(Exporter.java:461)<br/>
+ at org.fcrepo.importexport.exporter.Exporter.filterBinaryReferences(Exporter.java:348)<br/>
+ at org.fcrepo.importexport.exporter.Exporter.exportDescription(Exporter.java:295)<br/>
+ at org.fcrepo.importexport.exporter.Exporter.export(Exporter.java:241)<br/>
+ at org.fcrepo.importexport.exporter.Exporter.run(Exporter.java:197)<br/>
+ at org.fcrepo.importexport.ImportExportDriver.run(ImportExportDriver.java:58)<br/>
+ at org.fcrepo.importexport.ImportExportDriver.main(ImportExportDriver.java:47)<br/>
+ WARN 14:30:45.860 (Exporter) Unable to parse file: java.io.FileNotFoundException: data/f4/rest.ttl (No such file or directory)</p></blockquote>
+<p><span class="error">&#91;1&#93;</span> <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test0-Export/Importexcludingbinaries" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test0-Export/Importexcludingbinaries</a></p></div></div>
+<div class="comment" id="comment-18806"><div class="by">Situ, Longshou, 2017-05-19 20:56 UTC</div><div class="text"><p>Andrew Woods Yep, I got that error as well though it works when I exporting single resource <a href="http://localhost:8686/f4/rest/collection0" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest/collection0</a>. It failed with the repository root that includes resource &lt;<a href="http://localhost:8686/f4/rest/fcr:tx" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest/fcr:tx</a>&gt;. I'll close the PR and use the more specific member predicates instead to retrieve and filter out the binary references.</p></div></div>
+<div class="comment" id="comment-18811"><div class="by">Situ, Longshou, 2017-05-20 00:27 UTC</div><div class="text"><p>I've added a <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/82/commits/6ddb70b0c48fd937c92ce83efd2384fe39ec1988" class="external-link" rel="nofollow noreferrer">commit</a> to exclude the predicate fedora:hasTransactionProvide object references &lt;<a href="http://localhost:8686/f4/rest/fcr:tx" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest/fcr:tx</a>&gt;, which seems to be more convenient than providing all the predicates. The error is gone now.</p></div></div>
+<div class="comment" id="comment-18834"><div class="by">Andrew Woods, 2017-05-22 21:02 UTC</div><div class="text"><p>Pending response to minor code review comments.</p></div></div>
+<div class="comment" id="comment-18840"><div class="by">Situ, Longshou, 2017-05-22 22:12 UTC</div><div class="text"><p>Andrew Woods I've rebased it with master and added a commit to consolidate the method as suggested. See <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/82/commits/9402a4be9409e73464874eb6a026a5d55d5d4f87" class="external-link" rel="nofollow noreferrer">commits#9402a4be9409e73464874eb6a026a5d55d5d4f87</a>.</p></div></div>
+<div class="comment" id="comment-18850"><div class="by">Andrew Woods, 2017-05-23 14:33 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/c8f913fd1cccf4572c1ac383e847ad4e042f9303" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/c8f913fd1cccf4572c1ac383e847ad4e042f9303</a></p></div></div>
+<p><a href="data/FCREPO-2426.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-712 Date strings with milliseconds are parsed incorrectly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-712</span> Date strings with milliseconds are parsed incorrectly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2010-06-01 05:17 UTC</td></tr><tr><th>Updated</th><td>2010-06-30 12:29 UTC</td></tr><tr><th>Resolved</th><td>2010-06-30 12:29 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>The following xsd:dateTimes should be equivalent:</p>
+
+<p>        String a = "1970-01-01T00:00:00.2Z";<br/>
+        String b = "1970-01-01T00:00:00.200Z";</p>
+
+<p>according to <a href="http://www.w3.org/TR/xmlschema-2/#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/xmlschema-2/#dateTime</a></p>
+
+<p>However, Fedora treats these as different dates, namely that "a" is 198 milliseconds before "b". This is due to what sane people would call a bug in SimpleDateFormat, but some spec engineers beg to differ:</p>
+
+<p>        SimpleDateFormat formatter = new SimpleDateFormat();<br/>
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));</p>
+
+<p>        formatter.applyPattern("yyyy-MM-dd'T'HH:mm:ss.S");<br/>
+        Date aDate = formatter.parse(a);<br/>
+        formatter.applyPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");<br/>
+        Date bDate = formatter.parse(b);</p>
+
+<p>        System.out.println(aDate.equals(bDate));<br/>
+        System.out.println(aDate.getTime() + " vs. " + bDate.getTime());</p>
+
+<p>which prints out:<br/>
+        false<br/>
+        2 vs. 200</p>
+
+<p>This is the closest bug report I could find: <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4516915" class="external-link" rel="nofollow noreferrer">http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4516915</a><br/>
+Again, sane people would say that .2 is two-tenths, not two-thousandths, but I digress...</p>
+
+<p>As the various DateUtility methods all rely on SimpleDateFormat for parsing and formatting dates, Fedora can record the wrong datetime and moreover, clients that <b>do</b> parse datetimes correctly can't pass them back to Fedora. For example, if Fedora serializes a dsCreateDate of "1970-01-01T00:00:00.200Z", and a client retrieves and (correctly) parses that as "1970-01-01T00:00:00.2Z" and uses that in a subsequent purgeDatastream request as the startDT and endDT, the purgeDatastream request will fail, as Fedora reads the date as "1970-01-01T00:00:00.002Z".</p>
+
+<p>Of course, if you actually had another datastream version at "1970-01-01T00:00:00.002Z", you would have successfully purged the wrong version.</p>
+
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-11409"><div class="by">eddie, 2010-06-01 05:26 UTC</div><div class="text"><p>I'll note that I only caught this because the purgeDatastream tests for fedora-client were intermittently failing, as fedora-client does handle xsd:dateTimes correctly. See <a href="http://github.com/mediashelf/fedora-client/blob/master/src/main/java/com/yourmediashelf/fedora/util/DateUtility.java" class="external-link" rel="nofollow noreferrer">http://github.com/mediashelf/fedora-client/blob/master/src/main/java/com/yourmediashelf/fedora/util/DateUtility.java</a> for what I believe is a correct implementation, but it's a complete re-write that doesn't use SimpleDateFormat.</p></div></div>
+<p><a href="data/FCREPO-712.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

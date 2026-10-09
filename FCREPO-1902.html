@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1902 FcrepoResponse object should be immutable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1902</span> FcrepoResponse object should be immutable</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Elliot Metsger</td></tr><tr><th>Created</th><td>2016-02-09 22:14 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:38 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:38 UTC</td></tr><tr><th>Components</th><td>f4-java-client</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1901.html">FCREPO-1901</a> FcrepoResponse object should manage the CloseableHttpResponse, instead of the InputStream to the underlying HttpEntity</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1875.html">FCREPO-1875</a> Connection management responsiblities of FcrepoClient are unclear</td></tr></table>
+<h2>Environment</h2>Fedora 4.4.0, Java 8, MacOS
+<h2>Description</h2>
+<p>Considering 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1875" >
+                <a href="FCREPO-1875.html" class="jira-issue-macro-key issue-link"  title="Connection management responsiblities of FcrepoClient are unclear" >
+            
+            FCREPO-1875
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1901" >
+                <a href="FCREPO-1901.html" class="jira-issue-macro-key issue-link"  title="FcrepoResponse object should manage the CloseableHttpResponse, instead of the InputStream to the underlying HttpEntity" >
+            
+            FCREPO-1901
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, the FcrepoResponse is responsible for managing the state of the HTTP response object (if 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1901" >
+                <a href="FCREPO-1901.html" class="jira-issue-macro-key issue-link"  title="FcrepoResponse object should manage the CloseableHttpResponse, instead of the InputStream to the underlying HttpEntity" >
+            
+            FCREPO-1901
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is implemented, this is represented as a member variable containing the CloseableHttpResponse, if not, it may be represented as an InputStream to the response body).</p>
+
+<p>Allowing clients to mutate that state in arbitrary ways (e.g. by setting a different response object, or modifying the status code) makes it more difficult for the FcrepoResponse to manage that state.  Ideally, the FcrepoResponse would provide accessors to necessary state, but restrict access to mutating that state.  </p>
+
+<p>One consideration is that methods such as FcrepoResponse#setBody(InputStream) are used throughout the unit tests, so some refactoring may be necessary, or simply reducing the visibility of the mutating methods may be sufficient.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-22428"><div class="by">Danny Bernstein, 2021-09-17 17:38 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-1902.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

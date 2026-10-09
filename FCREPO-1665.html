@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1665 Containers do not manage membership triples of NonRdfSources</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1665</span> Containers do not manage membership triples of NonRdfSources</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Robert Sanderson</td></tr><tr><th>Assignee</th><td>Nianli Ma</td></tr><tr><th>Created</th><td>2015-07-31 19:45 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:31 UTC</td></tr><tr><th>Resolved</th><td>2015-11-05 14:15 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>ldp</td></tr></table>
+<h2>Description</h2>
+
+<p>Summary:  In/Direct Containers do not manage the membership triples of NonRdfSources.  </p>
+
+<p>Steps to reproduce:</p>
+<ul>
+	<li>Create an ldp:NonRdfSource, say an image (img)</li>
+	<li>Create an ldp:DirectContainer (dc), with membershipResource of img, and some hasMemberRelation (rel)</li>
+	<li>Create a new resource (new) inside dc</li>
+	<li>GET img/fcr:metadata</li>
+</ul>
+
+
+<p>Expected Behavior:  The fcr:metadata response to include the triple: img rel new</p>
+
+<p>Observed Behavior: The triple does not appear in any representation</p>
+
+<p>Remediation Requested: Either the container should reject the NonRDFSource as the object of membershipResource (boo!) or preferably the triple should be added to the fcr:metadata response, otherwise in contravention of LDP 5.4.2.1.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-14886"><div class="by">Robert Sanderson, 2015-07-31 19:53 UTC</div><div class="text"><p><a href="https://gist.github.com/escowles/8518b8a3b24e01f8498a" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/8518b8a3b24e01f8498a</a> from Former user demonstrates it working with fcr:metadata as membershipResource. (simple tweak to get the failing version)</p></div></div>
+<div class="comment" id="comment-15552"><div class="by">Nianli Ma, 2015-10-22 15:13 UTC</div><div class="text"><p>Robert Sanderson  It is really interesting that I can run the non-ref-broken.sh and get the following result:<br/>
+&lt;<a href="http://localhost:8080/rest/20512/files/file1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/20512/files/file1</a>&gt; &lt;<a href="http://www.w3.org/2007/05/powder-s#describedby" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2007/05/powder-s#describedby</a>&gt; &lt;<a href="http://localhost:8080/rest/20512/files1_related/related_file2" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/20512/files1_related/related_file2</a>&gt; .</p>
+
+<p>But for the describedby-description-working.sh, I got empty result.  Does this mean the problem solved in Fedora4.4? </p>
+
+<p>By the way, I didn't do anything to the code </p></div></div>
+<div class="comment" id="comment-15553"><div class="by">Robert Sanderson, 2015-10-22 15:48 UTC</div><div class="text"><p>They should both work.</p></div></div>
+<div class="comment" id="comment-15650"><div class="by">Andrew Woods, 2015-10-30 23:25 UTC</div><div class="text"><p>I have just verified the same result reported by Nianli Ma; namely, it is now possible to have Fedora/LDP create a membership relationship on a binary resource via a DirectContainer (as detailed in the linked scripts provided by Esmé Cowles).<br/>
+I have also verified that it is not currently possible to create such a relationship on the description of a binary resource. In other words, the linked script has two scenarios, one named "describedby-description-working.sh" (no longer works) and another named "describedby-NonRDFSource-broken.sh" (now working).</p>
+
+<p>Robert Sanderson, you suggest that both scenarios should work, but I would argue that the current state is the desired behavior. The NonRdfSourceDescription is a resource that, by definition, contains a description of its associated binary resource. It, in itself, is merely a construct for getting RDF about the associated binary. The subject of all of the triples in the NonRdfSourceDescription is the binary resource. <br/>
+There is currently no way of GETting RDF that describes the NonRdfSourceDescription; therefore, having the NonRdfSourceDescription as the membershipResource of a DirectContainer (or IndirectContainer) does not make sense in the Fedora/LDP model.</p>
+
+<p>In terms of this ticket, does that seem reasonable? or do you have a use case or need for RDF that has the NonRdfSourceDescription as a membershipResource?</p></div></div>
+<div class="comment" id="comment-15758"><div class="by">Robert Sanderson, 2015-11-05 00:31 UTC</div><div class="text"><p>On reflection, I don't have a use case for NRSD as a membershipResource, so I'm fine with closing as resolved.</p></div></div>
+<div class="comment" id="comment-15766"><div class="by">Andrew Woods, 2015-11-05 14:15 UTC</div><div class="text"><p>Fixed by previous tickets.</p></div></div>
+<p><a href="data/FCREPO-1665.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

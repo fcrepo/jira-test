@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1752 fcrepo-camel doesn&#x27;t properly encode Sparql-Update queries</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1752</span> fcrepo-camel doesn&#x27;t properly encode Sparql-Update queries</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-09-28 20:31 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-10-02 18:21 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>Sparql-update queries handled by fcrepo-camel (esp. via fcrepo-indexing-triplestore) will fail if they contain special URL characters, such as &amp;. The queries should be properly URL-escaped by the fcrepo-camel processors.</p>
+<h2>Comments (19)</h2>
+<div class="comment" id="comment-15334"><div class="by">Unknown, 2015-09-28 20:33 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel/pull/95" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/pull/95</a></p></div></div>
+<div class="comment" id="comment-15339"><div class="by">Former user, 2015-09-29 13:31 UTC</div><div class="text"><p>Jared Whiklo or I will take a look at this soon.  It'll coincide with us moving the Islandora vagrant install to use Karaf for the fcrepo-camel-toolbox instead of a .war.</p></div></div>
+<div class="comment" id="comment-15394"><div class="by">Andrew Woods, 2015-10-02 13:41 UTC</div><div class="text"><p>Former user have you or Jared Whiklo had a chance to verify this with your local scenarios?</p></div></div>
+<div class="comment" id="comment-15395"><div class="by">Jared Whiklo, 2015-10-02 14:10 UTC</div><div class="text"><p>I'll spin up a VM and see if I can perform the actions I was having trouble with previously.</p></div></div>
+<div class="comment" id="comment-15396"><div class="by">Andrew Woods, 2015-10-02 14:24 UTC</div><div class="text"><p>Can someone describe some example situations which prompted this issue? I am not seeing anything enlightening in the tests that are updated in this PR. <br/>
+I assume the issue is caused by a repository subject URI containing special characters. If so, when does this tend to happen?</p></div></div>
+<div class="comment" id="comment-15397"><div class="by">Unknown, 2015-10-02 14:27 UTC</div><div class="text"><p>For example, if you do this:</p>
+
+<p>INSERT </p>
+{
+  &lt;&gt; dc:title "This &amp; that" .
+}
+<p> WHERE {}</p>
+</div></div>
+<div class="comment" id="comment-15398"><div class="by">Former user, 2015-10-02 14:29 UTC</div><div class="text"><p>I just spun up a box.  Checking it out now.</p></div></div>
+<div class="comment" id="comment-15399"><div class="by">Andrew Woods, 2015-10-02 14:30 UTC</div><div class="text"><p>Unknown, can you please add an integration test for this case?</p></div></div>
+<div class="comment" id="comment-15400"><div class="by">Jared Whiklo, 2015-10-02 14:30 UTC</div><div class="text"><p>Further to what Unknown says, I noticed it with Islandora2 when adding a collection called "Archives &amp; Special Collections", the Sparql update seemed to get stripped at the &amp;.</p></div></div>
+<div class="comment" id="comment-15401"><div class="by">Unknown, 2015-10-02 14:35 UTC</div><div class="text"><p>The integration tests should be in fcrepo-indexing-triplestore, we don't do this sort of integration testing with fcrepo-camel</p></div></div>
+<div class="comment" id="comment-15404"><div class="by">Unknown, 2015-10-02 15:02 UTC</div><div class="text"><p>I added some additional tests with ampersands, but what this really needs is an IT in fcrepo-camel-toolbox</p></div></div>
+<div class="comment" id="comment-15405"><div class="by">Former user, 2015-10-02 15:03 UTC</div><div class="text"><p>Getting errors when indexing content with changeset merged in:</p>
+
+<p>2015-10-02 15:00:27,212 | INFO  | Consumer<span class="error">&#91;fedora&#93;</span> | FcrepoTriplestoreUpdater         | 62 - org.apache.camel.camel-core - 2.15.1 | Index Routing Error: FcrepoTriplestoreUpdater<br/>
+2015-10-02 15:00:27,233 | ERROR | Consumer<span class="error">&#91;fedora&#93;</span> | DefaultErrorHandler              | 62 - org.apache.camel.camel-core - 2.15.1 | Failed delivery for (MessageId: ID:fedora4-60313-1443793623396-3:1:1:1:53 on ExchangeId: ID-fedora4-48626-1443793958193-1-53). Exhausted after delivery attempt: 11 caught: org.apache.camel.component.http4.HttpOperationFailedException: HTTP operation failed invoking <a href="http://localhost:8080/fuseki/test/update" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fuseki/test/update</a> with statusCode: 400. Processed by failure processor: FatalFallbackErrorHandler[Channel[Log(FcrepoTriplestoreUpdater)[Index Routing Error: $</p>
+{routeId}
+<p>]]]</p>
+
+<p>Message History<br/>
+---------------------------------------------------------------------------------------------------------------------------------------<br/>
+RouteId              ProcessorId          Processor                                                                        Elapsed (ms)<br/>
+<span class="error">&#91;FcrepoTriplestoreR&#93;</span> <span class="error">&#91;FcrepoTriplestoreR&#93;</span> <span class="error">&#91;activemq://topic:fedora                                                       &#93;</span> [       494]<br/>
+<span class="error">&#91;FcrepoTriplestoreR&#93;</span> <span class="error">&#91;choice3           &#93;</span> [when[{header</p>
+{header(org.fcrepo.jms.eventType)}
+<p> == <a href="http://fedora.info/definitio" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitio</a>] [       494]<br/>
+<span class="error">&#91;FcrepoTriplestoreR&#93;</span> <span class="error">&#91;to11              &#93;</span> <span class="error">&#91;direct:index.triplestore                                                      &#93;</span> [       494]<br/>
+<span class="error">&#91;FcrepoTriplestoreI&#93;</span> <span class="error">&#91;filter2           &#93;</span> [filter[{not ((header</p>
+{header(org.fcrepo.jms.identifier)}
+<p> startsWith Simple: {{a] [       494]<br/>
+<span class="error">&#91;FcrepoTriplestoreI&#93;</span> <span class="error">&#91;removeHeaders3    &#93;</span> [removeHeaders<span class="error">&#91;CamelHttp*&#93;</span>                                                     ] [         0]<br/>
+<span class="error">&#91;FcrepoTriplestoreI&#93;</span> <span class="error">&#91;to13              &#93;</span> <span class="error">&#91;fcrepo:localhost:8080/fcrepo/rest                                             &#93;</span> [       115]<br/>
+<span class="error">&#91;FcrepoTriplestoreI&#93;</span> <span class="error">&#91;choice4           &#93;</span> [when<span class="error">&#91;{(Simple: {{indexing.predicate}} != &#39;true&#39;) or (XPath: /rdf:RDF/rdf:Descr&#93;</span> [       380]<br/>
+<span class="error">&#91;FcrepoTriplestoreI&#93;</span> <span class="error">&#91;to14              &#93;</span> <span class="error">&#91;direct:update.triplestore                                                     &#93;</span> [       389]<br/>
+<span class="error">&#91;FcrepoTriplestoreU&#93;</span> <span class="error">&#91;setHeader5        &#93;</span> [setHeader<span class="error">&#91;CamelFcrepoNamedGraph&#93;</span>                                              ] [         0]<br/>
+<span class="error">&#91;FcrepoTriplestoreU&#93;</span> <span class="error">&#91;to17              &#93;</span> <span class="error">&#91;fcrepo:localhost:8080/fcrepo/rest?accept=application/n-triples                &#93;</span> [       151]<br/>
+<span class="error">&#91;FcrepoTriplestoreU&#93;</span> <span class="error">&#91;process3          &#93;</span> <span class="error">&#91;Processor@0x3fa321a8                                                          &#93;</span> [         1]<br/>
+<span class="error">&#91;FcrepoTriplestoreU&#93;</span> <span class="error">&#91;log6              &#93;</span> <span class="error">&#91;log                                                                           &#93;</span> [         3]<br/>
+<span class="error">&#91;FcrepoTriplestoreU&#93;</span> <span class="error">&#91;to18              &#93;</span> <span class="error">&#91;http4://localhost:8080/fuseki/test/update                                     &#93;</span> [       224]<br/>
+[                  ] <span class="error">&#91;log4              &#93;</span> <span class="error">&#91;log                                                                           &#93;</span> [         3]</p>
+
+<p>Exchange<br/>
+---------------------------------------------------------------------------------------------------------------------------------------<br/>
+Exchange[<br/>
+	Id                  ID-fedora4-48626-1443793958193-1-53<br/>
+	ExchangePattern     InOnly<br/>
+	Headers             </p>
+{breadcrumbId=ID:fedora4-60313-1443793623396-3:1:1:1:53, CamelFcrepoNamedGraph=, CamelHttpMethod=POST, CamelHttpResponseCode=200, CamelRedelivered=true, CamelRedeliveryCounter=10, CamelRedeliveryMaxCounter=10, Content-Type=application/x-www-form-urlencoded, JMSCorrelationID=null, JMSDeliveryMode=2, JMSDestination=topic://fedora, JMSExpiration=0, JMSMessageID=ID:fedora4-60313-1443793623396-3:1:1:1:53, JMSPriority=4, JMSRedelivered=false, JMSReplyTo=null, JMSTimestamp=1443798026717, JMSType=null, JMSXGroupID=null, JMSXUserID=null, org.fcrepo.jms.baseURL=http://127.0.0.1:8080/fcrepo/rest, org.fcrepo.jms.eventID=76/c1/6f/28/76c16f28-562d-4c40-acda-1de1b1f00225, org.fcrepo.jms.eventType=http://fedora.info/definitions/v4/repository#PROPERTY_ADDED,http://fedora.info/definitions/v4/repository#PROPERTY_CHANGED, org.fcrepo.jms.identifier=/ampTest, org.fcrepo.jms.properties=http://purl.org/dc/elements/1.1/title,http://fedora.info/definitions/v4/repository#lastModified,http://fedora.info/definitions/v4/repository#lastModifiedBy, org.fcrepo.jms.timestamp=1443798026712, org.fcrepo.jms.user=bypassAdmin, org.fcrepo.jms.userAgent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:40.0) Gecko/20100101 Firefox/40.0}
+<p>	BodyType            String<br/>
+	Body                update=DELETE WHERE </p>
+{ &lt;http://127.0.0.1:8080/fcrepo/rest/ampTest&gt; ?p ?o }
+<p>;DELETE WHERE </p>
+{ &lt;http://127.0.0.1:8080/fcrepo/rest/ampTest/fcr:export?format=jcr/xml&gt; ?p ?o }
+<p>;INSERT DATA </p>
+{ &lt;http://localhost:8080/fcrepo/rest/ampTest/fcr:export?format=jcr/xml&gt; &lt;http://purl.org/dc/elements/1.1/format&gt; &lt;http://fedora.info/definitions/v4/repository#jcr/xml&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.jcp.org/jcr/nt/1.0folder&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://fedora.info/definitions/v4/repository#Resource&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.jcp.org/jcr/mix/1.0lastModified&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#lastModifiedBy&gt; "bypassAdmin"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#createdBy&gt; "bypassAdmin"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#primaryType&gt; "nt:folder"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#writable&gt; "true"^^&lt;http://www.w3.org/2001/XMLSchema#boolean&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.jcp.org/jcr/mix/1.0referenceable&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.jcp.org/jcr/mix/1.0created&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.jcp.org/jcr/nt/1.0hierarchyNode&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://fedora.info/definitions/v4/repository#Container&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#mixinTypes&gt; "fedora:Resource"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#exportsAs&gt; &lt;http://localhost:8080/fcrepo/rest/ampTest/fcr:export?format=jcr/xml&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#hasParent&gt; &lt;http://localhost:8080/fcrepo/rest/&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.jcp.org/jcr/nt/1.0base&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.w3.org/ns/ldp#RDFSource&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#lastModified&gt; "2015-10-02T15:00:26.711Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://www.w3.org/ns/ldp#Container&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://purl.org/dc/elements/1.1/title&gt; "With an &amp;"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#mixinTypes&gt; "fedora:Container"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; .&lt;http://localhost:8080/fcrepo/rest/ampTest&gt; &lt;http://fedora.info/definitions/v4/repository#created&gt; "2015-10-02T15:00:08.802Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; .}
+<p>]</p>
+
+<p>Stacktrace<br/>
+---------------------------------------------------------------------------------------------------------------------------------------<br/>
+org.apache.camel.component.http4.HttpOperationFailedException: HTTP operation failed invoking <a href="http://localhost:8080/fuseki/test/update" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fuseki/test/update</a> with statusCode: 400<br/>
+	at org.apache.camel.component.http4.HttpProducer.populateHttpOperationFailedException(HttpProducer.java:236)<span class="error">&#91;63:org.apache.camel.camel-http4:2.15.1&#93;</span><br/>
+	at org.apache.camel.component.http4.HttpProducer.process(HttpProducer.java:163)<span class="error">&#91;63:org.apache.camel.camel-http4:2.15.1&#93;</span><br/>
+	at org.apache.camel.util.AsyncProcessorConverterHelper$ProcessorToAsyncProcessorBridge.process(AsyncProcessorConverterHelper.java:61)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.SendProcessor.process(SendProcessor.java:129)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.management.InstrumentationProcessor.process(InstrumentationProcessor.java:77)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.RedeliveryErrorHandler.process(RedeliveryErrorHandler.java:448)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.Pipeline.process(Pipeline.java:118)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.Pipeline.process(Pipeline.java:80)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.component.direct.DirectProducer.process(DirectProducer.java:51)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.SendProcessor.process(SendProcessor.java:129)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.management.InstrumentationProcessor.process(InstrumentationProcessor.java:77)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.RedeliveryErrorHandler.process(RedeliveryErrorHandler.java:448)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.ChoiceProcessor.process(ChoiceProcessor.java:111)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.management.InstrumentationProcessor.process(InstrumentationProcessor.java:77)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.RedeliveryErrorHandler.process(RedeliveryErrorHandler.java:448)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.Pipeline.process(Pipeline.java:118)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.Pipeline.process(Pipeline.java:80)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.FilterProcessor.process(FilterProcessor.java:58)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.management.InstrumentationProcessor.process(InstrumentationProcessor.java:77)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.RedeliveryErrorHandler.process(RedeliveryErrorHandler.java:448)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.component.direct.DirectProducer.process(DirectProducer.java:51)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.SendProcessor.process(SendProcessor.java:129)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.management.InstrumentationProcessor.process(InstrumentationProcessor.java:77)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.RedeliveryErrorHandler.process(RedeliveryErrorHandler.java:448)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.ChoiceProcessor.process(ChoiceProcessor.java:111)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.management.InstrumentationProcessor.process(InstrumentationProcessor.java:77)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.RedeliveryErrorHandler.process(RedeliveryErrorHandler.java:448)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.CamelInternalProcessor.process(CamelInternalProcessor.java:191)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.util.AsyncProcessorHelper.process(AsyncProcessorHelper.java:109)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.processor.DelegateAsyncProcessor.process(DelegateAsyncProcessor.java:87)<span class="error">&#91;62:org.apache.camel.camel-core:2.15.1&#93;</span><br/>
+	at org.apache.camel.component.jms.EndpointMessageListener.onMessage(EndpointMessageListener.java:103)<span class="error">&#91;64:org.apache.camel.camel-jms:2.15.1&#93;</span><br/>
+	at org.springframework.jms.listener.AbstractMessageListenerContainer.doInvokeListener(AbstractMessageListenerContainer.java:569)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at org.springframework.jms.listener.AbstractMessageListenerContainer.invokeListener(AbstractMessageListenerContainer.java:507)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at org.springframework.jms.listener.AbstractMessageListenerContainer.doExecuteListener(AbstractMessageListenerContainer.java:474)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at org.springframework.jms.listener.AbstractPollingMessageListenerContainer.doReceiveAndExecute(AbstractPollingMessageListenerContainer.java:325)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at org.springframework.jms.listener.AbstractPollingMessageListenerContainer.receiveAndExecute(AbstractPollingMessageListenerContainer.java:263)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at org.springframework.jms.listener.DefaultMessageListenerContainer$AsyncMessageListenerInvoker.invokeListener(DefaultMessageListenerContainer.java:1103)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at org.springframework.jms.listener.DefaultMessageListenerContainer$AsyncMessageListenerInvoker.executeOngoingLoop(DefaultMessageListenerContainer.java:1095)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at org.springframework.jms.listener.DefaultMessageListenerContainer$AsyncMessageListenerInvoker.run(DefaultMessageListenerContainer.java:992)<span class="error">&#91;90:org.apache.servicemix.bundles.spring-jms:3.2.14.RELEASE_1&#93;</span><br/>
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)<span class="error">&#91;:1.8.0_60&#93;</span><br/>
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)<span class="error">&#91;:1.8.0_60&#93;</span><br/>
+	at java.lang.Thread.run(Thread.java:745)<span class="error">&#91;:1.8.0_60&#93;</span></p></div></div>
+<div class="comment" id="comment-15407"><div class="by">Andrew Woods, 2015-10-02 15:09 UTC</div><div class="text"><p>Former user, Did you build fcrepo-camel from this PR branch, wipe out your karaf/data directory, then reinstall your camel components for this test?</p></div></div>
+<div class="comment" id="comment-15408"><div class="by">Unknown, 2015-10-02 15:12 UTC</div><div class="text"><p>Can you list the steps you followed to get this? I am able to add properties with ampersands just fine.</p>
+
+<p>In fedora:<br/>
+INSERT </p>
+{
+  &lt;&gt; dc:title "this &amp; that" .
+}
+<p> WHERE {}</p>
+
+<p>From fuseki:</p>
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<td class='confluenceTd'> &lt;<a href="http://localhost:8080/fcrepo/rest/e6/57/75/21/e6577521-7ad4-434a-baa2-4693d8626c2c" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/e6/57/75/21/e6577521-7ad4-434a-baa2-4693d8626c2c</a>&gt;                           </td>
+<td class='confluenceTd'> &lt;<a href="http://purl.org/dc/elements/1.1/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/title</a>&gt;                       </td>
+<td class='confluenceTd'> "this &amp; that"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>&gt;</td>
+</tr>
+</tbody></table>
+</div>
+
+
+
+<p>Make sure you rm -rf ~/.m2/repository/org/fcrepo and then build the fcrepo-camel project with the changeset before loading this into karaf</p></div></div>
+<div class="comment" id="comment-15409"><div class="by">Unknown, 2015-10-02 15:42 UTC</div><div class="text"><p>Here's a PR to fcrepo-camel-toolbox with a corresponding integration test: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/60" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/60</a></p></div></div>
+<div class="comment" id="comment-15411"><div class="by">Andrew Woods, 2015-10-02 16:01 UTC</div><div class="text"><p>Once we get re-verification from Former user I would like to move this ticket forward.</p></div></div>
+<div class="comment" id="comment-15412"><div class="by">Former user, 2015-10-02 16:04 UTC</div><div class="text"><p>I built fcrepo-camel, uninstalled the version that gets pulled down when you bootstrap the enviornment, and then dropped the new bundle in the deploy directory of karaf.  I didn't wipe and re-install components.  I'll try that.</p></div></div>
+<div class="comment" id="comment-15413"><div class="by">Former user, 2015-10-02 16:44 UTC</div><div class="text"><p>Yup, that did it!  While I was trying to deploy the changes, looks like I accidentally got two karafs running at the same time.  No matter what I did i was still looking at the old one when logging into the client.  We're all good now!  Indexed with &amp;'s no problem.</p></div></div>
+<div class="comment" id="comment-15416"><div class="by">Andrew Woods, 2015-10-02 18:21 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel/commit/9fde12a6d90fa0b51a15e73b52b6e41de8308442" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/commit/9fde12a6d90fa0b51a15e73b52b6e41de8308442</a> and<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/b86988ccd9a06fb7c27672a1204570b29c96b34b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/b86988ccd9a06fb7c27672a1204570b29c96b34b</a></p></div></div>
+<p><a href="data/FCREPO-1752.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-691 Too-long DC, other values can cause triplestore to reach inconsistent state</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-691</span> Too-long DC, other values can cause triplestore to reach inconsistent state</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-05-06 20:42 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.4, Fedora 3.2, Fedora 3.2.1, Fedora 3.3</td></tr><tr><th>Is related to</th><td><a href="FCREPO-694.html">FCREPO-694</a> Option to truncate or reject doFields updates based on length</td></tr><tr><th>Is related to</th><td><a href="FCREPO-682.html">FCREPO-682</a> MySQL: Alter column type in doFields to LONGTEXT</td></tr></table>
+<h2>Environment</h2>MPTStore with Oracle or Postgres
+<h2>Description</h2>
+<p>When using MPTStore as the Resource Index option, with a database (like Postgres or Oracle) that enforces a maximum length on column values, the triplestore can get into an inconsistent state because the asynchronous "flush" of the triples to update doesn't succeed due to a DB error.  Currently, the only way of dealing with this is to track down the problematic object(s) in the repository, remove or correct them in the underlying storage, and do a resource index rebuild.</p>
+
+<p>Ideally, Fedora would have an option to either reject or auto-truncate such too-long values and avoid this inconsistency problem altogether.  This doesn't occur when using Mulgara as the underlying database because it doesn't have such length limits, however the option would be very helpful for people who have chosen another underlying triplestore.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11363"><div class="by">Aaron Birkland, 2010-05-06 21:33 UTC</div><div class="text"><p>There is another issue related to DC field length: <a href="http://fedora-commons.org/jira/browse/FCREPO-682" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/jira/browse/FCREPO-682</a></p>
+
+<p>Depending on the choice of database, the field search impl may will the same problem with long DC fields (but won't leave the RI in an inconsistent state).   Mysql will silently truncate the index entry, PostgresQL will throw an exception if the value is too large to index. </p></div></div>
+<div class="comment" id="comment-11368"><div class="by">Chris Wilper, 2010-05-11 16:43 UTC</div><div class="text"><p><span class="error">&#91;11:39&#93;</span> &lt;cwilper&gt; for resourceIndex, add a "truncate" option (defaults to true) for some length threshold for the underlying db<br/>
+<span class="error">&#91;11:40&#93;</span> &lt;cwilper&gt; (in mptstore)</p></div></div>
+<div class="comment" id="comment-13092"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-691.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

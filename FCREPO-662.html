@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-662 Extend REST API to provide simple support for remote or tiered storage status information.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-662</span> Extend REST API to provide simple support for remote or tiered storage status information.</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Daniel Davis</td></tr><tr><th>Created</th><td>2010-03-11 19:43 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>Extend the REST API to provide simple protocol support for remote or tiered storage status information.  Likely this would return a 503 status code and a retry-after header if an authorized access operation was unable to retrieve a datastream from managed storage that was recognized as valid within the timeout period.  The work is primarily to provide support through the Fedora Repository core for the function.  In related work outside the scope of this issue, it will be required that the low-level storage plug-in be able to provide a suitable signal.  Additional efficiencies could be gained by supporting this in a HEAD request at least for datastream disseminations and considered for dissemination-type services.</p>
+
+<p>This improvement is to enable minimal support for tiered storage plug-in which may have the datastream "file" off-line and may not be able to stream it before the timeout.</p>
+
+<p>The same ideas may be applied later to other back-end service calls especially for Web (external datastreams) from sources that return a 503 and retry-after too. </p>
+
+<p><a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html" class="external-link" rel="nofollow noreferrer">http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html</a><br/>
+<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html" class="external-link" rel="nofollow noreferrer">http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html</a></p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11258"><div class="by">Chris Wilper, 2010-03-12 20:51 UTC</div><div class="text"><p>Just a note re: supporting this at the low level:</p>
+
+<p>One approach we've talked about is to use exceptions as a way to trigger this condition at the Akubra level.  It would be fairly easy to do this with a hierarchical-storage aware Akubra plugin that threw a Fedora-recognized subclass of IOException in cases where Blob.openInputStream is called.</p>
+
+<p><a href="https://fedora-commons.org/bamboo/browse/AKUBRA-SAN/latest/artifact/site/apidocs/org/akubraproject/Blob.html#openInputStream%28%29" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/bamboo/browse/AKUBRA-SAN/latest/artifact/site/apidocs/org/akubraproject/Blob.html#openInputStream%28%29</a></p>
+
+<p>...without changing today's Akubra API.  If this approach works out, we could add such an exception to the formal Akubra api, on par with exceptions like MissingBlobException, DuplicateBlobException, etc.</p></div></div>
+<div class="comment" id="comment-11367"><div class="by">Chris Wilper, 2010-05-11 16:16 UTC</div><div class="text"><p>Will probably go through high level storage (post-3.4)</p></div></div>
+<div class="comment" id="comment-11588"><div class="by">Chris Wilper, 2010-08-31 20:24 UTC</div><div class="text"><p>Async purges should also be considered.</p>
+
+<p>See High Level Storage page on wiki: <a href="https://wiki.duraspace.org/display/FCREPO/High-level+storage+layer" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FCREPO/High-level+storage+layer</a></p></div></div>
+<div class="comment" id="comment-12995"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-662.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

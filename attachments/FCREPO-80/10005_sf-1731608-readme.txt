@@ -1,0 +1,137 @@
+readme.txt for Fedora 2.2 maintenance patch 6012 (2007.06.18)
+
+Ongoing maintenance to Fedora 2.2 now includes fixes for the following two bug 
+issues:
+1721620 "FilterEnforceAuthN lets bad requests through"
+1731608 "ldap servlet filter -- fix bugs revealed at hull"
+
+Note that both of these issues touch on code common to all 2.2 security servlet 
+filters.  You should apply this patch if you access Fedora using SOAP and are 
+seeing Illegal State Exceptions; or if you configure the Fedora 2.2 LDAP 
+security servlet filter and it doesn't test ok with your ldap directory.  
+
+
+
+ISSUES
+
+1721620 "FilterEnforceAuthN lets bad requests through"
+Sequence of writing to http response caused axis (server soap software) to throw
+an illegal state exception.  This problem was not specific to the particular
+servlet filters configured. 
+
+If you are a sourceforge user and checked out the project from subversion,
+you can update to patch level 6008 to incorporate only this fix.  This is in 
+the maintenance-2.2 branch.
+
+
+1731608 "ldap servlet filter -- fix bugs revealed at hull"
+Sequence of testing at Hull revealed a few bugs, and, possibly, also an 
+invalid programmer assumption of underlying JNDI response to a null password.
+
+1. A null password apparently causes Hull JNDI (LDAP) implementation to 
+return a valid but empty results object, instead of the (programmer-)
+expected naming exception.  (Core programmer tests do not reveal this JNDI
+behavior.)  Ldap servlet filter code accepted this as authentication.  
+The log makes this problem seem to have happened, but remote debugging 
+makes it difficult to know certainly that it did happen.  Regardless, it 
+would be specific to the ldap servlet filter.
+
+2. Bug in caching code could cause wrong cache duration to be used.
+This problem definitely happened.  It was not specific to the particular 
+servlet filters configured.  At the least, it causes confusing log messages.
+
+3. Re-authentication on cache timeout did not replace prior authentication
+decision, due to local variable with same name as instance field.
+That prior decision in the case of Hull testing was incorrect due to 1.
+This problem definitely happened.  It was specific to the ldap servlet filter.
+It is severe in the case of a re-used, incorrect "true" authentication 
+decision, as was the case at Hull (again, probably due to 1).
+
+
+
+TO APPLY PATCHES (SOURCEFORGE USERS)
+
+If you are a sourceforge user and checked out the project from subversion,
+you can update to patch level 6010 to incorporate fixes for 2 and 3, and for
+tracking issue 1721620, but not for 1.  This is in the maintenance-2.2 branch.
+
+Or you can update to patch level 6012 to incorporate also the fix for 1 and 
+increased debug-level logging.  This is in the maintenance-2.2 branch.
+See below for an additional configuration option.
+
+To be clear, patch levels are cumulative and so level 6012 includes -all- of 
+the fixes above.
+
+
+
+TO APPLY PATCHES (BINARY DOWNLOAD USERS)
+
+If instead you downloaded a binary distribution, you can use file fedora-2.2.6012.zip
+available from sourceforge under either of the related issues:  
+https://sourceforge.net/tracker/index.php?func=detail&aid=1721620&group_id=177054&atid=879703
+https://sourceforge.net/tracker/index.php?func=detail&aid=1731608&group_id=177054&atid=879703
+
+You will need to extract all files with paths being "classes/" into directory 
+"webapps/fedora/WEB-INF" of the tomcat or other servlet container in which 
+you have already installed and deployed the Fedora webapp.
+
+This incorporates all of these fixes.  To be clear, this equals patch level 
+6012.  See below for an additional configuration option. 
+
+
+
+DEBUGGING SUPPORT -- VERSION CONFIGURATION
+
+An additional, optional configuration option is now available at patch level 
+6012
+
+version
+ldap protocol version that jndi/ldap client should use to connect to ldap server
+value is one of: 2, 3 (default: 2)
+
+
+
+DEBUG SUPPORT -- LOGGING
+
+To turn on debug-level logging for servlet filter and related code,
+edit your installation's server/config/log4j.properties file.
+Insert the following new line
+log4j.logger.fedora.server.security=DEBUG, FEDORA
+after the existing line
+log4j.logger.fedora=INFO, FEDORA
+
+Restart Fedora to put this debug logging into play.
+
+
+FILES CHANGED AT EACH PATCH
+
+
+maintentance-2.2 branch @ patch level 6008
+
+fedora.server.security.servletfilters:
+BaseContributing.java
+FilterEnforceAuthn.java
+FilterFinalize.java
+FilterSetup.java
+
+
+maintentance-2.2 branch @ patch level 6010
+
+fedora.server.security.servletfilters:
+CacheElement.java
+Cache.java
+FilterSetup.java (redux)
+
+
+maintentance-2.2 branch @ patch level 6012
+
+fedora.server.security.servletfilters:
+BaseContributing.java (redux)
+
+fedora.server.security.servletfilters.ldap:
+FilterLdap.java
+
+fedora.server.errors.authorization:
+PasswordComparisonException.java
+
+ 	  	 

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2662 Sparql Delete works inconsistently in transaction</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2662</span> Sparql Delete works inconsistently in transaction</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-01-03 22:00 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:38 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:38 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.4</td></tr></table>
+<h2>Description</h2>
+<p>Sparql Delete requests which do not specify an exact object/literal to delete are having inconsistent results depending on if the subject having its properties deleted was created inside of the current transaction or not.  </p>
+
+<p>The query in question is:</p>
+
+<p>DELETE </p>
+{ &lt;&gt; &lt;http://purl.org/dc/elements/1.1/relation&gt; ?obj . }
+<p>WHERE </p>
+{ &lt;&gt; &lt;http://purl.org/dc/elements/1.1/relation&gt; ?obj }
+
+<p>This query should delete every property dc:relation from the object the request is made against.  However, I've run into it working differently in the following cases:<br/>
+1) No TX involved -&gt; dc:relations deleted<br/>
+2) Subject and Object created out of TX, delete query in TX -&gt; dc:relations deleted<br/>
+3) Subject created in TX, object out of TX -&gt; nothing deleted, no error<br/>
+4) Subject created out of TX, object created in TX -&gt; dc:relations deleted<br/>
+5) Subject and object created in TX -&gt; nothing deleted, no error</p>
+
+<p>Attached is a script (run against the one click installer) which illustrates the bug.</p>
+
+<p>I know this seems very edge case-y, but we really are running into it.  The approach that seems to work consistently in transactions is to retrieve all the existing values and then generate a delete query from that, but it can produce some rather large queries and takes 2 requests.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2662/10321_sparql_delete_tx_test.sh">sparql_delete_tx_test.sh</a>, 4506 bytes, added by Ben Pennell on 2018-01-03</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-22415"><div class="by">Danny Bernstein, 2021-09-17 17:38 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2662.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

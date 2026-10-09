@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1711 Investigate Fixity Properties and Possible Modification</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1711</span> Investigate Fixity Properties and Possible Modification</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-08-27 18:36 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>Determine whether it is possible to modify properties related to fixity:</p>
+
+<ul>
+	<li>Is a file's sha1 checksum stored in a property or added to the property response dynamically?</li>
+	<li>If it is stored in a property, can it be modified if the code preventing that is removed?</li>
+	<li>Are fixity responses resources that could potentially be modified?</li>
+</ul>
+
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-15107"><div class="by">Former user, 2015-08-27 18:51 UTC</div><div class="text"><p>If the fixity properties aren't added to the managed properties list in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/RdfLexicon.java#L303" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/RdfLexicon.java#L303</a>, then the SHA-1 checksum of a file can be modified.  Performing a fixity check would fail if the premis:hasMessageDigest is modified.</p>
+
+<p>The fixity results appear to be transient resources and not stored or able to be modified/operated on.  Deleting them results in the file being deleted.  Attempting to PATCH them results in an error.</p></div></div>
+<div class="comment" id="comment-15108"><div class="by">Former user, 2015-08-27 19:12 UTC</div><div class="text"><p>Andrew Woods: I think we can remove the limitation on updating premis:hasMessageDigest and allow users to modify it.  We may want to discourage or prevent modifying the SHA1 property on a file, though?</p></div></div>
+<div class="comment" id="comment-15109"><div class="by">Andrew Woods, 2015-08-27 19:24 UTC</div><div class="text"><p>Former user, Which exact predicate is being used for "the SHA1 property"?</p></div></div>
+<div class="comment" id="comment-15110"><div class="by">Former user, 2015-08-27 19:34 UTC</div><div class="text"><p>Andrew Woods: premis:hasMessageDigest:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/resources/fedora-node-types.cnd#L72" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/resources/fedora-node-types.cnd#L72</a></p></div></div>
+<div class="comment" id="comment-15111"><div class="by">Andrew Woods, 2015-08-27 19:38 UTC</div><div class="text"><p>That is too bad... as that predicate is called out in JHU's use case:<br/>
+<a href="https://s3.amazonaws.com/uploads.hipchat.com/267943/1716525/5cfgR9Zs70FjXrY/sparql2" class="external-link" rel="nofollow noreferrer">https://s3.amazonaws.com/uploads.hipchat.com/267943/1716525/5cfgR9Zs70FjXrY/sparql2</a></p></div></div>
+<div class="comment" id="comment-15112"><div class="by">Former user, 2015-08-27 19:48 UTC</div><div class="text"><p>I don't think it's a huge problem.  I think two options we should consider are:</p>
+
+<p>1. Allow containers (including skolemized blank nodes) and hash URIs to have premis:hasMessageDigest, but return an error when trying to update it on a NonRdfSource.  This would support the JHU usage (where the property is used  on a blank node), but prevent breaking fixity, etc.</p>
+
+<p>2. Also allow updating premis:hasMessageDigest on NonRdfSources, which a warning that doing the update can break fixity, etc.</p></div></div>
+<div class="comment" id="comment-15113"><div class="by">Andrew Woods, 2015-08-27 20:17 UTC</div><div class="text"><p>Would you prefer one of these two options over simply moving the relevant "server managed" predicates out of Premis an into a Fedora namespace?</p></div></div>
+<div class="comment" id="comment-15116"><div class="by">Former user, 2015-08-27 20:53 UTC</div><div class="text"><p>Having recently made the switch from using fedora:digest to premis:hasMessageDigest, it does seem silly to revert.  And create a migration tool to migrate the properties back to where they were.  And I still support using commonly-used predicates where possible.  As I said at the committers' call today, that is in conflict with making predicates used for system info server-managed.  The compromise is to keep using premis:hasMessageDigest, and to use a narrower limit on its use that protects the system info, but allows other uses.</p>
+
+<p>So, I think that boils down to #1 above.</p></div></div>
+<div class="comment" id="comment-15117"><div class="by">Andrew Woods, 2015-08-27 21:01 UTC</div><div class="text"><p>+1 to #1. Ideally Elliot Metsger or Aaron Birkland would be interested in working this ticket. If not, Former user, could you consider it?</p></div></div>
+<div class="comment" id="comment-15120"><div class="by">Aaron Birkland, 2015-08-27 22:20 UTC</div><div class="text"><p>For #1, what does 'updating' mean in the phrase  "return an error when trying to update it on a NonRdfSource"?  In particular, what should happen if somebody wanted to <b>add</b>  &lt;&gt; premis:hasMessageDigest "urn:sha2:123456" to record a digest using another algorithm?  </p>
+
+<p>Additionally, NonRDFSources also have a server premis:hasSize property.  Does #1 imply protecting just those two terms (premis:hasSize and premis:hasMessagDigest), or would the entire premis vocabulary be reserved for Fedora's internal use as properties of a NonRDFSource? </p>
+
+<p>What about other non-Fedora vocabularies used on NonRDFSources? Would 'ebucore' be in the same category as premis?</p>
+
+<p>Interestingly, at least for 4.3.0, I tried depositing an image and requesting only non-server-managed triples (via Prefer, as in<br/>
+curl -H "Prefer: return=representation; omit=\"http://fedora.info/definitions/v4/repository#ServerManaged\""  <a href="http://localhost:8080/rest/my_file/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/my_file/fcr:metadata</a></p>
+
+<p>... omitting server managed triples as above returned one triple: ebucore:filename.  The other ebucore triple (ebucore:hasMiqmeType) apparently is considered  server managed</p></div></div>
+<div class="comment" id="comment-15124"><div class="by">Former user, 2015-08-28 14:15 UTC</div><div class="text"><p>When I've tried adding additional checksums with different algorithms, they have replaced the triple with the SHA1 checksum, resulting in a broken fixity service.  I tried updating the CND file to make premis:hasMessageDigest multi-valued, but that didn't change the behavior.  It seems like it should be possible to fix this issue and allow adding additional algorithms, and then to update the fixity service to use the SHA1.</p>
+
+<p>I think neither of the ebucore properties should be server-managed properties &#8211; they are both be user-modifiable.  So we probably need to update the logic for figuring out what is server-managed that is treating ebu:hasMimeType differently.</p></div></div>
+<div class="comment" id="comment-15126"><div class="by">Andrew Woods, 2015-08-28 14:22 UTC</div><div class="text"><p>These are the "server-managed" properties that are blocked for modification:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/RdfLexicon.java#L301-L308" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/RdfLexicon.java#L301-L308</a></p></div></div>
+<div class="comment" id="comment-15133"><div class="by">Elliot Metsger, 2015-08-28 19:52 UTC</div><div class="text"><p>Sorry - I'm just catching up on this thread.  I'm not fully versed in LDP, but I wanted to chime in on Aaron's <a href="https://jira.duraspace.org/browse/FCREPO-1711?focusedCommentId=44431&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-44431" class="external-link" rel="nofollow noreferrer">comment above</a>: we like to be able to deposit new PREMIS fixity for objects (using different algorithms, say sha-256) that already exist in the repository.</p></div></div>
+<div class="comment" id="comment-15135"><div class="by">Former user, 2015-08-28 20:07 UTC</div><div class="text"><p>Elliot, I've created a branch that makes premis:hasMessageDigest user-modifiable and multi-valued (I made a mistake in editing the CND file before when I said that wasn't working): <a href="https://github.com/fcrepo4/fcrepo4/tree/user-modifiable-checksum" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/tree/user-modifiable-checksum</a></p>
+
+<p>With this update, I am able to add additional checksums, and they all display correctly.  However, running the fixity service fails.  So at a minimum, we'll need to update the fixity service to correctly find the sha1 checksum to do the fixity check.</p></div></div>
+<div class="comment" id="comment-15247"><div class="by">Former user, 2015-09-17 16:02 UTC</div><div class="text"><p>I've stopped work on this because I"m not actively working on it.  If Elliot Metsger or Aaron Birkland want to grab this, go ahead.</p>
+
+<p>Otherwise, I will probably have the bandwidth to look at this in a few weeks.  My thought was to allow modifying premis:hasMessageDigest and then update the fixity process to handle multiple values and correctly pick the sha1 value.</p></div></div>
+<div class="comment" id="comment-22381"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-1711.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

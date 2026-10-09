@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2027 With webac, non-fedoraAdmin users cannot delete properties even when granted write permission.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2027</span> With webac, non-fedoraAdmin users cannot delete properties even when granted write permission.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2016-05-19 12:57 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:48 UTC</td></tr><tr><th>Resolved</th><td>2016-11-10 15:53 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>auth</td></tr></table>
+<h2>Description</h2>
+<p>When you grant a non-fedoraAmin read and write permissions on a container (and all contained nodes) you'd expect them to be able to do any sort of normal read/write operations on nodes in that container.</p>
+
+<p>When performing sparql update that includes a DELETE clause the following error message acompanies the 400 response. (in this case I tried to delete dc:rights from the resource /libra2/prod)</p>
+
+<p>Cannot lookup child permission check information for /{}libra2/{}prod/</p>
+{http://purl.org/dc/elements/1.1/}
+<p>rights</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-16690"><div class="by">Michael Durbin, 2016-05-19 18:50 UTC</div><div class="text"><p>The fix is in fcrepo-module-auth-rbacl, the integration test is in fcrepo-module-auth-webac.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/30" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/30</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/64" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/64</a></p></div></div>
+<div class="comment" id="comment-16692"><div class="by">Andrew Woods, 2016-05-19 19:58 UTC</div><div class="text"><p>I get the same errors as Travis for fcrepo-module-auth-rbacl:<br/>
+<a href="https://s3.amazonaws.com/archive.travis-ci.org/jobs/131499857/log.txt" class="external-link" rel="nofollow noreferrer">https://s3.amazonaws.com/archive.travis-ci.org/jobs/131499857/log.txt</a></p></div></div>
+<div class="comment" id="comment-16693"><div class="by">Michael Durbin, 2016-05-19 20:06 UTC</div><div class="text"><p>Yeah, I do to, but only after I rebuilt it using a fresh build of fcrepo4.  A get errors (slightly) fewer when I build without my changes. </p>
+
+<p>I'm investigating the impact of <a href="https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975</a> on fcrepo-module-auth-rbacl now since fcrepo-module-auth-rbacl fails integration tests since that change.</p></div></div>
+<div class="comment" id="comment-16694"><div class="by">Andrew Woods, 2016-05-19 20:09 UTC</div><div class="text"><p>Thanks for investigating, Michael Durbin. If you happen to find the issues and create "impact PRs" for fcrepo-module-auth-rbacl (and any other impacted projects), please reopen <a href="https://jira.duraspace.org/browse/FCREPO-1742" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1742</a> and add your PR(s) there.</p></div></div>
+<div class="comment" id="comment-16701"><div class="by">Michael Durbin, 2016-05-20 02:46 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1039" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1039</a> eliminates those test failures.</p></div></div>
+<div class="comment" id="comment-16761"><div class="by">Andrew Woods, 2016-05-26 18:19 UTC</div><div class="text"><p>Rework resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/8daa68da2b9c52ab19ef94c6f1b61d896afe05f5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8daa68da2b9c52ab19ef94c6f1b61d896afe05f5</a></p></div></div>
+<div class="comment" id="comment-16762"><div class="by">Michael Durbin, 2016-05-26 18:27 UTC</div><div class="text"><p>What about these PR's?</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/30" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/30</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/64" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/64</a></p></div></div>
+<div class="comment" id="comment-16763"><div class="by">Andrew Woods, 2016-05-26 18:37 UTC</div><div class="text"><p>Resolution includes:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/b6af388704d2364c72f60f789d1cbc1029a28273" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/b6af388704d2364c72f60f789d1cbc1029a28273</a> and<br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/82f0ae64be89901e80128c78012a60da2a5cc164" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/82f0ae64be89901e80128c78012a60da2a5cc164</a></p></div></div>
+<p><a href="data/FCREPO-2027.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

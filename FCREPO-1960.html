@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1960 RDF expression for events</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1960</span> RDF expression for events</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-03-21 13:58 UTC</td></tr><tr><th>Updated</th><td>2016-07-05 13:21 UTC</td></tr><tr><th>Resolved</th><td>2016-07-05 13:21 UTC</td></tr><tr><th>Components</th><td>f4-core, f4-ontology</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Required by</th><td><a href="FCREPO-1945.html">FCREPO-1945</a> Node Properties should not be included in JMS events</td></tr></table>
+<h2>Description</h2>
+<p>Fedora should publish as part of the ontologies a system of classes and predicates (mostly reusing extant work) for the encoding of published events, such as appear on the Java API's event bus and are currently translated into JMS. Of course, the JMS event tap should also <em>use</em> this encoding.</p>
+<h2>Comments (30)</h2>
+<div class="comment" id="comment-16380"><div class="by">A. Soroka, 2016-03-22 14:52 UTC</div><div class="text"><p>Unknown, are you handling the Eventing spec? If so, I think we will want to factor this into that, no?</p></div></div>
+<div class="comment" id="comment-16381"><div class="by">Unknown, 2016-03-22 17:16 UTC</div><div class="text"><p>Yes, we should certainly factor this into the spec.</p></div></div>
+<div class="comment" id="comment-16393"><div class="by">A. Soroka, 2016-03-24 15:25 UTC</div><div class="text"><p>See: <a href="https://github.com/fcrepo4/fcrepo4/pull/1008" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1008</a> for the original conversation.</p></div></div>
+<div class="comment" id="comment-16404"><div class="by">Unknown, 2016-03-25 01:58 UTC</div><div class="text"><p>Here is a draft of an event ontology. </p>
+
+<p>And by "draft", I mean the sort you find in old 1800's Vermont farmhouses, which are usually indications that you need a professional to take a good look at it before you really feel comfortable.</p>
+
+<p><a href="https://github.com/acoburn/fcrepo-event-ontology" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/fcrepo-event-ontology</a></p></div></div>
+<div class="comment" id="comment-16406"><div class="by">A. Soroka, 2016-03-25 16:53 UTC</div><div class="text"><p>Looks good, thanks for moving this forward. I do have some questions:</p>
+
+<p>1. Why break up the URI into "root" and "resource path"?<br/>
+2. Do we not have something we can import for timestamp? Maybe from PREMIS or somewhere?<br/>
+3. Ditto for "user"?</p></div></div>
+<div class="comment" id="comment-16407"><div class="by">Unknown, 2016-03-25 17:17 UTC</div><div class="text"><p>The reason to break up root and resource path has everything to do with how transactions work in Fedora &#8211; to start a transaction, one needs to know the location of the Root.</p>
+
+<p>So in a messaging context, if I want to start a transaction, I need to issue that request to the root location. If the message simply has the root and the path concatenated, then the client would need special <em>a priori</em> knowledge about where that root location is.</p>
+
+<p>Another thought was the multi-tenancy context. While this isn't relevant at present, if there were multiple roots, I can imagine that it would be <em>extremely</em> convenient for a messaging system to be able to route based on the value of the root URI.</p>
+
+<p>I am not wedded to that division, but it would make certain operations significantly easier for a client.</p></div></div>
+<div class="comment" id="comment-16408"><div class="by">Unknown, 2016-03-25 17:32 UTC</div><div class="text"><p>The premis vocabulary contains <tt>premis:hasEventDateTime</tt> which seems like an excellent match for the timestamp property. Premis also includes <tt>premis:hasEventRelatedAgent</tt>, though it seems from the documentation that a subProperty such as <tt><a href="http://id.loc.gov/vocabulary/preservation/eventRelatedAgentRole/aut" class="external-link" rel="nofollow noreferrer">http://id.loc.gov/vocabulary/preservation/eventRelatedAgentRole/aut</a></tt> is preferred.</p>
+
+<p>Either way, seems like we can remove the timestamp and user-related fields from this ontology.</p></div></div>
+<div class="comment" id="comment-16409"><div class="by">A. Soroka, 2016-03-25 17:35 UTC</div><div class="text"><p>Your arguments about "root" make sense. I'm not happy about the fact that you have to go to the root to start a transaction, but that's not a problem in this ticket. And the multi-tenancy thing is a very strong argument. But in this case, we're not really talking about "root", are we? We're talking about some kind of "outermost container"? Or maybe I'm worrying too much about the language.</p></div></div>
+<div class="comment" id="comment-16410"><div class="by">Unknown, 2016-03-25 17:41 UTC</div><div class="text"><p>The language could be "topMostThing", for all I care. The current language uses <tt>org.fcrepo.jms.baseUrl</tt>; I changed it to "root" in this ontology because it refers to the <tt>fedora:RepositoryRoot</tt> resource, which seemed a better description of this thing (e.g. so as not to confuse it with a servlet's "context path", which might be /fcrepo rather than /fcrepo/rest).</p></div></div>
+<div class="comment" id="comment-16411"><div class="by">A. Soroka, 2016-03-25 17:44 UTC</div><div class="text"><p>"root" is better than "baseUrl", to my eye. I think we have two things here, as was hinted at by tamsin woo in a different context. There is the repository root, which is a syntactic thing, and there is the "top" or "outermost" container, which is a semantic thing. It's the second one we care about here, right?</p></div></div>
+<div class="comment" id="comment-16412"><div class="by">Unknown, 2016-03-25 17:55 UTC</div><div class="text"><p>Yes, here I believe we are interested in the top/outermost container, as defined by the repository. Syntactically, that means the resource that has the <tt>fedora:RepositoryRoot</tt> type, but that's just the logical outcome of the semantics of that URL representing the outermost container.</p></div></div>
+<div class="comment" id="comment-16413"><div class="by">A. Soroka, 2016-03-25 18:02 UTC</div><div class="text"><p>I think you mean the URL is the syntactical element and the typing is the semantic construct, right? That identity of syntactical construct and semantic construct only occurs right now because we haven't got clear on PUT yet. I don't think we want to assume it going forward. </p></div></div>
+<div class="comment" id="comment-16414"><div class="by">Unknown, 2016-03-25 18:07 UTC</div><div class="text"><p>Ah, yes, that is what I meant.</p></div></div>
+<div class="comment" id="comment-16683"><div class="by">Unknown, 2016-05-19 17:31 UTC</div><div class="text"><p>I have updated <a href="https://github.com/fcrepo4-labs/fcrepo-event-ontology" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-event-ontology</a> to use the PROV ontology to express events from the messaging system. An example in compact JSON-LD is provided, using the provided context.json in that git repo.</p>
+
+<p>This further shrinks the potential event ontology to contain only three classes (event:ResourceCreation, event:ResourceDeletion, event:ResourceModification). All properties come from other, existing ontologies (prov, dc, dcterms and foaf).</p>
+
+<p>I looked into using premis for this, but ultimately, PROV proved to be a much more natural fit.</p></div></div>
+<div class="comment" id="comment-16687"><div class="by">A. Soroka, 2016-05-19 18:39 UTC</div><div class="text"><p>Much of this looks very good to me. I don't understand, though, why we are putting requirements (i.e. "Each event will contain the following required data:") into an ontology, which cannot enforce them?</p></div></div>
+<div class="comment" id="comment-16695"><div class="by">Unknown, 2016-05-19 20:20 UTC</div><div class="text"><p>No, we certainly can't enforce that in the ontology, nor is the ontology structured to do that.</p>
+
+<p>Perhaps the confusion has to do with the fact that the README conflates a description of the ontology and an application profile specific to Fedora's messaging system (which is clearly out of scope from the perspective of the ontology).</p>
+
+<p>And as I am thinking about this more, the ontology here is now down to defining just three classes: Create, Update and Delete. It seems like there must be a vocabulary out there with the basic CRUD operations. If such a thing exists (I couldn't find one &#8211; there's the HTTP ontology, but that's not quite right), it would mean this ontology is completely unnecessary, and we're down to just an application profile defined in the context of the spec.</p></div></div>
+<div class="comment" id="comment-16710"><div class="by">Unknown, 2016-05-20 16:07 UTC</div><div class="text"><p>I have updated the event ontology README to more clearly distinguish between the ontology and the application profile for Fedora events.</p></div></div>
+<div class="comment" id="comment-16712"><div class="by">Jared Whiklo, 2016-05-20 17:35 UTC</div><div class="text"><p>+1 to this.</p>
+
+<p>One question is <a href="https://github.com/fcrepo4-labs/fcrepo-event-ontology/blob/master/event.ttl#L11" class="external-link" rel="nofollow noreferrer">this line</a> a mistake or does some black magic cause it to change in another context?</p></div></div>
+<div class="comment" id="comment-16713"><div class="by">Unknown, 2016-05-20 17:40 UTC</div><div class="text"><p>Jared Whiklo That was a mistake. Thanks for catching that. I updated that line to point to the Duraspace wiki page for the Messaging SPI &#8211; not that that page is particularly helpful at this point.</p></div></div>
+<div class="comment" id="comment-16860"><div class="by">Andrew Woods, 2016-06-06 16:01 UTC</div><div class="text"><p>This looks good:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-event-ontology" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-event-ontology</a></p>
+
+<p>I would be inclined to move this forward by publishing the "event" ontology and letting refinement happen with time.</p></div></div>
+<div class="comment" id="comment-16869"><div class="by">Andrew Woods, 2016-06-08 13:57 UTC</div><div class="text"><p>For consistency, would you be opposed to going with the date-based versioning:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-event-ontology/blob/master/event.ttl#L13" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-event-ontology/blob/master/event.ttl#L13</a><br/>
+..instead of "v0" ?</p></div></div>
+<div class="comment" id="comment-16883"><div class="by">Unknown, 2016-06-10 18:16 UTC</div><div class="text"><p>I have reformatted this ontology as RDF/XML and included an XSLT for HTML display. Furthermore, it uses a version label that is consistent with other ontology versioning schemes.</p>
+
+<p>A related question is: at what point should this repository move out of -labs (and should the ontology be added to an existing git repo or should it stay separate)?</p></div></div>
+<div class="comment" id="comment-16885"><div class="by">A. Soroka, 2016-06-14 14:04 UTC</div><div class="text"><p>I think it ready to move out now, but as to where… that is not as clear to me.</p></div></div>
+<div class="comment" id="comment-16887"><div class="by">Unknown, 2016-06-15 16:03 UTC</div><div class="text"><p>See fcrepo PR here: <a href="https://github.com/fcrepo4/fcrepo4/pull/1053" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1053</a></p></div></div>
+<div class="comment" id="comment-16910"><div class="by">Andrew Woods, 2016-06-25 14:46 UTC</div><div class="text"><p>Given the core-nature of the fcrepo-event-ontology, it seems fitting for it to move into:<br/>
+<a href="https://github.com/fcrepo4/ontology" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/ontology</a></p></div></div>
+<div class="comment" id="comment-16940"><div class="by">Andrew Woods, 2016-07-01 20:24 UTC</div><div class="text"><p>This looks good, pending response to internal and external audit comments.</p></div></div>
+<div class="comment" id="comment-16946"><div class="by">Andrew Woods, 2016-07-03 01:17 UTC</div><div class="text"><p>Related PR for fcrepo-audit: <a href="https://github.com/fcrepo4-exts/fcrepo-audit/pull/35" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/pull/35</a><br/>
+..and: <a href="https://github.com/acoburn/fcrepo4/pull/5" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/fcrepo4/pull/5</a></p></div></div>
+<div class="comment" id="comment-16951"><div class="by">Andrew Woods, 2016-07-04 15:26 UTC</div><div class="text"><p>Unknown, If you merge:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-audit/pull/35" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/pull/35</a> into master</p>
+
+<p>I will merge:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1053" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1053</a></p>
+
+<p>And close this ticket.</p></div></div>
+<div class="comment" id="comment-16960"><div class="by">Unknown, 2016-07-05 01:02 UTC</div><div class="text"><p>fcrepo-audit PR merged via: <a href="https://github.com/fcrepo4-exts/fcrepo-audit/commit/d85bb9a4b684d2a93448655bc93490afa008a2ba" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/commit/d85bb9a4b684d2a93448655bc93490afa008a2ba</a></p>
+
+<p>Andrew Woods is welcome to merge the related fcrepo4 PR at his leisure.</p></div></div>
+<div class="comment" id="comment-16961"><div class="by">Andrew Woods, 2016-07-05 13:21 UTC</div><div class="text"><p>Along with the above, this is the primary resolution:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/ddee309f31c63daac5a42de4da6bdabfc2d45c92" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ddee309f31c63daac5a42de4da6bdabfc2d45c92</a></p></div></div>
+<p><a href="data/FCREPO-1960.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

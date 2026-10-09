@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2110 4.6.0-RC-4 WebAC Regression</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2110</span> 4.6.0-RC-4 WebAC Regression</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-08-09 01:18 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:43 UTC</td></tr><tr><th>Resolved</th><td>2016-08-10 22:06 UTC</td></tr><tr><th>Components</th><td>f4-auth, f4-vagrant</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>webac</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2116.html">FCREPO-2116</a> Update vagrant for Fedora 4.7.0 </td></tr></table>
+<h2>Description</h2>
+<p>The following steps come from the Fedora workshop exercises... and appears not to work in 4.6.0-RC-4.<br/>
+Perform steps in slides 18 through 23: <a href="https://docs.google.com/presentation/d/1wbzi7d8xL_C_5jo_ZTykq3CswSfbaobLHgQacWGmNzA/edit?usp=sharing" class="external-link" rel="nofollow noreferrer">https://docs.google.com/presentation/d/1wbzi7d8xL_C_5jo_ZTykq3CswSfbaobLHgQacWGmNzA/edit?usp=sharing</a></p>
+
+<p>The test that appears to fail now is:<br/>
+curl -i -utestuser:password1 <a href="http://localhost:8080/fcrepo/rest/cover" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/cover</a></p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-17205"><div class="by">Andrew Woods, 2016-08-10 01:27 UTC</div><div class="text"><p>This is only a configuration issue.<br/>
+The problem for both running a fcrepo-webapp-plus locally, or via vagrant is that the following system property must be set as follows when using authorization:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.modeshape.configuration=classpath:/config/servlet-auth/repository.json"
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17206"><div class="by">Andrew Woods, 2016-08-10 01:32 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/52" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/52</a></p></div></div>
+<div class="comment" id="comment-17212"><div class="by">A. Soroka, 2016-08-10 15:44 UTC</div><div class="text"><p>Nick Ruest or Jared Whiklo can you review today?</p></div></div>
+<div class="comment" id="comment-17213"><div class="by">Nick Ruest, 2016-08-10 15:48 UTC</div><div class="text"><p>A. Soroka sure thing!</p></div></div>
+<div class="comment" id="comment-17214"><div class="by">Nick Ruest, 2016-08-10 16:04 UTC</div><div class="text"><p>Partially resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/f6417307b05c351497876ee560fb9c8fb652eced" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/f6417307b05c351497876ee560fb9c8fb652eced</a></p>
+
+<p>Andrew Woods do we need a master branch PR too, or is it just for the 4.6.0-RC branch?</p></div></div>
+<div class="comment" id="comment-17215"><div class="by">Andrew Woods, 2016-08-10 16:12 UTC</div><div class="text"><p>Yes, we need a related PR for master... which will include re-introducing a repository.json for AuthZ.<br/>
+I will have something for you shortly.</p></div></div>
+<div class="comment" id="comment-17216"><div class="by">Andrew Woods, 2016-08-10 16:30 UTC</div><div class="text"><p>Targeting fcrepo4-vagrant master:</p>
+<ul>
+	<li>DO NOT commit until some time in the future, when fcrepo4-vagrant is configured for Fedora 4.7.0</li>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/53" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/53</a></li>
+</ul>
+
+
+<p>Targeting fcrepo4 master:</p>
+<ul>
+	<li>Ready for immediate merging with master</li>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/pull/1090" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1090</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17217"><div class="by">Andrew Woods, 2016-08-10 21:27 UTC</div><div class="text"><p>The above fcrepo4 master PR is ready for you Nick Ruest.</p></div></div>
+<div class="comment" id="comment-17218"><div class="by">Nick Ruest, 2016-08-10 21:35 UTC</div><div class="text"><p>Partially resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/ffff6a4f1ab07c2a25099f5d8412a4b455616f14" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ffff6a4f1ab07c2a25099f5d8412a4b455616f14</a></p></div></div>
+<div class="comment" id="comment-17219"><div class="by">Andrew Woods, 2016-08-10 22:06 UTC</div><div class="text"><p>Closing this ticket and creating follow-on: <a href="https://jira.duraspace.org/browse/FCREPO-2116" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2116</a></p></div></div>
+<p><a href="data/FCREPO-2110.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2677 POSTing a LDP-NR does not return constrainedBy Link header</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2677</span> POSTing a LDP-NR does not return constrainedBy Link header</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Yinlin Chen</td></tr><tr><th>Created</th><td>2018-03-02 00:23 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-03-07 20:58 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>2018-spring-api-alignment-sprint</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>c.f. section 3.5 :   <a href="https://fcrepo.github.io/fcrepo-specification/#http-post" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#http-post</a></p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-19652"><div class="by">Andrew Woods, 2018-03-05 15:17 UTC</div><div class="text"><p>An new NonRDFSourceConstraints.rdf document to:</p>
+<ul>
+	<li>fcrepo-webapp/src/webapp/static/constraints</li>
+</ul>
+
+
+<p>See: ContainerConstraints.rdf</p>
+
+<p>For comparison:</p>
+
+<p>curl -i -XPOST <a href="http://localhost:8080/fcrepo/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/</a></p>
+
+<p>(See Link header in response)</p></div></div>
+<div class="comment" id="comment-19664"><div class="by">Yinlin Chen, 2018-03-06 15:43 UTC</div><div class="text"><p>Is the outcome of this ticket will be like below?</p>
+
+<p> </p>
+
+<p>Command: </p>
+
+<p>curl -i -XPOST -H "Content-Type:text/plain" "http://localhost:8080/rest"</p>
+
+<p> </p>
+
+<p>Response:</p>
+
+<p>HTTP/1.1 201 Created</p>
+
+<p>Date: Tue, 06 Mar 2018 15:39:26 GMT</p>
+
+<p>ETag: "41e194bc306ab57069afe0130cdeb5d970a5f1c8"</p>
+
+<p>Last-Modified: Tue, 06 Mar 2018 15:39:26 GMT</p>
+
+<p>Link: &lt;<a href="http://localhost:8080/rest/88/e4/8d/3d/88e48d3d-9b23-490e-ae4d-f0a12f87622b/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/88/e4/8d/3d/88e48d3d-9b23-490e-ae4d-f0a12f87622b/fcr:metadata</a>&gt;; rel="describedby"; </p>
+
+<p><font color="#ff0000">Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"</font></p>
+
+<p>anchor="http://localhost:8080/rest/88/e4/8d/3d/88e48d3d-9b23-490e-ae4d-f0a12f87622b"</p>
+
+<p>Location: <a href="http://localhost:8080/rest/88/e4/8d/3d/88e48d3d-9b23-490e-ae4d-f0a12f87622b" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/88/e4/8d/3d/88e48d3d-9b23-490e-ae4d-f0a12f87622b</a></p>
+
+<p>Content-Type: text/plain</p>
+
+<p>Content-Length: 75</p>
+
+<p>Server: Jetty(9.2.3.v20140905)</p>
+
+<p> </p>
+
+<p><a href="http://localhost:8080/rest/88/e4/8d/3d/88e48d3d-9b23-490e-ae4d-f0a12f87622b" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/88/e4/8d/3d/88e48d3d-9b23-490e-ae4d-f0a12f87622b</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19665"><div class="by">Danny Bernstein, 2018-03-06 16:20 UTC</div><div class="text"><p>Yinlin Chen:  yes that looks right to me.  Also you would want to make sure that the </p>
+
+<p><font color="#ff0000">Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"  also is present when you perform a GET on the newly created resource.</font></p></div></div>
+<div class="comment" id="comment-19681"><div class="by">Yinlin Chen, 2018-03-07 16:41 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1291" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1291</a></p></div></div>
+<div class="comment" id="comment-19684"><div class="by">Andrew Woods, 2018-03-07 18:55 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19688"><div class="by">Yinlin Chen, 2018-03-07 20:58 UTC</div><div class="text"><p>Andrew Woods PR updated. <a href="https://github.com/fcrepo4/fcrepo4/pull/1291" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1291</a></p></div></div>
+<div class="comment" id="comment-19693"><div class="by">Andrew Woods, 2018-03-08 03:47 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/3b915f1c76d3d14876050868f9d1ece884f762fa" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/3b915f1c76d3d14876050868f9d1ece884f762fa</a></p></div></div>
+<p><a href="data/FCREPO-2677.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

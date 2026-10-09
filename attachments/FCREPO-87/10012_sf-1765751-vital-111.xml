@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="urn:oasis:names:tc:xacml:1.0:policy" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" PolicyId="vital-111" RuleCombiningAlgId="urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable">
+   <Description>This is an object-specific policy.  It could be stored inside the vital:111 digital object in the POLICY datastream OR in the directory for object-specific policies. (The directory location is set in the Authorization module configuration in the Fedora server configuration file (fedora.fcfg). By using multiple policy Rules, this policy shows how to deny access to raw datastreams based on a value stored in the formatURI except to particular users (e.g., the object owners).</Description>
+   <Target>
+      <Subjects>
+         <AnySubject/>
+      </Subjects>
+      <Resources>
+         <Resource>
+            <ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+               <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">vital:111</AttributeValue>
+               <ResourceAttributeDesignator AttributeId="urn:fedora:names:fedora:2.1:resource:object:pid" DataType="http://www.w3.org/2001/XMLSchema#string"/>
+            </ResourceMatch>
+         </Resource>
+      </Resources>
+      <Actions>
+         <AnyAction/>
+      </Actions>
+   </Target>
+   <Rule RuleId="1" Effect="Deny">
+      <Target>
+         <Subjects>
+            <AnySubject/>
+         </Subjects>
+         <Resources>
+            <Resource>
+					<ResourceMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal">
+						<AttributeValue DataType="http://www.w3.org/2001/XMLSchema#anyURI">vital:protected</AttributeValue>
+						<ResourceAttributeDesignator AttributeId="urn:fedora:names:fedora:2.1:resource:datastream:formatUri" DataType="http://www.w3.org/2001/XMLSchema#anyURI"/>
+					</ResourceMatch>
+            </Resource>
+         </Resources>
+         <Actions>
+            <Action>
+               <ActionMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+                  <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">urn:fedora:names:fedora:2.1:action:id-getDatastreamDissemination</AttributeValue>
+                  <ActionAttributeDesignator AttributeId="urn:fedora:names:fedora:2.1:action:id" DataType="http://www.w3.org/2001/XMLSchema#string"/>
+               </ActionMatch>
+            </Action>
+         </Actions>
+      </Target>
+      <Condition FunctionId="urn:oasis:names:tc:xacml:1.0:function:not">
+         <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of">
+            <SubjectAttributeDesignator AttributeId="urn:fedora:names:fedora:2.1:subject:loginId" MustBePresent="false" DataType="http://www.w3.org/2001/XMLSchema#string"/>
+            <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-bag">
+               <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">fedoraAdmin</AttributeValue>
+            </Apply>
+         </Apply>
+      </Condition>
+   </Rule>
+   <Rule RuleId="2" Effect="Permit"/>
+</Policy>
+
+ 	  	 

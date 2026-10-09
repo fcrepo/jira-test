@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2396 PUT to fcr:metadata fails to add/replace non-server-managed triples</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2396</span> PUT to fcr:metadata fails to add/replace non-server-managed triples</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Created</th><td>2017-02-07 19:44 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.1</td></tr></table>
+<h2>Environment</h2>Tomcat7/Postgres9.4
+<h2>Description</h2>
+<p>This command</p>
+
+<p>curl -X PUT -H "Content-type: application/turtle" -H "Prefer: handling=lenient; received=\"minimal\"" -i --data-binary @add_title3.ttl "http://host:port/fcrepo/rest/a/binary/fcr:metadata"</p>
+
+<p>returns a "204 No Content" response but fails to replace the non-server-managed triples of the special 'fcr:metadata' resource associated with a binary (LDP-NR).</p>
+
+<p>The turtle is simply:</p>
+
+<p>@prefix dc:  &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;&gt;<br/>
+        dc:title                "Version 1" ;<br/>
+        dc:creator				"kefo" .</p>
+
+
+<p>The following gist contains a working example that demonstrates the problem.  For comparison purposes it also contains an example of a PUT that does work as expected against a generic RDF resource (LDP-RS) and a PATCH request against the fcr:metadata resource that works as expected.</p>
+
+<p><a href="https://gist.github.com/kefo/40ddf654ef96edce523b2559dae26c1a" class="external-link" rel="nofollow noreferrer">https://gist.github.com/kefo/40ddf654ef96edce523b2559dae26c1a</a></p>
+
+<p>It seems that a PUT to 'binary/fcr:metadata' fails to update the fcr:metadata resource when using the &lt;&gt; placeholder, but a PATCH to the same 'binary/fcr:metadata' endpoint using the &lt;&gt; placeholder succeeds.</p>
+
+<p>More information regarding this issue is found in the #fcrepo IRC log beginning around 11:54 AM: <a href="http://irclogs.fcrepo.org/2017-02-07.html" class="external-link" rel="nofollow noreferrer">http://irclogs.fcrepo.org/2017-02-07.html</a></p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-18528"><div class="by">Aaron Birkland, 2017-02-07 20:47 UTC</div><div class="text"><p>Good catch!  In this case it seems clear to me that &lt;&gt; is correctly interpreted as &lt;<a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>&gt; when interacting with <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>.  </p>
+
+<p>The LDP specification mentions that LDP servers MAY ignore server-managed properties in PUT, but your example isn't one of those.  If a fedora implementation wishes to disallow triples that contain &lt;<a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>&gt; as a subject, then the LDP specification suggests that the response <a href="http://www.w3.org/TR/ldp/#h-ldprs-put-failed" class="external-link" rel="nofollow noreferrer">MUST be in the 4xx range</a> (e.g. a 409).  PATCH ought to behave consistently to this (i.e. throw 409 whenever it attempts to create triples that are disallowed), but I don't think the LDP spec spells that out.  </p>
+
+<p>Given the above, it would seem that a 409 in response to both the PUT and PATCH examples would be consistent with the constraints in place.</p>
+</div></div>
+<div class="comment" id="comment-18530"><div class="by">kefo, 2017-02-07 22:27 UTC</div><div class="text"><p>I would argue that the PATCH is functioning as expected - properly replacing non-server-managed triples - and the PUT is not.  I see fcr:metadata as an/the LDP-RS, or at least it should be, of my PUT/PATCH requests.  That said, I'm pretty sure this will be discussed at greater length in the tech call Thursday.</p>
+</div></div>
+<div class="comment" id="comment-18532"><div class="by">Aaron Birkland, 2017-02-08 18:28 UTC</div><div class="text"><p>Absent language in the fedora specification defining the default base URI to be the binary's URI, I'd argue that PATCH is technically incorrect.  According to <a href="https://www.w3.org/TR/ldp/#h-ldpr-gen-defbaseuri" class="external-link" rel="nofollow noreferrer">LDP 4.2.1.5</a> and <a href="https://tools.ietf.org/html/rfc3986#section-5.1" class="external-link" rel="nofollow noreferrer">RFC3986</a>, the baseURI in the example is &lt;<a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>&gt;</p>
+
+<p>So to do a PACH on the descriptive LDP-RS: <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata:" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata:</a><br/>
+{{INSERT </p>
+{&lt;&gt; dc:title "whatever" .}
+<p> }}</p>
+
+<p>.. should result in the addition of the triple <br/>
+{{&lt;<a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>&gt; dc:title "whatever" }}<br/>
+.. due to the resolution of &lt;&gt; as &lt;<a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>&gt; according to the above referenced specifications.</p>
+
+<p>... instead, it resolves &lt;&gt; as the URI of the LDP-NR, and adds this triple:<br/>
+<tt>&lt;<a href="http://host:port/fcrepo/rest/a/binary" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary</a>&gt; dc:title "whatever"</tt></p>
+
+<p>This is not an expected outcome according to any published or proposed specification at the moment.  If it is indeed the desired behavior, then it would likely be necessary to amend the proposed fedora spec in order to make it allowable.</p></div></div>
+<div class="comment" id="comment-18533"><div class="by">Unknown, 2017-02-08 18:39 UTC</div><div class="text"><p>FWIW, I would argue that the subject of the triples in the resource at <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> should be <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a></p>
+
+<p>If that were the way it worked, then a PATCH to /fcrepo/rest/a/binary/fcr:metadata with the triple <tt>&lt;&gt; ex:foo "some value"</tt> would update the triple in that LDP-RS, just as kefo is trying to do.</p>
+
+<p>What I don't like about the current implementation is that, for <tt>/fcr:metadata</tt> resources, the general rule about RDF subjects is violated (i.e. that RDF subjects are based on the Resource-URI). This introduces complexity not only for a Fedora implementation but also for client code (i.e. by being inconsistent with how subjects are represented).</p></div></div>
+<div class="comment" id="comment-18534"><div class="by">A. Soroka, 2017-02-08 19:14 UTC</div><div class="text"><p>It's become clear that there is <em>no</em> way to make the relationship between descriptor and descriptand work perfectly with the single-subject rule. It's now clear as well that <tt>&lt;&gt;</tt> suffers from the same problem. In both cases, it's a question of context. There is no perfect choice. Unknown, if the subject of the triples in the descriptor is the descriptor, how can users make claims explicitly about the descriptand? Aaron Birkland, is it your claim that any request to a descriptor endpoint must use the full URI of that endpoint? That's terrible ergonomics and creates an unexpected and confusing and valueless distinction between the behavior of types of resources.</p></div></div>
+<div class="comment" id="comment-18535"><div class="by">Aaron Birkland, 2017-02-08 19:14 UTC</div><div class="text"><p>Well, I think statements about the LDP-NR (i.e. have the LDP-NR as a subject) are perfectly fine, and have a straightforward interpretation; e.g. "The LDP-NR is a jpeg".  To me, the primary issue is interpretation of &lt;&gt;.  If the only fix to this issue involves interpreting &lt;&gt; on <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> as <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>, that would be fine... as long as the ability to add triples that have the LDP-NR as subject (using absolute URIs) remains. </p>
+
+<p>For what it's worth, I don't really see much value in subject constraints.  Requiring the subject of <b>all</b> triples in <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> to be &lt;<a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>&gt; would be a breaking change to lots of existing data and applications.</p></div></div>
+<div class="comment" id="comment-18536"><div class="by">Aaron Birkland, 2017-02-08 19:17 UTC</div><div class="text"><p>A. Soroka No, my claim is more mundane.  It's merely that relative URIs should be interpreted as per <a href="https://tools.ietf.org/html/rfc3986#section-5" class="external-link" rel="nofollow noreferrer">RFC3986</a>, unless specific exceptions have been placed into a published specification</p>
+
+<p>Edit:<br/>
+.. interpreting &lt;&gt; upon POST to an LDPC as the "to-be-created URI" is one such exception codified in a specification</p></div></div>
+<div class="comment" id="comment-18537"><div class="by">kefo, 2017-02-08 20:22 UTC</div><div class="text"><p>My apologies, Aaron Birkland, I believe we are in agreement with respect to your first statement.  I agree too with Unknown.  If I introduced confusion, it's because I have found myself caught out and similarly confused by the current functionality.  I of course witnessed the behavior many times before yesterday, but the fact that, on very close inspection, a PUT/POST to <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> using &lt;&gt; resulted in &lt;&gt; being interpreted as <a href="http://host:port/fcrepo/rest/a/binary" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary</a> threw me. I expected my POST/PUT to <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> using &lt;&gt; to interpret &lt;&gt; as "http://host:port/fcrepo/rest/a/binary/fcr:metadata."</p>
+
+<p>A. Soroka is probably correct too - there's no clean way "to make the relationship between descriptor and descriptand work perfectly with the single-subject rule."  </p>
+
+<p>Would not interpreting &lt;&gt; to be the Request-URI - <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> - in this scenario be in keeping with <a href="https://www.w3.org/TR/ldp/#h-ldpr-gen-defbaseuri" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldpr-gen-defbaseuri</a>, which in turn references RFC3987, which in turn references RFC3986?</p>
+
+<p>I'm happy to modify the Issue description if it would aid focus on identifying the underlying issue.</p></div></div>
+<div class="comment" id="comment-18538"><div class="by">Aaron Birkland, 2017-02-08 20:44 UTC</div><div class="text"><blockquote><p>Would not interpreting &lt;&gt; to be the Request-URI - <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> - in this scenario be in keeping with <a href="https://www.w3.org/TR/ldp/#h-ldpr-gen-defbaseuri" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldpr-gen-defbaseuri</a>, which in turn references RFC3987, which in turn references RFC3986?</p></blockquote>
+
+<p>kefo Yes, I think we're all in agreement here!  I think the issue description is fine for the time being;  maybe it can be updated once a solution is agreed upon after the tech call, but it's pretty clear otherwise.  Thanks for finding this!</p></div></div>
+<div class="comment" id="comment-18543"><div class="by">A. Soroka, 2017-02-09 13:28 UTC</div><div class="text"><p>Aaron Birkland: that misses my point, which is to ask where to <em>place</em> those statements. Putting them in the LDP-R violates the single-subject rule, putting them in the LDP-NR is nonsense, and "interpreting &lt;&gt; on <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a> as <a href="http://host:port/fcrepo/rest/a/binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://host:port/fcrepo/rest/a/binary/fcr:metadata</a>, that would be fine... as long as the ability to add triples that have the LDP-NR as subject (using absolute URIs) remains." is useless.</p>
+
+<p>Interpreting <tt>&lt;&gt;</tt> that way does nothing to help anyone make claims about the LDP-NR, which is the whole purpose of the work, and adding those other triples violates the single-subject rule again. That is no better than what exists now.</p>
+
+<p>More importantly, the specifications you cite are off-point. Benjamin Armintor already hinted at the right specifications to construe (in IRC linked above): those that deal with the syntax of the message. So for example, SPARQL offers <tt>BASE</tt> declarations, Turtle offers <tt>@base</tt>, etc. </p>
+
+<p>There is no way not to break the single-subject rule here. The practical question is how to construct an interpretation of the relevant specifications that gives us the behavior that is clearly what any sensible user wants, and the answer is: Use the abilities in the RDF and SPARQL standards to offer an explicit base, and define that base as we find meet: the resource URI in all cases save when the resource is the target of an intra-repository <tt>describedby</tt> link, when it should instead be the URI of the described resource.</p>
+
+<p>LDP 4.2.1.5  or RFC3986 should never even come into play.</p></div></div>
+<div class="comment" id="comment-18544"><div class="by">A. Soroka, 2017-02-09 13:29 UTC</div><div class="text"><p>Unknown ^^^</p></div></div>
+<div class="comment" id="comment-18546"><div class="by">Unknown, 2017-02-09 13:49 UTC</div><div class="text"><p>A. Soroka <tt>owl:sameAs</tt> ?</p></div></div>
+<div class="comment" id="comment-18550"><div class="by">Aaron Birkland, 2017-02-10 14:45 UTC</div><div class="text"><p>A. Soroka My point is that I'm specifically not addressing the question of "where to place those statements", "what those statements should contain", etc.  This issue has raised at least two problems:</p>
+<ul>
+	<li>The way the current fedora impl is interpreting base URIs in kefo sample data is incorrect according to the relevant specifications (LDP, RFC3986, et al); it needs to be fixed regardless of any other outcomes.  In absence of an explicit base URI present in the content of the message, the specs say the document URI must be used as the base.  As Benjamin Armintor notes in IRC, the correct behavior is the "annoying" one in this case, since the document is fcr:metadata.</li>
+	<li>The placement and content of the descriptive triples may not be ideal.  There is an agenda item for Feb.16 fedora tech call to discuss this.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-18551"><div class="by">A. Soroka, 2017-02-10 14:54 UTC</div><div class="text"><p>I don't agree at all that "it needs to be fixed regardless of any other outcomes". It may very well be the case that the best choice here is to change the way we record those triples to remove the problem entirely, but at this point, I don't care to pursue this any more for the MODE impl. Setting up description as a relationship was a mistake, and there is no papering-over that. The correct choice is to back out of that mistake and accept description as representation instead, which eliminates this problem and a host of others, and that's what I am going to go work on.</p></div></div>
+<div class="comment" id="comment-18575"><div class="by">Benjamin Armintor, 2017-02-16 18:19 UTC</div><div class="text"><p>Updating with follow up:</p>
+
+<p>SPEC<br/>
+&lt;&gt; should resolve to the request URI</p>
+
+<p>CURRENT IMPLEMENTATION (ldpnr &lt;foo&gt;, ldprs &lt;bar&gt;)<br/>
+PUT to &lt;foo/fcr:metadata&gt; with a subject of &lt;&gt; 204's with no update (deceptively, but maybe correctly)<br/>
+PUT to &lt;foo/fcr:metadata&gt; with a subject of &lt;foo&gt; succeeds<br/>
+PUT to &lt;foo/fcr:metadata&gt; with a subject of &lt;foo/fcr:metadata&gt; 403's (incorrect subject)<br/>
+PUT to &lt;bar&gt; with a subject of &lt;&gt; succeeds<br/>
+PUT to &lt;bar&gt; with a subject of &lt;bar&gt; succeeds</p>
+
+<p>PATCH to &lt;foo/fcr:metadata&gt; with a subject of &lt;&gt; succeeds<br/>
+PATCH to &lt;foo/fcr:metadata&gt; with a subject of &lt;foo&gt; succeeds<br/>
+PATCH to &lt;foo/fcr:metadata&gt; with a subject of &lt;foo/fcr:metadata&gt; fails<br/>
+PATCH to &lt;bar&gt; with a subject of &lt;&gt; succeeds<br/>
+PATCH to &lt;bar&gt; with a subject of &lt;bar&gt; succeeds</p>
+
+<p><a href="https://gist.github.com/escowles/c1c4331a2a27b3cf960cf3f2012fa174#file-patch-binary-body-af-txt" class="external-link" rel="nofollow noreferrer">Hydra</a> uses diamond subjects for LDP-Cs, but explicit subjects for LDP-NR descriptions<br/>
+Islandora-CLAW does not yet support these updates</p>
+
+<p>Backwards compatibility alone is not a guide here, since the existing PUT behavior is "more correct", and we haven't identified a client relying on the non-conformant PATCH behavior.</p>
+
+<p>I think that if we are going to adhere to spec'd behaviors around &lt;&gt;, the status on PUT to &lt;foo/fcr:metadata&gt; for subjects of &lt;&gt; and &lt;foo/fcr:metadata&gt; should fail with the same informative 403 "foo/fcr:metadata is not in the topic of this RDF, which is foo".</p>
+
+<p>While the PATCH behavior could apparently be brought into specification without breaking ActiveFedora or CLAW, that seems like a different ticket.</p>
+
+<p>As discussed above, there is a clear behavior to use around BASE/@base declarations; I'm only commenting on the unidentified diamond subject.</p>
+</div></div>
+<div class="comment" id="comment-22393"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2396.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

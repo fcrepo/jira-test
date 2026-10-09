@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3477 API Test Suite: 4.1.1-A-1: If no LDPRm is appropriate to the Accept-Datetime value, implementations should return a 406 (Unacceptable).</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3477</span> API Test Suite: 4.1.1-A-1: If no LDPRm is appropriate to the Accept-Datetime value, implementations should return a 406 (Unacceptable).</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2020-10-22 19:28 UTC</td></tr><tr><th>Updated</th><td>2021-02-08 16:57 UTC</td></tr><tr><th>Resolved</th><td>2021-01-15 18:45 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>If no LDPRm is appropriate to the Accept-Datetime value, implementations should return a 406 (Unacceptable).<br/>
+<a href="https://fedora.info/2018/11/22/spec/#ldprv-get" class="external-link" rel="nofollow noreferrer">https://fedora.info/2018/11/22/spec/#ldprv-get</a></p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-21645"><div class="by">Andrew Woods, 2020-11-17 22:34 UTC</div><div class="text"><p>Changing priority to "medium" since we want this in Beta.</p></div></div>
+<div class="comment" id="comment-21858"><div class="by">Andrew Woods, 2021-01-09 00:11 UTC</div><div class="text"><p>We may want to discuss the desired behavior here, as the current behavior may be considered correct.</p>
+
+<p>The Fedora API Specification says:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://fedora.info/2018/11/22/spec/#ldprv-get" class="external-link" rel="nofollow noreferrer">https://fedora.info/2018/11/22/spec/#ldprv-get</a><br/>
+```<br/>
+If no LDPRm is appropriate to the Accept-Datetime value, implementations should return a 406 (Unacceptable).<br/>
+```</li>
+</ul>
+
+
+<p>The question is, "what is 'appropriate'"?</p>
+
+<p>F5 considered Accept-Datetime values that precede the first Memento as "inappropriate"... whereas, F6 returns the first Memento in this case.</p>
+
+<p>The Memento specification leaves the question of "appropriateness" up to the implementation:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://tools.ietf.org/html/rfc7089#section-3.1" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7089#section-3.1</a><br/>
+```<br/>
+  In order to respond to a datetime negotiation request, the server<br/>
+   uses an internal algorithm to select the Memento that best meets the<br/>
+   user agent's datetime preference.  The exact nature of the selection<br/>
+   algorithm is at the server's discretion but is intended to be<br/>
+   consistent, for example, always selecting the Memento that is nearest<br/>
+   in time relative to the requested datetime, always selecting the<br/>
+   Memento that is nearest in the past relative to the requested<br/>
+   datetime, etc.<br/>
+```</li>
+</ul>
+
+
+<p>There is a compatibility argument for aligning the F6 behavior with F5.</p></div></div>
+<div class="comment" id="comment-21918"><div class="by">Peter Winckles, 2021-01-14 16:52 UTC</div><div class="text"><p>To me, it seems like the test is wrong.</p>
+
+<p>From <a href="https://wiki.lyrasis.org/display/FEDORA5x/Versioning:" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FEDORA5x/Versioning:</a></p>
+
+<p>The date algorithm Fedora uses to determine which LDPRm should be returned to a TimeGate request, as indicated by the value of the Accept-Datetime header, is as follows:</p>
+
+<p>    <b>Any Accept-Datetime value that is earlier than the first/oldest Memento will return a reference to the first/oldest Memento</b>. <br/>
+     Any Accept-Datetime value that is later than a specific Memento’s timestamp but earlier than another Memento’s timestamp will return the older Memento. <br/>
+     An Accept-Datetime value that matches a stored Memento datetime value perfectly will return the Memento preserved at that timestamp.<br/>
+     An Accept-Datetime value that is later than the last Memento will return a reference to the last/youngest Memento.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21919"><div class="by">Danny Bernstein, 2021-01-14 18:03 UTC</div><div class="text"><p>If I'm not mistaken,  the above documentation is not aligned with fedora 5x behavior.   Since that is what is out in the wild I would suggest we update these documents to reflect 5x's behavior and then align f6 with f5.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21928"><div class="by">Danny Bernstein, 2021-01-15 17:52 UTC</div><div class="text"><p>Peter Winckles:  as it turns out I was mistaken.  The documentation is correct.  I verified that in 5.1.1, the date algorithm behavior matches the documentation. I'll investigate the test to see what's going on there.  </p></div></div>
+<div class="comment" id="comment-21929"><div class="by">Danny Bernstein, 2021-01-15 18:02 UTC</div><div class="text"><p>Actually - on further examination the issue appears to be in the case of a resource with no mementos. Since F6 by default is autoversioned,  it is returning the most recent memento whereas F5 does not autoversion and therefore returns 406 because there are no mementos.</p>
+
+<p>So the fix is to check whether or not there are mementos before testing for a 406.</p></div></div>
+<div class="comment" id="comment-21932"><div class="by">Danny Bernstein, 2021-01-15 18:45 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/Fedora-API-Test-Suite/pull/343" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/Fedora-API-Test-Suite/pull/343</a></p></div></div>
+<div class="comment" id="comment-21939"><div class="by">Andrew Woods, 2021-01-15 22:39 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo/Fedora-API-Test-Suite/commit/7df5e2fd857a6cc36740ce86a51a6e834d4a7ed5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/Fedora-API-Test-Suite/commit/7df5e2fd857a6cc36740ce86a51a6e834d4a7ed5</a></p></div></div>
+<p><a href="data/FCREPO-3477.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

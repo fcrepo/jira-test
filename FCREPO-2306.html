@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2306 BagIt Profile for Perseids (Research Object Bundle)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2306</span> BagIt Profile for Perseids (Research Object Bundle)</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bridget Almas</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-11-14 20:32 UTC</td></tr><tr><th>Updated</th><td>2017-05-15 16:22 UTC</td></tr><tr><th>Resolved</th><td>2017-05-15 16:22 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.1.0</td></tr><tr><th>Labels</th><td>bagit, import-export-phase-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-2221.html">FCREPO-2221</a> Export BagIt bags from Fedora</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2440.html">FCREPO-2440</a> Verify Perseids BagIt Profile</td></tr></table>
+<h2>Description</h2>
+<p>Perseids will export BagIt bags according to the Research Object Bundle BagIt Profile which we would like to be able to ingest into Fedora via the import/export feature.  The profile is follows, per  <a href="https://github.com/ResearchObject/bagit-ro/blob/master/profile.json" class="external-link" rel="nofollow noreferrer">https://github.com/ResearchObject/bagit-ro/blob/master/profile.json</a></p>
+
+<p>```<br/>
+{<br/>
+   "BagIt-Profile-Info":</p>
+{
+      "BagIt-Profile-Identifier":"https://w3id.org/ro/bagit/profile",
+      "Source-Organization":"researchobject.org",
+      "Contact-Name":"Stian Soiland-Reyes",
+      "Contact-Email":"soiland-reyes@cs.manchester.ac.uk",
+      "External-Description":"BagIt profile for Research Objects. See https://w3id.org/ro/bagit",
+      "Version":"0.2.20160422"
+   }
+<p>,<br/>
+   "Bag-Info": {<br/>
+      "Bag-Size": </p>
+{
+         "required":true
+      }
+<p>,<br/>
+      "Payload-Oxum": </p>
+{
+         "required":true
+      }
+<p>   },<br/>
+   "Manifests-Required":[<br/>
+      "md5", "sha1"<br/>
+   ],<br/>
+   "Allow-Fetch.txt": true,<br/>
+   "Serialization": "required",<br/>
+   "Accept-Serialization":[<br/>
+      "application/zip",<br/>
+      "application/x-tar",<br/>
+      "application/x-tar+gzip"<br/>
+   ],<br/>
+   "Tag-Manifests-Required":[<br/>
+     "md5", "sha1"<br/>
+   ],<br/>
+   "Tag-Files-Required":[<br/>
+     "metadata/manifest.json"<br/>
+   ],<br/>
+   "Accept-BagIt-Version":[<br/>
+      "0.97"<br/>
+   ]<br/>
+}<br/>
+```</p>
+
+<p>Functional differences from the default profile specified in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2224" >
+                <a href="FCREPO-2224.html" class="jira-issue-macro-key issue-link"  title="Create default fcrepo-import-export Bag Profile" >
+            
+            FCREPO-2224
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ include Serialization (required not optional), specification of Accept-Serialization, specification of Tag-Files-Required, additional md5 checksum manifest and tag-manifest required</p>
+
+<p>Diff :</p>
+
+<p>```<br/>
+ {<br/>
++  Accept-Serialization: [<br/>
++    "application/zip"<br/>
++    "application/x-tar"<br/>
++    "application/x-tar+gzip"<br/>
++  ]<br/>
++  Tag-Files-Required: [<br/>
++    "metadata/manifest.json"<br/>
++  ]<br/>
+   BagIt-Profile-Info: </p>
+{
+-    BagIt-Profile-Identifier: "http://fedora.info/fcrepoBagProfile.json"
++    BagIt-Profile-Identifier: "https://w3id.org/ro/bagit/profile"
+-    Source-Organization: "Duraspace"
++    Source-Organization: "researchobject.org"
+-    Contact-Name: "Nick Ruest"
++    Contact-Name: "Stian Soiland-Reyes"
+-    Contact-Email: "ruestn@yorku.ca"
++    Contact-Email: "soiland-reyes@cs.manchester.ac.uk"
+-    External-Description: "Default Bag Profile for Fedora."
++    External-Description: "BagIt profile for Research Objects. See https://w3id.org/ro/bagit"
+-    Version: "1.2"
++    Version: "0.2.20160422"
+   }
+<p>   Bag-Info: {</p>
+<ul class="alternate" type="square">
+	<li>Source-Organization: 
+{
+-      required: true
+-    }</li>
+	<li>Organization-Address: 
+{
+-      required: false
+-    }</li>
+	<li>Contact-Name: 
+{
+-      required: false
+-    }</li>
+	<li>Contact-Phone: 
+{
+-      required: false
+-    }</li>
+	<li>Contact-Email: 
+{
+-      required: false
+-    }</li>
+	<li>External-Description: 
+{
+-      required: false
+-    }</li>
+	<li>External-Identifier: 
+{
+-      required: false
+-    }</li>
+	<li>Bag-Group-Identifier: 
+{
+-      required: false
+-    }</li>
+	<li>Bag-Count: 
+{
+-      required: false
+-    }</li>
+	<li>Internal-Sender-Identifier: 
+{
+-      required: false
+-    }</li>
+	<li>Internal-Sender-Description: 
+{
+-      required: false
+-    }</li>
+	<li>Bagging-Date: 
+{
+-      required: true
+-    }
+<p>   }<br/>
+   Manifests-Required: [<br/>
++    "md5"<br/>
+     "sha1"<br/>
+   ]</p></li>
+	<li>Allow-Fetch.txt: false<br/>
++  Allow-Fetch.txt: true</li>
+	<li>Serialization: "optional"<br/>
++  Serialization: "required"<br/>
+   Tag-Manifests-Required: [<br/>
++    "md5"<br/>
+     "sha1"<br/>
+   ]</li>
+</ul>
+
+
+
+<p>```</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-18215"><div class="by">Esmé Cowles, 2016-12-13 19:45 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/63" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/63</a> is merged, but I'd like to use this ticket to confirm the Perseids profile is correct.</p></div></div>
+<div class="comment" id="comment-18217"><div class="by">Nick Ruest, 2016-12-14 12:51 UTC</div><div class="text"><p>Bridget Almas are you comfortable testing this?</p></div></div>
+<div class="comment" id="comment-18218"><div class="by">Esmé Cowles, 2016-12-14 13:02 UTC</div><div class="text"><p>Nick Ruest Bridget Almas, I want to make sure you both know that the profile support is still in progress.  We have currently implemented selecting the payload-manifest and tag-manifest algorithms, but supporting user-supplied metadata is being tracked in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2352" >
+                <a href="FCREPO-2352.html" class="jira-issue-macro-key issue-link"  title="Add support for user-supplied Bag metadata" >
+            
+            FCREPO-2352
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2356" >
+                <a href="FCREPO-2356.html" class="jira-issue-macro-key issue-link"  title="Enforce BagIt profile requirements for user-supplied metadata" >
+            
+            FCREPO-2356
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-18219"><div class="by">Bridget Almas, 2016-12-14 13:07 UTC</div><div class="text"><p>Nick RuestI can test but it will take me awhile to get setup to do that.  Is sometime next week okay?</p></div></div>
+<div class="comment" id="comment-18221"><div class="by">Nick Ruest, 2016-12-14 14:40 UTC</div><div class="text"><p>Bridget Almas I kinda jumped the gun here, so you're off the hook for right now. We'll have you test, verify, and provide feedback as part of the stakeholder process after the sprint is finished.</p></div></div>
+<p><a href="data/FCREPO-2306.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

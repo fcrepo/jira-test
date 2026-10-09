@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3560 Validate OCFL objects before Side-Loading/Reindexing </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3560</span> Validate OCFL objects before Side-Loading/Reindexing </h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-12-04 20:34 UTC</td></tr><tr><th>Updated</th><td>2021-01-28 22:47 UTC</td></tr><tr><th>Resolved</th><td>2021-01-28 22:47 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>Currently we are doing no validation of OCFL objects that are side loaded (ie copied directly into the OCFL and reindexed).  This task  is to add some validation capability in fcrepo-storage-ocfl that can we used by the http /fcr:reindex endpoint.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-21810"><div class="by">Danny Bernstein, 2020-12-04 20:35 UTC</div><div class="text"><p>Probably not a beta blocker, but might need to be addressed before release.</p></div></div>
+<div class="comment" id="comment-21840"><div class="by">Andrew Woods, 2020-12-15 23:05 UTC</div><div class="text"><p>Let's put this in beta... and can revisit if circumstances require.</p></div></div>
+<div class="comment" id="comment-21868"><div class="by">Peter Winckles, 2021-01-11 17:02 UTC</div><div class="text"><p>List of validations to implement:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>- Every header file has a corresponding content file, unless the
+  header indicates the resource is deleted in which case it must not
+  have a corresponding content file
+- Every content file has a corresponding header file
+- The Fedora ID of the object at the root of the OCFL object equals
+  the OCFL object ID
+- Any child resources must correctly reference their parent and have
+  a correct ID
+- Fedora IDs must start with info:fedora
+- Fedora ID parts may not be empty
+- Fedora ID parts may not equal:
+  - fcr-root
+  - .fcrepo
+  - fcr-container.nt
+  - fcr:tombstone
+  - fcr:versions
+- Fedora ID parts may not end with:
+  - ~fcr-desc
+  - ~fcr-acl
+  - ~fcr-desc.nt
+  - ~fcr-acl.nt
+- Every non-RDF resource must have a non-RDF description
+- All resource headers must contain:
+  - id
+  - parent
+  - stateToken
+  - interactionModel
+  - createdDate
+  - createdBy
+  - lastModifiedDate
+  - lastModifiedBy
+- Non-deleted resource headers must contain:
+  - contentPath
+  - contentSize
+  - digests
+- Non-RDF resource headers must contain:
+  - mimeType
+  - archivalGroup = false
+- External Non-RDF resource headers must contain:
+  - externalUrl
+  - externalHandling
+- Archival group resource headers must contain:
+  - archivalGroup = true
+  - objectRoot = true
+- Archival part resource headers must contain:
+  - archivalGroup = false
+  - objectRoot = false
+  - archivalGroupId
+- Atomic resource headers must contain:
+  - archivalGroup = false
+  - objectRoot = true
+- Digest URI must be formatted as urn:ALGORITHM:DIGEST
+- Timestamps must be in ISO-8601 format
+- Every version of the object must have all of the above validations
+  applied
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-21869"><div class="by">Peter Winckles, 2021-01-11 17:02 UTC</div><div class="text"><p>Digest validation will be configurable and optional, defaulting to validate</p></div></div>
+<div class="comment" id="comment-21936"><div class="by">Peter Winckles, 2021-01-15 20:17 UTC</div><div class="text"><p>First PR: <a href="https://github.com/fcrepo/fcrepo-storage-ocfl/pull/28" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/pull/28</a></p></div></div>
+<div class="comment" id="comment-21944"><div class="by">Peter Winckles, 2021-01-20 19:36 UTC</div><div class="text"><p>Fcrepo PR: <a href="https://github.com/fcrepo/fcrepo/pull/1852" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1852</a></p></div></div>
+<div class="comment" id="comment-21979"><div class="by">Danny Bernstein, 2021-01-28 22:47 UTC</div><div class="text"><p>Resolved by : <a href="https://github.com/fcrepo/fcrepo/commit/adda868163af4840aa875fe8d05b2ebcc1bc365a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/adda868163af4840aa875fe8d05b2ebcc1bc365a</a></p>
+
+<p>and <a href="https://github.com/fcrepo/fcrepo-storage-ocfl/commit/9dd9d4cd80d338d4f5275e966a23cba708f05a74" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/commit/9dd9d4cd80d338d4f5275e966a23cba708f05a74</a></p>
+
+<p> </p></div></div>
+<p><a href="data/FCREPO-3560.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

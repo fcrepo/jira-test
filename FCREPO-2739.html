@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2739 Server returns an error after inserting a particular triple syntax</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2739</span> Server returns an error after inserting a particular triple syntax</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Created</th><td>2018-03-18 02:24 UTC</td></tr><tr><th>Updated</th><td>2018-03-20 01:27 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.4, Fedora 4.7.5</td></tr></table>
+<h2>Environment</h2>Linux, Java 1.8 
+<h2>Description</h2>
+<p>Inserting an apparently innocuous triple such as:</p>
+
+<p>curl -iXPUT --data-binary '&lt;&gt; &lt;<a href="http://ex.org/p#123" class="external-link" rel="nofollow noreferrer">http://ex.org/p#123</a>&gt; &lt;<a href="http://ex.org/res/abc" class="external-link" rel="nofollow noreferrer">http://ex.org/res/abc</a>&gt; .' -H'Content-type:text/turtle' <a href="http://localhost:8080/rest/test_blowup" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_blowup</a></p>
+
+<p>Returns an apparently successful response: </p>
+
+<p>HTTP/1.1 201 Created<br/>
+Date: Sun, 18 Mar 2018 02:14:17 GMT<br/>
+ETag: W/"f2be3bf3552ed0f662c36cfe2f320c003d80fea0"<br/>
+Last-Modified: Sun, 18 Mar 2018 02:14:17 GMT<br/>
+Location: <a href="http://localhost:8080/rest/test_blowup" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_blowup</a><br/>
+Content-Type: text/plain<br/>
+Content-Length: 40<br/>
+Server: Jetty(9.2.3.v20140905)</p>
+
+<p><a href="http://localhost:8080/rest/test_blowup" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_blowup</a></p>
+
+<p>But on GET, the server returns a 500 error: </p>
+
+<p>java.lang.IllegalArgumentException: The localName argument may not be null or zero-length<br/>
+	at org.modeshape.common.util.CheckArg.isNotZeroLength(CheckArg.java:360)<br/>
+	at org.modeshape.common.util.CheckArg.isNotEmpty(CheckArg.java:373)<br/>
+	at org.modeshape.jcr.value.basic.NameValueFactory.create(NameValueFactory.java:175)<br/>
+	at org.modeshape.jcr.value.basic.NameValueFactory.create(NameValueFactory.java:168)<br/>
+	at org.modeshape.jcr.cache.document.DocumentTranslator.getProperties(DocumentTranslator.java:245)<br/>
+	at org.modeshape.jcr.cache.document.LazyCachedNode.getProperties(LazyCachedNode.java:425)<br/>
+	at org.modeshape.jcr.AbstractJcrNode.getProperties(AbstractJcrNode.java:2073)<br/>
+<span class="error">&#91;...&#93;</span></p>
+
+<p>The culprit seems to be the numeral in the predicate after the `#` sign. Whether that may be legal syntax or not (it seems to me, and other ttl parsers accept it), the aggravating factor is that the resource is created but unusable in any way (including DELETE). The server should instead return an error before persisting the content if it has a problem with it. </p>
+<p><a href="data/FCREPO-2739.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2551 As a developer, I would like to be able to use Gradle to build and test fcrepo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2551</span> As a developer, I would like to be able to use Gradle to build and test fcrepo</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Christopher Johnson</td></tr><tr><th>Created</th><td>2017-08-19 20:11 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr></table>
+<h2>Description</h2>
+<p>sorry, but I love Gradle.  The Groovy DSL really makes Maven's XML seem archaic and incredibly rigid.  It is also fast.  A clean fcrepo build takes around 30 seconds (without docs and IT tests).</p>
+
+<p>Here is a first look at the commit of my changes. <br/>
+<a href="https://github.com/pan-dora/fcrepo4/commit/6514f233573bfae3c350f3e1a1e35d3f2912e483" class="external-link" rel="nofollow noreferrer">https://github.com/pan-dora/fcrepo4/commit/6514f233573bfae3c350f3e1a1e35d3f2912e483</a>  <br/>
+My main reference for this was the Spring Framework, who have a rather complex build in Gradle.  There are a lot more tasks that can be added.  I have also made a docker task that can create and tag an image.  The image can be customized for different test scenarios.</p>
+
+<p>The main issue is that Gradle build properties must be in Camel case so the current use of property names like "fcrepo.some.config" has to be changed to fcrepoSomeConfig in the repository configuration files.  It is still possible to expand the Camel case properties at build time into the expected "system properties variables" (i.e. with the dot separator) for runtime injection in a global gradle.properties file. <br/>
+<a href="https://github.com/pan-dora/fcrepo4/blob/gradle-build/gradle.properties" class="external-link" rel="nofollow noreferrer">https://github.com/pan-dora/fcrepo4/blob/gradle-build/gradle.properties</a></p>
+
+<p> I also found and fixed several missing dependencies, primarily with the tests.  </p>
+
+<p>My overall (future) goal is to do integration tests with the jdk.incubator.httpclient using JDK 9 / JUnit 5 / Spring 5.  With a Gradle build, it is (for me) also easier to address the probable compilation problems that are the result of the strong encapsulation requirements in JDK 9.  I have not tried it yet with fcrepo, but I have built the client.</p>
+
+
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-19250"><div class="by">Andrew Woods, 2017-08-21 15:07 UTC</div><div class="text"><p>This looks good, Christopher Johnson. </p>
+
+<p>If there is interest and agreement from the other Fedora committers, this could be a good direction forward. One approach would be to establish a "gradle" branch that follows "master". It would be informative to see if we are able to perform a coming release with the Gradle machinery, including the various functions performed by the Maven process. If what Gradle offers includes everything that we rely on from Maven, then it seems like a positive evolution.</p>
+
+<p>In the meantime, I will add the Gradle topic to this week's tech agenda.<br/>
+<a href="https://wiki.duraspace.org/display/FF/2017-08-24+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2017-08-24+-+Fedora+Tech+Meeting</a></p></div></div>
+<div class="comment" id="comment-19254"><div class="by">Esmé Cowles, 2017-08-23 00:00 UTC</div><div class="text"><p>We discussed this a while ago, and my thoughts on it are the same as last time: I am skeptical of the benefits of a build system change outweighing the hassle for a considerable number of contributors having to setup the new system.  I would be much more open to using Gradle for a new project, but IMHO, changing the build system of a mature project should not be done unless there is compelling new functionality, or unless the old build system is deprecated, unmaintained, etc.</p>
+
+<p>That said, I look forward to hearing about it on the tech call, and I'm happy to be convinced that Gradle offers enough new functionality that it's worth making the switch.</p></div></div>
+<div class="comment" id="comment-19256"><div class="by">Christopher Johnson, 2017-08-23 14:40 UTC</div><div class="text"><p>Thank you for the replies.  I could expand at length on why Gradle is compelling for my work.  I have done some work on the Integration Tests including the <a href="https://github.com/pan-dora/fcrepo4/tree/gradle/fcrepo-integration-ldp/src/test/java/org/fcrepo/integration/ldp" class="external-link" rel="nofollow noreferrer">LDP Suite</a>.  I have built the <a href="https://github.com/w3c/ldp-testsuite" class="external-link" rel="nofollow noreferrer">latest master</a> and included it as a file system jar.  It seems to work now.  I do not know if the fact that these were broken is a consequence of other causes, but they definitely did not work in Gradle.  I have also implemented docker-compose into the ITs so that spinning up unique fcrepo instances with different microservices, etc. is possible.  For example, my build's default docker image requires a stand alone ActiveMQ service, and this is easy to incorporate with docker-compose.  In my use case, fcrepo is part of an ecosystem of different components.  Unit testing is of course a first priority, but I have been really stymied by the complexity of integration and performance testing with Maven.  Furthermore, I suspect that JDK 9 will break everything anyway, so if there is the will to move forward, migrating to JDK 9 is the perfect opportunity to embrace a new build system.  If I am welcome, maybe I join the meeting tomorrow and briefly discuss what I have learned recently about Gradle and JDK 9.  </p></div></div>
+<div class="comment" id="comment-19257"><div class="by">Esmé Cowles, 2017-08-23 14:46 UTC</div><div class="text"><p>Christopher Johnson, yes, please call in to this week's tech call — the connection info is on the agenda page: <a href="https://wiki.duraspace.org/display/FF/2017-08-24+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2017-08-24+-+Fedora+Tech+Meeting</a></p>
+
+<p>If JDK 9 does break things anyway, then that does sound like an opportunity to consider other options.</p></div></div>
+<div class="comment" id="comment-19258"><div class="by">Aaron Birkland, 2017-08-23 16:10 UTC</div><div class="text"><p>Of course you are welcome, everybody is!</p>
+
+<p>I'm also a bit skeptical of Gradle, or at least the cost/benefit ratio it brings to the code base of the community edition of Fedora, but am open if there is a strong interest, the resources to migrate, and enough expertise to maintain it.</p>
+
+<p>But anyway, as you point out there's no need for external projects to use Maven if they don't want to; just pull in the artifact(s) and orchestrate using the best tools you have (be that docker-compose, gradle, whatever).  If there are any ways in which Maven's inside of fcrepo4/fcrepo4 is holding you back, that would be good to know</p></div></div>
+<div class="comment" id="comment-19259"><div class="by">Unknown, 2017-08-23 18:58 UTC</div><div class="text"><p>I will probably not be on the tech call, but let me describe my experience with Gradle.</p>
+
+<p>I have used Gradle for several years on probably 20-30 JVM-based projects (Java and Clojure). I vastly prefer it to Maven, and every new JVM-based project I have started in the last year or two uses Gradle. Having released a good number of artifacts over the years to Maven Central (using both gradle and maven), I can also attest to the fact that Gradle is actually considerably easier than Maven – at least it's a lot easier than the way Maven is set up with Fedora4.</p>
+
+<p>Between Gradle and Maven, the Gradle configuration is also considerably smaller – in some of the conversion projects I've worked on (IIRC), it ends up being about 10-20% of the size of the maven configuration, which in my book is a massive win.</p>
+
+<p>In terms of working with Gradle, I would also vastly prefer using the Groovy syntax over XML. I actually don't know much Groovy – only enough to work effectively with Gradle; one doesn't need to be an expert in Groovy to work effectively with Gradle.</p>
+
+<p>Christopher Johnson has already mentioned the performance advantages of running the build and test suites with Gradle; I have also found that to be true: it is considerably faster to use Gradle than to use Maven.</p>
+
+<p>Gradle is also entirely self-contained. Whereas with Maven, a developer must first install maven on their computer, with Gradle, there is no installation step; all Gradle needs is a jar file, and if that's not available, it downloads it for you.</p>
+
+<p>Fedora uses a lot of Maven plugins. Every one of those plugins can be replaced with some equivalent in Gradle. (I know what plugins are used with Fedora4, and I have Gradle equivalents in much of the code I maintain). Well, there is one exception: the maven-site plugin – the plugin that generates pages like this: <a href="http://docs.fcrepo.org/site/4.7.4/fcrepo/" class="external-link" rel="nofollow noreferrer">http://docs.fcrepo.org/site/4.7.4/fcrepo/</a> Admittedly, I haven't looked extensively for an equivalent Gradle plugin, as I've never been convinced of the utility of these maven-generated pages.</p>
+
+<p>Gradle also gives you considerable more control over the build phases in comparison to Maven. This is especially useful for OSGi integration testing where you need a local <tt>mvn install</tt> to occur before <tt>mvn test</tt>, which isn't really possible with Maven.</p>
+
+<p>One advantage that Maven has over Gradle is the use of parent poms that get inherited by external subprojects. Gradle has something that is sort of equivalent (external build scripts), but I have never used those. I also think that extensive use of parent POM configuration is a little over-rated, and I don't think it would justify not using Gradle.</p>
+
+<p>The thing about Gradle is that it has a very different view of what a build system is. Maven is pretty rigid, in that it consists of plugins that are applied and configured, but there is very little flexibility beyond that. With Gradle, you have an entire scripting language at your command, and using that you can control the details of the build process much more effectively.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-22339"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2551.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

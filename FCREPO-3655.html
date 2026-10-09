@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3655 application/link-format returns multiple entries for the same second</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3655</span> application/link-format returns multiple entries for the same second</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2021-02-25 13:59 UTC</td></tr><tr><th>Updated</th><td>2022-11-16 20:54 UTC</td></tr><tr><th>Resolved</th><td>2022-05-19 21:33 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.2.0</td></tr><tr><th>Labels</th><td>fcrepo-6.1.0</td></tr></table>
+<h2>Description</h2>
+<p>If you make multiple changes or create multiple versions within a second you should only get the last one for each second.</p>
+
+<p>This works for RDF serializations.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&gt; curl -ufedoraAdmin:fedoraAdmin http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions
+ 
+@prefix memento: &lt;http://mementoweb.org/ns#&gt; .
+@prefix rdf:   &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+@prefix ldp:   &lt;http://www.w3.org/ns/ldp#&gt; .
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions&gt;
+        ldp:contains           &lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions/20210225134305&gt; ;
+        memento:original       &lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac&gt; ;
+        fedora:created         "2021-02-25T13:43:05.215950Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:lastModified    "2021-02-25T13:43:05.215950Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:createdBy       "fedoraAdmin" ;
+        fedora:lastModifiedBy  "fedoraAdmin" ;
+        rdf:type               ldp:Resource ;
+        rdf:type               ldp:Container ;
+        rdf:type               ldp:RDFSource .
+</pre>
+</div></div>
+
+<p>But not for <tt>application/link-format</tt></p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&gt; curl -ufedoraAdmin:fedoraAdmin http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions -H"Accept: application/link-format"
+
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac&gt;; rel="original",
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac&gt;; rel="timegate",
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions/20210225134305&gt;; rel="memento"; datetime="Thu, 25 Feb 2021 13:43:05 GMT",
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions/20210225134305&gt;; rel="memento"; datetime="Thu, 25 Feb 2021 13:43:05 GMT",
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions/20210225134305&gt;; rel="memento"; datetime="Thu, 25 Feb 2021 13:43:05 GMT",
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions/20210225134305&gt;; rel="memento"; datetime="Thu, 25 Feb 2021 13:43:05 GMT",
+&lt;http://localhost:8080/rest/test_version/bb4351ba-1293-4082-8a1e-aeb010be2aac/fcr:versions&gt;; rel="self"; from="Thu, 25 Feb 2021 13:43:05 GMT"; until="Thu, 25 Feb 2021 13:43:05 GMT"; type="application/link-format",
+</pre>
+</div></div>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22643"><div class="by">Jared Whiklo, 2022-05-19 21:33 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1992" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1992</a></p></div></div>
+<div class="comment" id="comment-22692"><div class="by">Danny Bernstein, 2022-09-01 15:41 UTC</div><div class="text"><p>This has been merged.</p></div></div>
+<p><a href="data/FCREPO-3655.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

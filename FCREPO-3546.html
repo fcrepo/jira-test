@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3546 Error updating external binary after updated without type header</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3546</span> Error updating external binary after updated without type header</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2020-11-30 22:23 UTC</td></tr><tr><th>Updated</th><td>2021-02-08 15:20 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.1.1</td></tr></table>
+<h2>Description</h2>
+<p>We have a proxied external binary in our repository which was created correctly, but then accidentally updated in a second request without providing <tt>'Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;; rel="type"'</tt>. The result is that future PUT requests fail to the binary with error:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Changing the interaction model ldp:BasicContainer to ldp:NonRDFSource is not allowed!
+</pre>
+</div></div>
+<p>Attaching a debugger to fedora shows that the resource now mistakenly is both a BasicContainer and a Binary in modeshape:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+jcr:mixinTypes=[ldp:NonRDFSource,fedora:Resource,fedora:Binary,ldp:BasicContainer]
+</pre>
+</div></div>
+<p>I was able to replicate the issue by running fedora locally with:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+mvn jetty:run -Dfcrepo.external.content.allowed=fcrepo-http-api/src/test/resources/allowed_external_paths.txt -pl fcrepo-webapp/
+</pre>
+</div></div>
+<p>And then performing the following requests:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+# Create external binary, with type link header included (succeeds)
+$ curl -H<span class="code-quote">"Link: &lt;file:<span class="code-comment">///Users/bbpennel/git/fcrepo5/README.md&gt;; rel=\"</span>http://fedora.info/definitions/fcrepo#ExternalContent\<span class="code-quote">"; handling=\"</span>proxy\<span class="code-quote">"; type=\"</span>text/plain\<span class="code-quote">"" -H<span class="code-quote">'Link: &lt;http://www.w3.org/ns/ldp#NonRDFSource&gt;; rel="</span>type"'</span> -XPUT -ufedoraAdmin:fedoraAdmin http://localhost:8080/<span class="code-keyword">rest</span>/readme
+</span>
+# Update external binary, with type link header included still (succeeds)
+$ curl -H<span class="code-quote">"Link: &lt;file:<span class="code-comment">///Users/bbpennel/git/fcrepo5/README.md&gt;; rel=\"</span>http://fedora.info/definitions/fcrepo#ExternalContent\<span class="code-quote">"; handling=\"</span>proxy\<span class="code-quote">"; type=\"</span>text/plain\<span class="code-quote">"" -H<span class="code-quote">'Link: &lt;http://www.w3.org/ns/ldp#NonRDFSource&gt;; rel="</span>type"'</span> -XPUT -ufedoraAdmin:fedoraAdmin http://localhost:8080/<span class="code-keyword">rest</span>/readme
+</span>
+# Update external binary, WITHOUT the type link header (succeeds, sort of)
+$ curl -H<span class="code-quote">"Link: &lt;file:<span class="code-comment">///Users/bbpennel/git/fcrepo5/README.md&gt;; rel=\"</span>http://fedora.info/definitions/fcrepo#ExternalContent\<span class="code-quote">"; handling=\"</span>proxy\<span class="code-quote">"; type=\"</span>text/plain\"" -XPUT -ufedoraAdmin:fedoraAdmin http://localhost:8080/<span class="code-keyword">rest</span>/readme
+</span>
+# Try updating binary with type link header included again (fails)
+$ curl -H<span class="code-quote">"Link: &lt;file:<span class="code-comment">///Users/bbpennel/git/fcrepo5/README.md&gt;; rel=\"</span>http://fedora.info/definitions/fcrepo#ExternalContent\<span class="code-quote">"; handling=\"</span>proxy\<span class="code-quote">"; type=\"</span>text/plain\<span class="code-quote">"" -H<span class="code-quote">'Link: &lt;http://www.w3.org/ns/ldp#NonRDFSource&gt;; rel="</span>type"'</span> -XPUT -ufedoraAdmin:fedoraAdmin http://localhost:8080/<span class="code-keyword">rest</span>/readme
+</span>
+Changing the interaction model ldp:BasicContainer to ldp:NonRDFSource is not allowed!
+</pre>
+</div></div>
+<p>This error does not happen with internal fedora binaries. Also, making the request without the type link header succeeds when the object is in this state. For GET and HEAD requests, the object still behaves like a binary as well. So from the outside this mainly just breaks being able to make the same request to create and update the binary.</p>
+
+<p>I'm not sure yet how to repair the object.</p>
+
+<p> </p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-22000"><div class="by">Ben Pennell, 2021-02-08 15:20 UTC</div><div class="text"><p>Confirmed that this bug does NOT impact Fedora 6 as of the time of this comment</p></div></div>
+<p><a href="data/FCREPO-3546.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

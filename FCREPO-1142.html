@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1142 fcrepo 3.6 creates a page with broken links from object search given a final / in the URL</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1142</span> fcrepo 3.6 creates a page with broken links from object search given a final / in the URL</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jörg Knappen</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2012-08-23 12:47 UTC</td></tr><tr><th>Updated</th><td>2012-08-24 17:51 UTC</td></tr><tr><th>Resolved</th><td>2012-08-23 18:38 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6</td></tr></table>
+<h2>Environment</h2>SLES 11 (64bit); Apache Tomcat 7.0.28; <br/>
+java version &quot;1.6.0_31&quot;<br/>
+Java(TM) SE Runtime Environment (build 1.6.0_31-b04)<br/>
+Java HotSpot(TM) 64-Bit Server VM (build 20.6-b01, mixed mode)<br/>
+
+<h2>Description</h2>
+<p>Whenn you enter<br/>
+<a href="http://fedora-server.dom/fedora/objects/" class="external-link" rel="nofollow noreferrer">http://fedora-server.dom/fedora/objects/</a><br/>
+(note the final slash; this can happen by "hacking off" the last part of a long URL to navigate back), then<br/>
+a query of the following type is issued by Fedora:<br/>
+<a href="http://fedora-server.dom/fedora/objects/?pid=true&amp;title=true&amp;description=true&amp;identifier=true&amp;terms=*&amp;query=&amp;maxResults=20" class="external-link" rel="nofollow noreferrer">http://fedora-server.dom/fedora/objects/?pid=true&amp;title=true&amp;description=true&amp;identifier=true&amp;terms=*&amp;query=&amp;maxResults=20</a><br/>
+(Note the / before ?pid)<br/>
+The resulting page contains broken links of the type<br/>
+<a href="http://fedora-server.dom/fedora/objects/objects/prefix%3Asuffix" class="external-link" rel="nofollow noreferrer">http://fedora-server.dom/fedora/objects/objects/prefix%3Asuffix</a><br/>
+(Note the duplication of objects/ in the path)</p>
+
+<p>Following the broken links gives back a completely empty page.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-12405"><div class="by">frank asseg, 2012-08-23 14:18 UTC</div><div class="text"><p>Problem seems to be handling of the context since there's a double "object" path in the wrong uris:<br/>
+CORRECT: <a href="http://localhost:8080/fedora/objects/fedora-system%3AContentModel-3.0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/fedora-system%3AContentModel-3.0</a><br/>
+WRONG:    <a href="http://localhost:8080/fedora/objects/objects/fedora-system%3AContentModel-3.0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/objects/fedora-system%3AContentModel-3.0</a></p>
+
+<p>i think it's in ReadOnlyContext.java.</p></div></div>
+<div class="comment" id="comment-12406"><div class="by">frank asseg, 2012-08-23 14:45 UTC</div><div class="text"><p>Problem seems to be relative URLs in DefaultSerializer.searchResultToHtml().<br/>
+the hrefs are set to /objects/&lt;object-pid&gt; which when invoked from .../objects/ gives the incorrent URL since /objects/ does not get stripped from the browser for relative URLs.</p></div></div>
+<div class="comment" id="comment-12407"><div class="by">frank asseg, 2012-08-23 14:56 UTC</div><div class="text"><p>fix is on github at <a href="https://github.com/fcrepo/fcrepo/tree/fcrepo-1142" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/tree/fcrepo-1142</a></p></div></div>
+<div class="comment" id="comment-12412"><div class="by">Benjamin Armintor, 2012-08-23 17:39 UTC</div><div class="text"><p>The 3.5 behavior was to return a 404 for /fedora/objects/, for what it's worth.</p></div></div>
+<div class="comment" id="comment-12414"><div class="by">Benjamin Armintor, 2012-08-23 18:38 UTC</div><div class="text"><p>Frank's code should be merged in for other reasons, but I'm closing this issue as won't fix: /fedora/objects and /fedora/objects/ are two different URIs and thus two different REST resources.  We <b>should</b> be returning a 404 when there's a trailing slash, and interpreting it as a request for an object profile with a null PID.  If anyone is relying on /fedora/objects/ to resolve to the object search, they are depending on a bug in the REST API introduced in the CXF migration.  If the reporter is relying on the object search programatically, they should be using the XML output serialization anyway.</p></div></div>
+<div class="comment" id="comment-12416"><div class="by">frank asseg, 2012-08-23 21:47 UTC</div><div class="text"><p>merged into master</p></div></div>
+<div class="comment" id="comment-12424"><div class="by">Jörg Knappen, 2012-08-24 14:40 UTC</div><div class="text"><p>From a usability point of view, I think the "buggy" behaviour of fcrepo-3.6 to present the search view on <br/>
+localhost:8080:fedora/objects/ preferable to the old behaviour of presenting a 404.</p>
+
+<p>The main point is that the URL is probably entered by a complete layperson (in respect of fedora <br/>
+and its technologies) who wants to find some item from the repository. The search form fulfils the <br/>
+expectations of the layperson, the 404 answer leaves him or her cluelessly. </p></div></div>
+<div class="comment" id="comment-12425"><div class="by">Benjamin Armintor, 2012-08-24 17:51 UTC</div><div class="text"><p>That service is intended to support repository administration and a machine- and human-usable REST api, not end-user discovery.  If end-user access at ambiguous URLs is important to a particular installation, FCRepo 3.6 makes it relatively easy to wire in a customized REST resource to perform that function. </p></div></div>
+<p><a href="data/FCREPO-1142.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

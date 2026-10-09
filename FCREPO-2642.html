@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2642 Example credentials to be URIs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2642</span> Example credentials to be URIs</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2017-10-03 23:27 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-08-30 15:37 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Labels</th><td>auth, medium</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>This task is to update the example credentials (jetty-users.properties) so that the usernames are URIs instead of strings.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19454"><div class="by">Situ, Longshou, 2017-10-05 00:50 UTC</div><div class="text"><p>Andrew Woods It looks like there's an character escaping issue with URI that contains the character colon ( : ), which is used as delimiter in jetty-users.properties (userName: password,userRole). I always got status 401 in the integration test suite org.fcrepo.integration.FedoraHtmlResponsesIT (fcrepo-webapp). What I'd tried including escape special character colon ( : ) with backslash(\:, <br/>
+: etc), URL escaping(%3A), unique code escaping (\u003A, 0x3A etc) etc, hoping that Java can interpret it, but I have no luck.<br/>
+ However it works when I use the URL escaped version of : (%3A) in user URI and the escaped version as credential to login Fedora. But we may need to unescaped it before using the user URI in this case.</p>
+
+<p>Do you have any thoughts / suggestions to deal with it? Thanks.</p></div></div>
+<div class="comment" id="comment-19455"><div class="by">Andrew Woods, 2017-10-05 02:03 UTC</div><div class="text"><p>Thanks, Situ, Longshou, that is an interesting discovery.</p>
+
+<p>Let's discuss on tomorrow's tech call.</p></div></div>
+<div class="comment" id="comment-19459"><div class="by">Aaron Birkland, 2017-10-05 14:02 UTC</div><div class="text"><p>This may be a big problem.  It looks like URIs are fundamentally incompatible with basic auth?  </p>
+
+<p>Look at RFC 7617 (The Basic HTTP Authentication Scheme): <a href="https://tools.ietf.org/html/rfc7617" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7617</a></p>
+
+<p> <br/>
+ The user-id and password MUST NOT contain any control characters (see<br/>
+ "CTL" in <span class="error">&#91;Appendix B.1 of RFC5234&#93;</span>|https://tools.ietf.org/html/rfc5234#appendix-B.1]).</p>
+
+<p>Furthermore, a user-id containing a colon character is invalid, as<br/>
+ the first colon in a user-pass string separates user-id and password<br/>
+ from one another; text after the first colon is part of the password.<br/>
+ User-ids containing colons cannot be encoded in user-pass strings.</p>
+
+<p>Note that many user agents produce user-pass strings without checking<br/>
+ that user-ids supplied by users do not contain colons; recipients<br/>
+ will then treat part of the username input as part of the password.<br/>
+  </p></div></div>
+<div class="comment" id="comment-19464"><div class="by">Situ, Longshou, 2017-10-05 17:17 UTC</div><div class="text"><p>Thanks Aaron Birkland for the extra information.</p>
+
+<p>Andrew Woods Should we just stop work on this ticket for now or close it?</p></div></div>
+<div class="comment" id="comment-20164"><div class="by">Andrew Woods, 2018-08-30 15:37 UTC</div><div class="text"><p>Basic Auth does not support URI credentials.</p></div></div>
+<p><a href="data/FCREPO-2642.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

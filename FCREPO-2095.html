@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2095 Revisit API for creating binary resources</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2095</span> Revisit API for creating binary resources</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-07-26 18:55 UTC</td></tr><tr><th>Updated</th><td>2018-09-27 03:56 UTC</td></tr><tr><th>Resolved</th><td>2018-09-27 03:56 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>Currently, an LDP-NR is created whenever:<br/>
+a) content-type of a POST or PUT request is not RDF<br/>
+or<br/>
+b) Content-Disposition: attachment header is present</p>
+
+<p>At present, this is not codified in the specification draft doc:<br/>
+<a href="https://docs.google.com/document/d/1ad3MhTQWGof0IJ03yY5jVofCK8uO9yPKMVXVYq7a44o/edit#" class="external-link" rel="nofollow noreferrer">https://docs.google.com/document/d/1ad3MhTQWGof0IJ03yY5jVofCK8uO9yPKMVXVYq7a44o/edit#</a></p>
+
+<p>The LDP spec is fairly silent about when a repository should create an LDP-NR.  This ticket is to see if there is a better way (possibly leveraging LDP headers) to explicitly convey a client's intent that a given resource should be created as a LDP-NR, and incorporate the conclusion into the spec draft.</p>
+
+<p>A case to consider is persisting an arbitrary RDF document (e.g. an owl document, RDF-based dataset, etc) as a binary resource in Fedora with an rdf media type.  This case precludes (a) from the above techniques for specifying binary resource creation.</p>
+
+<p>See discussion in <a href="https://github.com/fcrepo4/fcrepo4/pull/1081" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1081</a></p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-20296"><div class="by">Danny Bernstein, 2018-09-27 03:55 UTC</div><div class="text"><p>I believe this one can be closed as the recommendation is now in the spec:  <a href="https://fedora.info/2018/06/25/spec/#ldpnr-ixn-model" class="external-link" rel="nofollow noreferrer">https://fedora.info/2018/06/25/spec/#ldpnr-ixn-model</a></p>
+
+<p>and I double-checked that fcrepo4 is aligned with the specification.</p>
+
+<p><span class="error">&#91;tmp&#93;</span>@panna &gt; curl -i -u"fedoraAdmin:fedoraAdmin" -X POST -H "Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;; rel=\"type\"" -H "Content-Type: text/turtle" <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a> --data-binary @body.ttl<br/>
+HTTP/1.1 201 Created<br/>
+Date: Thu, 27 Sep 2018 03:51:45 GMT<br/>
+Set-Cookie: JSESSIONID=d3kaif6l2i2t16eqwtjgtycjb;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 26-Sep-2018 03:51:45 GMT<br/>
+ETag: "ca7b74c416f8f8b1443632df68c59dca50c5e06a"<br/>
+Last-Modified: Thu, 27 Sep 2018 03:51:45 GMT<br/>
+Link: &lt;<a href="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:metadata</a>&gt;; rel="describedby"; anchor="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0"<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:acl</a>&gt;; rel="acl"<br/>
+Location: <a href="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0</a><br/>
+Content-Type: text/plain<br/>
+Content-Length: 63<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p><a href="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0[tmp]@panna" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0[tmp]@panna</a> &gt; curl -X <a href="http://localhost:8080/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/</a><br/>
+<span class="error">&#91;tmp&#93;</span>@panna&gt; curl -i -u fedoraAdmin:fedoraAdmin -X GET <a href="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0</a><br/>
+HTTP/1.1 200 OK<br/>
+Date: Thu, 27 Sep 2018 03:52:35 GMT<br/>
+Set-Cookie: JSESSIONID=14gowc3rm2xjzo4vwf8q9mxbw;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 26-Sep-2018 03:52:35 GMT<br/>
+ETag: "ca7b74c416f8f8b1443632df68c59dca50c5e06a"<br/>
+Last-Modified: Thu, 27 Sep 2018 03:51:45 GMT<br/>
+Content-Type: text/turtle<br/>
+Accept-Ranges: bytes<br/>
+Content-Disposition: attachment; filename=""; creation-date="Thu, 27 Sep 2018 03:51:45 GMT"; modification-date="Thu, 27 Sep 2018 03:51:45 GMT"; size=181<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:metadata</a>&gt;; rel="describedby"<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Accept-External-Content-Handling: copy,redirect,proxy<br/>
+Allow: DELETE,HEAD,GET,PUT,OPTIONS<br/>
+Link: &lt;<a href="http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1e8bd00a-592c-4ae8-9bb6-91b4eb842ea0/fcr:acl</a>&gt;; rel="acl"<br/>
+Cache-Control: no-transform, must-revalidate, max-age=0<br/>
+Content-Length: 181<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p>@prefix acl: &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt; .<br/>
+@prefix foaf: &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt; .</p>
+
+<p>&lt;#readAccess&gt; a acl:Authorization ;<br/>
+ acl:agent foaf:Agent ;<br/>
+ acl:mode acl:Read .<br/>
+<span class="error">&#91;tmp&#93;</span>@panna &gt;</p></div></div>
+<p><a href="data/FCREPO-2095.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

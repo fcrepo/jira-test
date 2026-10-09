@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3197 Enhance migration-utils to add XML declaration for migrated in-line XML</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3197</span> Enhance migration-utils to add XML declaration for migrated in-line XML</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Doron Shalvi</td></tr><tr><th>Created</th><td>2020-01-31 01:28 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 17:07 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-utils-4.5.0</td></tr><tr><th>Labels</th><td>fcrepo-6.1.0</td></tr></table>
+<h2>Description</h2>
+<p>In-line XML datastreams migrated from Fedora 3 to OCFL do not contain an XML declaration. This declaration is is optional in XML 1.0, but common practice.  It is mandatory in XML 1.1. </p>
+
+<p>Please consider adding a declaration such as:</p>
+
+<p>&lt;?xml version="1.0" encoding="UTF-8"?&gt;</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21019"><div class="by">Andrew Woods, 2020-01-31 02:24 UTC</div><div class="text"><p>Inline XML content in FOXML has a "SIZE" attribute. Are you ok with the resultant XML document having a different size than the source? Do you have thoughts on validation of migrated inline XML?</p>
+
+<p>Scott Prater has observed that migration-utils changes the order of some inline XML attributes. See: <a href="https://jira.lyrasis.org/browse/FCREPO-3145" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3145</a></p>
+
+<p>I am trying to get a better sense of the requirements for migrated inline XML. There is an argument that the purest migration would be a byte-for-byte copy of what is found inline. Any difference in the output from a byte-for-byte copy represents a slightly new datastream. What variance is acceptable (or even desired) from a byte-for-byte copy?</p></div></div>
+<div class="comment" id="comment-21036"><div class="by">Doron Shalvi, 2020-02-06 17:25 UTC</div><div class="text"><p>As Scott Prater observes in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3145" >
+                <a href="FCREPO-3145.html" class="jira-issue-macro-key issue-link"  title="Fix migration-utils inline XML migration to not transform XML en route" >
+            
+            FCREPO-3145
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ I think the primary question is:  which should be considered the canonical version of the inline XML datastream?  The version stored on disk, or the version delivered by Fedora through its API?  From a systems perspective, I would tend to lean towards the latter, since I shouldn't have to know the internals of a system when performing an export/migration.  From a practical perspective the migration tool uses the stored FOXML, and most people migrating from F3 are probably familiar with stored FOXML, so this may not be a huge consideration.</p>
+
+<p>In our situation I am not too concerned about the resultant XML document having a different size than the source "SIZE" attribute, since we use in-line XML primarily for metadata that will likely be reprocessed into another format during our migration anyway.  A possible workflow for validating migrated inline XML data for a given version of a given datastream could be:</p>
+<ol>
+	<li>Migrate a byte-for-byte copy.</li>
+	<li>Validate the migrated copy using the "SIZE" attribute and using an XML validator.</li>
+	<li>(Optionally) Modify the migrated copy by adding an XML declaration.  Recompute size.  Store the modified copy and new size in place of the migrated copy.</li>
+</ol>
+
+
+<p>Possibly, this could be another runtime command line option.</p>
+
+<p>I'm not too vested in this particular request, partially because the migrated XML is still valid without a declaration.   I defer to those who are more concerned about preservation of in-line XML, with respect to the original question of which version is canonical.  I would note, however, that to some degree this is a general question that has come up a few times (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3198" >
+                <a href="FCREPO-3198.html" class="jira-issue-macro-key issue-link"  title="Migration-utils: Configurable resolvable URLs for external datastreams" >
+            
+            FCREPO-3198
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3145" >
+                <a href="FCREPO-3145.html" class="jira-issue-macro-key issue-link"  title="Fix migration-utils inline XML migration to not transform XML en route" >
+            
+            FCREPO-3145
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) - should the migration tool migrate exactly what Fedora 3 has stored, or should it account for runtime transformations represented by Fedora 3 code in serving the API?</p></div></div>
+<p><a href="data/FCREPO-3197.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1206 Multipart PUT requests are broken</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1206</span> Multipart PUT requests are broken</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Don Brower</td></tr><tr><th>Created</th><td>2014-01-04 04:53 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:57 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:57 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>Trying to update a datastream using a multipart encoded PUT request does not work. Fedora will save the multipart wrapper in the datastream contents. See attached file for example.</p>
+
+<p>It seems like the problem is here:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/RestUtil.java#L45" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/RestUtil.java#L45</a></p>
+
+<p>because isMultipartContent() only recognizes multipart messages that use the POST method:</p>
+
+<p><a href="http://commons.apache.org/proper/commons-fileupload/apidocs/src-html/org/apache/commons/fileupload/servlet/ServletFileUpload.html#line.66" class="external-link" rel="nofollow noreferrer">http://commons.apache.org/proper/commons-fileupload/apidocs/src-html/org/apache/commons/fileupload/servlet/ServletFileUpload.html#line.66</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1206/10181_fedora-put">fedora-put</a>, 2409 bytes, added by Don Brower on 2014-01-04</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12583"><div class="by">Benjamin Armintor, 2014-01-25 02:50 UTC</div><div class="text"><p>It is apparently believed that the semantics of PUT are incompatible with multipart request bodies, so I doubt that commons-fileupload regards this as a bug (and Fedora 3 is not going to change this dependency in the foreseeable future). See also <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6" class="external-link" rel="nofollow noreferrer">http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6</a></p></div></div>
+<div class="comment" id="comment-12584"><div class="by">Don Brower, 2014-01-25 03:04 UTC</div><div class="text"><p>Thanks for the answer. I don't completely follow how that section of RFC-2616 precludes multi-part uploads (e.g. what if all the files form a single semantic unit), but that is fine.</p>
+
+<p>FYI, the docs for modifyDatastream say the content should be multipart encoded.</p>
+
+<p><a href="https://wiki.duraspace.org/display/FEDORA37/REST+API#RESTAPI-modifyDatastream" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA37/REST+API#RESTAPI-modifyDatastream</a></p></div></div>
+<div class="comment" id="comment-12585"><div class="by">Benjamin Armintor, 2014-01-25 03:35 UTC</div><div class="text"><p>I agree that it's not a clear-cut case, but it's the one we're inheriting from Apache.  I guess we could try to work around it... I'm not sure what that would look like. The POST behavior just takes the first part... Hmm. Well, i any case, worth re-opening if nothing else as a landmark to a muddled part of the API. </p></div></div>
+<div class="comment" id="comment-12811"><div class="by">Andrew Woods, 2015-01-16 20:57 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1206.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

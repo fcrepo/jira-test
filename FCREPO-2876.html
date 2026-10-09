@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2876 Digest response header is incorrect for sha-256</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2876</span> Digest response header is incorrect for sha-256</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-09-20 22:06 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 20:57 UTC</td></tr><tr><th>Resolved</th><td>2018-09-21 15:19 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>easy, fall-2018-sprint-1</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>1. Create a binary: &lt;resource&gt;</p>
+
+<p>2. `curl -I -u fedoraAdmin:fedoraAdmin &lt;resource&gt; -H "Want-Digest: sha-256"`</p>
+
+<p>3. verify that the Digest response header looks like this</p>
+
+<p>`Digest: sha256=&lt;checksum&gt;`</p>
+
+<p>instead of like this</p>
+
+<p>`Digest: sha-256=&lt;checksum&gt;`</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20277"><div class="by">Ben Pennell, 2018-09-21 14:33 UTC</div><div class="text"><p>Danny Bernstein I'm not quite sure what the expected outcome for this ticket is. Do we want `Want-Digest: sha-256` to produce `Digest: sha256=blahblahlblah`?</p>
+
+<p>"sha-256" appears to be the algorithm name expected by internal java libraries, so we would have to do some translation on the way out. I don't see any reason we can't retain the - in the urn specification, and my instinct would be to keep the keys matching on the input and output, but I don't feel strongly if there is reason to change it.</p>
+
+<p>As a bonus, there is an existing test that explicitly expects `sha256` to fail when requesting digests:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/test/java/org/fcrepo/integration/kernel/modeshape/FedoraBinaryImplIT.java#L389" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/test/java/org/fcrepo/integration/kernel/modeshape/FedoraBinaryImplIT.java#L389</a></p></div></div>
+<div class="comment" id="comment-20281"><div class="by">Ben Pennell, 2018-09-21 15:19 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1418" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1418</a></p></div></div>
+<div class="comment" id="comment-20282"><div class="by">Ben Pennell, 2018-09-21 15:36 UTC</div><div class="text"><p>I have updated the documentation from sha256 to sha-256:</p>
+
+<p><a href="https://wiki.duraspace.org/display/FEDORA5x/RESTful+HTTP+API+-+Containers" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/RESTful+HTTP+API+-+Containers</a></p>
+
+<p><a href="https://wiki.duraspace.org/display/FEDORA5x/RESTful+HTTP+API+-+Fixity" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/RESTful+HTTP+API+-+Fixity</a></p></div></div>
+<div class="comment" id="comment-20283"><div class="by">Peter Matthew Eichman, 2018-09-21 17:03 UTC</div><div class="text"><p>Merged: <a href="https://github.com/fcrepo4/fcrepo4/commit/7d306e3a18d0ee81de1cebbd4226083aa7cf0b52" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/7d306e3a18d0ee81de1cebbd4226083aa7cf0b52</a></p></div></div>
+<p><a href="data/FCREPO-2876.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

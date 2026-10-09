@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1742 Last-Modified and ETag should not change with inbound references</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1742</span> Last-Modified and ETag should not change with inbound references</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-09-22 14:44 UTC</td></tr><tr><th>Updated</th><td>2016-05-24 09:26 UTC</td></tr><tr><th>Resolved</th><td>2016-05-24 09:26 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1498.html">FCREPO-1498</a> Indirectly Contained Resource Etags</td></tr><tr><th>Required by</th><td><a href="FCREPO-1616.html">FCREPO-1616</a> /rest/ should have an etag</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1889.html">FCREPO-1889</a> Direct/Indirect Containers allow writing arbitrary triples to any resource, despite access controls</td></tr></table>
+<h2>Description</h2>
+<p>Inbound links should not update the last-modified date or ETag.  Although inbound links can be retrieved with a resource, they are part of the state of the linking resources, not the linked-to resources.</p>
+
+<p>On a practical level, updating the last-modifed/ETag when a resource is linked to make it very difficult to update resources that are frequently liked to.</p>
+<h2>Comments (34)</h2>
+<div class="comment" id="comment-15271"><div class="by">Unknown, 2015-09-23 11:16 UTC</div><div class="text"><p>I am not sure that I agree with where this ticket is headed. According to the HTTP 1.1 spec (rfc 2616) <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html" class="external-link" rel="nofollow noreferrer">http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html</a>, ETags refer to "representations" not "resources". So, if the representation of any given object changes, the ETag should also change. That also means that for the resource /rest/a/b/c the ETag for application/rdf+xml should be different than the ETag for that same resource represented as application/ld+json, which is not currently the case.</p>
+
+<p>Similarly, if the resource (as application/rdf+xml) at /rest/a/b/c gets a new inbound resource (and the representation changes), the ETag should also change. If, however, inbound resources are not part of the response, and there has therefore been no change in the representation of the resource (given a certain set of request headers), then the ETag should not change.</p></div></div>
+<div class="comment" id="comment-15272"><div class="by">Former user, 2015-09-23 12:38 UTC</div><div class="text"><p>Aaron-</p>
+
+<p>I think there are two issues here:</p>
+
+<p>1. We should be using weak ETags, which guarantee semantic equivalence, rather than byte-for-byte equivalence.  Right now, using various Prefer and Accept headers will change the representation quite dramatically, and we shouldn't be indicating that those different representations have the same strong ETag.  Unless we want to create URL patterns to express all of those, it's not even clear to me how a client could make a POST to update a resource with an ETag based on a combinations of headers, and also provide those headers so we could figure out if they match or not.  So I think weak ETags better represent our actual behavior now and resolve the issues from the spec you bring up.</p>
+
+<p>2. If we are using weak ETags, then this question really hinges on what the state of an object is, and whether inbound links are part of it or not.  They are definitely usefully-related (hence the Prefer header to retrieve them with the resource).  But I think there's a strong case that they aren't part of the state of the resource itself, and are only part of the state of the linking resource instead.</p></div></div>
+<div class="comment" id="comment-15274"><div class="by">A. Soroka, 2015-09-23 13:32 UTC</div><div class="text"><p>At most, inbound links <em>from within the particular repository</em> are of interest here. How can the state of an object depend on whether random people somewhere else in the world have made links to it?</p>
+
+<p>I don't think inbound links of any kind are part of the object state. Amongst other problems, you could get into authZ entanglements.</p></div></div>
+<div class="comment" id="comment-15278"><div class="by">Unknown, 2015-09-23 18:17 UTC</div><div class="text"><p>Weak ETags++</p></div></div>
+<div class="comment" id="comment-15284"><div class="by">A. Soroka, 2015-09-24 15:45 UTC</div><div class="text"><p>I don't think anyone cares that much about caching triples. I think they care about caching bitstreams. I'd be perfectly happy to just get rid of ETags on RDF Sources.</p></div></div>
+<div class="comment" id="comment-15285"><div class="by">Former user, 2015-09-24 15:49 UTC</div><div class="text"><p>I think the main use for ETags on RDF Sources is preventing conflicting updates from differing clients.  So weak ETags should help with that (since the state of the resource is the important thing).</p>
+
+<p>To the extent that somebody was interested in caching, I imagine they could just use last-modified &#8211; though having last-modified be updated when inbound references change would interfere with that, making it look like a resource had changed when in fact only the links to it had.</p></div></div>
+<div class="comment" id="comment-15286"><div class="by">A. Soroka, 2015-09-24 15:51 UTC</div><div class="text"><p>Has that really been an issue? Conflicting updates?</p></div></div>
+<div class="comment" id="comment-15288"><div class="by">Former user, 2015-09-24 15:57 UTC</div><div class="text"><p>justin has raised it as an issue several times &#8211; that the changing ETag on resources that are linked to from a bunch of other resources makes them hard to update.</p></div></div>
+<div class="comment" id="comment-15291"><div class="by">A. Soroka, 2015-09-24 16:06 UTC</div><div class="text"><p>Right, so removing ETags (and relying on the upper layers to sort out update ordering) would solve that, wouldn't it?</p></div></div>
+<div class="comment" id="comment-15294"><div class="by">Former user, 2015-09-24 16:11 UTC</div><div class="text"><p>I think weak ETags are a good way of preventing multiple separate clients from updating the same resource and overwriting each other's changes.  The clients could coordinate some other way, of course.</p></div></div>
+<div class="comment" id="comment-15295"><div class="by">A. Soroka, 2015-09-24 16:17 UTC</div><div class="text"><p>I don't think we have a good sense of how expensive weak ETags are. If they include inbound links from other repository resources, that will require some computation server-side. For our reference implementation, that might be unproblematic or terrible or in-between depending on MODE. But we are changing the API here. If we say that weak ETags include inbound links, then anyone who does Fedora will have to do that, even if it is extremely hard. I'm not sure this a good requirement.</p></div></div>
+<div class="comment" id="comment-15296"><div class="by">Former user, 2015-09-24 16:23 UTC</div><div class="text"><p>I completely agree that we're changing the API.  The current behavior is strong ETags, which change with inbound links.  The strong ETags are pretty clearly wrong for RDF sources, since they should be different for different formats, Prefer headers, etc.  The inbound link aspect is problematic, and arguably incorrect as well (since we seem to agree that inbound links don't change the state).</p>
+
+<p>Right now, the ETags are based on MODE's last modified property, which changes with inbound link changes.  I don't know if it's possible to get a last modified property that doesn't include inbound link changes, or if we'd need to maintain our own last-modified property.  Of course, there may also be some way to generate a weak ETag some other way.  That idea has been brought up a few times, and I don't remember hearing any good alternatives to last-modified.</p></div></div>
+<div class="comment" id="comment-15350"><div class="by">Esmé Cowles, 2015-09-29 20:42 UTC</div><div class="text"><p>I've made some progress towards using a userspace last-modified property instead of jcr:lastModified:</p>
+
+<p><a href="https://github.com/escowles/fcrepo4/tree/lastmod" class="external-link" rel="nofollow noreferrer">https://github.com/escowles/fcrepo4/tree/lastmod</a></p>
+
+<p>The primary use case works (I can create inbound links to a resource without its ETag or Last-Modified headers changing).  But there are some test failures related to the new fedora:lastModified property being server-managed.</p></div></div>
+<div class="comment" id="comment-15442"><div class="by">Esmé Cowles, 2015-10-12 21:36 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/917" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/917</a></p></div></div>
+<div class="comment" id="comment-15525"><div class="by">Andrew Woods, 2015-10-19 21:58 UTC</div><div class="text"><p>Looks good, pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-15534"><div class="by">Esmé Cowles, 2015-10-20 14:38 UTC</div><div class="text"><p>I've addressed your code review comments with a new commit: <a href="https://github.com/escowles/fcrepo4/commit/31ac833e5b2fa5daf2407cd7fa2ff928924a8b39" class="external-link" rel="nofollow noreferrer">https://github.com/escowles/fcrepo4/commit/31ac833e5b2fa5daf2407cd7fa2ff928924a8b39</a></p></div></div>
+<div class="comment" id="comment-15536"><div class="by">Andrew Woods, 2015-10-20 16:42 UTC</div><div class="text"><p>Esmé Cowles, what was your response to:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/917#issuecomment-149355239" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/917#issuecomment-149355239</a></p></div></div>
+<div class="comment" id="comment-15547"><div class="by">Andrew Woods, 2015-10-20 18:55 UTC</div><div class="text"><p>Sorry for the repeated iteration on this, but in further testing I see that creating a Binary resource results in a "fedora:lastModified" property on the fcr:metadata - Good. However, if I replace the binary with a new file, the "fedora:lastModified" does not change. It would be good to ensure that we have an integration test for this scenario as well.</p></div></div>
+<div class="comment" id="comment-15569"><div class="by">Esmé Cowles, 2015-10-27 12:59 UTC</div><div class="text"><p>I've updated <a href="https://github.com/fcrepo4/fcrepo4/pull/917" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/917</a> to update the last-modified property when binary content is updated, and updated an existing IT to check that scenario.</p></div></div>
+<div class="comment" id="comment-15616"><div class="by">Andrew Woods, 2015-10-29 23:04 UTC</div><div class="text"><p>On hold for feedback from Esmé Cowles.</p></div></div>
+<div class="comment" id="comment-15705"><div class="by">Esmé Cowles, 2015-11-02 14:03 UTC</div><div class="text"><p>I've created a design page with a list of the actions that should result in updating the last-modified date:</p>
+
+<p><a href="https://wiki.duraspace.org/display/FF/Design+-+Last-Modified+Property" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+Last-Modified+Property</a></p>
+
+<p>Once we have agreement on that list, we should review the IT coverage and verify that the behavior is correct and verified by ITs.</p></div></div>
+<div class="comment" id="comment-15826"><div class="by">Esmé Cowles, 2015-11-12 21:22 UTC</div><div class="text"><p>After a little more digging, I think the option of removing the reciprocal links won't work: it looks like the jcr:lastModified property gets updated when there are inbound links anyway.  See this (failing) test:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/f152b17311ff1e2f7706dfc44e1173448ae5a9c0#diff-436d6e185b1f02b980735f0cff5b1020R230" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f152b17311ff1e2f7706dfc44e1173448ae5a9c0#diff-436d6e185b1f02b980735f0cff5b1020R230</a></p></div></div>
+<div class="comment" id="comment-15827"><div class="by">Andrew Woods, 2015-11-12 21:27 UTC</div><div class="text"><p>It was a promising lead. Is the ModeShape reference causing the update?</p></div></div>
+<div class="comment" id="comment-15836"><div class="by">Esmé Cowles, 2015-11-13 19:39 UTC</div><div class="text"><p>I assume the Modeshape reference is causing the update.  Maybe Modeshape stored reciprocal links like we do?</p></div></div>
+<div class="comment" id="comment-16531"><div class="by">Unknown, 2016-04-16 17:56 UTC</div><div class="text"><p>Referencing comment in <a href="https://jira.duraspace.org/browse/FCREPO-1498" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1498</a> &#8211; I have what appears to be a working implementation of this. I will hold off on the PR until after the 4.5.1 release-related changes are merged back into master.</p></div></div>
+<div class="comment" id="comment-16621"><div class="by">Unknown, 2016-05-03 14:37 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1033" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1033</a></p>
+
+<p>Related issue: <a href="https://jira.duraspace.org/browse/FCREPO-1498" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1498</a></p></div></div>
+<div class="comment" id="comment-16674"><div class="by">Andrew Woods, 2016-05-18 16:23 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-16686"><div class="by">Andrew Woods, 2016-05-19 18:13 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975</a></p></div></div>
+<div class="comment" id="comment-16700"><div class="by">Michael Durbin, 2016-05-20 02:44 UTC</div><div class="text"><p>The original completion of this issue impacted role based access controls... a fix is included in this PR.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/1039" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1039</a></p></div></div>
+<div class="comment" id="comment-16702"><div class="by">Andrew Woods, 2016-05-20 03:16 UTC</div><div class="text"><p>Pending response to code review comment.</p></div></div>
+<div class="comment" id="comment-16727"><div class="by">Michael Durbin, 2016-05-23 20:06 UTC</div><div class="text"><p>I've addressed the comments and discussion with an additional commit.</p></div></div>
+<div class="comment" id="comment-16728"><div class="by">Andrew Woods, 2016-05-23 23:50 UTC</div><div class="text"><p>Looks good... pending response to code review.</p></div></div>
+<div class="comment" id="comment-16730"><div class="by">Michael Durbin, 2016-05-24 00:51 UTC</div><div class="text"><p>Ok... I believe I've addressed the comments.</p></div></div>
+<div class="comment" id="comment-16733"><div class="by">Unknown, 2016-05-24 09:26 UTC</div><div class="text"><p>Merged follow-on into master via <a href="https://github.com/fcrepo4/fcrepo4/commit/8daa68da2b9c52ab19ef94c6f1b61d896afe05f5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8daa68da2b9c52ab19ef94c6f1b61d896afe05f5</a></p></div></div>
+<p><a href="data/FCREPO-1742.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

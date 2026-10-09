@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2028 Make fcrepo-connector-file module optional</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2028</span> Make fcrepo-connector-file module optional</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-05-19 18:05 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:54 UTC</td></tr><tr><th>Resolved</th><td>2016-09-19 22:14 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr><tr><th>Labels</th><td>modularity</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1992.html">FCREPO-1992</a> Move fcrepo-connector-file module to fcrepo4-labs git repo</td></tr></table>
+<h2>Description</h2>
+<p>This task is to make the Federation capability optionally by moving it into fcrepo4-exts and building it into fcrepo-webapp-plus.<br/>
+Additinally, the wiki documentation should be updated to indicate that Federation is not core, and available as an optional module.</p>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-16901"><div class="by">Andrew Woods, 2016-06-23 23:53 UTC</div><div class="text"><p>Jared Whiklo, here is a patch for allowing "-Paudit" to build:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...awoods:fcrepo-2028" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...awoods:fcrepo-2028</a></p></div></div>
+<div class="comment" id="comment-16902"><div class="by">Jared Whiklo, 2016-06-24 03:18 UTC</div><div class="text"><p>Thanks Andrew Woods, I did finally get that part. I am having trouble included those tests with this profile. </p>
+
+<p>My attempt is here:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...whikloj:FCREPO-2028?expand=1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...whikloj:FCREPO-2028?expand=1</a></p>
+
+<p>I'm think I probably need to leave the tests in place but exclude them by default and include them in the connector-file profile.</p></div></div>
+<div class="comment" id="comment-16903"><div class="by">Andrew Woods, 2016-06-24 13:19 UTC</div><div class="text"><p>Related PRs:<br/>
+Remove fcrepo-connector-file from core codebase:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1056" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1056</a></p></div></div>
+<div class="comment" id="comment-16957"><div class="by">Jared Whiklo, 2016-07-05 00:52 UTC</div><div class="text"><p>Andrew Woods,</p>
+
+<p>I found that if I use</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;systemProperty&gt;
+   &lt;name&gt;fcrepo.modeshape.configuration&lt;/name&gt;
+   &lt;value&gt;${fcrepo.modeshape.configuration}&lt;/value&gt;
+&lt;/systemProperty&gt;
+</pre>
+</div></div>
+
+<p>within the jetty-maven-plugin configuration (with the property defined in the pom.xml) it doesn't set it. Instead I see something like</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[DEBUG]   (s) systemProperty = org.eclipse.jetty.maven.plugin.SystemProperty@4a2891d1
+[DEBUG]   (s) name = fcrepo.modeshape.configuration
+[DEBUG]   (s) systemProperty = org.eclipse.jetty.maven.plugin.SystemProperty@7b6d88d1
+</pre>
+</div></div>
+
+<p>So if I change it to</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;systemProperty&gt;
+   &lt;name&gt;fcrepo.modeshape.configuration&lt;/name&gt;
+   &lt;value&gt;${project.basedir}/src/test/resources/config/test_repository.json&lt;/value&gt;
+&lt;/systemProperty&gt;
+</pre>
+</div></div>
+
+<p>I see it gets set properly:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[DEBUG]   (s) systemProperty = org.eclipse.jetty.maven.plugin.SystemProperty@4a2891d1
+[DEBUG]   (s) name = fcrepo.modeshape.configuration
+[DEBUG]   (s) value = /sw/var/www/fcrepo4/fcrepo-webapp-plus/src/test/resources/config/test_repository.json
+[DEBUG]   (s) systemProperty = org.eclipse.jetty.maven.plugin.SystemProperty@7b6d88d1
+</pre>
+</div></div>
+
+<p>But then it tells me the file doesn't exist, even though it does.</p>
+
+<p>I also tried</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;systemProperty&gt;
+   &lt;name&gt;fcrepo.modeshape.configuration&lt;/name&gt;
+   &lt;value&gt;classpath:/config/test_repository.json&lt;/value&gt;
+&lt;/systemProperty&gt;
+</pre>
+</div></div>
+
+<p>It also cannot locate the file.</p>
+
+<p>Maybe this is due to <br/>
+<tt>contextPath = /</tt><br/>
+but I'm not sure what it should be? </p>
+
+<p>Hints, or suggestions appreciated. I hate leaning on you for maven stuff, but I really don't get it.</p></div></div>
+<div class="comment" id="comment-16963"><div class="by">Andrew Woods, 2016-07-05 14:10 UTC</div><div class="text"><p>Without seeing the details of your server log it is a bit tricky to say definitively, but have you tried:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;systemProperty&gt;
+   &lt;name&gt;fcrepo.modeshape.configuration&lt;/name&gt;
+   &lt;value&gt;classpath:${project.basedir}/src/test/resources/config/test_repository.json&lt;/value&gt;
+&lt;/systemProperty&gt;
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16970"><div class="by">Jared Whiklo, 2016-07-06 18:07 UTC</div><div class="text"><p>Yeah, sorry.</p>
+
+<p>I'm bowing out, I don't want my lack of Maven skills to delay the 4.6 release.</p>
+
+<p>My work up to now is all here <a href="https://github.com/whikloj/fcrepo-webapp-plus/tree/FCREPO-2028" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo-webapp-plus/tree/FCREPO-2028</a>, for what it is worth...</p></div></div>
+<div class="comment" id="comment-16976"><div class="by">Jared Whiklo, 2016-07-07 18:36 UTC</div><div class="text"><p>A. Soroka: For the requested warning, would something like<br/>
+<b>FedoraFileSystemConnector will be removed from the core of Fedora and packaged in fcrepo-webapp-plus in the next release.</b><br/>
+be adequate and correct?</p></div></div>
+<div class="comment" id="comment-16977"><div class="by">A. Soroka, 2016-07-07 18:37 UTC</div><div class="text"><p>I think so. Andrew Woods?</p></div></div>
+<div class="comment" id="comment-16980"><div class="by">Andrew Woods, 2016-07-07 19:12 UTC</div><div class="text"><p>That text looks good... if we are committing to this work being in the next release. I did not hear any volunteers for that task on today's call. Therefore, I would change the text to something like "Warning: FedoraFileSystemConnector ... in a coming release".</p></div></div>
+<div class="comment" id="comment-16981"><div class="by">Jared Whiklo, 2016-07-07 19:20 UTC</div><div class="text"><p>I was more concerned that it was going to hold up a release, but if there is no deadline for my buffonery I'll continue trying to get it working.</p>
+
+<p>But based on the "...my buffonery..." part of my previous statement, I will vacillate in the message.</p></div></div>
+<div class="comment" id="comment-16982"><div class="by">Jared Whiklo, 2016-07-07 19:23 UTC</div><div class="text"><p>PR for logger message: <a href="https://github.com/fcrepo4/fcrepo4/pull/1065" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1065</a></p></div></div>
+<div class="comment" id="comment-17025"><div class="by">Andrew Woods, 2016-07-13 00:00 UTC</div><div class="text"><p>Jared Whiklo, This needs some clean-up (particularly `AbstractResourceIT`), but it should be enough to get you going again.<br/>
+<a href="https://github.com/whikloj/fcrepo-webapp-plus/pull/3" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo-webapp-plus/pull/3</a></p>
+
+<p>Let me know if you need any help.</p></div></div>
+<div class="comment" id="comment-17551"><div class="by">Jared Whiklo, 2016-09-18 01:00 UTC</div><div class="text"><p>fcrepo4 - <a href="https://github.com/fcrepo4/fcrepo4/pull/1056" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1056</a><br/>
+fcrepo-webapp-plus - <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/49" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/49</a><br/>
+file connector repo - <a href="https://github.com/whikloj/fcrepo-connector-file" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo-connector-file</a></p></div></div>
+<div class="comment" id="comment-17563"><div class="by">Andrew Woods, 2016-09-19 22:14 UTC</div><div class="text"><p>Resolved with:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/edcd18a9826f288038239f332c9c5c2b14e75c75" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/edcd18a9826f288038239f332c9c5c2b14e75c75</a></li>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/fe6c6e9dcf719ba9ef6003618943add10d7108c3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/fe6c6e9dcf719ba9ef6003618943add10d7108c3</a></li>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-connector-file" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-connector-file</a></li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-2028.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3359 Concurrent creation of objects fails in transactions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3359</span> Concurrent creation of objects fails in transactions</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2020-06-26 20:09 UTC</td></tr><tr><th>Updated</th><td>2020-06-30 19:55 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.5, Fedora 5.1.0</td></tr></table>
+<h2>Description</h2>
+<p>Multiple requests attempting to create new objects in pairtrees where pairtree components share the same name can result in generating invalid pairtree names. For example, the following operations can produce the issue:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+PUT http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/base
+</span>start tx:1
+
+PUT http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/tx:1/base/path/to/myobj1
+</span>
+start tx:2
+
+PUT http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/tx:2/base/path/to/myobj2
+</span>
+commit tx:1 and tx:2
+</pre>
+</div></div>
+<p>If the two commits are concurrent, then the result can be the following resources being created:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/base/path/to/myobj1
+</span>
+http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/base/path[2]/to/myobj2</span>
+</pre>
+</div></div>
+<p>The issue can be reproduced with the following integration test:</p>
+
+<p><a href="https://gist.github.com/bbpennel/c5684c114586c257e57e54bbfcb0ee0b" class="external-link" rel="nofollow noreferrer">https://gist.github.com/bbpennel/c5684c114586c257e57e54bbfcb0ee0b</a></p>
+
+<p>Attempting to perform modification operations on either myobj1 or myobj2 will produce variations on the following error (exact stacktrace depends on the operation):</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -XPUT http:<span class="code-comment">//localhost:8080/d61a4b67-fe3d-4807-b03a-cc121234b877/path/to/obj2/child
+</span>
+javax.jcr.nodetype.ConstraintViolationException: Cannot find a definition <span class="code-keyword">for</span> a child named <span class="code-quote">'{}path'</span> on the node at <span class="code-quote">'/d61a4b67-fe3d-4807-b03a-cc121234b877'</span> with primary type <span class="code-quote">'nt:folder'</span> and mixin types: [fedora:Container,fedora:Resource,ldp:BasicContainer]
+	at org.modeshape.jcr.AbstractJcrNode.nodeDefinition(AbstractJcrNode.java:2913)
+	at org.modeshape.jcr.AbstractJcrNode.getDefinition(AbstractJcrNode.java:2837)
+	at org.modeshape.jcr.AbstractJcrNode.isCheckedOut(AbstractJcrNode.java:3220)
+	at org.modeshape.jcr.AbstractJcrNode.addChildNode(AbstractJcrNode.java:1133)
+	at org.modeshape.jcr.AbstractJcrNode.addNode(AbstractJcrNode.java:1074)
+	at org.modeshape.jcr.AbstractJcrNode.addNode(AbstractJcrNode.java:988)
+	at org.modeshape.jcr.AbstractJcrNode.addNode(AbstractJcrNode.java:102)
+	at org.modeshape.jcr.api.JcrTools.findOrCreateNode(JcrTools.java:437)
+	at org.modeshape.jcr.api.JcrTools.findOrCreateNode(JcrTools.java:377)
+	at org.fcrepo.kernel.modeshape.services.AbstractService.findOrCreateNode(AbstractService.java:67)
+	at org.fcrepo.kernel.modeshape.services.ContainerServiceImpl.findOrCreate(ContainerServiceImpl.java:78)
+	at org.fcrepo.http.api.FedoraLdp.createFedoraResource(FedoraLdp.java:802)
+	at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:438)
+...
+
+</pre>
+</div></div>
+<p>You can produce similar outcomes with DELETE and MOVE operations, probably POST as well. Performing a GET directly against "path<span class="error">&#91;2&#93;</span>" will throw an error if WebAC is turned on, due to an encoding issue with the brackets.</p>
+
+<p>Note: the basic container "base" (or "d61a4b67-fe3d-4807-b03a-cc121234b877" in the example above) was not necessary to produce the sibling count indexed pair trees. However, if I placed the pair tree at the root of the repository, no exceptions were thrown when performing operations on objects in the pair tree.</p>
+
+<p>This is the same issue as <a href="https://jira.lyrasis.org/browse/FCREPO-2086" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-2086</a> where the resolution explicitly does not cover transactions.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21298"><div class="by">Ben Pennell, 2020-06-26 22:27 UTC</div><div class="text"><p>While objects like this can be difficult to deal with, it does seem that if you perform a MOVE directly against indexed pair tree nodes you can rename them to something without the index, and then interact with the path. For example:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -X MOVE -H <span class="code-quote">"Destination: http:<span class="code-comment">//localhost:8181/fcrepo/<span class="code-keyword">rest</span>/deposits/a9_2"</span> <span class="code-quote">"http://localhost:8181/fcrepo/<span class="code-keyword">rest</span>/deposits/a9%5B2%5D"</span></span>
+</pre>
+</div></div>
+<p>Succeeds but sometimes returns the message "There is no node that will serve as the parent of the moved item". You can then move anything contained within that path to the correct path. If WebAC is enabled, then it may require encoding the characters here (this breaks some tests):</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/fcrepo-5.1.0/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACFilter.java#L190" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/fcrepo-5.1.0/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACFilter.java#L190</a></p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-object">String</span> requestUrl = httpRequest.getRequestURL().toString();
+requestUrl = requestUrl.replace(<span class="code-quote">"["</span>, <span class="code-quote">"%5B"</span>).replace(<span class="code-quote">"]"</span>, <span class="code-quote">"%5D"</span>);
+</pre>
+</div></div>
+<p>As otherwise URI.create will fail on unencoded []s.</p></div></div>
+<div class="comment" id="comment-21300"><div class="by">Ben Pennell, 2020-06-30 19:55 UTC</div><div class="text"><p>I've put together a tool to automate locating and fixing the names of resources in pairtrees with same name siblings. Its not perfect, for instance it will create a basic container instead of a pairtree in some situations since I was unable to create empty pairtrees:</p>
+
+<p><a href="https://github.com/UNC-Libraries/fedora-repair-siblings" class="external-link" rel="nofollow noreferrer">https://github.com/UNC-Libraries/fedora-repair-siblings</a></p></div></div>
+<p><a href="data/FCREPO-3359.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-571 Custom db - SQL Interface on Fedora objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-571</span> Custom db - SQL Interface on Fedora objects</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Lodewijk Bogaards</td></tr><tr><th>Created</th><td>2009-11-06 20:07 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>For speed reasons we wanted a database that contains a part of the information Fedora contains in its foxml objects. We had considered gSearch and tried Mulgara, but came into problems. I longed for a database, as they are best for the kind of use-case we were saddled with. I came up with an idea and looked at Fedora's ability to do this for the dublin core datastream. I figured that it would be easy to extend that feature a bit, so that Fedora might do it for any kind of metadata. This was indeed not too difficult and with a few extra classes and a only a few changes of the original code this was realised. </p>
+
+<p>The idea is that DefaultDOManager.dbspec is extended with this line:</p>
+
+<p>    &lt;include href="server/config/custom-db.xml" /&gt;</p>
+
+<p>Then in that file under the Fedora home config dir you can put your own database schema, which is an extension of the database schema used in the dbspec<br/>
+file. Of course you may then also add more include statements to the custom-db.xml file, so that you may configure parts of the database in separate files.</p>
+
+<p>In the dbspec files the main setup is of tables which have columns. I have added values to those columns through defining value getters. Currently I have implemented only once such value getter that uses an xPath expression. The expression retrieves from the foxml or from a datastream of the foxml one or more values. This values getting code does not necessarily run for all digital objects. It is possible to choose one or more content models and/or datastream ids that must be present for the tables to be updated by the digital object, thus allowing for a tables to be updated only by a specific kind of digital object. Here is an example of table with two columns (not necessarily a practical example):</p>
+
+<p>&lt;table name="easyFiles" contentModel="info:fedora/fedora-system:easyfile"<br/>
+datastreamId="file"&gt;</p>
+
+<p>  &lt;column name="pid" type="varchar(64)" notNull="true" index="easyfile_pid" binary="true"&gt;<br/>
+	&lt;comment&gt;The PID of the file object. Primary key of this table.&lt;/comment&gt;<br/>
+    &lt;/column&gt;</p>
+
+<p>    &lt;column name="filename" type="varchar(256)" notNull="true" index="filename"<br/>
+default="-"&gt;<br/>
+        &lt;value&gt;<br/>
+             &lt;valuegetter type="xPath" xPath="//easyfile:filename" nsPrefix="easyfile" nsUri="http://easy.dans.knaw.nl/files" delimiterType="row" /&gt;<br/>
+          &lt;/value&gt;<br/>
+&lt;/column&gt;</p>
+
+<p>A table with the name "easy_files"  is made that is filled for the digital obejcts that have the content model "info:fedora/fedora-system:easyfile" and have a datastream "file". The xPath expression "//easyfile:filename" runs over the file datastream and puts its values in the "filename" column. If multiple values are found it delimits those values by creating multiple rows (silly example I know).  The pid column must be present and is the only hardcoded column. It is maintained by the custom-db code.</p>
+
+<p>As said before an xPath expression may return several values. For that two kinds of delimiters may be used. A row delimiter (meaning several rows are created for each value) and a normal delimiter (meaning a string value, by default a comma, is inserted after every value). Also a values tag may contain several valuegetter tags, which can be delimited in the same two ways.<br/>
+If two columns return two rows each those two column values are added together as one row. A possibility would be to add valuegetters for the second row that return a default value for that row if nothing was found, thus creating the possibility of composing rows almost any which way one wants.Of course one might also choose to use different types of valuegetters next to each other, but currently there is only the xPath implementation. The xPath implementation will typically cover most cases where somebody just wants to retrieve some basic information about their digital objects from a database. However, other types of implementations would be necessary if one would want to work with hierarchical data. </p>
+
+<p>A pid must always be present, but does not need to be the primary key (primaryKey attribute of the table). It is up to the user how the data is composed into tables. Foreign keys may also be defined, though I found that I needed to fix a small bug in the code for this too work for PostgreSQL, since this code probably had been lying dormant in Fedora for years. I have tested this only with PostgreSQL, so I do not know if the Fedora code base has any more such bugs. My code did not need any addition to the Fedora database code except for this bugfix.<br/>
+One other advantage of having primary keys, foreign keys and also the notNull attribute is that if the values gotten from the foxml do not correspond to your database schema the database will thrown an exception which then makes it impossible to ingest the object. This is a free kind of data validation, though, admittedly, a bit weak. However using Fedora to do your database housekeeping is much more reliable than doing it yourself. If it gets in Fedora it gets into your database and if it didn't get in Fedora it didn't get into the database.  It's almost impossible for Fedora and the database to get out of sync. And if they do for some magical reason (get out of sync) one can still rebuild the database with the Fedora rebuild tool.</p>
+
+<p>So with this simple system it is possible to do almost any kind of database synchronization based on Fedora data. I have seen many projects based on<br/>
+Fedora that employ a database alongside Fedora in order to speed up the querying process. I therefore think this might be useful for many such projects.</p>
+
+<p>An extension to this would be possible through the search interface that comes with Fedora. It could be made to search through tables that the user defines. This wouldn't be a replacement of gSearch, but a simple alternative for those who need to achieve results quick. This was not needed for our project, since we use gSearch, so I have not taken the liberty to do so. </p>
+
+<p>The attached source is based on the released source of Fedora 3.2.1. The code has been documented, optimized (for not doing the same stuph more than once) and tested (though unit tests are missing). The gist of it can be found under fedora.server.customdb. </p>
+
+<p>Last but not least it should be mentioned that we use this feature already and have seen no problems with it so far. It also does not interfere in anyway with the normal functioning of Fedora. If one does not put anything in custom-db.xml then Fedora does not touch the custom-db code at all, so deciding to adopt this feature into the Fedora codebase does not endanger the overall project at all. </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-571/10068_src.zip">src.zip</a>, 13826813 bytes, added by Lodewijk Bogaards on 2009-11-06</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11111"><div class="by">Chris Wilper, 2009-11-24 20:59 UTC</div><div class="text"><p>This has been in the received state for a while; we still have to make the decision among the committers on whether the feature should go in the baseline.  I personally haven't had time to look at it in detail, but hope to get an opportunity sometime after the upcoming release.</p>
+
+<p>By the way, I noticed that this is on the agenda to talk about at the Fedora-UK&amp;I&amp;EU Meeting on December 8th:<br/>
+<a href="https://fedora-commons.org/confluence/pages/viewpage.action?pageId=13762803" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/confluence/pages/viewpage.action?pageId=13762803</a></p>
+
+<p>If there's any kind of additional material developed for that talk/presentation, please attach it (or link to it).</p>
+
+<p>Thanks,<br/>
+Chris</p></div></div>
+<div class="comment" id="comment-11200"><div class="by">Lodewijk Bogaards, 2010-01-04 13:47 UTC</div><div class="text"><p>This functionality has been presented at the Fedora EU meeting in Oxford on the 8th of December. In the mean time a manual has been written and the functionality extended a little and optimized a bit further.</p>
+
+<p>The manual, the presentation with the example and the updated source can be found here:</p>
+
+<p><a href="http://tinyurl.com/yh3srk2" class="external-link" rel="nofollow noreferrer">http://tinyurl.com/yh3srk2</a> (see the attachments at the bottom of the page)</p>
+
+<p>I hope somebody will be able to give it a look and see if this can become part of the next Fedora version.</p></div></div>
+<div class="comment" id="comment-12833"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-571.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

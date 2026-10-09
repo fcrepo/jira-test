@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1928 PUT request should default to Prefer:handling=lenient</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1928</span> PUT request should default to Prefer:handling=lenient</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Created</th><td>2016-02-25 15:44 UTC</td></tr><tr><th>Updated</th><td>2017-05-17 14:00 UTC</td></tr><tr><th>Resolved</th><td>2016-09-08 22:54 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Sub-tasks</th><td><a href="FCREPO-1941.html">FCREPO-1941</a> Determine the drawbacks, if any, of defaulting to lenient handling of PUT updates</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2432.html">FCREPO-2432</a> Optionally Update Server Managed Triples</td></tr></table>
+<h2>Environment</h2>RHEL 6, Tomcat7, fcrepo 4.5.0
+<h2>Description</h2>
+<p>PUT request with non server-managed triples in payload fails.</p>
+
+<p>Steps to reproduce:</p>
+
+<p>$ curl -i -X PUT <a href="https://lmyrepo.edu/fcrepo/rest/test/testput" class="external-link" rel="nofollow noreferrer">https://lmyrepo.edu/fcrepo/rest/test/testput</a> <br/>
+HTTP/1.1 201 Created<br/>
+Date: Thu, 25 Feb 2016 15:27:46 GMT<br/>
+Server: Apache-Coyote/1.1<br/>
+ETag: "e74f03e5f3a1784d15decb8eefec68f7bd281af3"<br/>
+Last-Modified: Thu, 25 Feb 2016 15:27:46 GMT<br/>
+Location: <a href="https://myrepo.edu/fcrepo/rest/test/testput" class="external-link" rel="nofollow noreferrer">https://myrepo.edu/fcrepo/rest/test/testput</a><br/>
+Content-Type: text/plain; charset=UTF-8<br/>
+Content-Length: 55<br/>
+Connection: close</p>
+
+<p><a href="https://myrepo.edu/fcrepo/rest/test/testput" class="external-link" rel="nofollow noreferrer">https://myrepo.edu/fcrepo/rest/test/testput</a></p>
+
+<p>$ curl -i -X PUT -H'Content-Type:text/turtle' --upload-file minimal.ttl <a href="https://myrepo.edu/fcrepo/rest/test/testput" class="external-link" rel="nofollow noreferrer">https://myrepo.edu/fcrepo/rest/test/testput</a> <br/>
+HTTP/1.1 100 Continue</p>
+
+<p>HTTP/1.1 100 Continue</p>
+
+<p>HTTP/1.1 409 Conflict<br/>
+Date: Thu, 25 Feb 2016 15:27:51 GMT<br/>
+Server: Apache-Coyote/1.1<br/>
+Link: &lt;<a href="https://myrepo.edu/static/constraints/ServerManagedTypeException.rdf" class="external-link" rel="nofollow noreferrer">https://myrepo.edu/static/constraints/ServerManagedTypeException.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Content-Type: text/plain; charset=UTF-8<br/>
+Content-Length: 112<br/>
+Connection: close</p>
+
+<p>The repository type (<a href="http://fedora.info/definitions/v4/repository#Container" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Container</a>) of this resource is system managed.</p>
+
+<p>Content of 'minimal.ttl':</p>
+
+<p>@prefix xsd: &lt;<a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a>&gt; .<br/>
+@prefix dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .<br/>
+&lt;&gt; dc:title "Hello"^^xsd:string .</p>
+
+<p>For what I understand, omitting server-managed properties for an existing resource should just leave those properties unchanged, right?  </p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-16219"><div class="by">Andrew Woods, 2016-02-29 17:05 UTC</div><div class="text"><p>scossu, per the LDP spec (<a href="https://www.w3.org/TR/ldp/#h-ldpr-gen-pubclireqs" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldpr-gen-pubclireqs</a>), this functionality was changed in 4.3.0.</p>
+<ul>
+	<li><a href="https://wiki.duraspace.org/display/FF/Fedora+4.3.0+Release+Notes#Fedora4.3.0ReleaseNotes-StrategicDirection" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Fedora+4.3.0+Release+Notes#Fedora4.3.0ReleaseNotes-StrategicDirection</a></li>
+	<li><a href="https://jira.duraspace.org/browse/FCREPO-1418" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1418</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-16221"><div class="by">scossu, 2016-02-29 17:22 UTC</div><div class="text"><p>Andrew Woods I understand the policy about advertising constraints, but my request did not include any server-managed triples (that I know of), so I am confused about why my request is still failing. What am I doing wrong here?</p></div></div>
+<div class="comment" id="comment-16223"><div class="by">Andrew Woods, 2016-02-29 17:43 UTC</div><div class="text"><p>Excluding triples in the body of a PUT request is an implicit request to remove those triples. Fortunately, now with the completion of the following ticket:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1878" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1878</a></p>
+
+<p>..you can get the full body of a resource at the time of creation with a request like:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -i -XPUT -H<span class="code-quote">"Prefer: <span class="code-keyword">return</span>=representation"</span> -H<span class="code-quote">"Accept: text/turtle"</span> localhost:8080/<span class="code-keyword">rest</span>/collection
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16225"><div class="by">scossu, 2016-02-29 18:31 UTC</div><div class="text"><p>I might have gotten sidetracked by looking at <a href="https://www.w3.org/TR/ldp/#h-ldpr-http_put" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldpr-http_put</a> and specifically at 4.2.4.1 (italics are mine): </p>
+
+<blockquote><p>4.2.4.1 If a HTTP PUT is accepted on an existing resource, LDP servers MUST replace the entire persistent state of the identified resource with the entity representation in the body of the request. <b>LDP servers MAY ignore LDP-server-managed properties</b>, and MAY ignore other properties such as dcterms:modified and dcterms:creator if they are handled specially by the server (for example, <b>if the server overrides the value or supplies a default value</b>). Any LDP servers that wish to support a more sophisticated merge of data provided by the client with existing state stored on the server for a resource MUST use HTTP PATCH, not HTTP PUT. </p></blockquote>
+
+<p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1878" >
+                <a href="FCREPO-1878.html" class="jira-issue-macro-key issue-link"  title="On creation of LDPR, Content-Type is inappropriate to response entity" >
+            
+            FCREPO-1878
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ does not help if I want to update a resource whose metadata I have not cached in the client. In that case I have to perform a GET, parse the triples, filter out the non-server-managed ones, merge in my triples and send a PUT request. </p>
+
+<p>Of course at that point I would be better off with PATCH, but in some cases it is much simpler to just replace all the triples that I am allowed to without knowing anything about the resource in advance. Is there a specific reason why Fedora cannot ignore the server-managed triples altogether and always supply its own values as suggested in the LDP specs? </p></div></div>
+<div class="comment" id="comment-16226"><div class="by">scossu, 2016-02-29 18:35 UTC</div><div class="text"><p>Ah, and more explicitly: </p>
+
+<blockquote><p>4.2.4.2 LDP servers SHOULD allow clients to update resources without requiring detailed knowledge of server-specific constraints. This is a consequence of the requirement to enable simple creation and modification of LDPRs. </p></blockquote></div></div>
+<div class="comment" id="comment-16227"><div class="by">Andrew Woods, 2016-02-29 18:40 UTC</div><div class="text"><p>I have added this to the Thursday tech meeting:<br/>
+<a href="https://wiki.duraspace.org/display/FF/2016-03-03+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2016-03-03+-+Fedora+Tech+Meeting</a></p></div></div>
+<div class="comment" id="comment-16228"><div class="by">scossu, 2016-02-29 19:54 UTC</div><div class="text"><p>Thanks, I will try to make the meeting. </p></div></div>
+<div class="comment" id="comment-16265"><div class="by">Esmé Cowles, 2016-03-03 16:21 UTC</div><div class="text"><p>If you send this Prefer header, then it won't complain if the server-managed triples are omitted:</p>
+
+<p>Prefer: handling=lenient; received="minimal"</p>
+
+<p>I can confirm that this works with a current master build of fcrepo4.</p></div></div>
+<div class="comment" id="comment-17266"><div class="by">Andrew Woods, 2016-08-25 14:45 UTC</div><div class="text"><p>Thanks, Esmé Cowles. <br/>
+scossu, can we close this ticket?</p></div></div>
+<div class="comment" id="comment-17311"><div class="by">scossu, 2016-08-31 20:45 UTC</div><div class="text"><p>Andrew Woods I am not sure about the goal of this ticket related to the title. From what I understand, this was supposed to change the behavior of Fedora so that a request include the "lenient" policy by default. </p>
+
+<p>I have tested this in 4.6.0 and this is not the case, since I still have to explicitly set the header mentioned by Esmé Cowles in order to avoid a 409. </p>
+
+<p>If the scope was not actually to do anything but provide a workaround for the current behavior, I am fine all the same. That solution works for me since we already built that workaround in our clients, but I still think this diverges from the LDP definition I mentioned in <a href="#comment-48443" rel="noreferrer">comment-48443</a>. </p></div></div>
+<div class="comment" id="comment-17314"><div class="by">Andrew Woods, 2016-09-01 03:05 UTC</div><div class="text"><p>scossu, It was a simple experiment to create a PR that sets the default 'Prefer' header on PUT requests to <tt>handling=lenient; received="minimal"</tt>. The resultant situation is exactly symmetrical to the current state. <br/>
+Currently, you get a 409 response if you have not set <tt>Prefer: handling=lenient; received="minimal"</tt> on PUT requests that contain bodies WITHOUT server-managed triples.<br/>
+Changing the default on PUT requests to <tt>Prefer: handling=lenient; received="minimal"</tt>, would result in a 409 response for PUT requests that contain bodies WITH server-managed triples.</p>
+
+<p>The current state supports the non-normative description in: <a href="https://www.w3.org/TR/ldp/#h-ldprs-put-servermanagedprops" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldprs-put-servermanagedprops</a><br/>
+The changed state would support the MAY of: <a href="https://www.w3.org/TR/ldp/#h-ldpr-put-replaceall" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldpr-put-replaceall</a></p>
+
+<p>With an informed use of headers, the current state can support clients that wish to make PUT requests with either minimal or full RDF bodies. <br/>
+In the changed state, it is not clear how full RDF body requests would be supported.</p>
+
+<p>I would recommend we keep the state of Fedora as-is... but it has been added to the agenda: <a href="https://wiki.duraspace.org/display/FF/2016-09-01+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2016-09-01+-+Fedora+Tech+Meeting</a></p></div></div>
+<div class="comment" id="comment-17449"><div class="by">Andrew Woods, 2016-09-08 22:54 UTC</div><div class="text"><p>scossu, we discussed this ticket on today's tech call:<br/>
+<a href="https://wiki.duraspace.org/display/FF/2016-09-08+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2016-09-08+-+Fedora+Tech+Meeting</a></p>
+
+<p>The consensus was that Fedora's current behavior complies with both HTTP's expectations the idempotency of PUT, as well as LDP's expectations around PUT requests.</p>
+
+<p>Regarding: <a href="https://www.w3.org/TR/ldp/#h-ldpr-put-replaceall" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldpr-put-replaceall</a></p>
+<ul class="alternate" type="square">
+	<li>This is a MAY clause that is not supported by Fedora</li>
+</ul>
+
+
+<p>Regarding: <a href="https://www.w3.org/TR/ldp/#h-ldprs-put-servermanagedprops" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldprs-put-servermanagedprops</a> , and specifically the non-normative note:</p>
+<ul class="alternate" type="square">
+	<li>Fedora supports exactly this model.</li>
+</ul>
+
+
+<p>As you have already noted in this ticket, although the behavior you request is not Fedora's default interaction, it is available with the use of <tt>Prefer: handling=lenient; received="minimal"</tt>.</p>
+
+<p>On a related note, if Fedora were to change per this ticket, it would be logically necessary to change the behavior on GET to return user-triples only.</p>
+
+<p>In discussing this topic on today's tech call, it was speculated that your use case is more in line with PATCH usage than PUT... and if so, you may be driven towards PUT due to the cumbersomeness of the SPARQL-Update syntax. But that is speculation.</p>
+
+<p>For now, I am closing this ticket as <tt>Won't Fix</tt>, but please feel free to reopen it if you believe we are missing something in your request.</p></div></div>
+<div class="comment" id="comment-17451"><div class="by">scossu, 2016-09-09 02:31 UTC</div><div class="text"><p>Andrew Woods Thanks for the constructive discussion. I have already left a comment in the tech meeting notes and will mirror that comment here: </p>
+
+<p>What I am trying to do is not "mutating", but rather replacing the whole set of triples with a new one, while letting the server take care of the server-managed triples. My request body is RDF, not SPARQL-UPDATE. If the original resource has a triple with a predicate that my PUT request has not provided, that triple should not be in the resulting resource. Basically when I am PUTting a resource I don't care whether it existed or not previously. </p>
+
+<p>That said, by using the aforementioned Prefer header I can reliably replicate an idempotent behavior, so I am happy to leave this ticket closed especially if changing this to default breaks or impairs some other behavior. </p></div></div>
+<p><a href="data/FCREPO-1928.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

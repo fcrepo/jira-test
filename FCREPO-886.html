@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-886 Validation - validate against local schemata if a system property is set</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-886</span> Validation - validate against local schemata if a system property is set</h1>
+<table class="meta"><tr><th>Type</th><td>Technical task</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-03-22 20:56 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Parent</th><td><a href="FCREPO-713.html">FCREPO-713</a> Responses to various API requests are not schema-valid</td></tr></table>
+<h2>Description</h2>
+<p>If a system property is set (name tbd) then validate against local file copies of schemata rather than online version.  Default should be validation against online schemata</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-11882"><div class="by">Stephen Bayliss, 2011-03-22 20:57 UTC</div><div class="text"><p>Discussed on committer call 2011-03-22 - if it looks like too much effort to implement validation against local copies, instead just disable the validation entirely based on a system property.</p></div></div>
+<div class="comment" id="comment-11884"><div class="by">Stephen Bayliss, 2011-03-22 21:44 UTC</div><div class="text"><p>Example code for validating against filesystem schema:<br/>
+<a href="http://www.edankert.com/validate.html#validate_external_schema_SAX" class="external-link" rel="nofollow noreferrer">http://www.edankert.com/validate.html#validate_external_schema_SAX</a><br/>
+So, we should I think just be able to pass in an array containing all the schemata (eg by walking the directory for xsd files)</p></div></div>
+<div class="comment" id="comment-11893"><div class="by">eddie, 2011-03-29 19:55 UTC</div><div class="text"><p>is this ticket actually a sub-task of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-713" >
+                <a href="FCREPO-713.html" class="jira-issue-macro-key issue-link"  title="Responses to various API requests are not schema-valid" >
+            
+            FCREPO-713
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+?</p></div></div>
+<div class="comment" id="comment-11929"><div class="by">Stephen Bayliss, 2011-04-28 19:50 UTC</div><div class="text"><p>I'm not sure if validating against local schemata will actually work for the "on an aeroplane" situation - I just hit a validation error to do with an xml:lang attribute, presumably because of a connection failure to <a href="http://www.w3.org/XML/1998/namespace" class="external-link" rel="nofollow noreferrer">http://www.w3.org/XML/1998/namespace</a> (though I guess we could download all of the dependent schemata as well).  So being able to turn off validation entirely (as discussed on the call on Apr 26th 2011) would be a good idea in any case.</p></div></div>
+<div class="comment" id="comment-11944"><div class="by">Aaron Birkland, 2011-05-08 00:17 UTC</div><div class="text"><p>I've been trying to get this to work for quite some time.  The source of my consternation seems to be a bug in xerces:<br/>
+<a href="https://issues.apache.org/jira/browse/XERCESJ-1130" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/jira/browse/XERCESJ-1130</a></p>
+
+<p>Basically, one cannot define a Schema using two component Schemas with the same namespace.  </p>
+
+<p>As an example, in order to validate datastream history, two schemas are needed, datastreamHistory.xsd and datastreamProfile.xsd.  They both use the namespace <a href="http://www.fedora.info/definitions/1/0/management/" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/management/</a>.  Due to the bug in Xerces, pseudocode<br/>
+  schema = schemaFactory.newSchema(<span class="error">&#91;datasteamHistory.xsd, datastreamProfile.xsd&#93;</span>) <br/>
+will produce a schema will end up equivalent to:<br/>
+  schema = schemaFactory.newSchema(datastreamProfile.xsd)<br/>
+so you will get an error that no datastreamHistory element can be found.</p>
+
+<p>I cannot find a simple way around this bug.. producing a single schema file by "concatinating" the two might possibly work, but I haven't tried that yet</p>
+
+<p>I believe this still applies to xerces 2.11, but I have not tried it, as neither xerces 2.10 or 2.11 is in Maven central   Very annoying that such a well known and critical apache project can't or won't update their artifacts in maven central.</p>
+
+<p>Maybe we could also find some other implementation of javax.xml.validation.Validator? </p></div></div>
+<div class="comment" id="comment-11945"><div class="by">eddie, 2011-05-08 03:46 UTC</div><div class="text"><p>There's this list of JAXP parsers: <a href="http://www.edankert.com/jaxpimplementations.html" class="external-link" rel="nofollow noreferrer">http://www.edankert.com/jaxpimplementations.html</a></p></div></div>
+<div class="comment" id="comment-11946"><div class="by">Stephen Bayliss, 2011-05-08 11:30 UTC</div><div class="text"><p>For this release I think it would be acceptable to just disable the validation, eg a -Dvalidation.rest.skip=true</p>
+
+<p>Probably a separate JIRA issue for this; and carry forward this ticket to the next release.</p>
+
+<p>Doesn't the /validate method do schema validation - I think against local schemata?</p>
+
+<p>And org.fcrepo.server.validation.DOValidatorXMLSchema looks like it does this.</p></div></div>
+<div class="comment" id="comment-11948"><div class="by">Aaron Birkland, 2011-05-08 19:10 UTC</div><div class="text"><p>I think offline schema validation is effectively impossible for this release given what's available in maven central, so disabling validation is the only plausible approach now.  I've been using -Doffline=true (and/or -Donline=false), and will just leave the offline schema validation disabled in the code.  </p></div></div>
+<div class="comment" id="comment-13121"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-886.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

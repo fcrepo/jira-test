@@ -1,0 +1,92 @@
+Index: src/java/fedora/utilities/install/Distribution.java
+===================================================================
+--- src/java/fedora/utilities/install/Distribution.java	(revision 758)
++++ src/java/fedora/utilities/install/Distribution.java	(revision 759)
+@@ -34,6 +34,7 @@
+ 	public static final String COMMONS_COLLECTIONS;
+ 	public static final String COMMONS_DBCP;
+ 	public static final String COMMONS_POOL;
++	public static final String LOG4J;
+ 	
+ 	private static Properties PROPS;
+ 	static {
+@@ -58,7 +59,7 @@
+         COMMONS_COLLECTIONS = PROPS.getProperty("install.commons.collections");
+         COMMONS_DBCP = PROPS.getProperty("install.commons.dbcp");
+         COMMONS_POOL = PROPS.getProperty("install.commons.pool");
+-        
++        LOG4J = PROPS.getProperty("install.log4j");
+     }
+ 
+     public abstract boolean contains(String path);
+Index: src/java/fedora/utilities/install/InstallOptions.java
+===================================================================
+--- src/java/fedora/utilities/install/InstallOptions.java	(revision 758)
++++ src/java/fedora/utilities/install/InstallOptions.java	(revision 759)
+@@ -34,6 +34,7 @@
+     public static final String APIA_SSL_REQUIRED     = "apia.ssl.required";
+     public static final String APIM_SSL_REQUIRED     = "apim.ssl.required";
+     public static final String SERVLET_ENGINE        = "servlet.engine";
++    public static final String USING_JBOSS			 = "jboss";
+     public static final String TOMCAT_HOME           = "tomcat.home";
+     public static final String FEDORA_ADMIN_PASS     = "fedora.admin.pass";
+     public static final String TOMCAT_SHUTDOWN_PORT  = "tomcat.shutdown.port";
+@@ -144,7 +145,9 @@
+             inputOption(APIM_SSL_REQUIRED);
+         }
+         inputOption(SERVLET_ENGINE);
+-        if (!getValue(SERVLET_ENGINE).equals(OTHER)) {
++        if (getValue(SERVLET_ENGINE).equals(OTHER)) {
++        	inputOption(USING_JBOSS);
++        } else {
+             inputOption(TOMCAT_HOME);
+             inputOption(TOMCAT_HTTP_PORT);
+             inputOption(TOMCAT_SHUTDOWN_PORT);
+Index: src/java/fedora/utilities/install/OptionDefinition.properties
+===================================================================
+--- src/java/fedora/utilities/install/OptionDefinition.properties	(revision 758)
++++ src/java/fedora/utilities/install/OptionDefinition.properties	(revision 759)
+@@ -64,6 +64,13 @@
+ servlet.engine.defaultValue = included
+ servlet.engine.validValues = included existingTomcat other
+ 
++jboss.label = JBoss Application Server
++jboss.description = \
++Will you be using the JBoss Application Server as your Servlet engine?\n\
++If so, we will not include 'log4j' in the WAR.
++jboss.defaultValue = false
++jboss.validValues = true false
++
+ tomcat.home.label = Tomcat home directory
+ tomcat.home.description = \
+ Please provide the full path to your existing Tomcat installation, or  \n\
+Index: src/java/fedora/utilities/install/Installer.java
+===================================================================
+--- src/java/fedora/utilities/install/Installer.java	(revision 758)
++++ src/java/fedora/utilities/install/Installer.java	(revision 759)
+@@ -143,6 +143,12 @@
+ 	        	installJDBCDriver(_dist, _opts, webinfLib);
+ 	        }
+ 
++	        // Remove log4j if using JBoss Application Server
++	        if (container.equals(InstallOptions.OTHER) &&
++	        		_opts.getValue(InstallOptions.USING_JBOSS).equals("true")) {
++	        	new File(webinfLib, Distribution.LOG4J).delete();
++	        }
++
+ 	        File fedoraWar = new File(installDir, Distribution.FEDORA_WAR);
+ 	        Zip.zip(fedoraWar, warStage.listFiles());
+ 	        return fedoraWar;
+Index: src/properties/install.properties
+===================================================================
+--- src/properties/install.properties	(revision 758)
++++ src/properties/install.properties	(revision 759)
+@@ -17,3 +17,4 @@
+ install.commons.collections =	commons-collections-3.1.jar
+ install.commons.dbcp		=	commons-dbcp-1.2.1.jar
+ install.commons.pool		=	commons-pool-1.2.jar
+\ No newline at end of file
++install.log4j				=	log4j-1.2.14.jar
+\ No newline at end of file
+
+ 	  	 

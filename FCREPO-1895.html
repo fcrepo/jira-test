@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1895 acl:agent in WebAC policies should be a URI not a literal</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1895</span> acl:agent in WebAC policies should be a URI not a literal</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-02-05 22:47 UTC</td></tr><tr><th>Updated</th><td>2016-05-26 22:38 UTC</td></tr><tr><th>Resolved</th><td>2016-05-26 22:38 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>The integration tests for the WebAC module use literals to identify acl:agents, but they should use URIs.</p>
+
+<p>See <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/blob/master/src/test/resources/acls/01/authorization.ttl#L4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/blob/master/src/test/resources/acls/01/authorization.ttl#L4</a></p>
+
+<p>If the WebAC module is actually using URIs already, then the tests should be updated to reflect this.</p>
+
+<p>This is intended to align the Fedora and Hydra WebAC usage.  See <a href="https://github.com/projecthydra/hydra-head/issues/313" class="external-link" rel="nofollow noreferrer">https://github.com/projecthydra/hydra-head/issues/313</a> for the Hydra Access Controls ticket created for changes there.</p>
+<h2>Comments (26)</h2>
+<div class="comment" id="comment-16075"><div class="by">Unknown, 2016-02-06 13:10 UTC</div><div class="text"><p>+1 on making those URIs.</p>
+
+<p>Because acl:agent values can be both users or groups, I think it would make sense to have two prefixes. Maybe fcrepo.webac.user.baseUri and fcrepo.webac.group.baseUri? (though maybe there should be an "auth" part of that?). Then, if the value is null, they are treated as strings?</p></div></div>
+<div class="comment" id="comment-16079"><div class="by">Andrew Woods, 2016-02-08 21:03 UTC</div><div class="text"><p>Esmé Cowles, is this ticket coming out of what Hydra currently does? or from a desire to be better aligned with the WebAC "spec"?</p></div></div>
+<div class="comment" id="comment-16080"><div class="by">Esmé Cowles, 2016-02-08 21:11 UTC</div><div class="text"><p>Andrew Woods I opened the ticket mostly to sync with the Hydra practice.  But as I was looking at the WebAC wiki page and ontology, I did notice that the acl:agent predicate wants a foaf:Agent, not a literal.</p></div></div>
+<div class="comment" id="comment-16325"><div class="by">scossu, 2016-03-12 15:23 UTC</div><div class="text"><p>I would be very happy if we could use URIs for agents. Andrew Woods does that preclude the use of literals, which you have built the Fedora specs upon to satisfy the majority of use cases, or can both live in the same implementation? </p></div></div>
+<div class="comment" id="comment-16326"><div class="by">Andrew Woods, 2016-03-12 16:15 UTC</div><div class="text"><p>scossu, I believe support for literals and URIs may be able to coexist... but will defer to Unknown, who had designed it out in the past.</p></div></div>
+<div class="comment" id="comment-16327"><div class="by">Unknown, 2016-03-12 17:24 UTC</div><div class="text"><p>Yes, the implementation that I have in mind for this could easily support literals <em>and</em> URIs.</p></div></div>
+<div class="comment" id="comment-16332"><div class="by">Unknown, 2016-03-13 02:50 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/58" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/58</a></p>
+
+<p>acl:agent values can now be literals or URIs.</p>
+
+<p>We will need a follow-on ticket to update WebAC documentation &#8211; it is necessary to use system properties as baseURIs for users/groups.</p></div></div>
+<div class="comment" id="comment-16336"><div class="by">Unknown, 2016-03-13 17:49 UTC</div><div class="text"><p>scossu I have a potential implementation, allowing the WebAC module to support URIs, but what we really need is a clear use case for this (that is the primary reason it wasn't implemented earlier). If you have a specific use case in mind, could you please add it to <a href="https://wiki.duraspace.org/display/FF/Design+-+WebAccessControl+Authorization+Delegate?" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+WebAccessControl+Authorization+Delegate?</a> In particular, it would be helpful to know if user/group URIs will all have a common baseUri and/or whether the user/group ids will come from the servlet authentication mechanism or whether the value of the effective user will come from an additional header (delegated authN).</p></div></div>
+<div class="comment" id="comment-16338"><div class="by">Andrew Woods, 2016-03-14 13:34 UTC</div><div class="text"><p>Pending community input in the form of use cases.</p></div></div>
+<div class="comment" id="comment-16339"><div class="by">Esmé Cowles, 2016-03-14 13:48 UTC</div><div class="text"><p>If the user/group ids are coming from an external system like Hydra or Islandora, then that system can be responsible for making URIs out of them.  If they are email addresses or usernames from a local system, then they can be made into mailto: URIs, or prefixed with a dummy HTTP prefix that identifies them.  If they are from something like OAuth, then they may already be URIs.</p>
+
+<p>Having a defined baseURI seems more useful when servlet auth layer is being used, and the ids provided are email addresses or usernames, which would usually be the case when using common auth modules like LDAP/AD or JDBC.</p></div></div>
+<div class="comment" id="comment-16340"><div class="by">Unknown, 2016-03-14 14:25 UTC</div><div class="text"><p>The <tt>baseURI</tt> mechanism is designed specifically to address the case of servlet auth and mapping usernames/roles to URIs. For delegated (e.g. header-based) authentication, any URI format can be used by a client, and the current PR fully supports that.</p></div></div>
+<div class="comment" id="comment-16341"><div class="by">scossu, 2016-03-14 15:47 UTC</div><div class="text"><p>Unknown, Andrew Woods: see use case at <a href="https://wiki.duraspace.org/display/FF/AIC+Use+Case%3A+Users+and+Groups+as+URIs+in+a+WebAC+Context" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/AIC+Use+Case%3A+Users+and+Groups+as+URIs+in+a+WebAC+Context</a> </p></div></div>
+<div class="comment" id="comment-16605"><div class="by">Joshua Allan Westgard, 2016-04-29 19:52 UTC</div><div class="text"><p>Am I reading this correctly that the issue has already been fixed and is just waiting to be merged?  Or is the fact that it is "reopened" mean that there is more to do?  We have a use case for alignment of Fedora's and Hydra's WebAC interpretations if that is something that would be helpful. I might be able to make a case for some developer time in the 2nd half of May if there is a need for additional work.</p></div></div>
+<div class="comment" id="comment-16606"><div class="by">Andrew Woods, 2016-04-29 20:37 UTC</div><div class="text"><p>Joshua Allan Westgard, This PR:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/58" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/58</a><br/>
+..adds support for "user" URIs and "group" URIs as long as all of the groups have the same base-URI, and likewise with the users.<br/>
+Since we do not know if that restriction is valid for actual Fedora installations, this PR has been put on hold. <br/>
+Is this assumption valid in the case of UMd?</p></div></div>
+<div class="comment" id="comment-16607"><div class="by">Joshua Allan Westgard, 2016-04-29 21:14 UTC</div><div class="text"><p>It sounds to me like it would be a valid restriction for our current use case &amp; for the foreseeable future, but possibly not forever.  I'm going to call Peter Matthew Eichman's attention to this PR and ask him to review. </p></div></div>
+<div class="comment" id="comment-16636"><div class="by">Esmé Cowles, 2016-05-11 21:04 UTC</div><div class="text"><p>This PR came up at <span class="error">&#91;today&#39;s Hydra Tech call&#93;</span>(<a href="https://wiki.duraspace.org/display/hydra/Hydra+Tech+Call+2016-05-11" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/hydra/Hydra+Tech+Call+2016-05-11</a>).  Hydra is moving forward with aligning with Fedora's WebAC implementation and has beta releases out now.  Is Joshua Allan Westgard's comment enough to move forward with <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/58?" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/58?</a>   </p></div></div>
+<div class="comment" id="comment-16647"><div class="by">Andrew Woods, 2016-05-13 18:37 UTC</div><div class="text"><p>Esmé Cowles, It would be good to hear back from Peter Matthew Eichman on this... but in the absence of that, does PR-58 meet the Hydra use cases? If so, that and Joshua Allan Westgard's comments probably are enough to move forward.</p></div></div>
+<div class="comment" id="comment-16648"><div class="by">Joshua Allan Westgard, 2016-05-13 19:45 UTC</div><div class="text"><p>Thanks for following up on this.  We talked about this question today in a planning meeting.  The consensus was that URIs with all the same base URI would be sufficient for us for now, but it would be good to have Peter Matthew Eichman's assessment based on a full review of the PR, if this can wait until next week. Peter has been assigned to a different project for the past two-week sprint, but will be back on Fedora starting on Monday.</p></div></div>
+<div class="comment" id="comment-16649"><div class="by">Esmé Cowles, 2016-05-13 19:59 UTC</div><div class="text"><p>Joshua Allan Westgard, waiting till next week is no problem.  Thanks for following up on this!</p></div></div>
+<div class="comment" id="comment-16655"><div class="by">Peter Matthew Eichman, 2016-05-16 16:28 UTC</div><div class="text"><p>Andrew Woods, Esmé Cowles, Joshua Allan Westgard, just a heads up, my attention has been called to this and I will be taking a look at it today.</p></div></div>
+<div class="comment" id="comment-16659"><div class="by">Peter Matthew Eichman, 2016-05-16 20:52 UTC</div><div class="text"><p>Andrew Woods, Esmé Cowles, Unknown: After taking a look at PR-58 and conferring with Joshua Allan Westgard, this appears to meet UMD's use cases. However, I am curious how the use of URIs in the ACLs will affect the agent classes defined using foaf:member on foaf:Group resources. Would the objects of those foaf:member properties also have to change to URIs if you used URIs in your ACLs?</p></div></div>
+<div class="comment" id="comment-16664"><div class="by">Unknown, 2016-05-17 00:54 UTC</div><div class="text"><p>Peter Matthew Eichman for acl:agentClass constructs (clearly not with bnodes &#8211; this is just to express the structure), the users defined with foaf:member would all be URIs:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+    &lt;&gt; acl:agentClass [
+        a foaf:Group ;
+        foaf:member &lt;info:umd/user/peter&gt;, &lt;info:umd/user/josh&gt; ]
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16667"><div class="by">Peter Matthew Eichman, 2016-05-17 14:12 UTC</div><div class="text"><p>Unknown: Thanks for the clarification. That was what I expected, and it should work for our (UMD's) purposes.</p></div></div>
+<div class="comment" id="comment-16764"><div class="by">Esmé Cowles, 2016-05-26 20:52 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/08f2df553025464f90384f710222e7c5b4ab74c4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/08f2df553025464f90384f710222e7c5b4ab74c4</a></p></div></div>
+<div class="comment" id="comment-16765"><div class="by">Andrew Woods, 2016-05-26 22:34 UTC</div><div class="text"><p>Related clean-up: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/65" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/65</a></p></div></div>
+<div class="comment" id="comment-16766"><div class="by">Unknown, 2016-05-26 22:38 UTC</div><div class="text"><p>Cleanup merged via <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/0d3308c249677af8f25d16968bb306b08909a6be" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/0d3308c249677af8f25d16968bb306b08909a6be</a></p></div></div>
+<p><a href="data/FCREPO-1895.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

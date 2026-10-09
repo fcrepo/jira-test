@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1071 Ingest of AtomZIP files fail with URL validation exception for managed content datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1071</span> Ingest of AtomZIP files fail with URL validation exception for managed content datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2012-02-21 01:24 UTC</td></tr><tr><th>Updated</th><td>2015-04-02 18:41 UTC</td></tr><tr><th>Resolved</th><td>2015-03-31 21:05 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.1</td></tr></table>
+<h2>Description</h2>
+<p>AtomZIP files specify src giving the content location.  Exported objects in AtomZIP format give this as simply the file name (within the zip).</p>
+
+<p>The current validation code tries to validate this location and fails.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12248"><div class="by">Stephen Bayliss, 2012-02-21 01:43 UTC</div><div class="text"><p>Managed datastreams in FOXML use the file: protocol - so there is I guess an open question as to whether the AtomZIP format should specify this as well?  But file: is usually a full path; in this case it's referring to content in the zip, so it's not really a file...  And for Archive export format the managed content in any case is embedded in the FOXML in Base64... (so no file: in this case)</p>
+
+<p>If we modified AtomZIP to use file: it would break archived content and prevent it being imported (although if that content had managed streams it can't currently be imported in any case due to this bug; but it would break existing objects that only have inline datastreams).</p></div></div>
+<div class="comment" id="comment-12252"><div class="by">Stephen Bayliss, 2012-02-21 17:13 UTC</div><div class="text"><p>1 line fix to remove validation of the datastream filename in the zip file (as it's not a URL or a file: protocol) has been committed.</p>
+
+<p>Should leave this ticket open though as this is pointing to a lack of tests for ingesting objects using AtomZIP (from memoryi sn't there a parameter that can be supplied to control ingest format for the integration test suite?) </p></div></div>
+<div class="comment" id="comment-12911"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<div class="comment" id="comment-13832"><div class="by">Benjamin Armintor, 2015-03-31 21:04 UTC</div><div class="text"><p>Fixed in 3.6:<br/>
+<a href="https://github.com/fcrepo3/fcrepo/commit/0bd7d5d475f34e0da335491c97af1167255885de" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/0bd7d5d475f34e0da335491c97af1167255885de</a></p>
+
+<p>There is also a roundtrip test for AtomZIP export/import in 3.8.1:<br/>
+<a href="https://github.com/fcrepo3/fcrepo/commit/ce01d9b0786b3e50c96f7b3a849841088f8c414d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/ce01d9b0786b3e50c96f7b3a849841088f8c414d</a></p></div></div>
+<p><a href="data/FCREPO-1071.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

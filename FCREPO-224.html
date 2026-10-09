@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-224 API-A fails to unescape first colon in URL</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-224</span> API-A fails to unescape first colon in URL</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2008-06-18 18:27 UTC</td></tr><tr><th>Updated</th><td>2010-05-18 21:40 UTC</td></tr><tr><th>Resolved</th><td>2010-04-11 20:37 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.4, Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 1, Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>Reported by Ross against 3.0b1 Apr 2, 2008.  The problem also exists in maintenance-2.2.</p>
+
+<p>Our library is overhauling our web site and web site tools and one of the new web page editor tools is called Contribute from Adobe. We ran into a problem where people were using Contribute to cut/paste citation URLs that were referencing Fedora dissemination requests. Contribute takes URLs that look like:</p>
+
+<p><a href="http://repo.lib.virginia.edu:18080/fedora/get/uva-lib:32653/uva-lib-bdef:100/getFullView" class="external-link" rel="nofollow noreferrer">http://repo.lib.virginia.edu:18080/fedora/get/uva-lib:32653/uva-lib-bdef:100/getFullView</a></p>
+
+<p>and properly escapes special characters like the colon so the URL is rewritten as:</p>
+
+<p><a href="http://repo.lib.virginia.edu:18080/fedora/get/uva-lib%3A32653/uva-lib-bdef%3A100/getFullView" class="external-link" rel="nofollow noreferrer">http://repo.lib.virginia.edu:18080/fedora/get/uva-lib%3A32653/uva-lib-bdef%3A100/getFullView</a></p>
+
+<p>Problem is, Fedora cannot handle the rewritten URL. The bug is in the request URL parsing section of FedoraAccessServlet where it is looking for a colon( character but fails to URLDecode the string before it does the lookup. The result is that %3A does not match colon( when parsing the bdef pid section of the URL so the conditional incorrectly fails.</p>
+
+<p>There are two places in code where:<br/>
+                if (URIArray<span class="error">&#91;6&#93;</span>.indexOf(":") == -1) {</p>
+
+<p>should instead be</p>
+
+<p>                if (URLDecoder.decode(URIArray<span class="error">&#91;6&#93;</span>, "UTF-8").indexOf(":") == -1) {</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10462"><div class="by">Chris Wilper, 2008-06-18 20:09 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>A safe fix for this should decode only the first occurance of %3A if the un-encoded pid does not contain a colon.</p>
+
+<p>It should be tested against at least the following:</p>
+
+<p>test%3A12<br/>
+test:1%3A2<br/>
+test%3A1%3A2</p></div></div>
+<div class="comment" id="comment-10463"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1997081<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1997081" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1997081</a></p></div></div>
+<div class="comment" id="comment-11311"><div class="by">Stephen Bayliss, 2010-04-11 20:37 UTC</div><div class="text"><p>Also covered by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-627" >
+                <a href="FCREPO-627.html" class="jira-issue-macro-key issue-link"  title="Fedora REST-style object viewer does not properly handle encoded slashes in the pid value." >
+            
+            FCREPO-627
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, fix should be addressed as part of that.</p></div></div>
+<div class="comment" id="comment-11372"><div class="by">Stephen Bayliss, 2010-05-13 17:35 UTC</div><div class="text"><p>No longer covered by the implementation of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-627" >
+                <a href="FCREPO-627.html" class="jira-issue-macro-key issue-link"  title="Fedora REST-style object viewer does not properly handle encoded slashes in the pid value." >
+            
+            FCREPO-627
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ - this is now a separate issue.</p>
+
+<p>The API-A LITE does not accept URL-encoded PIDs, however the new REST API does (and requires them to be encoded).  One solution could be to point people at the new REST API and let them use that instead.  Alternatively we could consider some limited handling of URL-encoding in API-A LITE (but being careful not to break any existing behaviour).</p></div></div>
+<div class="comment" id="comment-11379"><div class="by">Stephen Bayliss, 2010-05-18 21:40 UTC</div><div class="text"><p>Discussed Committers Meeting 2010-05-18.</p>
+
+<p>The new REST API copes with URL-encoded PIDs, so using that would be the proposed solution.  Also it was expressed that we don't really want to do too much more work on the LITE APIs as they are due to be deprecated.</p></div></div>
+<p><a href="data/FCREPO-224.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

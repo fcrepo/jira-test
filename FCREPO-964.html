@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-964 Memory leak in fedora-client</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-964</span> Memory leak in fedora-client</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Nigel Thomas</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2011-07-08 20:10 UTC</td></tr><tr><th>Updated</th><td>2012-02-21 15:47 UTC</td></tr><tr><th>Resolved</th><td>2012-02-21 15:45 UTC</td></tr><tr><th>Components</th><td>legacy - java-client</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Environment</h2>Linux and Windows
+<h2>Description</h2>
+<p>MediaShelf fedora-client memory leak detected at <a href="http://mediashelf.github.com/fedora-client/xref/com/yourmediashelf/fedora/c" class="external-link" rel="nofollow noreferrer">http://mediashelf.github.com/fedora-client/xref/com/yourmediashelf/fedora/c</a><br/>
+lient/FedoraClient.html#102. When multiple new clients are created and removed (assuming gc has happened), references to eu.medsea.mimeutil.detector.MagicMimeMimeDetector still persist in the heap. </p>
+
+<p>See attached chart from MAT, after running some stress test's on our servers and processing the resulting heap.</p>
+
+<p>For a quick fix I have changed fedora client to use a single instance of new MimeUtil2(); by making<br/>
+it static and using a static initialiser to register the mime detector. This has helped, however may introduce unforeseen threading issues in MimeUtil2 perhaps on the method MimeUtil2.getMimeTypes.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-964/10132_chart2.png">chart2.png</a>, 9283 bytes, added by Nigel Thomas on 2011-07-08</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-12249"><div class="by">eddie, 2012-02-21 14:46 UTC</div><div class="text"><p>looks like it's a known issue with the mime-util library: <a href="https://sourceforge.net/tracker/index.php?func=detail&amp;aid=3152843&amp;group_id=205064&amp;atid=992132" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/tracker/index.php?func=detail&amp;aid=3152843&amp;group_id=205064&amp;atid=992132</a></p></div></div>
+<div class="comment" id="comment-12250"><div class="by">eddie, 2012-02-21 15:45 UTC</div><div class="text"><p>fixed per <a href="https://github.com/mediashelf/fedora-client/commit/320199e19da3b4361788531b85fd5bc0b56d987d" class="external-link" rel="nofollow noreferrer">https://github.com/mediashelf/fedora-client/commit/320199e19da3b4361788531b85fd5bc0b56d987d</a></p></div></div>
+<p><a href="data/FCREPO-964.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

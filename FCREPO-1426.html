@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1426 Automatically generate audit event nodes for internal audit events</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1426</span> Automatically generate audit event nodes for internal audit events</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2015-03-30 12:45 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-22 13:32 UTC</td></tr><tr><th>Components</th><td>f4-audit, f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr><tr><th>Required by</th><td><a href="FCREPO-1456.html">FCREPO-1456</a> Suppress JMS events for internal audit node creation</td></tr></table>
+<h2>Description</h2>
+<p>If an audit container is configured, internal audit events should automatically be generated and posted to that container.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-14026"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-04-15 00:22 UTC</div><div class="text"><p>Former user, I have created a basic working version (tests are not working yet)<br/>
+<a href="https://github.com/umd-lib/fcrepo4/commit/1143f6b4121aa9b3dbbad70c61223f5857b18f2b" class="external-link" rel="nofollow noreferrer">https://github.com/umd-lib/fcrepo4/commit/1143f6b4121aa9b3dbbad70c61223f5857b18f2b</a></p>
+
+<p>I want to check with you and get your feedback before proceeding. I'm sure you would have a lot of it since It's been several months I worked with fcrepo.</p></div></div>
+<div class="comment" id="comment-14027"><div class="by">Former user, 2015-04-15 11:31 UTC</div><div class="text"><p>Mohamed Mohideen Abdul Rasheed, I think this is a good start, but too tightly coupled to the kernel.  Ideally, there would be no kernel changes at all for the audit service.  Instead, you should follow the pattern of the JMS module and subscribe to the eventBus events that are already being generated:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-jms/src/main/java/org/fcrepo/jms/observer/JMSTopicPublisher.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-jms/src/main/java/org/fcrepo/jms/observer/JMSTopicPublisher.java</a></p>
+
+<p>So I think you should create a new fcrepo-audit module and move the AuditServiceImpl.java there.</p>
+
+<p>I would also like to see a System property used to enable the creation of these nodes, called fcrepo.audit.container, whose value is used instead of hard-coding /audit/.</p></div></div>
+<div class="comment" id="comment-14075"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-04-16 15:02 UTC</div><div class="text"><p>Working version of InternalAuditor created. Tests are pending.<br/>
+PR: <a href="https://github.com/fcrepo4-labs/fcrepo-audit/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-audit/pull/1</a><br/>
+PR: <a href="https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/8</a></p></div></div>
+<div class="comment" id="comment-14115"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-04-21 15:12 UTC</div><div class="text"><p>Added tests and updated PR based on feedback.</p></div></div>
+<div class="comment" id="comment-14119"><div class="by">Former user, 2015-04-21 18:10 UTC</div><div class="text"><p>I've completed functional testing of this, and I found one small issue: the audit records for deleted nodes can't be accessed because of an error checking the references for being skolems (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1483" >
+                <a href="FCREPO-1483.html" class="jira-issue-macro-key issue-link"  title="Checking audit node links to deleted resources causes error" >
+            
+            FCREPO-1483
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).  I have a PR to catch this error and allow the audit nodes to be accessed.</p></div></div>
+<div class="comment" id="comment-14120"><div class="by">Former user, 2015-04-21 19:07 UTC</div><div class="text"><p>Just a couple of minor comments then this is ready to merge.</p></div></div>
+<div class="comment" id="comment-14125"><div class="by">Former user, 2015-04-22 13:32 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-audit/commit/3d7d6d348424df73940bf992b2770cdbc92dc3d5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-audit/commit/3d7d6d348424df73940bf992b2770cdbc92dc3d5</a> and <a href="https://github.com/fcrepo4-labs/fcrepo-webapp-plus/commit/430914bd95fa761105e39b7d91f7b2662010d2d3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-webapp-plus/commit/430914bd95fa761105e39b7d91f7b2662010d2d3</a></p></div></div>
+<p><a href="data/FCREPO-1426.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

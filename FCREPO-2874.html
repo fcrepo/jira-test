@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2874 Deleting Memento issues message with incorrect &#x27;id&#x27; and &#x27;isPart&quot;Of&#x27; values</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2874</span> Deleting Memento issues message with incorrect &#x27;id&#x27; and &#x27;isPart&quot;Of&#x27; values</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2018-09-20 21:07 UTC</td></tr><tr><th>Updated</th><td>2018-10-05 20:00 UTC</td></tr><tr><th>Resolved</th><td>2018-10-05 02:22 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>DELETEing a Memento (LDPRm) is mostly OK, but the 'id' is incorrect and the ‘isPartOf’ value should perhaps reference the LDPRv, not the repo root.</p>
+
+<p> </p>
+
+<p>Incoming Message</p>
+
+<p> </p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+{
+   <span class="code-quote">"@context"</span>: [
+       <span class="code-quote">"https:<span class="code-comment">//www.w3.org/ns/activitystreams"</span>,
+</span>       {
+           <span class="code-quote">"dcterms"</span>: <span class="code-quote">"http:<span class="code-comment">//purl.org/dc/terms/"</span>,
+</span>           <span class="code-quote">"id"</span>: <span class="code-quote">"@id"</span>,
+           <span class="code-quote">"isPartOf"</span>: {
+               <span class="code-quote">"@id"</span>: <span class="code-quote">"dcterms:isPartOf"</span>,
+               <span class="code-quote">"@type"</span>: <span class="code-quote">"@id"</span>
+           },
+           <span class="code-quote">"prov"</span>: <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/prov#"</span>,
+</span>           <span class="code-quote">"type"</span>: <span class="code-quote">"@type"</span>
+       }
+   ],
+   <span class="code-quote">"actor"</span>: [
+       {
+           <span class="code-quote">"id"</span>: <span class="code-quote">"info:fedora/local-user#fedoraAdmin"</span>,
+           <span class="code-quote">"type"</span>: [
+               <span class="code-quote">"Person"</span>
+           ]
+       },
+       {
+           <span class="code-quote">"name"</span>: <span class="code-quote">"curl/7.60.0"</span>,
+           <span class="code-quote">"type"</span>: [
+               <span class="code-quote">"Application"</span>
+          ]
+       }
+   ],
+   <span class="code-quote">"id"</span>: <span class="code-quote">"urn:uuid:9bee1808-3a83-4eeb-8563-0ef9344e1326"</span>,
+   <span class="code-quote">"name"</span>: <span class="code-quote">"delete resource"</span>,
+   <span class="code-quote">"object"</span>: {
+       <span class="code-quote">"id"</span>: <span class="code-quote">"http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/versioning/14/fedora:timemap/20180920195019"</span>,
+</span>       <span class="code-quote">"isPartOf"</span>: <span class="code-quote">"http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>"</span>,
+</span>       <span class="code-quote">"type"</span>: [
+           <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#Container"</span>,
+</span>           <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#Resource"</span>,
+</span>           <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#RDFSource"</span>,
+</span>           <span class="code-quote">"http:<span class="code-comment">//mementoweb.org/ns#Memento"</span>,
+</span>           <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#BasicContainer"</span>,
+</span>           <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/prov#Entity"</span>
+</span>       ]
+   },
+   <span class="code-quote">"published"</span>: <span class="code-quote">"2018-09-20T19:50:53.894Z"</span>,
+   <span class="code-quote">"type"</span>: [
+       <span class="code-quote">"Delete"</span>
+   ]
+}
+ 
+</pre>
+</div></div>
+<p> </p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20333"><div class="by">Danny Bernstein, 2018-10-04 14:52 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1426" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1426</a></p></div></div>
+<div class="comment" id="comment-20340"><div class="by">Andrew Woods, 2018-10-05 00:05 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-20353"><div class="by">Andrew Woods, 2018-10-05 20:00 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/95e144132fb4043567e4548c6c4146faa3a7b048" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/95e144132fb4043567e4548c6c4146faa3a7b048</a></p></div></div>
+<p><a href="data/FCREPO-2874.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

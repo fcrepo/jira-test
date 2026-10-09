@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-803 Xslt import/include other datastreams from the same object</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-803</span> Xslt import/include other datastreams from the same object</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Egbert Gramsbergen</td></tr><tr><th>Created</th><td>2010-09-23 15:01 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Is related to</th><td><a href="FCREPO-990.html">FCREPO-990</a> URIResolver for Saxon Servlet to allow for additional datastream bindings to be provided to xslt</td></tr><tr><th>Depends on</th><td><a href="FCREPO-706.html">FCREPO-706</a> Datastream bindings for methods passing as URL use old-style LITE API</td></tr></table>
+<h2>Description</h2>
+<p>Use case: dissiminatrions through different xslt's which are all datastreams of one "xslt object". Some of the xslt's import and/or include others.</p>
+
+<p>At present, the only reliable way to do this is e.g. &lt;xsl:import="/fedora/get/aux:xslt/XSLT2"/&gt;.<br/>
+A better and more robust solution would be something like &lt;xsl:import="$THIS$/XSLT2"/&gt; or just &lt;xsl:import="XSLT2"/&gt;.<br/>
+(The first solution is used for the Schema extension of DS-COMPOSITE, the second actually worked in Fedora3.0 but not in 3.4)</p>
+
+<p>related discussion: <a href="http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/5711" class="external-link" rel="nofollow noreferrer">http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/5711</a></p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11733"><div class="by">Chris Wilper, 2010-12-07 23:25 UTC</div><div class="text"><p>Discussed on Dec 7th call...need to figure out why the second form doesn't work with 3.4.  Note, however, that it's not going to work when datastream mediation is enabled in any case, because the relative URI won't resolve (the URL back to Fedora to get the content is very temporary).  </p></div></div>
+<div class="comment" id="comment-12037"><div class="by">Stephen Bayliss, 2011-08-08 18:22 UTC</div><div class="text"><p>See also 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-990" >
+                <a href="FCREPO-990.html" class="jira-issue-macro-key issue-link"  title="URIResolver for Saxon Servlet to allow for additional datastream bindings to be provided to xslt" >
+            
+            FCREPO-990
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ - this URI resolver could take care of how to resolve the relative URI (as well as adding auth) - and possibly have configurable behaviour.</p></div></div>
+<div class="comment" id="comment-12047"><div class="by">Stephen Bayliss, 2011-09-08 11:36 UTC</div><div class="text"><p>See also 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-706" >
+                <a href="FCREPO-706.html" class="jira-issue-macro-key issue-link"  title="Datastream bindings for methods passing as URL use old-style LITE API" >
+            
+            FCREPO-706
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.  If the URI resolver for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-990" >
+                <a href="FCREPO-990.html" class="jira-issue-macro-key issue-link"  title="URIResolver for Saxon Servlet to allow for additional datastream bindings to be provided to xslt" >
+            
+            FCREPO-990
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ were modified to generically handle relative HTTP URL paths, then the paths will actually change if we later implemented 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-706" >
+                <a href="FCREPO-706.html" class="jira-issue-macro-key issue-link"  title="Datastream bindings for methods passing as URL use old-style LITE API" >
+            
+            FCREPO-706
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ ie moved from the LITE to the new REST API paths to datastreams.  So if we do fix this then 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-706" >
+                <a href="FCREPO-706.html" class="jira-issue-macro-key issue-link"  title="Datastream bindings for methods passing as URL use old-style LITE API" >
+            
+            FCREPO-706
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ should be implemented first to avoid changing behaviour.  (unless we implemented some specific behaviour if the HTTP URL path was for Fedora).</p></div></div>
+<div class="comment" id="comment-12950"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-803.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

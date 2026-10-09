@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2060 java.nio.charset.MalformedInputException</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2060</span> java.nio.charset.MalformedInputException</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-06-23 13:14 UTC</td></tr><tr><th>Updated</th><td>2016-11-12 14:54 UTC</td></tr><tr><th>Resolved</th><td>2016-06-24 19:34 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>Using the modeshape5 branch, when ingesting a large object with 1000+ files, I am seeing an exception on the 299th file: </p>
+
+<p>Error: STATUS: 500 org.modeshape.persistence.relational.RelationalProviderException: java.nio.charset.MalformedInputException: Input length = 1<br/>
+	at org.modeshape.persistence.relational.DefaultStatements.readDocument(DefaultStatements.java:192)<br/>
+	at org.modeshape.persistence.relational.DefaultStatements.getById(DefaultStatements.java:109)<br/>
+	at org.modeshape.persistence.relational.RelationalDb.lambda$get$9(RelationalDb.java:148)<br/>
+	at org.modeshape.persistence.relational.RelationalDb.runWithConnection(RelationalDb.java:358)<br/>
+	at org.modeshape.persistence.relational.RelationalDb.get(RelationalDb.java:148)<br/>
+	at org.modeshape.schematic.SchematicDb.getEntry(SchematicDb.java:154)<br/>
+	at org.modeshape.jcr.cache.document.LocalDocumentStore.get(LocalDocumentStore.java:87)<br/>
+	at org.modeshape.jcr.cache.document.WorkspaceCache.documentFor(WorkspaceCache.java:184)<br/>
+	at org.modeshape.jcr.cache.document.WorkspaceCache.documentFor(WorkspaceCache.java:203)<br/>
+	at org.modeshape.jcr.cache.document.WorkspaceCache.getNode(WorkspaceCache.ja...</p>
+
+<p>When trying to access the object afterwards, I see the same error (stacktrace attached).</p>
+
+<p>I tried skipping the first 295 files and that file ingests without problem and the ingest continues, and I get the same error on the 299th file that is processed.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2060/10262_stacktrace.txt">stacktrace.txt</a>, 8299 bytes, added by Esmé Cowles on 2016-06-23</li>
+</ul>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-16898"><div class="by">Esmé Cowles, 2016-06-23 13:20 UTC</div><div class="text"><p>The error happens at this line in our Hydra ingest tool:</p>
+
+<p><a href="https://github.com/pulibrary/plum/blob/master/app/jobs/ingest_mets_job.rb#L61" class="external-link" rel="nofollow noreferrer">https://github.com/pulibrary/plum/blob/master/app/jobs/ingest_mets_job.rb#L61</a></p>
+
+<p>I'm working to isolate this issue and reproduce with a shell script to make it easier for others to debug this error.  But so far haven't been successful.</p></div></div>
+<div class="comment" id="comment-16899"><div class="by">Andrew Woods, 2016-06-23 13:21 UTC</div><div class="text"><p>This is with a PostgreSQL backend, correct?<br/>
+I would be interest to see if other backends exhibit the same behavior. </p>
+
+<p>Can you clarify what you mean by "ingesting a large object with 1000+ files"? Does that mean you are creating a container and adding 1000+ binaries to that container?</p></div></div>
+<div class="comment" id="comment-16900"><div class="by">Esmé Cowles, 2016-06-23 13:40 UTC</div><div class="text"><p>Yes, this is with the PostgreSQL backend.  The data follows the CurationConcerns/HydraWorks pattern:</p>
+
+<ul>
+	<li>one container for the object which has a `members` IndirectContainer</li>
+	<li>one container for each source file (a FileSet) — this container has a `files` DirectContainer, where two binaries are added (a 100MB TIFF image and a ~50KB HTML file)</li>
+	<li>each of the FileSets has a proxy added to the object `members` container.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-16904"><div class="by">Esmé Cowles, 2016-06-24 14:33 UTC</div><div class="text"><p>I've tried a few different things, and have only been able to reproduce the error with the configuration I was using:</p>
+
+<ul>
+	<li>Using MySQL instead of PostgreSQL worked without errors</li>
+	<li>Ingesting on my local machine with PostgreSQL 9.4 worked without errors</li>
+	<li>I'm currently testing PostgreSQL 9.5 (instead of 9.3) to see if that resolves the problem</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-16908"><div class="by">Esmé Cowles, 2016-06-24 19:34 UTC</div><div class="text"><p>This problem was fixed by using PostgreSQL 9.4 or 9.5.  I've updated the wiki docs to indicate these versions should be used with Modeshape5: <a href="https://wiki.duraspace.org/display/FEDORA4x/Configuring+JDBC+Object+Store" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Configuring+JDBC+Object+Store</a></p></div></div>
+<p><a href="data/FCREPO-2060.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

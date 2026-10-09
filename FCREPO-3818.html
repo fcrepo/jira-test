@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3818 Path mapping exception when accessing fcrepo/rest</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3818</span> Path mapping exception when accessing fcrepo/rest</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2022-04-07 15:52 UTC</td></tr><tr><th>Updated</th><td>2023-03-09 16:52 UTC</td></tr><tr><th>Resolved</th><td>2022-11-16 17:58 UTC</td></tr><tr><th>Components</th><td>fcrepo-docker, fcrepo-webapp</td></tr><tr><th>Affects versions</th><td>Fedora 6.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 6.3.0</td></tr><tr><th>Addresses</th><td><a href="FCREPO-3852.html">FCREPO-3852</a> HTTP 500 Error for web UI (accept: text/html)</td></tr></table>
+<h2>Environment</h2>Linux, Docker Image fcrepo:6.1.1 Tomcat 9.0.55
+<h2>Description</h2>
+<p>Access to http://&lt;...&gt;/fcrepo/rest/ resulted in a 500 Server Error response while the log shows a warning that a path mapping exception occured. After restarting the server everything worked again as expected. We could not reproduce this so far. Looks like some sort of state pollution to me.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>INFO 12:02:15.484 [http-nio-8080-exec-8] (FedoraLdp) GET resource ''
+WARN 12:02:15.492 [http-nio-8080-exec-8] (WildcardExceptionMapper) Unmapped exception
+java.lang.IllegalArgumentException: Cannot translate NULL path
+	at org.fcrepo.http.commons.api.rdf.HttpIdentifierConverter.toInternalId(HttpIdentifierConverter.java:83)
+	at org.fcrepo.http.commons.api.rdf.HttpIdentifierConverter.toInternalId(HttpIdentifierConverter.java:58)
+	at org.fcrepo.http.api.responses.StreamingBaseHtmlProvider.writeTo(StreamingBaseHtmlProvider.java:205)
+	at org.fcrepo.http.api.responses.StreamingBaseHtmlProvider.writeTo(StreamingBaseHtmlProvider.java:83)
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$TerminalWriterInterceptor.invokeWriteTo(WriterInterceptorExecutor.java:242)
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$TerminalWriterInterceptor.aroundWriteTo(WriterInterceptorExecutor.java:227)
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:139)
+	at org.glassfish.jersey.server.internal.JsonWithPaddingInterceptor.aroundWriteTo(JsonWithPaddingInterceptor.java:85)
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:139)
+	at org.glassfish.jersey.server.internal.MappableExceptionWrapperInterceptor.aroundWriteTo(MappableExceptionWrapperInterceptor.java:61)
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:139)
+	at org.glassfish.jersey.message.internal.MessageBodyFactory.writeTo(MessageBodyFactory.java:1116)
+	at org.glassfish.jersey.server.ServerRuntime$Responder.writeResponse(ServerRuntime.java:635)
+	at org.glassfish.jersey.server.ServerRuntime$Responder.processResponse(ServerRuntime.java:373)
+	at org.glassfish.jersey.server.ServerRuntime$Responder.process(ServerRuntime.java:363)
+	at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:258)
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:292)
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:274)
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:244)
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:234)
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)
+	at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:366)
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:319)
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:227)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:189)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:61)
+	at org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:253)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:74)
+	at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:26)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:77)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:108)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:137)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:450)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)
+	at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)
+	at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)
+	at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:189)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:197)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:97)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:659)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:135)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92)
+	at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:687)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:78)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:357)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:382)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:65)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:895)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1722)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+	at java.base/java.lang.Thread.run(Thread.java:829)</pre>
+</div></div>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3818/10363_fcrepo-3818-pathmapping-with-trace__55a9bacd-9736-4027-ae82-1cb3473e8388_.log">fcrepo-3818-pathmapping-with-trace (55a9bacd-9736-4027-ae82-1cb3473e8388).log</a>, 90448 bytes, added by Ralf Claussnitzer on 2022-04-14</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-22623"><div class="by">Ralf Claussnitzer, 2022-04-11 15:14 UTC</div><div class="text"><p>From Slack:</p>
+
+<blockquote><p>We've made another interesting observation. Although the Browser access to fcrepo/rest failed, we had no problems accessing it via curl. It might be something around the Browser authentication. </p></blockquote>
+
+<blockquote><p>I had/have a lot of issues with the Repo via Browser (might relate to other problems and bugs) when working with Fedora. It works perfectly through the API and curl tho. I might suppose, it is not a good idea to trust the GUI? (in my case, bc. Fedora is behind a proxy and https is enabled).</p></blockquote></div></div>
+<div class="comment" id="comment-22624"><div class="by">Ralf Claussnitzer, 2022-04-11 15:16 UTC</div><div class="text"><p>A set of warnings appeared in the log around the time of the issue. Probably unrelated:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>WARN 12:34:26.786 [ActiveMQ Transport: tcp:///194.95.144.60:33696@61616] (Transport) Transport Connection to: tcp://194.95.144.60:33696 failed
+java.io.IOException: Unknown data type: 47
+        at org.apache.activemq.openwire.OpenWireFormat.doUnmarshal(OpenWireFormat.java:359)
+        at org.apache.activemq.openwire.OpenWireFormat.unmarshal(OpenWireFormat.java:278)
+        at org.apache.activemq.transport.tcp.TcpTransport.readCommand(TcpTransport.java:240)
+        at org.apache.activemq.transport.tcp.TcpTransport.doRun(TcpTransport.java:232)
+        at org.apache.activemq.transport.tcp.TcpTransport.run(TcpTransport.java:215)
+        at java.base/java.lang.Thread.run(Thread.java:829)
+WARN 12:34:26.884 [ActiveMQ Transport: tcp:///194.95.144.60:33698@61616] (Transport) Transport Connection to: tcp://194.95.144.60:33698 failed
+java.io.IOException: Unknown data type: 47
+        at org.apache.activemq.openwire.OpenWireFormat.doUnmarshal(OpenWireFormat.java:359)
+        at org.apache.activemq.openwire.OpenWireFormat.unmarshal(OpenWireFormat.java:278)
+        at org.apache.activemq.transport.tcp.TcpTransport.readCommand(TcpTransport.java:240)
+        at org.apache.activemq.transport.tcp.TcpTransport.doRun(TcpTransport.java:232)
+        at org.apache.activemq.transport.tcp.TcpTransport.run(TcpTransport.java:215)
+        at java.base/java.lang.Thread.run(Thread.java:829)
+WARN 12:34:33.075 [ActiveMQ Transport: tcp:///194.95.144.60:33700@61616] (Transport) Transport Connection to: tcp://194.95.144.60:33700 failed
+java.io.IOException: Unknown data type: 35
+        at org.apache.activemq.openwire.OpenWireFormat.looseUnmarshalNestedObject(OpenWireFormat.java:471)
+        at org.apache.activemq.openwire.v12.BaseDataStreamMarshaller.looseUnmarsalCachedObject(BaseDataStreamMarshaller.java:487)
+        at org.apache.activemq.openwire.v12.ConnectionInfoMarshaller.looseUnmarshal(ConnectionInfoMarshaller.java:154)
+        at org.apache.activemq.openwire.OpenWireFormat.doUnmarshal(OpenWireFormat.java:367)
+        at org.apache.activemq.openwire.OpenWireFormat.unmarshal(OpenWireFormat.java:278)
+        at org.apache.activemq.transport.tcp.TcpTransport.readCommand(TcpTransport.java:240)
+        at org.apache.activemq.transport.tcp.TcpTransport.doRun(TcpTransport.java:232)
+        at org.apache.activemq.transport.tcp.TcpTransport.run(TcpTransport.java:215)
+        at java.base/java.lang.Thread.run(Thread.java:829)
+WARN 12:34:45.378 [ActiveMQ Transport: tcp:///194.95.144.60:33702@61616] (Transport) Transport Connection to: tcp://194.95.144.60:33702 failed
+java.io.IOException: Unknown data type: 88
+        at org.apache.activemq.openwire.OpenWireFormat.looseUnmarshalNestedObject(OpenWireFormat.java:471)
+        at org.apache.activemq.openwire.v12.BaseDataStreamMarshaller.looseUnmarsalCachedObject(BaseDataStreamMarshaller.java:487)
+        at org.apache.activemq.openwire.v12.ConnectionInfoMarshaller.looseUnmarshal(ConnectionInfoMarshaller.java:154)
+        at org.apache.activemq.openwire.OpenWireFormat.doUnmarshal(OpenWireFormat.java:367)
+        at org.apache.activemq.openwire.OpenWireFormat.unmarshal(OpenWireFormat.java:278)
+        at org.apache.activemq.transport.tcp.TcpTransport.readCommand(TcpTransport.java:240)
+        at org.apache.activemq.transport.tcp.TcpTransport.doRun(TcpTransport.java:232)
+        at org.apache.activemq.transport.tcp.TcpTransport.run(TcpTransport.java:215)
+        at java.base/java.lang.Thread.run(Thread.java:829)
+WARN 12:34:52.638 [ActiveMQ Transport: tcp:///194.95.144.60:33704@61616] (Transport) Transport Connection to: tcp://194.95.144.60:33704 failed
+java.io.IOException: Unknown data type: 47
+        at org.apache.activemq.openwire.OpenWireFormat.doUnmarshal(OpenWireFormat.java:359)
+        at org.apache.activemq.openwire.OpenWireFormat.unmarshal(OpenWireFormat.java:278)
+        at org.apache.activemq.transport.tcp.TcpTransport.readCommand(TcpTransport.java:240)
+        at org.apache.activemq.transport.tcp.TcpTransport.doRun(TcpTransport.java:232)
+        at org.apache.activemq.transport.tcp.TcpTransport.run(TcpTransport.java:215)
+        at java.base/java.lang.Thread.run(Thread.java:829)
+WARN 12:34:52.726 [ActiveMQ Transport: tcp:///194.95.144.60:33706@61616] (Transport) Transport Connection to: tcp://194.95.144.60:33706 failed
+java.io.IOException: Unknown data type: 47
+        at org.apache.activemq.openwire.OpenWireFormat.doUnmarshal(OpenWireFormat.java:359)
+        at org.apache.activemq.openwire.OpenWireFormat.unmarshal(OpenWireFormat.java:278)
+        at org.apache.activemq.transport.tcp.TcpTransport.readCommand(TcpTransport.java:240)
+        at org.apache.activemq.transport.tcp.TcpTransport.doRun(TcpTransport.java:232)
+        at org.apache.activemq.transport.tcp.TcpTransport.run(TcpTransport.java:215)
+        at java.base/java.lang.Thread.run(Thread.java:829)
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-22625"><div class="by">Ralf Claussnitzer, 2022-04-14 08:05 UTC</div><div class="text"><p>I attached a trace log  while the problem was there: fcrepo-3818-pathmapping-with-trace</p>
+
+<p>Not much to see here. The requested resource and all its children are resolved and IDs get translated. The only weird thing is that one of the resource translations occurs twice, on the beginning and at the end of the processing. All ends then with the known IllegalArgumentException.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>TRACE 07:47:13.161 [http-nio-8080-exec-2] (HttpIdentifierConverter) Translating http URI http://sdvcmr-test-app01.slub-dresden.de:8082/fcrepo/rest/qucosa to Fedora ID with encoded set to false
+...
+TRACE 07:47:13.248 [http-nio-8080-exec-2] (HttpIdentifierConverter) Translating http URI http://sdvcmr-test-app01.slub-dresden.de:8082/fcrepo/rest/qucosa to Fedora ID with encoded set to false</pre>
+</div></div>
+
+<p>It seems that the problem is occurring with increasing frequency. Everything is fine immediately after restart. Only the GUI is affected.</p>
+
+<p>Another thing I was wondering about is why would Fedora start a transaction for a simple GET request?</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>TRACE 07:47:13.168 [http-nio-8080-exec-2] (TransactionProvider) Providing new transaction 4e075588-e6d6-4a3a-b18d-cfad856da226
+INFO 07:47:13.173 [http-nio-8080-exec-2] (FedoraLdp) GET resource 'qucosa'</pre>
+</div></div></div></div>
+<div class="comment" id="comment-22729"><div class="by">Danny Bernstein, 2022-10-13 15:50 UTC</div><div class="text"><p>Jared Whiklo will look at this this week.</p></div></div>
+<div class="comment" id="comment-22730"><div class="by">Jared Whiklo, 2022-10-13 15:51 UTC</div><div class="text"><p>Problem is that this should not be a singleton </p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-http-api/src/main/java/org/fcrepo/http/api/responses/StreamingBaseHtmlProvider.java#L119-L126" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-http-api/src/main/java/org/fcrepo/http/api/responses/StreamingBaseHtmlProvider.java#L119-L126</a></p></div></div>
+<div class="comment" id="comment-22733"><div class="by">Jared Whiklo, 2022-10-13 22:29 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/2009" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2009</a></p></div></div>
+<div class="comment" id="comment-22764"><div class="by">Danny Bernstein, 2022-11-16 17:52 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo/fcrepo/commit/a64759643149ace9c48a7e8d2bdb65c65ee777ea" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/a64759643149ace9c48a7e8d2bdb65c65ee777ea</a></p></div></div>
+<p><a href="data/FCREPO-3818.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

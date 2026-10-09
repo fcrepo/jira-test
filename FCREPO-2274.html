@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2274 Integration tests that test concurrency could theoretically pass even when concurrency issues persist.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2274</span> Integration tests that test concurrency could theoretically pass even when concurrency issues persist.</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Reopened</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2016-10-14 21:04 UTC</td></tr><tr><th>Updated</th><td>2018-10-02 22:31 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Labels</th><td>tests</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2276.html">FCREPO-2276</a> Locking code into the kernel layer</td></tr></table>
+<h2>Description</h2>
+<p>FedoraLDPIT contains the following tests:</p>
+
+<p>testConcurrentPuts<br/>
+testConcurrentPutsWithPairtrees<br/>
+testConcurrentUpdatesToBinary<br/>
+testConcurrentPatches</p>
+
+<p>All of them have the basic pattern that we start a bunch of thread that perform concurrent operations at roughly the same time and make sure they do the appropriate things.  In practices these tests consistently failed without the concurrency fix and always passed with the fix, but there's no guarantee they'll fail even without concurrency control depending on variations on the thread scheduling in the machine on which the tests are running.  </p>
+
+<p>Apparently there are fancy frameworks that will allow us to elevate these tests from smoke-tests to something that will actually make assertions about our code in hypothetical but precise concurrency scenarios.</p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-17836"><div class="by">A. Soroka, 2016-10-14 21:08 UTC</div><div class="text"><p>One of those "fancy frameworks" is Awaitility, which we already use in the codebase and the use of which will be <em>much</em> simpler than the extant code.</p></div></div>
+<div class="comment" id="comment-17840"><div class="by">Michael Durbin, 2016-10-15 02:52 UTC</div><div class="text"><p>I have likely stumbled onto an example of a failing of this while backporting this code to 4.6.  One of the integration tests failed, and I know of know reason, other than the unliklihood of the particular timing, that would prevent it from happening in the current branch.</p>
+
+<p>```</p>
+
+<p>DEBUG 22:09:02.612 (FedoraBaseResource) setting baseURL = <a href="http://localhost:40535/" class="external-link" rel="nofollow noreferrer">http://localhost:40535/</a><br/>
+TRACE 22:09:02.618 (DefaultPathLockManager) Thread 17 requesting write lock on /dc418fd1-54e8-4252-9808-b16d5f85a7f7.<br/>
+DEBUG 22:09:02.618 (DefaultPathLockManager) Acquired all necessary path locks  (Thread 17)<br/>
+INFO 22:09:02.621 (FedoraLdp) PUT resource 'dc418fd1-54e8-4252-9808-b16d5f85a7f7'<br/>
+TRACE 22:09:02.635 (DefaultPathLockManager) Thread 17 released locks.<br/>
+DEBUG 22:09:02.660 (FedoraBaseResource) setting baseURL = <a href="http://localhost:40535/" class="external-link" rel="nofollow noreferrer">http://localhost:40535/</a><br/>
+TRACE 22:09:02.663 (DefaultPathLockManager) Thread 21 requesting write lock on /dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/1.<br/>
+TRACE 22:09:02.663 (DefaultPathLockManager) Thread 21 requesting write lock on /dc418fd1-54e8-4252-9808-b16d5f85a7f7/00.<br/>
+DEBUG 22:09:02.663 (DefaultPathLockManager) Acquired all necessary path locks  (Thread 21)<br/>
+INFO 22:09:02.669 (FedoraLdp) PUT resource 'dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/1'<br/>
+TRACE 22:09:02.673 (DefaultPathLockManager) Thread 21 released locks.<br/>
+DEBUG 22:09:02.693 (FedoraBaseResource) setting baseURL = <a href="http://localhost:40535/" class="external-link" rel="nofollow noreferrer">http://localhost:40535/</a><br/>
+DEBUG 22:09:02.694 (FedoraBaseResource) setting baseURL = <a href="http://localhost:40535/" class="external-link" rel="nofollow noreferrer">http://localhost:40535/</a><br/>
+DEBUG 22:09:02.696 (FedoraBaseResource) setting baseURL = <a href="http://localhost:40535/" class="external-link" rel="nofollow noreferrer">http://localhost:40535/</a><br/>
+TRACE 22:09:02.702 (DefaultPathLockManager) Thread 22 requesting write lock on /dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/4.<br/>
+DEBUG 22:09:02.703 (DefaultPathLockManager) Acquired all necessary path locks  (Thread 22)<br/>
+TRACE 22:09:02.704 (DefaultPathLockManager) Thread 23 requesting write lock on /dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/3.<br/>
+DEBUG 22:09:02.708 (DefaultPathLockManager) Acquired all necessary path locks  (Thread 23)<br/>
+TRACE 22:09:02.710 (DefaultPathLockManager) Thread 24 requesting write lock on /dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/2.<br/>
+DEBUG 22:09:02.711 (DefaultPathLockManager) Acquired all necessary path locks  (Thread 24)<br/>
+INFO 22:09:02.713 (FedoraLdp) PUT resource 'dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/4'<br/>
+INFO 22:09:02.716 (FedoraLdp) PUT resource 'dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/3'<br/>
+INFO 22:09:02.717 (FedoraLdp) PUT resource 'dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/2'<br/>
+TRACE 22:09:02.738 (DefaultPathLockManager) Thread 22 released locks.<br/>
+TRACE 22:09:02.750 (DefaultPathLockManager) Thread 23 released locks.<br/>
+TRACE 22:09:02.758 (DefaultPathLockManager) Thread 24 released locks.<br/>
+DEBUG 22:09:02.766 (FedoraBaseResource) setting baseURL = <a href="http://localhost:40535/" class="external-link" rel="nofollow noreferrer">http://localhost:40535/</a><br/>
+INFO 22:09:02.771 (FedoraLdp) GET resource 'dc418fd1-54e8-4252-9808-b16d5f85a7f7'<br/>
+TRACE 22:09:02.772 (DefaultPathLockManager) Thread 18 requesting read lock on /dc418fd1-54e8-4252-9808-b16d5f85a7f7.<br/>
+DEBUG 22:09:02.772 (DefaultPathLockManager) Acquired all necessary path locks  (Thread 18)<br/>
+TRACE 22:09:02.780 (DefaultPathLockManager) Thread 18 released locks.<br/>
+INFO 22:09:02.807 (FedoraLdpIT) Found child: <a href="http://localhost:40535/dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/2" class="external-link" rel="nofollow noreferrer">http://localhost:40535/dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/2</a><br/>
+INFO 22:09:02.807 (FedoraLdpIT) Found child: <a href="http://localhost:40535/dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/4" class="external-link" rel="nofollow noreferrer">http://localhost:40535/dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/4</a><br/>
+INFO 22:09:02.807 (FedoraLdpIT) Found child: <a href="http://localhost:40535/dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/1" class="external-link" rel="nofollow noreferrer">http://localhost:40535/dc418fd1-54e8-4252-9808-b16d5f85a7f7/00/1</a><br/>
+...<br/>
+...</p>
+
+<p>Failed tests: <br/>
+  FedoraLdpIT.testConcurrentPutsWithPairtrees:2501 Four children should have been created. (only three found)<br/>
+```</p>
+
+<p>I suspect as our logs and response codes indicate, the resources were all created properly, but the update to the parents listing of children got trampled.  If that something that's also not written in a threadsafe way in the kernel, then at the API we need to lock the parent for writing when creating new child nodes.  I hope verifying this is trivial in Awaitility and that we have another patch to back port.</p></div></div>
+<div class="comment" id="comment-17846"><div class="by">A. Soroka, 2016-10-17 14:23 UTC</div><div class="text"><p>I don't understand this last comment at all. Does it report a failure of the kind that we expected might be possible, or a new kind of failure that should be corrected before I look at this issue?</p></div></div>
+<div class="comment" id="comment-17847"><div class="by">Michael Durbin, 2016-10-17 14:47 UTC</div><div class="text"><p>I don't think it needs to be corrected before this issue, and indeed any such fix can't be reliably tested before you look at this issue.</p></div></div>
+<div class="comment" id="comment-17848"><div class="by">A. Soroka, 2016-10-17 15:05 UTC</div><div class="text"><p>then what exactly are the conditions/actions/consequences that the i-tests for this issue should test? If the current versions sometimes fail and sometimes succeed, I obviously cannot take them as a definition with which to start.</p></div></div>
+<div class="comment" id="comment-17849"><div class="by">Michael Durbin, 2016-10-17 15:33 UTC</div><div class="text"><p>Assume they all pass, as they have on the branch of code against which they were written.  If you discover that they wouldn't pass under certain circumstances, document those as bugs and @ignore the test that identifies said circumstances.</p>
+
+<p>I understand the tests now are crude.  The goal of them is to ensure that two roughly concurrent operations proceed with predictable results.  In theory we'd need to test for scheduling that switches at literally every point in the running code to fully test it.  I don't know what options Awaitility offers, or what's practical.  Assuming you have the ability to ensure that scheduling of one thread is deferred until another processes and is blocked, I'd recommend testing with such switch points right before and right after any instances of lock acquisition or session granting/saving, as those would seem like the edge cases.  </p></div></div>
+<div class="comment" id="comment-17850"><div class="by">A. Soroka, 2016-10-17 16:16 UTC</div><div class="text"><p>Then I don't understand the import of the error report above. Does it not clearly demonstrate a failure of these very tests in just the case in which you say they don't fail?</p></div></div>
+<div class="comment" id="comment-17851"><div class="by">Michael Durbin, 2016-10-17 16:27 UTC</div><div class="text"><p>The above report was only observed when backporting to a previous release.  Lots of other differences existed, and the limitation of the current integration testing made it difficult to determine if it was a bug that affects the current codebase, or one that had been fixed between 4.6 and 4.7.  I thew it out there as an example of something I'd hope an improved integration test framework could answer.</p></div></div>
+<div class="comment" id="comment-17852"><div class="by">A. Soroka, 2016-10-17 16:39 UTC</div><div class="text"><p>Okay, that makes more sense. In that case, I understand the need here simply to be to check that two concurrent requests to create the same resource both proceed, one failing and one succeeding? </p></div></div>
+<div class="comment" id="comment-17853"><div class="by">A. Soroka, 2016-10-17 16:39 UTC</div><div class="text"><p>How can I check that the test fails in the absence of your fix (i.e. is there a commit I can revert)?</p></div></div>
+<div class="comment" id="comment-17854"><div class="by">Michael Durbin, 2016-10-17 17:52 UTC</div><div class="text"><p>I've made a dummy PathLockManager implementation that does nothing to see the failures or commented out the code that acquires the lock.</p></div></div>
+<div class="comment" id="comment-17856"><div class="by">A. Soroka, 2016-10-18 14:04 UTC</div><div class="text"><p>Ok, that sounds usable. I should be able to look at this sometime later this week.</p></div></div>
+<div class="comment" id="comment-17857"><div class="by">A. Soroka, 2016-10-18 14:33 UTC</div><div class="text"><p>Tried to start on this, got nowhere: the current master branch version of <tt>FedoraLdpIT</tt> fails to even run for me in Eclipse, with a bizarre stacktrace (below). Is this some kind of known issue?</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+java.lang.NoClassDefFoundError: Could not initialize <span class="code-keyword">class </span>org.fcrepo.integration.http.api.FedoraLdpIT
+	at sun.reflect.GeneratedConstructorAccessor8.newInstance(Unknown Source)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:422)
+	at org.junit.runners.BlockJUnit4ClassRunner.createTest(BlockJUnit4ClassRunner.java:195)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.createTest(SpringJUnit4ClassRunner.java:198)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner$1.runReflectiveCall(SpringJUnit4ClassRunner.java:251)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.methodBlock(SpringJUnit4ClassRunner.java:253)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:216)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:82)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:238)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:63)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:236)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:53)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:229)
+	at org.springframework.test.context.junit4.statements.RunBeforeTestClassCallbacks.evaluate(RunBeforeTestClassCallbacks.java:60)
+	at org.springframework.test.context.junit4.statements.RunAfterTestClassCallbacks.evaluate(RunAfterTestClassCallbacks.java:67)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:309)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.run(SpringJUnit4ClassRunner.java:162)
+	at org.eclipse.jdt.internal.junit4.runner.JUnit4TestReference.run(JUnit4TestReference.java:86)
+	at org.eclipse.jdt.internal.junit.runner.TestExecution.run(TestExecution.java:38)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests(RemoteTestRunner.java:459)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests(RemoteTestRunner.java:678)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.run(RemoteTestRunner.java:382)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.main(RemoteTestRunner.java:192)
+
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17858"><div class="by">Michael Durbin, 2016-10-18 14:49 UTC</div><div class="text"><p>Not known to me, but I've never tried to run integration tests within an IDE.  I've only used maven on the command line.</p></div></div>
+<div class="comment" id="comment-17866"><div class="by">A. Soroka, 2016-10-20 14:02 UTC</div><div class="text"><p>Obviated by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2276" >
+                <a href="FCREPO-2276.html" class="jira-issue-macro-key issue-link"  title="Locking code into the kernel layer" >
+            
+            FCREPO-2276
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-17985"><div class="by">Andrew Woods, 2016-11-09 18:48 UTC</div><div class="text"><p>Reopening this ticket because we will want to ensure that these scenarios work correctly even in the case that the locking code is refactored into the kernel layer, per: <a href="https://jira.duraspace.org/browse/FCREPO-2276" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2276</a></p></div></div>
+<p><a href="data/FCREPO-2274.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

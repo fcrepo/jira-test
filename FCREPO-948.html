@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-948 Policy index rebuilder fails</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-948</span> Policy index rebuilder fails</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-05-29 16:02 UTC</td></tr><tr><th>Updated</th><td>2011-07-26 16:44 UTC</td></tr><tr><th>Resolved</th><td>2011-07-26 16:44 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr></table>
+<h2>Environment</h2>configC
+<h2>Description</h2>
+<p>FeSL policy index rebuilder fails with the following stack trace.  As far as I can tell (and I've not had chance to look at this in any detail yet) I think it is something to do with the spring config not picking up the bean for this particular rebuilder.  Or perhaps this particular rebuilder is in need of some spring-ification - org.fcrepo.server.security.xacml.pdp.data.PolicyIndexRebuilder</p>
+
+<p>Error: java.lang.NullPointerException</p>
+
+<p>java.lang.NullPointerException<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getOptions(Rebuild.java:2<br/>
+22)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getUserInput(Rebuild.java<br/>
+:379)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:447)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.<br/>
+java:39)<br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAcces<br/>
+sorImpl.java:25)<br/>
+        at java.lang.reflect.Method.invoke(Method.java:597)<br/>
+        at org.fcrepo.server.utilities.rebuild.cli.CLILoader.main(CLILoader.java<br/>
+:77)</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-11985"><div class="by">Benjamin Armintor, 2011-06-21 21:48 UTC</div><div class="text"><p>Either the rebuilder needs to return an empty map from .getOptions(), or the Rebuild class needs to fail more gracefully on a null result there.  This should be an easy thing to fix.</p></div></div>
+<div class="comment" id="comment-11995"><div class="by">Benjamin Armintor, 2011-06-29 00:46 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/2fa0ef094024be1d0aa64cbf81d14fa5262861e1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/2fa0ef094024be1d0aa64cbf81d14fa5262861e1</a></p></div></div>
+<div class="comment" id="comment-12013"><div class="by">Stephen Bayliss, 2011-07-18 21:30 UTC</div><div class="text"><p>Reopening as rebuilder currently failing for Berkeley DB XML and eXist.</p>
+
+<p>Error reported (NB different error from the one reported above, so seems like a different issue):</p>
+
+<p>Rebuilding...<br/>
+ERROR 17:27:11.738 (DbXmlManager) Could not start database subsystem.<br/>
+com.sleepycat.dbxml.XmlException: Error: Operation not permitted<br/>
+        at com.sleepycat.dbxml.dbxml_javaJNI.XmlManager_createContainerInternal_<br/>
+_SWIG_0(Native Method) <span class="error">&#91;berkeley-dbxml-2.5.13.jar:na&#93;</span><br/>
+        at com.sleepycat.dbxml.XmlManager.createContainerInternal(XmlManager.jav<br/>
+a:613) <span class="error">&#91;berkeley-dbxml-2.5.13.jar:na&#93;</span><br/>
+        at com.sleepycat.dbxml.XmlManager.createContainer(XmlManager.java:180) [<br/>
+berkeley-dbxml-2.5.13.jar:na]<br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlManager.&lt;init&gt;(DbXmlMa<br/>
+nager.java:107) <span class="error">&#91;fcrepo-security-pdp-3.5-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlPolicyIndex.init(DbXml<br/>
+PolicyIndex.java:77) <span class="error">&#91;fcrepo-security-pdp-3.5-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlPolicyIndex.clear(DbXm<br/>
+lPolicyIndex.java:518) <span class="error">&#91;fcrepo-security-pdp-3.5-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.xacml.pdp.data.PolicyIndexRebuilder.start(<br/>
+PolicyIndexRebuilder.java:72) <span class="error">&#91;fcrepo-security-pdp-3.5-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.run(Rebuild.java:120) [fc<br/>
+repo-server-3.5-SNAPSHOT.jar:na]<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:462) [f<br/>
+crepo-server-3.5-SNAPSHOT.jar:na]<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) [na:1.6.0<br/>
+_17]<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.<br/>
+java:39) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAcces<br/>
+sorImpl.java:25) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.cli.CLILoader.main(CLILoader.java<br/>
+:77) <span class="error">&#91;fcrepo-server-3.5-SNAPSHOT-cli-loader-main.jar:na&#93;</span><br/>
+Finished.<br/>
+Rebuild failed:<br/>
+org.fcrepo.server.security.xacml.pdp.data.PolicyIndexException: Error initialisi<br/>
+ng DbXmlManager - Error: Operation not permitted<br/>
+org.fcrepo.server.security.xacml.pdp.data.PolicyIndexException: Error initialisi<br/>
+ng DbXmlManager - Error: Operation not permitted<br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlPolicyIndex.init(DbXml<br/>
+PolicyIndex.java:79)<br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlPolicyIndex.clear(DbXm<br/>
+lPolicyIndex.java:518)<br/>
+        at org.fcrepo.server.security.xacml.pdp.data.PolicyIndexRebuilder.start(<br/>
+PolicyIndexRebuilder.java:72)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.run(Rebuild.java:120)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:462)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.<br/>
+java:39)<br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAcces<br/>
+sorImpl.java:25)<br/>
+        at java.lang.reflect.Method.invoke(Method.java:597)<br/>
+        at org.fcrepo.server.utilities.rebuild.cli.CLILoader.main(CLILoader.java<br/>
+:77)<br/>
+Caused by: org.fcrepo.server.security.xacml.pdp.data.PolicyStoreException: Error<br/>
+: Operation not permitted<br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlManager.&lt;init&gt;(DbXmlMa<br/>
+nager.java:149)<br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlPolicyIndex.init(DbXml<br/>
+PolicyIndex.java:77)<br/>
+        ... 9 more<br/>
+Caused by: com.sleepycat.dbxml.XmlException: Error: Operation not permitted, err<br/>
+code = DATABASE_ERROR<br/>
+        at com.sleepycat.dbxml.dbxml_javaJNI.XmlManager_createContainerInternal_<br/>
+_SWIG_0(Native Method)<br/>
+        at com.sleepycat.dbxml.XmlManager.createContainerInternal(XmlManager.jav<br/>
+a:613)<br/>
+        at com.sleepycat.dbxml.XmlManager.createContainer(XmlManager.java:180)<br/>
+        at org.fcrepo.server.security.xacml.pdp.data.DbXmlManager.&lt;init&gt;(DbXmlMa<br/>
+nager.java:107)<br/>
+        ... 10 more</p></div></div>
+<div class="comment" id="comment-12014"><div class="by">Benjamin Armintor, 2011-07-18 22:33 UTC</div><div class="text"><p>This is, to be clear, a different issue, correct?</p>
+
+<p>What's the stacktrace for the eXist failure?</p></div></div>
+<div class="comment" id="comment-12015"><div class="by">Stephen Bayliss, 2011-07-18 22:36 UTC</div><div class="text"><p>Yes Ben, it's certainly different to the original issue.  It is some kind of regression though as the rebuilder was working when originally committed - I'll need to run the debugger on it I think to work out what's going on.  It's a little clear with eXist - the db doesn't seem to have been created.</p>
+
+<p>Stack trace for eXist:</p>
+
+<p>ERROR 18:19:18.679 (ExistPolicyIndex) Error adding resource fedora-policy:access<br/>
+-staff Failed to invoke method parse in class org.exist.xmlrpc.RpcConnection: Co<br/>
+llection /db/fesl not found<br/>
+org.xmldb.api.base.XMLDBException: Failed to invoke method parse in class org.ex<br/>
+ist.xmlrpc.RpcConnection: Collection /db/fesl not found<br/>
+        at org.exist.xmldb.RemoteCollection.store(RemoteCollection.java:523) [ex<br/>
+ist.jar:na]<br/>
+        at org.exist.xmldb.RemoteCollection.storeResource(RemoteCollection.java:<br/>
+488) <span class="error">&#91;exist.jar:na&#93;</span><br/>
+        at org.exist.xmldb.RemoteCollection.storeResource(RemoteCollection.java:<br/>
+458) <span class="error">&#91;exist.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.xacml.pdp.data.ExistPolicyIndex.addPolicy(<br/>
+ExistPolicyIndex.java:142) <span class="error">&#91;fcrepo-security-pdp-3.5-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.xacml.pdp.data.PolicyIndexRebuilder.addObj<br/>
+ect(PolicyIndexRebuilder.java:46) <span class="error">&#91;fcrepo-security-pdp-3.5-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.addObject(Rebuild.java:18<br/>
+5) <span class="error">&#91;fcrepo-server-3.5-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.run(Rebuild.java:143) [fc<br/>
+repo-server-3.5-SNAPSHOT.jar:na]<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:462) [f<br/>
+crepo-server-3.5-SNAPSHOT.jar:na]<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) [na:1.6.0<br/>
+_17]<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.<br/>
+java:39) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAcces<br/>
+sorImpl.java:25) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.cli.CLILoader.main(CLILoader.java<br/>
+:77) <span class="error">&#91;fcrepo-server-3.5-SNAPSHOT-cli-loader-main.jar:na&#93;</span><br/>
+Caused by: org.apache.xmlrpc.XmlRpcException: Failed to invoke method parse in c<br/>
+lass org.exist.xmlrpc.RpcConnection: Collection /db/fesl not found<br/>
+        at org.apache.xmlrpc.client.XmlRpcStreamTransport.readResponse(XmlRpcStr<br/>
+eamTransport.java:197) <span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.apache.xmlrpc.client.XmlRpcStreamTransport.sendRequest(XmlRpcStre<br/>
+amTransport.java:156) <span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.apache.xmlrpc.client.XmlRpcHttpTransport.sendRequest(XmlRpcHttpTr<br/>
+ansport.java:115) <span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.apache.xmlrpc.client.XmlRpcSunHttpTransport.sendRequest(XmlRpcSun<br/>
+HttpTransport.java:69) <span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.apache.xmlrpc.client.XmlRpcClientWorker.execute(XmlRpcClientWorke<br/>
+r.java:56) <span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.apache.xmlrpc.client.XmlRpcClient.execute(XmlRpcClient.java:167)<br/>
+<span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.apache.xmlrpc.client.XmlRpcClient.execute(XmlRpcClient.java:158)<br/>
+<span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.apache.xmlrpc.client.XmlRpcClient.execute(XmlRpcClient.java:147)<br/>
+<span class="error">&#91;xmlrpc-client-3.1.2.jar:3.1.2&#93;</span><br/>
+        at org.exist.xmldb.RemoteCollection.store(RemoteCollection.java:521) [ex<br/>
+ist.jar:na]<br/>
+        ... 12 common frames omitted</p></div></div>
+<div class="comment" id="comment-12017"><div class="by">Benjamin Armintor, 2011-07-19 21:24 UTC</div><div class="text"><p>It's your problem now, buddy!</p></div></div>
+<div class="comment" id="comment-12020"><div class="by">Stephen Bayliss, 2011-07-26 16:44 UTC</div><div class="text"><p>Fixed in commits:</p>
+<ul>
+	<li><a href="https://github.com/fcrepo/fcrepo/commit/721c2846a991ad7c0bfc5a1842eeab69eb8dcc21" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/721c2846a991ad7c0bfc5a1842eeab69eb8dcc21</a></li>
+	<li><a href="https://github.com/fcrepo/fcrepo/commit/b9c64be59996a693af7548fc066ea87ba341cf81" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/b9c64be59996a693af7548fc066ea87ba341cf81</a></li>
+	<li><a href="https://github.com/fcrepo/fcrepo/commit/88d52a332d80b15d2bb143e1b5230b24e2ef4a38" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/88d52a332d80b15d2bb143e1b5230b24e2ef4a38</a></li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-948.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

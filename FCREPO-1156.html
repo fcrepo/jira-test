@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1156 Performance degradation when adding a lot of datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1156</span> Performance degradation when adding a lot of datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>frank asseg</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2012-10-04 16:31 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Is related to</th><td><a href="FCREPO-25.html">FCREPO-25</a> Option to store Audit Trail outside the object</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1161.html">FCREPO-1161</a> DateTimeUtil does create a lot of &quot;SimpleDateFormat&quot; objects</td></tr></table>
+<h2>Environment</h2>Linux 3.5.3-1-ARCH #1 SMP PREEMPT Sun Aug 26 09:14:51 CEST 2012 x86_64 GNU/Linux<br/>
+Java(TM) SE Runtime Environment (build 1.7.0_02-b13)<br/>
+Java HotSpot(TM) 64-Bit Server VM (build 22.0-b10, mixed mode)<br/>
+
+<h2>Description</h2>
+<p>When adding a lot of manages datastreams to an object the ingestion throughput performance degrades in a linear fashion.<br/>
+ When e.g. ingesting 1000 managed datastreams with 500KB each the time needed for adding the datastream for the first is ~20ms and this degrades to ~130ms on a local installation.<br/>
+ I created a git hub project to reproduce this, which can be found here: <br/>
+<a href="https://github.com/fasseg/fcrepo-test-ingester.git" class="external-link" rel="nofollow noreferrer">https://github.com/fasseg/fcrepo-test-ingester.git</a><br/>
+which can be run as described in the README to reproduce this issue.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1156/10168_ingest_no_audit.gif">ingest_no_audit.gif</a>, 13616 bytes, added by frank asseg on 2012-10-18</li>
+<li><a href="attachments/FCREPO-1156/10173_managed_audit_xstream_attributes.gif">managed_audit_xstream_attributes.gif</a>, 10107 bytes, added by frank asseg on 2012-11-29</li>
+<li><a href="attachments/FCREPO-1156/10172_managed_audit_xstream_plain.gif">managed_audit_xstream_plain.gif</a>, 10119 bytes, added by frank asseg on 2012-11-29</li>
+<li><a href="attachments/FCREPO-1156/10167_non_versionable_patchedDateTimeUtiliy.gif">non_versionable_patchedDateTimeUtiliy.gif</a>, 22235 bytes, added by frank asseg on 2012-10-16</li>
+<li><a href="attachments/FCREPO-1156/10165_non_versionable.gif">non_versionable.gif</a>, 20130 bytes, added by frank asseg on 2012-10-16</li>
+<li><a href="attachments/FCREPO-1156/10163_result_ingest.png">result_ingest.png</a>, 9984 bytes, added by frank asseg on 2012-10-04</li>
+<li><a href="attachments/FCREPO-1156/10164_result_update.png">result_update.png</a>, 12614 bytes, added by frank asseg on 2012-10-04</li>
+<li><a href="attachments/FCREPO-1156/10166_versionable.gif">versionable.gif</a>, 18587 bytes, added by frank asseg on 2012-10-16</li>
+</ul>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-12457"><div class="by">frank asseg, 2012-10-04 17:01 UTC</div><div class="text"><p>a plot of the degradation when running the test tool thusly:<br/>
+java -jar target/test-ingester-0.0.1-SNAPSHOT.jar <a href="http://localhost:8080/fedora/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/</a> fedoraAdmin fed 1000 500000</p>
+
+<p>i.e. 1000 datatstreams with 500KB size each</p></div></div>
+<div class="comment" id="comment-12458"><div class="by">frank asseg, 2012-10-04 18:17 UTC</div><div class="text"><p>a plot of the degradation when <b>updating</b> 1000 datstreams</p></div></div>
+<div class="comment" id="comment-12462"><div class="by">frank asseg, 2012-10-16 19:45 UTC</div><div class="text"><p>the same test with versionable and non versionable datastreams, and there seems to be a additional overhead which sems to add an additional linear factor during ingest. i'll retest this with 5000 datastreams to check if it stay linear..</p></div></div>
+<div class="comment" id="comment-12463"><div class="by">frank asseg, 2012-10-16 22:06 UTC</div><div class="text"><p>didn't realize until i used a sufficently large data set that the time needed for the first update corresponds to the time needed for the last ingest.<br/>
+so it seems to be just related to the FOXML size, which in turn speaks for an issue with the foxmldeserializer</p></div></div>
+<div class="comment" id="comment-12464"><div class="by">frank asseg, 2012-10-16 22:25 UTC</div><div class="text"><p>SimpleDateFormat usage in DateUtility seems to be increasing, with a simple patch using a static instance of SimpleDateFormat the timings seem to be a bit better. I'll have to profile further into this..</p></div></div>
+<div class="comment" id="comment-12465"><div class="by">frank asseg, 2012-10-17 00:08 UTC</div><div class="text"><p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-25" >
+                <a href="FCREPO-25.html" class="jira-issue-macro-key issue-link"  title="Option to store Audit Trail outside the object" >
+            
+            FCREPO-25
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ might be related since the audit inline xml datastreams inflate the foxml size</p></div></div>
+<div class="comment" id="comment-12468"><div class="by">frank asseg, 2012-10-18 13:28 UTC</div><div class="text"><p>the last test was done by commenting out the addition of the audit trail in DefaultManager and had the desired effect of mitigating the performance degradation greatly.<br/>
+The datastream used has been set to be versionable.</p></div></div>
+<div class="comment" id="comment-12501"><div class="by">frank asseg, 2012-11-29 20:39 UTC</div><div class="text"><p>Added statistics for the managed audit datastream update/ingest with plain audit datastreams and managed datastreams using attributes.</p></div></div>
+<div class="comment" id="comment-12923"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1156.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

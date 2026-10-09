@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-822 Ingesting with &quot;M&quot; datastream contentLocation set to a file fails with Akubra</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-822</span> Ingesting with &quot;M&quot; datastream contentLocation set to a file fails with Akubra</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Asger Askov Blekinge</td></tr><tr><th>Created</th><td>2010-11-19 17:06 UTC</td></tr><tr><th>Updated</th><td>2011-02-21 23:25 UTC</td></tr><tr><th>Resolved</th><td>2011-01-18 20:33 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr><tr><th>Is related to</th><td><a href="FCREPO-776.html">FCREPO-776</a> Allow externally-managed content referring to a file URI to be readable by unauthenticated users</td></tr></table>
+<h2>Environment</h2>Windows (also verified using Ubuntu), XACML turned on, ConfigB, deny-unallowed-file-resolution.xml removed, Akubra storage.  Ingest using REST API (through web client)
+<h2>Description</h2>
+<p>Ingesting an object on Windows, managed content datastream, with the datastream defined as follows:</p>
+
+<p>      &lt;foxml:contentLocation REF="file:/D:/Fedora34Test/test/datastream.xml" TYPE="URL"/&gt;</p>
+
+<p>Ingest fails.  Reports a "Policy blocked datastream resolution" error.</p>
+
+<p>However this is with the deny-unallowed-file-resolution.xml disabled (ie policy deleted; policies reloaded).</p>
+
+<p>Log with debug turned up is below.</p>
+
+<p>The error seemingly at the root of this is (the actual error reporting is confusing):<br/>
+(PolicyFinder) An error occured while trying to find a single applicable policy for a request: Malformed object token: <a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a></p>
+
+<p>This seems to be coming from org.fcrepo.server.storage.lowlevel.akugra.AkubraLowlevelStorage.getBlobId</p>
+
+<p>What is confusing is why the file path ever got through to this class in the first place - I would expect only PIDs or internal datastream identifiers.</p>
+
+<p>Reverting to the legacy storage solves the problem.</p>
+
+<p>Log:</p>
+
+<p>INFO 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Committing addition of demo:ingest<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (DOTranslationUtility) makeAbsoluteURLs: input=<a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a>, output=<a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a><br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (DefaultExternalContentManager) in getExternalContent(), url=<a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a><br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (DefaultExternalContentManager) in getFile(), url=<a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a><br/>
+INFO 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (DefaultExternalContentManager) Checking resolution security on <a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a><br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (DefaultAuthorization) Entered enforceRetrieveFile<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (ReadOnlyContext) SINGLE SUBJECT VALUE from map == fedoraAdmin<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) context index set=42<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) wrapSubjectIdAsSubjects(): fedoraAdmin<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) wrapSubjectIdAsSubjects(): subjectAttribute, id=urn:oasis:names:tc:xacml:1.0:subject:subject-id, type=<a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>, value=StringAttribute: ""<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) wrapSubjectIdAsSubjects(): subjectAttribute, id=urn:fedora:names:fedora:2.1:subject:loginId, type=<a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>, value=StringAttribute: "fedoraAdmin"<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) request action has urn:fedora:names:fedora:2.1:action:contextId=StringAttribute: "42"<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) request action has urn:fedora:names:fedora:2.1:action:api=StringAttribute: "urn:fedora:names:fedora:2.1:action:api-m"<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) request action has urn:fedora:names:fedora:2.1:action:id=StringAttribute: "urn:fedora:names:fedora:2.1:action:id-retrieveFile"<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) request action has urn:oasis:names:tc:xacml:1.0:action:action-id=StringAttribute: ""<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) about to ref contextAttributeFinder=org.fcrepo.server.security.ContextAttributeFinderModule@20224a<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (ContextAttributeFinderModule) registering 42<br/>
+DEBUG 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Got DOReader (source=null) for <a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a> in 0ms.<br/>
+INFO 2010-11-19 10:45:19.310 <span class="error">&#91;http-8080-1&#93;</span> (PolicyFinder) An error occured while trying to find a single applicable policy for a request: Malformed object token: <a href="file:/D:/Fedora34Test/test/datastream.xml" class="external-link" rel="nofollow noreferrer">file:/D:/Fedora34Test/test/datastream.xml</a><br/>
+DEBUG 2010-11-19 10:45:19.326 <span class="error">&#91;http-8080-1&#93;</span> (PolicyEnforcementPoint) Policy evaluation took 16ms.</p>
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11701"><div class="by">Asger Askov Blekinge, 2010-11-24 00:10 UTC</div><div class="text"><p>Bug solved, will explain further in next comment. It is a simple problem between PolicyFinder, RetrieveObject and Akubra. Many bits of code do not adhere to the interface, but stuff works most of the time. You found a combo that broke the system</p></div></div>
+<div class="comment" id="comment-11776"><div class="by">Chris Wilper, 2011-01-18 20:33 UTC</div><div class="text"><p>Fixed in maintenance-3.4: <a href="https://github.com/fcrepo/fcrepo/commit/bcb049cdb20415c774266ff3a78f8969c7efdcb0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/bcb049cdb20415c774266ff3a78f8969c7efdcb0</a><br/>
+...and master: <a href="https://github.com/fcrepo/fcrepo/commit/2338fa3436eb8adf23371cf667b5c3f45b01341d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/2338fa3436eb8adf23371cf667b5c3f45b01341d</a></p></div></div>
+<div class="comment" id="comment-11784"><div class="by">Chris Wilper, 2011-01-20 07:28 UTC</div><div class="text"><p>This was also happening in Ubuntu &#8211; OS doesn't matter.  Fix verified.</p></div></div>
+<p><a href="data/FCREPO-822.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

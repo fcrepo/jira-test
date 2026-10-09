@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1733 Fcrepo fails to launch on Win Server family</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1733</span> Fcrepo fails to launch on Win Server family</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Answered</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Osman Din</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-09-16 16:21 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 20:00 UTC</td></tr><tr><th>Resolved</th><td>2015-09-17 19:08 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>bug</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-1581.html">FCREPO-1581</a> Upgrade: Modeshape-4.4.0.Final... when released</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1581.html">FCREPO-1581</a> Upgrade: Modeshape-4.4.0.Final... when released</td></tr></table>
+<h2>Environment</h2>Windows Server 2008 R2
+<h2>Description</h2>
+<p>fcrepo4 builds OK, but there's a runtime exception on Windows 2008 R2 (at least) causing fcrepo not to launch.</p>
+
+<p>Caused by: java.lang.NoSuchMethodError: com.google.common.io.Closeables.closeQuietly(Ljava/io/Closeable;)V<br/>
+    at org.iq80.leveldb.impl.MMapLogWriter.close(MMapLogWriter.java:83) ~<span class="error">&#91;leveldb-0.5.jar:na&#93;</span><br/>
+    at org.iq80.leveldb.impl.VersionSet.initializeIfNeeded(VersionSet.java:111) ~<span class="error">&#91;leveldb-0.5.jar:na&#93;</span><br/>
+    at org.iq80.leveldb.impl.VersionSet.&lt;init&gt;(VersionSet.java:91) ~<span class="error">&#91;leveldb-0.5.jar:na&#93;</span><br/>
+    at org.iq80.leveldb.impl.DbImpl.&lt;init&gt;(DbImpl.java:167) ~<span class="error">&#91;leveldb-0.5.jar:na&#93;</span><br/>
+    at org.iq80.leveldb.impl.Iq80DBFactory.open(Iq80DBFactory.java:59) ~<span class="error">&#91;leveldb-0.5.jar:na&#93;</span><br/>
+    at org.infinispan.persistence.leveldb.LevelDBStore.openDatabase(LevelDBStore.java:143) ~<span class="error">&#91;infinispan-cachestore-leveldb-6.0.2.Final.jar:6.0.2.Final&#93;</span><br/>
+    at org.infinispan.persistence.leveldb.LevelDBStore.start(LevelDBStore.java:95) ~<span class="error">&#91;infinispan-cachestore-leveldb-6.0.2.Final.jar:6.0.2.Final&#93;</span><br/>
+    at org.infinispan.persistence.manager.PersistenceManagerImpl.start(PersistenceManagerImpl.java:122) ~<span class="error">&#91;infinispan-core-6.0.2.Final.jar:6.0.2.Final&#93;</span><br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~<span class="error">&#91;na:1.8.0_60&#93;</span><br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source) ~<span class="error">&#91;na:1.8.0_60&#93;</span><br/>
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source) ~<span class="error">&#91;na:1.8.0_60&#93;</span><br/>
+    at java.lang.reflect.Method.invoke(Unknown Source) ~<span class="error">&#91;na:1.8.0_60&#93;</span><br/>
+    at org.infinispan.commons.util.ReflectionUtil.invokeAccessibly(ReflectionUtil.java:183) ~<span class="error">&#91;infinispan-commons-6.0.2.Final.jar:6.0.2.Final&#93;</span><br/>
+    ... 49 common frames omitted</p>
+
+<p>The error message was reported in: </p>
+
+<p><a href="https://groups.google.com/forum/#!topic/fedora-community/-MnqHSAkLjY" class="external-link" rel="nofollow noreferrer">https://groups.google.com/forum/#!topic/fedora-community/-MnqHSAkLjY</a></p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-15245"><div class="by">Osman Din, 2015-09-17 13:33 UTC</div><div class="text"><p>This is happening because of conflicting Guava lookups.</p>
+
+<p>Guava first removed their Closeables.closeQueity() method in v 17.0:</p>
+
+<p><a href="https://github.com/google/guava/commit/b05363dc42ed0be66f83a2dda182265c062bc754#diff-3ba08d6a53c177c0f784f39387fe4c76" class="external-link" rel="nofollow noreferrer">https://github.com/google/guava/commit/b05363dc42ed0be66f83a2dda182265c062bc754#diff-3ba08d6a53c177c0f784f39387fe4c76</a></p>
+
+<p>Please see the release notes:</p>
+
+<p><a href="https://code.google.com/p/guava-libraries/wiki/Release17" class="external-link" rel="nofollow noreferrer">https://code.google.com/p/guava-libraries/wiki/Release17</a></p>
+
+<p>And then they re-added it, but with a different signature:</p>
+
+<p><a href="https://github.com/google/guava/commit/f6f3aab8605bd368ef37ce82298d8896a358f669" class="external-link" rel="nofollow noreferrer">https://github.com/google/guava/commit/f6f3aab8605bd368ef37ce82298d8896a358f669</a></p>
+
+<p>And even before this change of mind, they were trying to deprecate it in v 15.0.</p>
+
+<p>Anyway, FileChannel is a Closeable but it's not an InputStream or a Reader (although the latter are indeed Closeable):</p>
+
+<p><a href="http://docs.oracle.com/javase/7/docs/api/java/nio/channels/FileChannel.html" class="external-link" rel="nofollow noreferrer">http://docs.oracle.com/javase/7/docs/api/java/nio/channels/FileChannel.html</a></p>
+
+<p>But this is relied upon by level db 0.5, like so:</p>
+
+<p><a href="https://github.com/dain/leveldb/blob/0.5/leveldb/src/main/java/org/iq80/leveldb/impl/MMapLogWriter.java#L83" class="external-link" rel="nofollow noreferrer">https://github.com/dain/leveldb/blob/0.5/leveldb/src/main/java/org/iq80/leveldb/impl/MMapLogWriter.java#L83</a></p>
+
+<p>The particular line tries to close a FileChannel, but a newer Guava version (version 18.0 loaded by fcrepo) expects an InputStream or a Reader.</p>
+
+<p>My guess is that on some operating systems an older version of guava is available at classpath but this fails to happen on Windows Server. But this is a guess &#8211;<br/>
+I haven't seen it happening in action and I'm not sure if it's worth verifying this.</p>
+
+<p>However, it must be noted:</p>
+
+<p>This bug is occurring as a side effect of fcrepo use of older ModeShape and Infinispan versions. </p>
+
+<p>The end result of using an older version of Infinispan, whether via ModeShape or directly,<br/>
+is that LevelDB connector jar version 0.5, not 0.7, is brought in.</p>
+
+<p>Therefore:</p>
+
+<p>If upgrading to latest ModeShape is on the roadmap anyway, and the stale logic of a class (see below) in fcrepo-kerne-modeshape is scheduled for an update, then this bug should get resolved automatically. </p>
+
+<p>The reason for this suggestion is the following commit:</p>
+
+<p><a href="https://github.com/infinispan/infinispan/commit/7e2695f1317995e2efa3cffec4881d807aa1d246#diff-04dc5d029560773ac79faaf3da0fbb22R136" class="external-link" rel="nofollow noreferrer">https://github.com/infinispan/infinispan/commit/7e2695f1317995e2efa3cffec4881d807aa1d246#diff-04dc5d029560773ac79faaf3da0fbb22R136</a></p>
+
+<p>Why is that significant? In the 0.7 version of the LevelDB jar, they created their own class org.iq80.leveldb.util.Closeables and removed the dependency on com.google.common.io.Closeables, altogether.</p>
+
+<p><a href="https://github.com/dain/leveldb/commit/be7714e4356f575520d306d8710488563f660066#diff-f4544cb6331d092347a0ebe3cf598549L22" class="external-link" rel="nofollow noreferrer">https://github.com/dain/leveldb/commit/be7714e4356f575520d306d8710488563f660066#diff-f4544cb6331d092347a0ebe3cf598549L22</a></p>
+
+<p>ModeShape 4.3.0 (and above) should take care of this issue. The following is the switch they made to newer Infinispan version:</p>
+
+<p><a href="https://github.com/ModeShape/modeshape/commit/19f518b00c799a4dd93d95189d9283e60e09f416#diff-087bd377ad142482401f1d144ba2a9ddL247" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/commit/19f518b00c799a4dd93d95189d9283e60e09f416#diff-087bd377ad142482401f1d144ba2a9ddL247</a></p>
+
+<p>And, a change would be necessary to a utility class in fcrepo-kernel-modeshape, <br/>
+as this particular class uses Infinispan 6.2 for a deprecated class org.infinispan.manager.CacheManager.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/services/functions/GetClusterConfiguration.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/services/functions/GetClusterConfiguration.java</a></p>
+
+<p>Please let me know about your preference.</p></div></div>
+<div class="comment" id="comment-15251"><div class="by">Osman Din, 2015-09-17 18:49 UTC</div><div class="text"><p>Resolved by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1581" >
+                <a href="FCREPO-1581.html" class="jira-issue-macro-key issue-link"  title="Upgrade: Modeshape-4.4.0.Final... when released" >
+            
+            FCREPO-1581
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, when released.</p>
+
+<p>Confirms finding outlined above. Upgrading ModeShape loads the correct JAR an fixes the launch problem on Windows Server (tested only 2008 R2 but it shouldn't matter).</p>
+
+<p>The fcrepo branch I used was modeshape-4.4.0, and I ran it in Tomcat 8. There was a problem running the jetty-console JAR on that branch, but that's a separate issue (and I'm not sure if it's tied to that particular branch).</p></div></div>
+<div class="comment" id="comment-15253"><div class="by">Andrew Woods, 2015-09-17 20:55 UTC</div><div class="text"><p>Osman Din, would you please create a ticket for the jetty-console issue you are seeing?</p></div></div>
+<div class="comment" id="comment-15256"><div class="by">Osman Din, 2015-09-18 12:57 UTC</div><div class="text"><p><a href="https://jira.duraspace.org/browse/FCREPO-1740" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1740</a></p></div></div>
+<div class="comment" id="comment-15544"><div class="by">Andrew Woods, 2015-10-20 16:57 UTC</div><div class="text"><p>Now that <a href="https://jira.duraspace.org/browse/FCREPO-1581" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1581</a> has been merged, can someone with a Windows machine verify this item has also been resolved?</p></div></div>
+<div class="comment" id="comment-15554"><div class="by">Osman Din, 2015-10-22 20:32 UTC</div><div class="text"><p>Andrew Woods No, it's not running (on Win server family) and the issue persists. What is the difference between this release and the fcrepo modeshape-4.4.0 branch (I can't find it on your github page)? As the earlier comments indicate, I had successfully tested against the latter.</p></div></div>
+<div class="comment" id="comment-15555"><div class="by">Andrew Woods, 2015-10-22 22:28 UTC</div><div class="text"><p>Osman Din, This commit (<a href="https://github.com/fcrepo4/fcrepo4/commit/e0acd0c69229a47791548aa607fdff35fa942d3a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/e0acd0c69229a47791548aa607fdff35fa942d3a</a>) is not included in a release. Are you testing against the master branch of Fedora?</p></div></div>
+<div class="comment" id="comment-15556"><div class="by">Osman Din, 2015-10-23 13:51 UTC</div><div class="text"><p>Andrew Woods Yes, my mistake, as I was testing against a release.</p>
+
+<p>The master branch is now working OK on a Windows Server, so the issue has been resolved.</p></div></div>
+<div class="comment" id="comment-15558"><div class="by">Andrew Woods, 2015-10-23 20:46 UTC</div><div class="text"><p>Resolved by: <a href="https://jira.duraspace.org/browse/FCREPO-1581" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1581</a> </p></div></div>
+<p><a href="data/FCREPO-1733.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

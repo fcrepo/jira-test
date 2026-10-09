@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2038 RDF parsing error</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2038</span> RDF parsing error</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>justin</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-05-23 21:44 UTC</td></tr><tr><th>Updated</th><td>2017-01-10 17:05 UTC</td></tr><tr><th>Resolved</th><td>2017-01-10 17:05 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Environment</h2>FCREPO 4.5.1
+<h2>Description</h2>
+<p>When I PUT this RDF:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>"\n&lt;&gt; a &lt;http://pcdm.org/models#Object&gt;,\n     &lt;http://projecthydra.org/works/models#Work&gt;;\n   &lt;http://purl.org/dc/terms/title&gt; \"Presidential Address: Rethinking the Comparative and the International\";\n   &lt;http://id.loc.gov/vocabulary/relators/dpt&gt; \"batchuser@example.com\";\n   &lt;http://purl.org/dc/elements/1.1/contributor&gt; \"Carnoy, Martin\",\n     \"Comparative Education Review\";\n   &lt;http://purl.org/dc/elements/1.1/description&gt; \"\"\"\"It is both a great honor and a great responsibility to address the Comparative and International Education Society (CIES) on the occasion of its fiftieth anniversary. A great honor, of course, because of the symbolism associated with such an event. The great responsibility comes from the richness and depth of past presidential addresses and the weight of living up to their standards. The theme of our meeting this year in Hawaii is \"\"Rethinking the Comparative.\"\"  It might well have been \"\"Rethinking the Comparative and the International,\"\"  for both elements of our name bear reexamination in a world and in national societies that are changing rapidly and profoundly. We need to ask ourselves, after 50 years, what it is that makes comparative and international education unique and what the CIES, as an intellectual community, contributes to understanding how the world works and to human progress.\r \"\"\"\";\n   &lt;http://purl.org/dc/elements/1.1/subject&gt; \"-- comparative education\",\n     \"-- international education\";\n   &lt;http://purl.org/dc/terms/created&gt; \"2006\";\n   &lt;http://purl.org/dc/terms/dateSubmitted&gt; \"2016-05-23T21:41:30.761946+00:00\"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt;;\n   &lt;http://purl.org/dc/terms/modified&gt; \"2016-05-23T21:41:30.766416+00:00\"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt;;\n   &lt;http://purl.org/dc/terms/type&gt; \"text\";\n   &lt;http://www.w3.org/ns/auth/acl#accessControl&gt; &lt;http://127.0.0.1:8986/rest/test/16/62/08/58/16620858-37a1-4da0-ae04-c906e0db4871&gt;;\n   &lt;info:fedora/fedora-system:def/model#hasModel&gt; \"GenericWork\" .\n"
+</pre>
+</div></div>
+
+<p>Fcrepo returns a 400: "RDF was not parsable: <span class="error">&#91;line: 9, col: 1 &#93;</span> Broken token (newline): ;"</p>
+
+<p>The problem seems related to the \r in the description field. When I remove that it works.</p>
+
+<p>Source data: <a href="https://purl.stanford.edu/wm346hj8366.xml" class="external-link" rel="nofollow noreferrer">https://purl.stanford.edu/wm346hj8366.xml</a>  The description field has a quote in it, thus the quadruple quote.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-17622"><div class="by">Danny Bernstein, 2016-09-23 19:20 UTC</div><div class="text"><p>Hey Justin -<br/>
+I'm looking into this one.  Can you give me a curl command that will demonstrate the problem?  It would help me determine whether this issue is still a problem post Jena 3.1 upgrade.  <br/>
+Thanks.</p></div></div>
+<div class="comment" id="comment-17630"><div class="by">Danny Bernstein, 2016-09-26 19:05 UTC</div><div class="text"><p>Justin - forget it, I figured it out.   So this is still a problem post recent Jena 3.1 updates.  Incidentally,  having a \n character in the value field also triggers the problem. The issue can be reproduced by issuing the following commands against rev ba835 (Sept 23):</p>
+
+<p>1.  create a new node.<br/>
+2.  create a  sparql update file with a carriage return and/or new line in the description field : </p>
+
+<p>PREFIX dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt;<br/>
+INSERT </p>
+{ 
+       &lt;&gt; dc:description "Important Academic 
+Research 
+Paper" . 
+}
+
+<p>3.  execute this: </p>
+
+<p>curl -v -X PATCH -H "Content-Type: application/sparql-update" --data-binary  "@file-name-herel"  <a href="http://localhost:8080/rest/path/to/node" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/path/to/node</a></p>
+
+<p>NB:  The jira is not displaying the line break after  the word "Research".</p></div></div>
+<div class="comment" id="comment-17631"><div class="by">Danny Bernstein, 2016-09-26 19:34 UTC</div><div class="text"><p>Actually this appears to be fixed. </p>
+
+<p>By changing the sparql file to: <br/>
+PREFIX dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt;<br/>
+INSERT</p>
+{ &lt;&gt; dc:description "Important Academic \r Research Paper" . }
+
+<p>The PATCH request returns a 204. </p>
+
+<p>When retrieving the node's metadata, the value for description is not escaped, I believe as we would expect.</p>
+
+<p>Perhaps not a bug? Either it was fixed in the Jena update or the request was not properly escaped.</p></div></div>
+<div class="comment" id="comment-17632"><div class="by">Danny Bernstein, 2016-09-26 19:37 UTC</div><div class="text"><p>Hey Justin - this appears to be fixed.  I'm passing this back to you for your review.</p></div></div>
+<div class="comment" id="comment-17664"><div class="by">Andrew Woods, 2016-09-28 14:08 UTC</div><div class="text"><p>justin, pending your review.</p></div></div>
+<div class="comment" id="comment-17665"><div class="by">Andrew Woods, 2016-09-28 14:12 UTC</div><div class="text"><p>Note, justin is currently unavailable. Send reminder Oct 24, 2016.</p></div></div>
+<div class="comment" id="comment-18396"><div class="by">Andrew Woods, 2017-01-10 17:05 UTC</div><div class="text"><p>Closing this issue as it can not be reproduced locally and the issue reporter has not indicated an interest in pursuing.</p></div></div>
+<p><a href="data/FCREPO-2038.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1507 audit-triplestore and fcrepo-audit should use the same URIs for identifying events</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1507</span> audit-triplestore and fcrepo-audit should use the same URIs for identifying events</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-04-27 20:19 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:42 UTC</td></tr><tr><th>Resolved</th><td>2015-06-05 15:50 UTC</td></tr><tr><th>Components</th><td>f4-audit</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>audit</td></tr></table>
+<h2>Description</h2>
+<p>Both audit-triplestore and fcrepo-audit auto-generate identifiers for event nodes, leading to different identifiers for the same events stored in two different places.</p>
+
+<p>We should generate a single identifier when the events are converted from JCR to Fedora events, and use that identifier in both places for consistency.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-14419"><div class="by">Jon Roby, 2015-06-01 19:30 UTC</div><div class="text"><p>Hi, Am I right in thinking maybe Line 193 of InternalAuditor.java might be a reason:</p>
+
+<p>final String uuid = pidMinter.mitPid();</p>
+
+<p>If we get the existing identifier from the FedoraEvent, we use that instead of the above line?</p></div></div>
+<div class="comment" id="comment-14423"><div class="by">Former user, 2015-06-02 12:26 UTC</div><div class="text"><p>Yes, that sounds like a good idea.  I'm not sure if the event already has a good identifier that could be used, or if we should also update the event-generation process to mint one.</p></div></div>
+<div class="comment" id="comment-14459"><div class="by">Former user, 2015-06-04 19:00 UTC</div><div class="text"><p>I have a PR for the first part of this: minting an ID when events are generated and adding it to the JMS event, so downstream consumers can use it to build the same identifiers for the events: <a href="https://github.com/fcrepo4/fcrepo4/pull/812" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/812</a></p>
+
+<p>Next up will be updated the camel and internal event processors to use the new ID.</p></div></div>
+<div class="comment" id="comment-14463"><div class="by">Former user, 2015-06-04 20:03 UTC</div><div class="text"><p>PR 2 of 4: Adding a header to the main Camel project: <a href="https://github.com/fcrepo4/fcrepo-camel/pull/73" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/pull/73</a></p></div></div>
+<div class="comment" id="comment-14467"><div class="by">Former user, 2015-06-04 20:58 UTC</div><div class="text"><p>PRs 3 and 4:</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-audit/pull/14" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-audit/pull/14</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/pull/33" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/pull/33</a></p>
+
+<p>These will require PRs 1 and 2 to be merged before their tests will pass.</p></div></div>
+<div class="comment" id="comment-14468"><div class="by">Andrew Woods, 2015-06-04 22:47 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-14472"><div class="by">Former user, 2015-06-05 15:50 UTC</div><div class="text"><p>I have addressed the PR comments and updated all four PRs</p></div></div>
+<div class="comment" id="comment-14473"><div class="by">Andrew Woods, 2015-06-05 18:06 UTC</div><div class="text"><p>Resolved with the following commits:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/75916010e5dfbdc74e4e415837e3366babbbc834" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/75916010e5dfbdc74e4e415837e3366babbbc834</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-camel/commit/c301fffc122199109f34f21b8e1e2db9c99fd306" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/commit/c301fffc122199109f34f21b8e1e2db9c99fd306</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-audit/commit/4be506655fde769eacc416716bce26b44a7bcfaa" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-audit/commit/4be506655fde769eacc416716bce26b44a7bcfaa</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/commit/1aa699481fd87466eac3854340fdf11ca74daddc" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/commit/1aa699481fd87466eac3854340fdf11ca74daddc</a></p></div></div>
+<p><a href="data/FCREPO-1507.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

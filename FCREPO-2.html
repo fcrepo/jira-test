@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2 BDef and BMech Modification : with Integrity Alerts</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2</span> BDef and BMech Modification : with Integrity Alerts</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-02-09 16:49 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 14:13 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.0</td></tr></table>
+<h2>Description</h2>
+<p>(80/20 rule applied)</p>
+
+<p>This has been on ongoing discussion about the extent to <br/>
+which Fedora will support versioning of BDef and BMech <br/>
+objects. </p>
+
+<p>General things we agree to:<br/>
+1. We will allow changes that do not break <br/>
+existing "behavior contracts." So, we WILL support <br/>
+adding methods to existing BDefs, but NOT modification <br/>
+or deletion of methods.<br/>
+2. We will not enforce that a BMech implements all <br/>
+methods of a BDef. So, if a BDef has a new method <br/>
+added to it, that method does not have to be <br/>
+implemented by all associated BMechs. So, it could be <br/>
+the case that new methods may not always be <br/>
+available. The idea would be that all BMechs would <br/>
+eventually implement newly defined BDef methods, but <br/>
+Fedora will not consider a BMech broken when it does <br/>
+not implement new methods.<br/>
+3. Date-time stamped API-A requests. If API-A <br/>
+requests to see methods supported by an object are <br/>
+given date-time stamps, we well return the list of <br/>
+methods implemented at the time specified.<br/>
+A note on Disseminator Versioning. Regarding <br/>
+modifiation of Disseminators on Data Objects (which <br/>
+point to BDef and BMech objects, the only valid changes <br/>
+that can be made are those that do not break existing <br/>
+behavior contracts on the Data Object. Thus it is <br/>
+permitted to change descriptive labels, or change the <br/>
+BMech that the Disseminator points to. Changing the <br/>
+BMech can only be done if it does not require different <br/>
+datastream bindings. These permitted changes will <br/>
+cause the Disseminator to be versioned. <br/>
+Changing a BDef on an existing Disseminator is NOT <br/>
+allowed. A new BDef would require a new Disseminator <br/>
+because ia different BDef means a different behavor <br/>
+contract is being associated with the Data Object.<br/>
+We are still discussing what we should/should-not <br/>
+support in the realm of BDef/BMech versioning beyond <br/>
+the above.<br/>
+Date: 2005-11-16 11:24<br/>
+Sender: payette<br/>
+Logged In: YES <br/>
+user_id=128</p>
+
+<p>The "Force Purge" feature can help here too:</p>
+
+<p> Add option to be able to force purge of objects or<br/>
+datastreams even if the purge would violate referential<br/>
+integrity constraints. There are times this is desirable,<br/>
+and it's o.k. to have the repository in a temporary state<br/>
+of broken references. Clear example is removing a<br/>
+bmech object, when intent is to replace it with updated<br/>
+object. Check implications of loosening referential<br/>
+integrity checks on force purge and on modification of<br/>
+MIME on a datastream. (issues in Admininstrator?<br/>
+Elsewhere?)<br/>
+Date: 2005-11-16 11:23<br/>
+Sender: payette<br/>
+Logged In: YES <br/>
+user_id=128</p>
+
+<p>More notes on the problem:</p>
+
+<p> At this time, we do not allow modification of the<br/>
+datastreams of BDEF and BMECH objects, most notably<br/>
+the METHODMAP and WSDL datastreams. At the<br/>
+current time, modification of a BDEF/BMECH is achieved<br/>
+by purging the BDEF/BMECH, making changes to ingest<br/>
+file, and doing new ingest. Before BDEF/BMECH can be<br/>
+purged, all data objects that reference it must also be<br/>
+purged. Once new BDEF/BMECH in ingested, then all<br/>
+data objects are re-ingested. This is tedious.</p>
+
+<p>However, there are two basic reasons we have not<br/>
+enabled direct modification of BDEF and BMECH objects:</p>
+
+<p>1. Free editing of the xml content of these datastreams<br/>
+is dangerous in terms of potentially breaking data<br/>
+objects that are referring to the BDEF or BMECH. The<br/>
+most obvious case is modifying a datastream binding<br/>
+spec in a BMECH object in such a way that the<br/>
+datastream binding keys in the data objects are no<br/>
+longer valid. We need to decide what kinds of changes<br/>
+to BDEF and BMECH objects we will allow, to minimize<br/>
+potential breakage.</p>
+
+<p>2. Given that we want to allow reasonable changes to<br/>
+BDEF and BMECH objects, the real issue to tackle is the<br/>
+current replication process that takes BDEF and BMECH<br/>
+xml data and populates the relational db. The<br/>
+replication of changes to the relational database is not<br/>
+set up properly to accomodate changes. Right now,<br/>
+there are relationships between the data objects and<br/>
+the bdef/bmech objects that depend on joins that use<br/>
+db-generated identifiers as join keys. Replication is<br/>
+generally a delete/insert process rather than an update<br/>
+process when it comes to BDEF and BMECH objects.<br/>
+This would result in rows with new db-generated<br/>
+identifiers and would break the joins to the data object<br/>
+tables which would reference old db-generated<br/>
+identifiers. We need to fix this.</p>
+
+<p>We need to take a good look at the replicator code and<br/>
+figure out how to do database updates for changes to<br/>
+BDEF and BMECH datastreams.<br/>
+We also need to decide what client tools will enable the<br/>
+updating of BDEF and BMECH objects. Options:<br/>
+1. Fedora Administrator Object Editor: When editing a<br/>
+BDEF or BMECH object, bring up special dialogs for<br/>
+editing METHODMAP and WSDL datastreams. Then send<br/>
+a modifyDatastream and have the server realize we are<br/>
+dealing with these special datastreams. Alternative is<br/>
+to send a whole new ingest file via a new API-M method<br/>
+(updateObject?) and have the server do some sort of<br/>
+diff analysis for BDEF and BMECH objects.<br/>
+2. Modify the BDEF/BMECH builder to allow editing of<br/>
+these objects. Same issue on how changes are<br/>
+communicated to server. Do we have a new API-M<br/>
+method that allows a whole new ingest file to come in<br/>
+(updateObject) and then server does the diff thing?</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10002"><div class="by">Daniel Davis, 2007-09-14 18:16 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: fcswa<br/>
+Logged In: YES <br/>
+user_id=1855086<br/>
+Originator: NO</p>
+
+<p>NSDL#430 BDef and BMech Modification : with Integrity Alerts</p></div></div>
+<div class="comment" id="comment-10003"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: sjw46<br/>
+Item #: 1656174<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1656174" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1656174</a><br/>
+Closed On: 2007-04-27 15:52:23<br/>
+Closed By: payette</p></div></div>
+<div class="comment" id="comment-10502"><div class="by">Chris Wilper, 2008-09-12 14:13 UTC</div><div class="text"><p>In 3.0, Service Definition and Deployment objects can be changed without integrity restrictions.</p></div></div>
+<p><a href="data/FCREPO-2.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

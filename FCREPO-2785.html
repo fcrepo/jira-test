@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2785 Stop using Modeshape Namespace registry</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2785</span> Stop using Modeshape Namespace registry</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-05-03 17:31 UTC</td></tr><tr><th>Updated</th><td>2018-10-04 19:00 UTC</td></tr><tr><th>Resolved</th><td>2018-10-03 12:54 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>This ticket is to determine the best path forward to deprecating the use of the Modeshape Namespace registry.</p>
+
+<p>This could mean returning full URIs in all responses or replacing it with some other option.</p>
+
+<p>Once a path is determined then this ticket can move to implement it.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-19980"><div class="by">Bethany Seeger, 2018-05-03 18:18 UTC</div><div class="text"><p>Capturing some conversation from slack channel that might be helpful in approaching this ticket:  </p>
+
+<p> </p>
+
+<p>acoburn <span class="error">&#91;2:11 PM&#93;</span><br/>
+ the namespace issue is actually really, really easy if you just stop using JCR namespaces</p>
+
+<p>if the persistence layer uses full IRIs, then you just add in prefixes (if at all) in a post-processing step<br/>
+ you can have the prefixes defined in a simple file if you want</p>
+
+<p>whikloj <span class="error">&#91;2:12 PM&#93;</span><br/>
+ Yeah, the question we had was whether we add the prefixes or not and if you do how does one alter that mapping</p>
+
+<p>acoburn <span class="error">&#91;2:12 PM&#93;</span><br/>
+ as for <em>how</em>, it's just a method you call on the Jena writer<br/>
+ you pass it a Map&lt;String, String&gt;<br/>
+ as for how to create that `Map&lt;String, String&gt;`, there are a million ways to do that<br/>
+ in Trellis, I just read a JSON file<br/>
+ I also have a namespace impl that uses ZooKeeper for full horizontal distribution, and even that wasn't too complex</p>
+
+<p>birkland <span class="error">&#91;2:15 PM&#93;</span><br/>
+ A simple JSON mapping file would work well, <em>and</em> not risk :boom: your repository by messing with a dangerous CND file.</p>
+
+<p>acoburn <span class="error">&#91;2:15 PM&#93;</span><br/>
+ I've only seen bad things happen when you allow an admin to modify an CND file</p>
+
+<p> </p>
+
+<p> </p>
+
+<p><a href="https://github.com/trellis-ldp/trellis/blob/master/components/io-jena/src/main/java/org/trellisldp/io/JenaIOService.java#L160-L164" class="external-link" rel="nofollow noreferrer">https://github.com/trellis-ldp/trellis/blob/master/components/io-jena/src/main/java/org/trellisldp/io/JenaIOService.java#L160-L164</a></p>
+
+<p> </p>
+
+<p><a href="https://github.com/trellis-ldp/trellis/blob/master/components/io-jena/src/main/java/org/trellisldp/io/JenaIOService.java#L167-L169" class="external-link" rel="nofollow noreferrer">https://github.com/trellis-ldp/trellis/blob/master/components/io-jena/src/main/java/org/trellisldp/io/JenaIOService.java#L167-L169</a></p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20306"><div class="by">Ben Pennell, 2018-10-01 19:03 UTC</div><div class="text"><p>My understanding currently is:</p>
+<ul>
+	<li>to store info about a node in modeshape, you have to store it in jcr properties.</li>
+	<li>properties are identified with prefixed paths (i.e., fedora:lastModifiedBy).</li>
+	<li>The prefix must be in modeshapes baked-in namespace registry</li>
+	<li>We want to store full URIs for properties and control the prefixes outside of modeshape</li>
+	<li>modeshape won't accept a property named "http://example.com/property" because "http" is not a known prefix.</li>
+</ul>
+
+
+<p>So unless there is a way to store info in modeshape that I’m not seeing in its API, it seems like three options are:</p>
+<ol>
+	<li>Prefix predicate URIs prior to persistence, then have jena handle namespacing from a configuration file. For example, modeshape stores a predicate named “pred:http:%2F%2Fexample.com%2Fproperty”</li>
+	<li>Leave modeshape’s namespace registry alone. Change the serialization of triples to translate out of modeshape prefixes into full urls, then switch to prefixes from the provided configuration.</li>
+	<li>Leave modeshape’s namespace registry alone. When serializing triples return full URIs.</li>
+</ol>
+
+
+<p>I don't think any of these approaches has any impact on POST/PATCH/PUT requests, since the prefixes there are handled internally by jena and received by fedora as URIs.</p></div></div>
+<div class="comment" id="comment-20307"><div class="by">Danny Bernstein, 2018-10-01 19:08 UTC</div><div class="text"><p>Ben Pennell:  in the case of 1,  how do you envision the behavior in the case that a namespace prefix is not configured?</p></div></div>
+<div class="comment" id="comment-20308"><div class="by">Danny Bernstein, 2018-10-01 19:10 UTC</div><div class="text"><p>Ben Pennell : in  case 1,  that would involve storing more information no,  since the whole URI would be stored in Modeshape?</p></div></div>
+<div class="comment" id="comment-20312"><div class="by">Ben Pennell, 2018-10-01 19:53 UTC</div><div class="text"><p>Danny Bernstein If a namespace prefix isn't configured you would get back the full uri rather than a prefixed predicate. That should be the case for #1 or #2</p></div></div>
+<div class="comment" id="comment-20323"><div class="by">Ben Pennell, 2018-10-03 12:54 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1425" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1425</a></p></div></div>
+<div class="comment" id="comment-20337"><div class="by">Danny Bernstein, 2018-10-04 19:00 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/cd3341a9bcd7d19055fe40319bc3237bc1eff54a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/cd3341a9bcd7d19055fe40319bc3237bc1eff54a</a></p></div></div>
+<p><a href="data/FCREPO-2785.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3357 Deleted ocfl IDs are not removed from the database</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3357</span> Deleted ocfl IDs are not removed from the database</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-06-22 21:25 UTC</td></tr><tr><th>Updated</th><td>2020-07-22 22:26 UTC</td></tr><tr><th>Resolved</th><td>2020-07-22 22:26 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>loose-end</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>When a tombstone is deleted from OCFL it's mapping should be removed from the database, it is not and so re-adding that ID causes a stack trace.</p>
+
+<p>#########</p>
+
+
+<p>&gt; curl -ufedoraAdmin:fedoraAdmin -XPUT -i "http://localhost:8080/rest/something"<br/>
+HTTP/1.1 201 Created<br/>
+Date: Mon, 22 Jun 2020 21:21:41 GMT<br/>
+Set-Cookie: JSESSIONID=node0tt6wrq9hkvva1qavfj0gwl2ov3011.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Sun, 21-Jun-2020 21:21:41 GMT<br/>
+ETag: W/"D6FA4F59033650886B53E3B71715716D"<br/>
+X-State-Token: D6FA4F59033650886B53E3B71715716D<br/>
+Last-Modified: Mon, 22 Jun 2020 21:21:41 GMT<br/>
+Link: &lt;<a href="http://localhost:8080/rest/something" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/something</a>&gt;; rel="timegate"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/something" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/something</a>&gt;; rel="original"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/something/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/something/fcr:versions</a>&gt;; rel="timemap"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Container" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Container</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Resource" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Resource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/something/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/something/fcr:acl</a>&gt;; rel="acl"<br/>
+Location: <a href="http://localhost:8080/rest/something" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/something</a><br/>
+Content-Type: text/plain<br/>
+Content-Length: 36<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+<p><a href="http://localhost:8080/rest/something%" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/something%</a></p>
+
+
+<p>&gt; curl -ufedoraAdmin:fedoraAdmin -XDELETE -i "http://localhost:8080/rest/something"<br/>
+HTTP/1.1 204 No Content<br/>
+Date: Mon, 22 Jun 2020 21:21:52 GMT<br/>
+Set-Cookie: JSESSIONID=node0vxgp35q6h2ksa5xmkq092trc3012.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Sun, 21-Jun-2020 21:21:52 GMT<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+
+<p>&gt; curl -ufedoraAdmin:fedoraAdmin -XDELETE -i "http://localhost:8080/rest/something/fcr:tombstone"<br/>
+HTTP/1.1 204 No Content<br/>
+Date: Mon, 22 Jun 2020 21:22:00 GMT<br/>
+Set-Cookie: JSESSIONID=node0osxp9w0cyf1g1afuer0232th23013.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Sun, 21-Jun-2020 21:22:00 GMT<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+
+<p>&gt; curl -ufedoraAdmin:fedoraAdmin -XGET -i "http://localhost:8080/rest/something" <br/>
+HTTP/1.1 404 Not Found<br/>
+Date: Mon, 22 Jun 2020 21:22:13 GMT<br/>
+Set-Cookie: JSESSIONID=node011h0aljg6a0hgkmxzl0es2dc13014.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Sun, 21-Jun-2020 21:22:13 GMT<br/>
+Content-Type: text/turtle;charset=utf-8<br/>
+Content-Length: 173<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+<p>Error: org.fcrepo.persistence.api.exceptions.PersistentItemNotFoundException: Unable to read .fcrepo/something.json from object something version null, object was not found.%</p>
+
+<p>&gt; curl -ufedoraAdmin:fedoraAdmin -XPUT -i "http://localhost:8080/rest/something" <br/>
+HTTP/1.1 500 Internal Server Error<br/>
+Date: Mon, 22 Jun 2020 21:22:19 GMT<br/>
+Set-Cookie: JSESSIONID=node01rgfmcxqh43zx1mz8rk3shcql03015.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Sun, 21-Jun-2020 21:22:19 GMT<br/>
+Content-Type: text/plain;charset=utf-8<br/>
+Transfer-Encoding: chunked<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+<p>org.springframework.dao.DuplicateKeyException: PreparedStatementCallback; SQL <span class="error">&#91;INSERT INTO ocfl_id_map (fedora_id, fedora_root_id, ocfl_id) VALUES (?, ?, ?)&#93;</span>; Unique index or primary key violation: "PUBLIC.PRIMARY_KEY_6 ON PUBLIC.OCFL_ID_MAP(FEDORA_ID) VALUES 909"; SQL statement:<br/>
+INSERT INTO ocfl_id_map (fedora_id, fedora_root_id, ocfl_id) VALUES (?, ?, ?) <span class="error">&#91;23505-200&#93;</span>; nested exception is org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: Unique index or primary key violation: "PUBLIC.PRIMARY_KEY_6 ON PUBLIC.OCFL_ID_MAP(FEDORA_ID) VALUES 909"; SQL statement:<br/>
+INSERT INTO ocfl_id_map (fedora_id, fedora_root_id, ocfl_id) VALUES (?, ?, ?) <span class="error">&#91;23505-200&#93;</span><br/>
+ at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:243)<br/>
+ at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:72)<br/>
+ at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1443)<br/>
+ at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:633)<br/>
+ at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:862)<br/>
+ at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:883)<br/>
+ at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.update(NamedParameterJdbcTemplate.java:321)<br/>
+ at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.update(NamedParameterJdbcTemplate.java:326)<br/>
+ at org.fcrepo.persistence.ocfl.impl.DbFedoraToOcflObjectIndex.addMapping(DbFedoraToOcflObjectIndex.java:103)<br/>
+ at org.fcrepo.persistence.ocfl.impl.CreateRDFSourcePersister.persist(CreateRDFSourcePersister.java:76)<br/>
+ at org.fcrepo.persistence.ocfl.impl.OCFLPersistentStorageSession.persist(OCFLPersistentStorageSession.java:164)<br/>
+ at org.fcrepo.kernel.impl.services.CreateResourceServiceImpl.perform(CreateResourceServiceImpl.java:160)<br/>
+ at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:467)<br/>
+ at jdk.internal.reflect.GeneratedMethodAccessor92.invoke(Unknown Source)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+ at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:124)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:167)<br/>
+ at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:79)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:469)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:391)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:80)<br/>
+ at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:253)<br/>
+ at org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)<br/>
+ at org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:292)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:274)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:244)<br/>
+ at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)<br/>
+ at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:232)<br/>
+ at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:680)<br/>
+ at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:392)<br/>
+ at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:365)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:318)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)<br/>
+ at org.eclipse.jetty.servlet.ServletHolder$NotAsyncServlet.service(ServletHolder.java:1400)<br/>
+ at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:760)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1617)<br/>
+ at org.eclipse.jetty.websocket.server.WebSocketUpgradeFilter.doFilter(WebSocketUpgradeFilter.java:226)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1604)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:61)<br/>
+ at org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:231)<br/>
+ at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:86)<br/>
+ at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+ at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1596)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:545)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+ at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:555)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:235)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:1607)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1297)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:485)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:1577)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1212)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:221)<br/>
+ at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)<br/>
+ at org.eclipse.jetty.server.Server.handle(Server.java:500)<br/>
+ at org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:383)<br/>
+ at org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:547)<br/>
+ at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:375)<br/>
+ at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:270)<br/>
+ at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)<br/>
+ at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:103)<br/>
+ at org.eclipse.jetty.io.ChannelEndPoint$2.run(ChannelEndPoint.java:117)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:336)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:313)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:171)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:129)<br/>
+ at org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:388)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:806)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:938)<br/>
+ at java.base/java.lang.Thread.run(Thread.java:834)<br/>
+Caused by: org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: Unique index or primary key violation: "PUBLIC.PRIMARY_KEY_6 ON PUBLIC.OCFL_ID_MAP(FEDORA_ID) VALUES 909"; SQL statement:<br/>
+INSERT INTO ocfl_id_map (fedora_id, fedora_root_id, ocfl_id) VALUES (?, ?, ?) <span class="error">&#91;23505-200&#93;</span><br/>
+ at org.h2.message.DbException.getJdbcSQLException(DbException.java:459)<br/>
+ at org.h2.message.DbException.getJdbcSQLException(DbException.java:429)<br/>
+ at org.h2.message.DbException.get(DbException.java:205)<br/>
+ at org.h2.message.DbException.get(DbException.java:181)<br/>
+ at org.h2.index.BaseIndex.getDuplicateKeyException(BaseIndex.java:103)<br/>
+ at org.h2.mvstore.db.MVSecondaryIndex.checkUnique(MVSecondaryIndex.java:221)<br/>
+ at org.h2.mvstore.db.MVSecondaryIndex.add(MVSecondaryIndex.java:196)<br/>
+ at org.h2.mvstore.db.MVTable.addRow(MVTable.java:531)<br/>
+ at org.h2.command.dml.Insert.insertRows(Insert.java:195)<br/>
+ at org.h2.command.dml.Insert.update(Insert.java:151)<br/>
+ at org.h2.command.CommandContainer.update(CommandContainer.java:198)<br/>
+ at org.h2.command.Command.executeUpdate(Command.java:251)<br/>
+ at org.h2.jdbc.JdbcPreparedStatement.executeUpdateInternal(JdbcPreparedStatement.java:191)<br/>
+ at org.h2.jdbc.JdbcPreparedStatement.executeUpdate(JdbcPreparedStatement.java:152)<br/>
+ at com.mchange.v2.c3p0.impl.NewProxyPreparedStatement.executeUpdate(NewProxyPreparedStatement.java:1502)<br/>
+ at org.springframework.jdbc.core.JdbcTemplate.lambda$update$0(JdbcTemplate.java:867)<br/>
+ at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:617)<br/>
+ ... 91 more</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-21306"><div class="by">Jared Whiklo, 2020-07-02 19:58 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1709" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1709</a></p></div></div>
+<div class="comment" id="comment-21307"><div class="by">Jared Whiklo, 2020-07-03 21:19 UTC</div><div class="text"><p>New PR - replacing 1709<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1710" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1710</a></p></div></div>
+<div class="comment" id="comment-21349"><div class="by">Peter Winckles, 2020-07-16 19:29 UTC</div><div class="text"><p>New PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1724" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1724</a></p></div></div>
+<div class="comment" id="comment-21356"><div class="by">Andrew Woods, 2020-07-22 22:26 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/11091226f830bd78cfcc774e07b35c243663a136" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/11091226f830bd78cfcc774e07b35c243663a136</a></p></div></div>
+<p><a href="data/FCREPO-3357.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-466 Shell scripts don&#x27;t properly pass through args with spaces</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-466</span> Shell scripts don&#x27;t properly pass through args with spaces</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Phil CHADWICK</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-03-17 10:38 UTC</td></tr><tr><th>Updated</th><td>2009-03-20 08:43 UTC</td></tr><tr><th>Resolved</th><td>2009-03-20 08:43 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.4, Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.2</td></tr></table>
+<h2>Description</h2>
+<p>Phil reports:</p>
+
+<p>I have found a bug in all the 3.1 client shell scripts.<br/>
+e.g. fedora-find.sh synopsis at:</p>
+
+<p> <a href="http://fedora-commons.org/confluence/display/FCR30/Client+Command-line+Utilities" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/confluence/display/FCR30/Client+Command-line+Utilities</a></p>
+
+<p>suggests (with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-86" >
+                <a href="FCREPO-86.html" class="jira-issue-macro-key issue-link"  title="Authentication error with fedora-find command-line utility" >
+            
+            FCREPO-86
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ applied) this example should work:</p>
+
+<p> fedora-find localhost 8080 userid password "pid fType title description" "fedora" http</p>
+
+<p>It does not work because the code (with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-86" >
+                <a href="FCREPO-86.html" class="jira-issue-macro-key issue-link"  title="Authentication error with fedora-find command-line utility" >
+            
+            FCREPO-86
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ applied) says:</p>
+
+<p> (exec $JAVA_HOME/bin/java ... $1 $2 $3 $4 $5 $6 $7)</p>
+
+<p>The exec means that the fieldList ($5) gets expanded as follows<br/>
+before execution (which is wrong &#8211; it should not be expanded, but<br/>
+rather be seen by the shell as a single argument):</p>
+
+<p> pid fType title description</p>
+
+<p>It also means that wild carding with "?" and "*" for the search string<br/>
+($6) will match files in the current working directory instead of being<br/>
+passed through to the java application.</p>
+
+<p>The fix is to quote all the shell arguments, thus:</p>
+
+<p> (exec $JAVA_HOME/bin/java ... "$1" "$2" "$3" "$4" "$5" "$6" "$7")</p>
+
+<p>I expect that this bug is present in all the shell scripts.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10875"><div class="by">Chris Wilper, 2009-03-17 11:32 UTC</div><div class="text"><p>Thanks Phil.  I've confirmed that your suggested fix gets past the problem reported.  (both wildcards and args with spaces)</p>
+
+<p>However, it always passes a fixed # of args to the program.  So if I run fedora-find.sh with too few args, the 7th one looks like "" (empty string) to the java program.  Ideally, it's simply not provided to the program, since it wasn't provided by the user running the script.</p>
+
+<p>I lifted the following technique from the ant shell script, which seems to fit the bill:</p>
+
+<p>exec_args=<br/>
+for arg in "$@" ; do<br/>
+  exec_args="$exec_args \"$arg\""<br/>
+done</p>
+
+<p>exec_cmd="exec $JAVA_HOME/bin/java ... $exec_args"<br/>
+eval $exec_cmd</p></div></div>
+<div class="comment" id="comment-10876"><div class="by">Chris Wilper, 2009-03-17 20:42 UTC</div><div class="text"><p>While reviewing the shell scripts for this issue, I decided to modularize a bit.  In order to ease maintenance and avoid regression issues, I've shortened them each significantly as follows:</p>
+
+<p>#!/bin/sh</p>
+
+<p>scriptdir=`dirname "$0"`<br/>
+. "$scriptdir"/env-client.sh</p>
+
+<p>execWithCmdlineArgs fedora.client.Administrator</p>
+
+<p>exit $?</p>
+
+<p>NOTE: This updated technique does not require bash, and will run fine with /bin/sh.</p></div></div>
+<div class="comment" id="comment-10878"><div class="by">Chris Wilper, 2009-03-20 08:43 UTC</div><div class="text"><p>This is now fixed in trunk.  Also refactored the .bat (windows) scripts similarly.</p></div></div>
+<p><a href="data/FCREPO-466.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

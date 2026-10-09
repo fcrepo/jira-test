@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2052 Remove Default repository.json Configuration in Deployable war</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2052</span> Remove Default repository.json Configuration in Deployable war</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-06-07 15:24 UTC</td></tr><tr><th>Updated</th><td>2016-07-23 02:05 UTC</td></tr><tr><th>Resolved</th><td>2016-06-10 00:36 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>preservation</td></tr></table>
+<h2>Description</h2>
+<p>This task is to remove the default repository.json from both the core fcrepo4-webapp.war as well as the fcrepo-webapp-plus.war, such as:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/324f8a3130536ac0c073e470794aeace9b3ee78d#diff-b9546c63cde391e1af63d195a571c371" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/324f8a3130536ac0c073e470794aeace9b3ee78d#diff-b9546c63cde391e1af63d195a571c371</a></p>
+
+<p>However, the one-click should still have a default configuration, such as:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/f27cc4035302db9f251f4d7a549800fec0d97485" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f27cc4035302db9f251f4d7a549800fec0d97485</a></p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-16872"><div class="by">Andrew Woods, 2016-06-08 23:01 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/pull/1052" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1052</a></p></div></div>
+<div class="comment" id="comment-16873"><div class="by">Esmé Cowles, 2016-06-09 17:30 UTC</div><div class="text"><p>This ticket doesn't really explain why we are removing the default repository.json file.  On today's tech call, there was a brief description of why, but we were running out of time so I didn't think it was worth going into.  But I'd appreciate having the rationale spelled out here.</p>
+
+<p>E.g., is this about moving to Modeshape5 where people are going to need to setup MySQL or Postgres and make some decision about backend, so we should get people ready for that choice?</p></div></div>
+<div class="comment" id="comment-16874"><div class="by">Michael Durbin, 2016-06-09 18:03 UTC</div><div class="text"><p>I haven't had time to look at this PR, and won't today, but do have a moment to try to explain.  I think this is in response to the fact that we don't recommend the use of leveldb due to the fact that if you run out of memory (or file handles) it corrupts your database.  Some people don't read the whole manual before proceeding with a software installation, and the kinds of problems they get in to with levelDB will only appear after they've ingested a lot of stuff into the repository.  </p>
+
+<p>Forcing someone to make an informed decision about their backend database is preferable to defaulting to one that's likely to leave them with problems down the road.</p></div></div>
+<div class="comment" id="comment-16875"><div class="by">Andrew Woods, 2016-06-09 18:07 UTC</div><div class="text"><p>Thanks, Michael Durbin... exactly!<br/>
+I would also add that this PR/ticket is designed to still allow administrators to use the existing LevelDB configuration if they so choose. The point being that administrators will now have to "choose" their backend, as opposed to being given one out of the box that has potential durability issues.</p></div></div>
+<div class="comment" id="comment-16876"><div class="by">Esmé Cowles, 2016-06-09 19:18 UTC</div><div class="text"><p>OK, I think I agree in principle that this is a good way to go.  But if the fcrepo.modeshape.configuration system property isn't set, then I see a big stacktrace with the error message 'Could not resolve placeholder 'fcrepo.modeshape.configuration' in string value "$</p>
+{fcrepo.modeshape.configuration}
+<p>"'.</p>
+
+<p>Can we catch that exception and print out a helpful message that they need to set a configuration explicitly?</p></div></div>
+<div class="comment" id="comment-16878"><div class="by">Andrew Woods, 2016-06-09 21:51 UTC</div><div class="text"><p>PR has been updated to log a message if Fedora fails during context initialization:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1052" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1052</a></p></div></div>
+<div class="comment" id="comment-16882"><div class="by">Esmé Cowles, 2016-06-10 00:36 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/dcf8356152e083ff4af4a51e2720eb97ca83bc36" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/dcf8356152e083ff4af4a51e2720eb97ca83bc36</a></p></div></div>
+<div class="comment" id="comment-16925"><div class="by">Yinlin Chen, 2016-06-27 14:21 UTC</div><div class="text"><p>This page needs to be updated too. <a href="https://wiki.duraspace.org/display/FEDORA4x/Application+Configuration" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Application+Configuration</a></p></div></div>
+<div class="comment" id="comment-16926"><div class="by">Andrew Woods, 2016-06-27 14:26 UTC</div><div class="text"><p>Yinlin Chen, please update.</p></div></div>
+<div class="comment" id="comment-16937"><div class="by">Yinlin Chen, 2016-06-30 15:52 UTC</div><div class="text"><p>Please see <a href="https://wiki.duraspace.org/pages/diffpagesbyversion.action?pageId=67242895&amp;selectedPageVersions=7&amp;selectedPageVersions=6" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/pages/diffpagesbyversion.action?pageId=67242895&amp;selectedPageVersions=7&amp;selectedPageVersions=6</a></p></div></div>
+<div class="comment" id="comment-17111"><div class="by">Andrew Woods, 2016-07-22 22:12 UTC</div><div class="text"><p>In addition to the original PR:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/dcf8356152e083ff4af4a51e2720eb97ca83bc36" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/dcf8356152e083ff4af4a51e2720eb97ca83bc36</a></p>
+
+<p>Additional PRs:</p>
+<ul>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/ce17d49a3b798d2b12d2ed77bff9e1fe68e5646a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/ce17d49a3b798d2b12d2ed77bff9e1fe68e5646a</a> - against master</li>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/f89dbc95d45903ca8204326ed25991bd754f9c00" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/f89dbc95d45903ca8204326ed25991bd754f9c00</a> - against 4.6.0-RC</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17112"><div class="by">Andrew Woods, 2016-07-23 02:05 UTC</div><div class="text"><p>Follow-on PR for fcrepo4-vagrant: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/49" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/49</a></p></div></div>
+<p><a href="data/FCREPO-2052.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

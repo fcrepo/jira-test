@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1669 Leakage of JCR nodes in Fixity results</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1669</span> Leakage of JCR nodes in Fixity results</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2015-08-03 18:59 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 23:48 UTC</td></tr><tr><th>Resolved</th><td>2015-11-04 18:42 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>When performing a fixity check on a binary resource, "fcr:content" and "fcr:data" resources are exposed in the generated RDF.<br/>
+To reproduce:</p>
+<ul class="alternate" type="square">
+	<li>Create a binary resource:<br/>
+curl -XPUT -H"Content-Type: image/jpeg" --data-binary @image.jpg localhost:8080/rest/image.jpg</li>
+	<li>Get the result of a fixity run:<br/>
+curl localhost:8080/rest/image.jpg/fcr:fixity</li>
+	<li>See JCR leakage:<br/>
+...<br/>
+        premis:hasContentLocation &lt;/image.jpg/jcr:content/jcr:data&gt; .<br/>
+...<br/>
+&lt;/image.jpg/jcr:content/jcr:data&gt; a premis:ContentLocation ;</li>
+</ul>
+
+
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-15655"><div class="by">Unknown, 2015-10-31 17:53 UTC</div><div class="text"><p>In addition to the <tt>premis:hasContentLocation</tt> triple, I notice that the <tt>premis:hasContentLocationValue</tt> triple also exposes the <tt>/jcr:content/jcr:data</tt> value &#8211; in that case as an xsd:string rather than as a URI.</p>
+
+<p>For both of these, what should the expected value be?</p>
+
+<p>The documentation at <a href="https://wiki.duraspace.org/display/FEDORA40/RESTful+HTTP+API+-+Fixity" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA40/RESTful+HTTP+API+-+Fixity</a> suggest something like this: <tt>info://org.modeshape.jcr.value.binary.FileSystemBinaryStore@7bcc39fb/fcrepo4/fcrepo-webapp/fcrepo4-data/fcrepo.binary-store-path#f7d787ee7fc58ce7fc257ae0067a2c65476be750</tt>, which also exposes an underlying implementation.</p></div></div>
+<div class="comment" id="comment-15656"><div class="by">Andrew Woods, 2015-10-31 18:13 UTC</div><div class="text"><p>If you have a suggested "expected values", we can start there.</p></div></div>
+<div class="comment" id="comment-15675"><div class="by">Unknown, 2015-11-01 13:36 UTC</div><div class="text"><p>If we are going to confine ourselves to "single subject responses" (which I think we should), then the <tt>premis:hasContentLocation</tt> should be something like this:</p>
+
+<p><tt>&lt;./path/to/resource#fixity/(timestamp)/location&gt;</tt></p>
+
+<p>The <tt>timestamp</tt> portion of the URI would be the same as it is for the rest of the response.</p>
+
+<p>We have more flexibility with the string-based <tt>premis:hasContentLocationValue</tt> triple. For that, it would be nice to indicate something about the physical location of the data. Depending on what modeshape provides through its public API, it would be nice to indicate the name, type and a hint of the location of the binary in the underlying storage layer.</p></div></div>
+<div class="comment" id="comment-15725"><div class="by">Esmé Cowles, 2015-11-04 14:47 UTC</div><div class="text"><p>Yes, ideally we'd be able to provide the full path to the file on disk for premis:hasContentLocationValue &#8211; I'll see what we can get from Modeshape.</p></div></div>
+<div class="comment" id="comment-15727"><div class="by">Unknown, 2015-11-04 14:52 UTC</div><div class="text"><p>The issue with file paths is that, if someone is using an infinispan grid as their blob store, there is no "filepath". In that case a "file" is just a blob that's split up into a lot of small pieces. Or, if a binary is really small, it may go into the leveldb cache, just as how, if a property is really big, it goes into the binary store.</p></div></div>
+<div class="comment" id="comment-15731"><div class="by">Esmé Cowles, 2015-11-04 15:46 UTC</div><div class="text"><p>As it turns out, I don't see anything in the Modeshape API that would give us a filename or equivalent storage information for stores that didn't map directly to disk.  See <a href="http://docs.jboss.org/modeshape/4.3.0.Final/api/org/modeshape/jcr/value/binary/StoredBinaryValue.html" class="external-link" rel="nofollow noreferrer">http://docs.jboss.org/modeshape/4.3.0.Final/api/org/modeshape/jcr/value/binary/StoredBinaryValue.html</a> &#8211; we can get the file size, mime type, an input stream, and a key (which is just the SHA-1 checksum).  So I think the file's path/URI is the only thing we have that's relevant &#8211; is it worth putting that as the value of premis:hasContentLocationValue?  Or should be just remove the ContentLocation block?</p></div></div>
+<div class="comment" id="comment-15732"><div class="by">Unknown, 2015-11-04 15:56 UTC</div><div class="text"><p>Can we get the name of the binary store? That might be useful information, but I'm a little inclined to just remove the ContentLocation block. I also don't know what happens if you have multiple binary stores: does JcrRepository::getConfiguration::getBinaryStorage get the correct value?</p></div></div>
+<div class="comment" id="comment-15735"><div class="by">Esmé Cowles, 2015-11-04 17:35 UTC</div><div class="text"><p>We can get the type (transient/file/cache/database/composite/custom) and the binary store class name.  In the case of multiple binary stores, they should be wrapped in a CompositeBinaryStore, so we could find the store that contained a file using the findBinaryStoreContainingKey method.  But I'm not sure the type or class name are really appropriate for premis:hasContentLocationValue, which seems more geared towards a filename, URI, byte offset, etc. that would be used to access a file, not a description of the kind of storage system used.</p>
+
+<p>So I think we should simply remove the ContentLocation block.</p></div></div>
+<div class="comment" id="comment-15737"><div class="by">Andrew Woods, 2015-11-04 17:45 UTC</div><div class="text"><p>I'm also fine with removing the "ContentLocation" block.</p></div></div>
+<div class="comment" id="comment-15738"><div class="by">Esmé Cowles, 2015-11-04 17:50 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/942" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/942</a></p></div></div>
+<div class="comment" id="comment-15740"><div class="by">Unknown, 2015-11-04 18:42 UTC</div><div class="text"><p>Merged into master via <a href="https://github.com/fcrepo4/fcrepo4/commit/ab7fc84d8d870647b140145279ad047bfe737bea" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ab7fc84d8d870647b140145279ad047bfe737bea</a></p></div></div>
+<p><a href="data/FCREPO-1669.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

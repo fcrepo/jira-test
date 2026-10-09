@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1294 Long-running ingest produces &quot;OutOfMemoryError: GC overhead limit exceeded&quot; error</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1294</span> Long-running ingest produces &quot;OutOfMemoryError: GC overhead limit exceeded&quot; error</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Answered</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-01-20 14:27 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-09-22 15:40 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>When ingesting object metadata as RDF/XML, initial batches of 1000 objects are successful and pretty constant in processing time.  After 5-8 batches are loaded, the processing time increases and eventually there is the error "java.lang.OutOfMemoryError: GC overhead limit exceeded".</p>
+
+<p>If I restart the servlet container between batches, the error goes away.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1294/10196_bb0001050m.dams5.xml">bb0001050m.dams5.xml</a>, 19398 bytes, added by Former user on 2015-01-20</li>
+<li><a href="attachments/FCREPO-1294/10234_body.rdf">body.rdf</a>, 6477 bytes, added by Andrew Woods on 2015-08-20</li>
+<li><a href="attachments/FCREPO-1294/10253_java-gc-fcrepo_oome.log">java-gc-fcrepo_oome.log</a>, 11424 bytes, added by scossu on 2015-11-18</li>
+<li><a href="attachments/FCREPO-1294/10254_java-gc-fcrepo-Xmx6144m_oome.log">java-gc-fcrepo-Xmx6144m_oome.log</a>, 10472 bytes, added by scossu on 2015-11-18</li>
+<li><a href="attachments/FCREPO-1294/10195_OutOfMemoryError-GC-overhead-limit-exceeded.txt">OutOfMemoryError-GC-overhead-limit-exceeded.txt</a>, 8342 bytes, added by Former user on 2015-01-20</li>
+</ul>
+<h2>Comments (22)</h2>
+<div class="comment" id="comment-13150"><div class="by">Andrew Woods, 2015-01-20 14:35 UTC</div><div class="text"><p>Former user, Can you provide a sample of the type of RDF you are ingesting?</p></div></div>
+<div class="comment" id="comment-13151"><div class="by">Former user, 2015-01-20 14:52 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>Here's a sample of the RDF/XML I'm posting.  Before posting, the ingest tool checks whether each described Fedora URIs exists, and creates it if necessary.</p></div></div>
+<div class="comment" id="comment-14306"><div class="by">Michael Durbin, 2015-05-20 12:50 UTC</div><div class="text"><p>Early testing of the migration-utils seems to run up against this as well... <br/>
+<a href="https://github.com/fcrepo4-labs/migration-utils/issues/18" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/issues/18</a></p></div></div>
+<div class="comment" id="comment-14763"><div class="by">Andrew Woods, 2015-07-20 14:26 UTC</div><div class="text"><p>Unknown, is it safe to assume this ticket is not currently "In Progress"?</p></div></div>
+<div class="comment" id="comment-14829"><div class="by">Julie Allinson, 2015-07-24 11:24 UTC</div><div class="text"><p>Just to add, we've seen this too with an ingest of about 2000 fairly small objects (metadata only) via Hydra AF9. We thought it might be solvable with better tomcat / jvm tuning but perhaps not.</p></div></div>
+<div class="comment" id="comment-14900"><div class="by">Priya Manalil, 2015-08-04 04:35 UTC</div><div class="text"><p>The Fedora 4.2, running on Tomcat 8.0.12, jdk1.8.0_45, with JAVA_OPTS = -Xms3g -Xmx3g, after ingesting<br/>
+ about 70,000 Fedora Objects and 400,000 Datastream, is running out of memory and the server is not responding. </p></div></div>
+<div class="comment" id="comment-14904"><div class="by">Andrew Woods, 2015-08-04 20:50 UTC</div><div class="text"><p>Resources for tuning GC to help debug this issue:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://confluence.atlassian.com/display/CONFKB/Confluence+crashes+due+to+java.lang.OutOfMemoryError+GC+overhead+limit+exceeded" class="external-link" rel="nofollow noreferrer">https://confluence.atlassian.com/display/CONFKB/Confluence+crashes+due+to+java.lang.OutOfMemoryError+GC+overhead+limit+exceeded</a></li>
+	<li><a href="https://confluence.atlassian.com/display/CONFKB/Enable+Garbage+Collection+Logging" class="external-link" rel="nofollow noreferrer">https://confluence.atlassian.com/display/CONFKB/Enable+Garbage+Collection+Logging</a></li>
+	<li><a href="https://confluence.atlassian.com/display/ENTERPRISE/Garbage+Collection+%28GC%29+Tuning+Guide" class="external-link" rel="nofollow noreferrer">https://confluence.atlassian.com/display/ENTERPRISE/Garbage+Collection+%28GC%29+Tuning+Guide</a></li>
+	<li><a href="https://github.com/chewiebug/GCViewer" class="external-link" rel="nofollow noreferrer">https://github.com/chewiebug/GCViewer</a></li>
+	<li><a href="http://tech.shift.com/post/74311817513/cassandra-tuning-the-jvm-for-read-heavy-workloads" class="external-link" rel="nofollow noreferrer">http://tech.shift.com/post/74311817513/cassandra-tuning-the-jvm-for-read-heavy-workloads</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15052"><div class="by">Andrew Woods, 2015-08-20 14:46 UTC</div><div class="text"><p>Julie Allinson, can you provide a link to one or two example documents which you are trying to ingest when you hit this error?</p></div></div>
+<div class="comment" id="comment-15053"><div class="by">Julie Allinson, 2015-08-20 16:10 UTC</div><div class="text"><p>Andrew Woods It was a batch process reading an XML and creating 2000 relatively simple objects, see code snippet below. Problem here more to do with <b>speed</b> of creation than quantity of data, I think:</p>
+
+<p>            h = Concept.new<br/>
+            h.rdftype += <a href="#Concept&#39;, &#39;http://fedora.info/definitions/v4/indexing#Indexable&#39;" rel="noreferrer">'http://www.w3.org/2004/02/skos/core#Concept', 'http://fedora.info/definitions/v4/indexing#Indexable'</a><br/>
+            h.preflabel = i.css('skos|prefLabel').text<br/>
+            h.concept_scheme = @scheme<br/>
+            if i.css('skos|altLabel')<br/>
+              i.css('skos|altLabel').each do |i|<br/>
+                h.altlabel += <span class="error">&#91;i.text&#93;</span><br/>
+              end<br/>
+            end<br/>
+            if i.css('skos|definition').text != ''<br/>
+              h.definition = i.css('skos|definition').text<br/>
+            end<br/>
+            h.save<br/>
+            if i.css('skos|broader').text == ''<br/>
+              h.istopconcept = 'true'<br/>
+              @scheme.topconcept += <span class="error">&#91;h&#93;</span><br/>
+              @scheme.save<br/>
+            end<br/>
+            h.identifier = h.id<br/>
+            h.former_id = i.values<br/>
+            h.save</p></div></div>
+<div class="comment" id="comment-15056"><div class="by">Andrew Woods, 2015-08-20 20:16 UTC</div><div class="text"><p>Julie Allinson, thanks. Can you also share your JAVA_OPTS settings?</p></div></div>
+<div class="comment" id="comment-15057"><div class="by">Andrew Woods, 2015-08-20 21:44 UTC</div><div class="text"><p>For the record, with the:</p>
+<ul class="alternate" type="square">
+	<li>following command
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">for</span> x in {0..50000}; <span class="code-keyword">do</span> echo <span class="code-quote">"number $x"</span>; echo <span class="code-quote">""; curl -i -XPOST -H"</span>Content-Type: text/turtle" --data-binary @body.rdf localhost:8080/fcrepo/<span class="code-keyword">rest</span>; done
+</pre>
+</div></div></li>
+	<li>attached `body.rdf`</li>
+	<li>default JAVA_OPTS (meaning no additional configuration)</li>
+</ul>
+
+
+<p>I hit a GC OOM at 3430 requests.</p></div></div>
+<div class="comment" id="comment-15058"><div class="by">Julie Allinson, 2015-08-21 11:57 UTC</div><div class="text"><p>Andrew Woods I saw it consistently with default settings, Paul (my dev) has seen it intermittently with these settings:<br/>
+CATALINA_OPTS="$CATALINA_OPTS -server -Xmx512m -Xmx1024m"</p>
+
+<p>it happens more often if Fedora/tomcat have been in use for a few hours before running the task, as if there is a build up of memory use</p>
+
+<p>We've also seen this error:</p>
+
+<p>ERROR 18:25:37.924 (InvocationContextInterceptor) ISPN000136: Execution error<br/>
+java.lang.OutOfMemoryError: Java heap space</p>
+</div></div>
+<div class="comment" id="comment-15269"><div class="by">Osman Din, 2015-09-22 15:38 UTC</div><div class="text"><p>It’s a bug only if Fedora is making a guarantee that even when there are long running ingests, it will work within a specific heap range. </p>
+
+<p>The OOM stacktrace is really a warning by the JVM that the code is inefficient for three things: (a) a memory setting; (b) a data set (I used the ticket’s 6K RDF file, I’m assuming that’s a representative sample); (c) a particular system (I tested it on a desktop Windows  machine with Tomcat 8 on a standard electro-mechanical disk).</p>
+
+<p>After successfully running various tests for 160 hours and ingesting, without restart, about 350K items (using Andrew’s command and data) and finding out that the heap usage actually decreases with time, I’m not sure if the ticket (and the experience) should be classified as a bug.</p>
+
+<p>I ran the ingest on a Windows desktop machine (the defaults on my machine are: Java 8 Hotspot Server VM, 4-8GB memory (it used around 3 GB), parallel garbage collector) and did not run into any relevant issues. Initially, the heap usage was a bit high but it settled down to about 1.7 GB. The ratio of GC activity was pretty reasonable throughout my tests, hence there was little possibility of a GC Out of Memory error. I can share a screenshot, if somebody is interested.</p>
+
+<p>The JVM documentation says the following:</p>
+
+<p>Both parallel and collector will “ will throw an OutOfMemoryError if too much time is being spent in garbage collection: if more than 98% of the total time is spent in garbage collection and less than 2% of the heap is recovered, an OutOfMemoryError will be thrown”.</p>
+
+<p>Of course, we could look at the source code to make Fedora use less heap and thus make it spend less time garbage collecting, but I think a different ticket regarding performance-tuning should be created as there is no guarantee that users would not see this stack trace even when the modifications have been made (let’s suppose they want to run a long, heavy ingest on a 128 MB machine). </p>
+
+<p>I do recognize that there’s possibly an issue here. But I think this issue is only a symptom, and specific effort should be planned to get rid of the underlying problem.</p>
+
+<p>In parallel to any performance-tuning efforts, it might be a good idea for the customer (or the Fedora developers) to profile the application before selecting (or recommending) a particular hardware, JVM, memory heap setting. It’s not a consumer application, after all. </p></div></div>
+<div class="comment" id="comment-15347"><div class="by">Andrew Woods, 2015-09-29 16:43 UTC</div><div class="text"><p>I believe your analysis is correct, Osman Din. I would add that if anyone runs into this issue in the future, debugging and tuning can be facilitated by adding the following JAVA_OPTS, then reproducing the error.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+JAVA_OPTS=<span class="code-quote">"${JAVA_OPTS} -Xloggc:/tmp/java-gc.log -XX:+PrintGCDetails -XX:+PrintGCDateStamps"</span>
+</pre>
+</div></div>
+
+<p>The "java-gc.log" (or whatever you wish to name it) will contain memory management details that can be easily visualized with:<br/>
+<a href="https://github.com/chewiebug/GCViewer" class="external-link" rel="nofollow noreferrer">https://github.com/chewiebug/GCViewer</a></p></div></div>
+<div class="comment" id="comment-15849"><div class="by">scossu, 2015-11-18 00:11 UTC</div><div class="text"><p>Hi there,<br/>
+I am still experiencing this problem. The application fails after about 1000 ingests. </p>
+
+<p>What I am missing from this ticket is a recipe for setting my JVM options to ensure that my server runs in a normal production scenario. If there is not such recipe, I still think this is an issue.</p>
+
+<p>My java settings: <br/>
+ /usr/lib/jvm/java-1.8.0/bin/java -Djava.awt.headless=true -Dfile.encoding=UTF-8 -server -Xms512m -Xmx2048m -XX:NewSize=256m -XX:MaxNewSize=256m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=512m -XX:+DisableExplicitGC -Xloggc:/tmp/java-gc.log -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Dfcrepo.home=/data/fcrepo -Dfcrepo.modeshape.configuration=<a href="file:/etc/tomcat7/lake/repository.json" class="external-link" rel="nofollow noreferrer">file:/etc/tomcat7/lake/repository.json</a> -Dfcrepo.activemq.configuration=<a href="file:/etc/tomcat7/lake/activemq.xml" class="external-link" rel="nofollow noreferrer">file:/etc/tomcat7/lake/activemq.xml</a> -classpath :/usr/share/tomcat7/bin/bootstrap.jar:/usr/share/tomcat7/bin/tomcat-juli.jar:/usr/share/java/commons-daemon.jar -Dcatalina.base=/usr/share/tomcat7 -Dcatalina.home=/usr/share/tomcat7 -Djava.endorsed.dirs= -Djava.io.tmpdir=/var/cache/tomcat7/temp -Djava.util.logging.config.file=/usr/share/tomcat7/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager org.apache.catalina.startup.Bootstrap start</p>
+
+<p>See attached GC log file. <span class="nobr"><a href="attachments/FCREPO-1294/10253_java-gc-fcrepo_oome.log" title="java-gc-fcrepo_oome.log attached to FCREPO-1294" data-attachment-type="file" data-attachment-name="java-gc-fcrepo_oome.log" data-media-services-type="file" data-media-services-id="b1dd0f78-2b6c-4202-b3eb-9f444c21849f" rel="noreferrer">java-gc-fcrepo_oome.log</a></span> </p></div></div>
+<div class="comment" id="comment-15850"><div class="by">Osman Din, 2015-11-18 14:09 UTC</div><div class="text"><p>scossu A higher -Xmx setting (e.g., something above or around 4G) should take care of the issue you're seeing. </p></div></div>
+<div class="comment" id="comment-15851"><div class="by">scossu, 2015-11-18 16:16 UTC</div><div class="text"><p>Osman Din Id did not unfortunately. Tried 4096m and 6144m and it keeps quitting between ingest #1020 and #1030. Find new GC log attached. <span class="nobr"><a href="attachments/FCREPO-1294/10254_java-gc-fcrepo-Xmx6144m_oome.log" title="java-gc-fcrepo-Xmx6144m_oome.log attached to FCREPO-1294" data-attachment-type="file" data-attachment-name="java-gc-fcrepo-Xmx6144m_oome.log" data-media-services-type="file" data-media-services-id="c533d7e7-0c7d-4ca2-92cc-01b9b313d237" rel="noreferrer">java-gc-fcrepo-Xmx6144m_oome.log</a></span> </p>
+
+<p>Increasing metaspace size to 1024m did not help either. </p>
+
+<p>Some more information: </p>
+
+<p>I am ingesting RDF data only, about 30 triples per resource (user-provided, not counting the server-managed ones)</p>
+
+<p>My test server has 8Gb of RAM and has a few servers running. Java is taking 10Gb of virtual memory with the above settings. This is my 'top' command output</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Tasks: 167 total,   1 running, 166 sleeping,   0 stopped,   0 zombie
+Cpu(s):  0.6%us,  1.8%sy,  0.0%ni, 97.6%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st
+Mem:   8062472k total,  7914920k used,   147552k free,  1192864k buffers
+Swap:        0k total,        0k used,        0k free,  4571976k cached
+
+1  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND                                                                                         
+  1825 tomcat    20   0 10.5g 692m  60m S 32.9  8.8   5:23.56 java                                                                                            
+</pre>
+</div></div>
+
+<p>Is system memory becoming a bottleneck here?</p></div></div>
+<div class="comment" id="comment-15852"><div class="by">Osman Din, 2015-11-18 16:56 UTC</div><div class="text"><p>It does appear that the system memory is not sufficient. How much memory is getting consumed by other Java applications on this machine? If it's a dev machine, one way to find out would be to download an application like JConsole &#8211; it would auto-detect and connect to applications (like Fedora) and tell you the actual statistics. There's also the GCViewer tool (that Andrew recommends).</p></div></div>
+<div class="comment" id="comment-15853"><div class="by">scossu, 2015-11-18 18:21 UTC</div><div class="text"><p>I have two separate instances of Java running Blazegraph (the Fedora index) and Tomcat running Fedora only. These are the top ranking processes in terms of memory usage:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+3  PID %MEM  VIRT SWAP  RES CODE DATA  SHR nFLT nDRT S  PR  NI %CPU COMMAND                                                                                   
+  1825  9.0 10.5g    0 711m    4 8.6g  60m 3846    0 S  20   0 82.1 java                                                                                      
+  3674  5.2 6740m    0 413m    4 6.4g  15m    2    0 S  20   0  0.0 java                                                                                      
+ 12939  0.4  521m    0  32m  336 170m 9064    7    0 S  20   0  0.0 httpd                                                                                     
+ 12937  0.4  521m    0  29m  336 169m 6536    2    0 S  20   0  0.0 httpd                                                                                     
+ 12941  0.4  521m    0  29m  336 169m 6544    1    0 S  20   0  0.0 httpd                                                                                     
+ 12943  0.4  521m    0  29m  336 169m 6484    5    0 S  20   0  0.0 httpd                                                                                     
+ 12940  0.4  521m    0  29m  336 169m 6504    1    0 S  20   0  0.0 httpd                                                                                     
+ 12944  0.4  521m    0  29m  336 169m 6512    6    0 S  20   0  0.0 httpd                                                                                     
+ 12942  0.4  521m    0  29m  336 169m 6504   10    0 S  20   0  0.0 httpd                                                                                     
+ 12938  0.4  521m    0  29m  336 169m 6512    3    0 S  20   0  0.0 httpd                                                                                     
+  2697  0.3  519m    0  26m  336 167m 5592    0    0 S  20   0  0.0 httpd                                                                                     
+  2421  0.3  432m    0  24m 6540 375m 3248   72    0 S  20   0  0.0 mysqld                                                                                    
+  2781  0.2  359m    0  19m  336 7996  11m  112    0 S  20   0  0.0 httpd                                                                                     
+  2599  0.2  486m    0  17m   12 374m 6720   12    0 S  20   0  0.0 shibd                                                                                     
+ 12936  0.1  359m    0 9672  336 7996  848    0    0 S  20   0  0.0 httpd                                                                                     
+  2972  0.1  218m    0 9648 5336 4792 6236    1    0 S  20   0  0.0 postmaster                                                                                
+  3781  0.1  218m    0 9508 5336 4800 6120    0    0 S  20   0  0.0 postmaster                                                                                
+
+</pre>
+</div></div>
+
+<p>What do you suggest to tweak? 8Gb does not seem a low entry point for a test server to me. </p>
+
+<p>I can try JConsole but the Java servers on my test machine are proxied through Apache httpd, so I have to check how to do that. I also gave GCViewer a try earlier, but for some reason it is not starting on my local machine. I will keep you posted if I can gather more information. </p></div></div>
+<div class="comment" id="comment-15854"><div class="by">Osman Din, 2015-11-18 19:03 UTC</div><div class="text"><p>The reason is that although the memory you are passing it exceeds the physical memory on the machine, it's going to write the memory pages to disk, causing performance issues and ultimately OOM warnings. From the output, it's not clear to me if the other process is consuming 10.5 or 6.5 GB of virtual memory. It seems like this process could be preventing F4 from the 3-4 GB it needs (for a certain duration of time at least).</p></div></div>
+<div class="comment" id="comment-15855"><div class="by">scossu, 2015-11-18 19:15 UTC</div><div class="text"><p>Thanks. I will try to shut down and move out other applications to see if it improves the situation and report back. </p>
+
+<p>When we resolve this, I think there are two things we need to establish and document in the Fedora Wiki: 1) minimal system requirements for production and test environment; 2) recommended JVM settings (the ones in <a href="https://wiki.duraspace.org/x/jQsCB" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/x/jQsCB</a> don't work). This will greatly help implementers getting started. </p></div></div>
+<div class="comment" id="comment-15859"><div class="by">scossu, 2015-11-20 17:11 UTC</div><div class="text"><p>I moved to a staging server with 8Gb of RAM and only Tomcat + Fedora running. Using the following settings: </p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+-server -Djava.awt.headless=<span class="code-keyword">true</span> -Dfile.encoding=UTF-8 -Xms512m -Xmx6144m -XX:NewSize=256m -XX:MaxNewSize=256m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=1024m -XX:+DisableExplicitGC 
+</pre>
+</div></div>
+
+<p>I was able to chug through hundreds of thousands of record without a OOME. Yay!</p>
+
+<p>Reiterating my previous message, I think it is important to let users know about this limitation. </p>
+
+<p>As time permits, as Osman Din suggests, it would be good to investigate and limit the heap memory build up. The fact that you either need a lot of RAM or you have to restart the server after n ingests may not sound very appealing to evaluators. </p></div></div>
+<p><a href="data/FCREPO-1294.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

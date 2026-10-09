@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4094 Add support for XSLT 3.0 to fcrepo-camel-toolbox solr indexing</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4094</span> Add support for XSLT 3.0 to fcrepo-camel-toolbox solr indexing</h1>
+<table class="meta"><tr><th>Type</th><td>Code Task</td></tr><tr><th>Status</th><td>Received</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Created</th><td>2026-07-08 13:23 UTC</td></tr><tr><th>Updated</th><td>2026-07-08 13:23 UTC</td></tr></table>
+<h2>Description</h2>
+<p>camel toolbox only ships with support for XSLT 1.0 which is ancient by modern standards. Requests have come in for more modern support for 2 and 3. </p>
+
+
+<p>The Solr indexer applies the transform via Camel's plain XSLT component — <tt>SolrRouter.java:170</tt> does {{toD("xslt:$</p>
+{header.CamelIndexingTransformation}
+<p>")}}, and the project depends on <tt>camel-xslt</tt> (<a href="https://claude.ai/epitaxy/local_8d990485-d089-4753-b36e-65afd03eaadd" class="external-link" rel="nofollow noreferrer">pom.xml:161</a>).</p>
+
+<p>That component delegates to the JDK's built-in JAXP <tt>TransformerFactory</tt> (the Xalan-derived XSLTC processor bundled with the JVM), which implements only XSLT 1.0 / XPath 1.0. Saxon is nowhere on the classpath, so there's no XSLT 2.0/3.0 support.</p>
+
+<p>If you wanted 2.0/3.0 support, the standard route would be swapping in <tt>camel-xslt-saxon</tt> and using <tt>xslt-saxon:</tt> URIs — Saxon-HE would give you XSLT 3.0. That's worth keeping in mind for the Camel 4 upgrade too, since the component split (<tt>camel-xslt</tt> vs <tt>camel-xslt-saxon</tt>) carries over there unchanged.</p>
+<p><a href="data/FCREPO-4094.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

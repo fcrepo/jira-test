@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-870 XmlUsersFileModule depends on FEDORA_HOME environment variable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-870</span> XmlUsersFileModule depends on FEDORA_HOME environment variable</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2011-03-09 13:20 UTC</td></tr><tr><th>Updated</th><td>2011-03-09 17:42 UTC</td></tr><tr><th>Resolved</th><td>2011-03-09 17:42 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.4, Fedora 3.4.1, Fedora 3.4.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-68.html">FCREPO-68</a> Enable Multiple Fedora WARs in one Servlet Container</td></tr></table>
+<h2>Description</h2>
+<p>org.fcrepo.server.security.jaas.auth.module.XmlUsersFileModule depends on the FEDORA_HOME environment variable being set, rather than following the convention of using org.fcrepo.common.Constants.FEDORA_HOME which attempts to determine the value of "Fedora Home" as follows:</p>
+<ul>
+	<li>servlet.fedora.home system property (checked first)</li>
+	<li>fedora.home system property (checked next) or the</li>
+	<li>FEDORA_HOME environment variable (checked last).</li>
+</ul>
+
+
+<p>As a result, this can cause Fedora to fail to start if the environment variable is not set. In scenarios where the FEDORA_HOME environment variable is set and multiple Fedoras are deployed to the same system, they will all end up (unintentionally) using the same copy of FEDORA_HOME/server/config/fedora-users.xml file.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-11832"><div class="by">eddie, 2011-03-09 17:42 UTC</div><div class="text"><p>Fixed in 09bfaa0358cd52607d24fbb3fc74b82101e6f63d. Now using Constants.FEDORA_HOME.</p></div></div>
+<p><a href="data/FCREPO-870.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

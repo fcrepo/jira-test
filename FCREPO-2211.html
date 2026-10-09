@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2211 fcrepo-import-export build fails when tomcat is running.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2211</span> fcrepo-import-export build fails when tomcat is running.</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2016-09-14 20:48 UTC</td></tr><tr><th>Updated</th><td>2016-09-20 02:25 UTC</td></tr><tr><th>Resolved</th><td>2016-09-20 02:25 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr></table>
+<h2>Description</h2>
+<p><em>No description.</em></p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-17519"><div class="by">Andrew Woods, 2016-09-14 21:42 UTC</div><div class="text"><p>That is interesting. I tested that when I was reviewing the lasted PR (collapse to single module), and again now with both fcrepo-webapp and fcrepo-webapp-plus in tomcat... and I am not seeing that behavior.<br/>
+Without any <tt>port</tt> properties set, running Fedora in tomcat while building the master branch of fcrepo-import-export, the build completes successfully.</p>
+
+<p>Have you verified this, Michael Durbin?</p></div></div>
+<div class="comment" id="comment-17524"><div class="by">Michael Durbin, 2016-09-15 02:12 UTC</div><div class="text"><p>Bethany Seeger reported this on IRC, and since I knew I was remiss in testing it, I quickly wrote up the ticket.  That said, in testing right now with another instance of apache-tomcat-7.0.69, I get the following error:</p>
+
+<p><span class="error">&#91;ERROR&#93;</span> Failed to execute goal org.codehaus.cargo:cargo-maven2-plugin:1.4.12:start (start-cargo) on project fcrepo-import-export: Execution start-cargo of goal org.codehaus.cargo:cargo-maven2-plugin:1.4.12:start failed: Port number 8009 (defined with the property cargo.tomcat.ajp.port) is in use. Please free it on the system or set it to a different port in the container configuration. -&gt; <span class="error">&#91;Help 1&#93;</span></p>
+
+<p>It's a relatively easy fix, but I'm going to spend my scant free time working the other issues with import first.</p>
+</div></div>
+<div class="comment" id="comment-17526"><div class="by">Andrew Woods, 2016-09-15 13:53 UTC</div><div class="text"><p>That would explain it. I am not using an AJP connector, hence port 8009 is disabled locally.</p></div></div>
+<div class="comment" id="comment-17528"><div class="by">Andrew Woods, 2016-09-15 14:07 UTC</div><div class="text"><p>Bethany Seeger, would you be interested in taking this ticket? The solution is likely a combination of adding a new dynamic port for the integration tests:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/pom.xml#L99" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/pom.xml#L99</a></li>
+	<li><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/pom.xml#L123" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/pom.xml#L123</a></li>
+	<li><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/pom.xml#L253" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/pom.xml#L253</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17529"><div class="by">Bethany Seeger, 2016-09-15 14:10 UTC</div><div class="text"><p>Sure - I can take this on, but probably won't look at it till tomorrow or early next week.  (not that I'm assuming there's a huge rush on this, but just in case that matters)</p>
+</div></div>
+<div class="comment" id="comment-17562"><div class="by">Bethany Seeger, 2016-09-19 21:27 UTC</div><div class="text"><p>Here's the PR: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/37" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/37</a></p></div></div>
+<div class="comment" id="comment-17566"><div class="by">Andrew Woods, 2016-09-20 02:25 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/317db67dae692d0709b4f9e3a7de2a56930d059c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/317db67dae692d0709b4f9e3a7de2a56930d059c</a></p></div></div>
+<p><a href="data/FCREPO-2211.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+diff --git a/fcrepo-server/src/main/java/org/fcrepo/server/resourceIndex/ResourceIndexImpl.java b/fcrepo-server/src/main/java/org/fcrepo/server/resourceIndex/ResourceIndexImpl.java
+index 029ef8a..4bea47f 100755
+--- a/fcrepo-server/src/main/java/org/fcrepo/server/resourceIndex/ResourceIndexImpl.java
++++ b/fcrepo-server/src/main/java/org/fcrepo/server/resourceIndex/ResourceIndexImpl.java
+@@ -7,6 +7,8 @@ package org.fcrepo.server.resourceIndex;
+ import java.io.IOException;
+ import java.io.OutputStream;
+ 
++import java.util.ArrayList;
++import java.util.Arrays;
+ import java.util.HashSet;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -143,9 +145,9 @@ public class ResourceIndexImpl
+             throws ResourceIndexException {
+         try {
+             if (delete) {
+-                _writer.delete(getTripleIterator(set), _syncUpdates);
++                _writer.delete(getTripleList(set), _syncUpdates);
+             } else {
+-                _writer.add(getTripleIterator(set), _syncUpdates);
++                _writer.add(getTripleList(set), _syncUpdates);
+             }
+         } catch (Exception e) {
+             throw new ResourceIndexException("Error updating triples", e);
+@@ -176,25 +178,13 @@ public class ResourceIndexImpl
+     /**
+      * Gets a Trippi TripleIterator for the given set.
+      */
+-    private TripleIterator getTripleIterator(final Set<Triple> set) {
+-        return new TripleIterator() {
+-
+-            private final Iterator<Triple> _iter = set.iterator();
+-
+-            @Override
+-            public boolean hasNext() {
+-                return _iter.hasNext();
+-            }
+-
+-            @Override
+-            public Triple next() {
+-                return getLocalizedTriple(_iter.next());
+-            }
+-
+-            @Override
+-            public void close() {
+-            }
+-        };
++    private List<Triple> getTripleList(final Set<Triple> set) {
++        Triple[] result = new Triple[set.size()];
++        int i = -1;
++        for (Triple t:set){
++            result[++i] = getLocalizedTriple(t);
++        }
++        return Arrays.asList(result);
+     }
+     
+     /**

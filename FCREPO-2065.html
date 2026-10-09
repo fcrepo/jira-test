@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2065 DelegateHeaderPrincipalProvider passes on-behalf-of header in FEDORA_ALL_PRINCIPALS</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2065</span> DelegateHeaderPrincipalProvider passes on-behalf-of header in FEDORA_ALL_PRINCIPALS</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Mirek Simek</td></tr><tr><th>Assignee</th><td>Mirek Simek</td></tr><tr><th>Created</th><td>2016-06-27 16:33 UTC</td></tr><tr><th>Updated</th><td>2016-07-19 13:55 UTC</td></tr><tr><th>Resolved</th><td>2016-07-19 13:55 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>auth</td></tr></table>
+<h2>Environment</h2>fcrepo 4.5.2
+<h2>Description</h2>
+<p>Scenario: both normal users (as configured in tomcat) and impersonated users (via admin account and on-behalf-of header) access the repository.</p>
+
+<p>If admin user calls fedora with on-behalf-of header, all works as expected. If non-admin user calls fedora and adds on-behalf-of header, the contents of header gets propagated to FEDORA_ALL_PRINCIPALS - this is done in HttpHeaderPrincipalProvider.getPrincipals() as DelegateHeaderPrincipalProvider is a subclass of HttpHeader...</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2065/10263_fedora_auth.pdf">fedora auth.pdf</a>, 11901 bytes, added by Mirek Simek on 2016-06-29</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-16930"><div class="by">Benjamin Armintor, 2016-06-29 15:33 UTC</div><div class="text"><p>This seems like a problem in the way that header is handled in the PrincipalProvider implementations- is there a way we could move the relevant checks into the appropriate classes rather than locating them in the client code?</p></div></div>
+<div class="comment" id="comment-16932"><div class="by">Mirek Simek, 2016-06-29 17:11 UTC</div><div class="text"><p>Benjamin, I'm new to fedora internals and don't follow what you mean by "client code". If you mean moving the checks from ServletContainerAuthenticationProvider into the concrete implementations, I'm all for it - it would help me with better implementation of feature from <a href="https://groups.google.com/forum/#!topic/fedora-tech/gcnp6sz1O00" class="external-link" rel="nofollow noreferrer">https://groups.google.com/forum/#!topic/fedora-tech/gcnp6sz1O00</a> - passing groups with on-behalf-of, which we need for our repository instance.</p>
+
+<p>I've sketched one possible solution, see the pseudouml. Comments? <span class="nobr"><a href="attachments/FCREPO-2065/10263_fedora_auth.pdf" title="fedora auth.pdf attached to FCREPO-2065" data-attachment-type="file" data-attachment-name="fedora auth.pdf" data-media-services-type="file" data-media-services-id="dbbcf864-407e-4783-b57d-cfd700a71f52" rel="noreferrer">fedora auth.pdf</a></span> </p>
+
+<p>Thanks, ms.</p></div></div>
+<div class="comment" id="comment-16934"><div class="by">Andrew Woods, 2016-06-30 14:16 UTC</div><div class="text"><p>Related PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1059" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1059</a></p></div></div>
+<div class="comment" id="comment-16942"><div class="by">Andrew Woods, 2016-07-01 20:26 UTC</div><div class="text"><p>I believe Benjamin Armintor is working on a revised PR for this ticket.</p></div></div>
+<div class="comment" id="comment-17034"><div class="by">Andrew Woods, 2016-07-13 16:45 UTC</div><div class="text"><p>Benjamin Armintor, any updates?</p></div></div>
+<div class="comment" id="comment-17064"><div class="by">A. Soroka, 2016-07-19 13:55 UTC</div><div class="text"><p>Fixed with: <a href="https://github.com/fcrepo4/fcrepo4/commit/5dd5af5315d776aa4c02acf073b91092355a0326" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/5dd5af5315d776aa4c02acf073b91092355a0326</a></p></div></div>
+<p><a href="data/FCREPO-2065.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

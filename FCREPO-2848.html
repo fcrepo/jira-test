@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2848 Triples in mementos not the same as in original resource</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2848</span> Triples in mementos not the same as in original resource</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2018-08-24 15:22 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 21:16 UTC</td></tr><tr><th>Resolved</th><td>2018-09-24 17:47 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>fall-2018-sprint-1</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>When fetching the original resource and a recently created memento, the memento has a few different triples.  Some are not an issue, but others may be. The memento is not the same as the original resource (at least in this serialization). </p>
+
+<p>To reproduce: </p>
+
+<p>// create a resource to version<br/>
+$&gt;  curl -X POST -H "Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel=\"type\"" <a href="http://localhost:8080/fcrepo4/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo4/rest/</a> -H "slug: test1"</p>
+
+<p>// version it<br/>
+$&gt; curl -X POST <a href="http://localhost:8080/fcrepo4/rest/test1/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo4/rest/test1/fcr:versions</a></p>
+
+<p>which creates a memento  &#8211; fetch memento information by querying the fcr:versions endpoint.  </p>
+
+<p>Then get the Original Resource and the memento and compare them: <br/>
+$&gt; curl <a href="http://localhost:8080/fcrepo4/rest/test1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo4/rest/test1</a><br/>
+$&gt; curl <a href="http://localhost:8080/fcrepo4/rest/test1/fcr:versions/UNIQUEID" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo4/rest/test1/fcr:versions/UNIQUEID</a></p>
+
+<p>The differences in the memento's triples are as follows: </p>
+
+<p>Missing triple:<br/>
+        rdf:type               fedora:Continer;</p>
+
+<p>Duplicated triples:</p>
+
+<p>        rdf:type               ldp:RDFSource ;<br/>
+        rdf:type               ldp:Container ;<br/>
+        fedora:writable        true ;</p>
+
+<p>new altogether:<br/>
+        rdf:type               ldp:BasicContainer ;</p>
+
+
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-20157"><div class="by">Bethany Seeger, 2018-08-24 15:24 UTC</div><div class="text"><p>Original resource looked like this: </p>
+
+<p>@prefix test:  &lt;info:fedora/test/&gt; .<br/>
+@prefix memento:  &lt;<a href="http://mementoweb.org/ns#" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#</a>&gt; .<br/>
+@prefix rdfs:  &lt;<a href="http://www.w3.org/2000/01/rdf-schema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/01/rdf-schema#</a>&gt; .<br/>
+@prefix webac:  &lt;<a href="http://fedora.info/definitions/v4/webac#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#</a>&gt; .<br/>
+@prefix acl:  &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt; .<br/>
+@prefix ns001:  &lt;<a href="http://www.iana.org/assignments/relation/" class="external-link" rel="nofollow noreferrer">http://www.iana.org/assignments/relation/</a>&gt; .<br/>
+@prefix xsi:  &lt;<a href="http://www.w3.org/2001/XMLSchema-instance" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema-instance</a>&gt; .<br/>
+@prefix xmlns:  &lt;<a href="http://www.w3.org/2000/xmlns/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/xmlns/</a>&gt; .<br/>
+@prefix rdf:  &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora:  &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix xml:  &lt;<a href="http://www.w3.org/XML/1998/namespace" class="external-link" rel="nofollow noreferrer">http://www.w3.org/XML/1998/namespace</a>&gt; .<br/>
+@prefix ebucore:  &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#</a>&gt; .<br/>
+@prefix ldp:  &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+@prefix dcterms:  &lt;<a href="http://purl.org/dc/terms/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/</a>&gt; .<br/>
+@prefix xs:  &lt;<a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a>&gt; .<br/>
+@prefix fedoraconfig:  &lt;<a href="http://fedora.info/definitions/v4/config#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/config#</a>&gt; .<br/>
+@prefix foaf:  &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt; .<br/>
+@prefix dc:  &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/fcrepo5/rest/foo8" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo5/rest/foo8</a>&gt;<br/>
+        rdf:type               fedora:Container ;<br/>
+        rdf:type               fedora:Resource ;<br/>
+        fedora:lastModifiedBy  "bypassAdmin" ;<br/>
+        fedora:createdBy       "bypassAdmin" ;<br/>
+        fedora:created         "2018-08-24T15:06:06.747Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+        fedora:lastModified    "2018-08-24T15:06:06.747Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+        rdf:type               ldp:RDFSource ;<br/>
+        rdf:type               ldp:Container ;<br/>
+        fedora:writable        true .</p>
+
+<p>-------</p>
+
+<p>Resulting Memento: </p>
+
+
+
+<p>@prefix premis:  &lt;<a href="http://www.loc.gov/premis/rdf/v1#" class="external-link" rel="nofollow noreferrer">http://www.loc.gov/premis/rdf/v1#</a>&gt; .<br/>
+@prefix test:  &lt;info:fedora/test/&gt; .<br/>
+@prefix memento:  &lt;<a href="http://mementoweb.org/ns#" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#</a>&gt; .<br/>
+@prefix rdfs:  &lt;<a href="http://www.w3.org/2000/01/rdf-schema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/01/rdf-schema#</a>&gt; .<br/>
+@prefix webac:  &lt;<a href="http://fedora.info/definitions/v4/webac#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#</a>&gt; .<br/>
+@prefix acl:  &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt; .<br/>
+@prefix ns001:  &lt;<a href="http://www.iana.org/assignments/relation/" class="external-link" rel="nofollow noreferrer">http://www.iana.org/assignments/relation/</a>&gt; .<br/>
+@prefix xsi:  &lt;<a href="http://www.w3.org/2001/XMLSchema-instance" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema-instance</a>&gt; .<br/>
+@prefix xmlns:  &lt;<a href="http://www.w3.org/2000/xmlns/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/xmlns/</a>&gt; .<br/>
+@prefix rdf:  &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora:  &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix xml:  &lt;<a href="http://www.w3.org/XML/1998/namespace" class="external-link" rel="nofollow noreferrer">http://www.w3.org/XML/1998/namespace</a>&gt; .<br/>
+@prefix ebucore:  &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#</a>&gt; .<br/>
+@prefix ldp:  &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+@prefix dcterms:  &lt;<a href="http://purl.org/dc/terms/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/</a>&gt; .<br/>
+@prefix xs:  &lt;<a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a>&gt; .<br/>
+@prefix fedoraconfig:  &lt;<a href="http://fedora.info/definitions/v4/config#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/config#</a>&gt; .<br/>
+@prefix foaf:  &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt; .<br/>
+@prefix dc:  &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/fcrepo5/rest/foo8" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo5/rest/foo8</a>&gt;<br/>
+        rdf:type               ldp:RDFSource ;<br/>
+        rdf:type               ldp:Container ;<br/>
+        rdf:type               fedora:Resource ;<br/>
+        fedora:created         "2018-08-24T15:06:06.747Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+        fedora:writable        true ;<br/>
+        fedora:lastModified    "2018-08-24T15:06:06.747Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+        fedora:lastModifiedBy  "bypassAdmin" ;<br/>
+        fedora:createdBy       "bypassAdmin" ;<br/>
+        rdf:type               ldp:RDFSource ;<br/>
+        rdf:type               ldp:Container ;<br/>
+        rdf:type               ldp:BasicContainer ;<br/>
+        fedora:writable        true .</p></div></div>
+<div class="comment" id="comment-20175"><div class="by">Danny Bernstein, 2018-09-07 18:02 UTC</div><div class="text"><p>I ran the test a couple of times and could confirm the duplicate triples but <b><em>not the missing or new triples.</em></b></p></div></div>
+<div class="comment" id="comment-20180"><div class="by">Bethany Seeger, 2018-09-07 20:05 UTC</div><div class="text"><p>I'm seeing the same thing you are.  Odd.  I'll work on the duplicate triple problem and keep an eye out for the other triples either appearing or disappearing. </p></div></div>
+<div class="comment" id="comment-20259"><div class="by">Danny Bernstein, 2018-09-19 03:57 UTC</div><div class="text"><p>Bethany Seeger :  I would be ideal to be able to close this ticket before the end of the sprint.  Where do things stand with it at this point in time?  Any idea of when you think you'll be able to land it? </p></div></div>
+<div class="comment" id="comment-20260"><div class="by">Bethany Seeger, 2018-09-19 13:35 UTC</div><div class="text"><p>Hi Danny Bernstein &#8211; I have this mostly working - triples are better now.  There is a nasty little issue where dates like 'created' and 'lastModified' have a different number of digits in the millisecond area of the date: 2 in the original resource and 3 digits in the memento, but only if it's less the &lt;100ms.  This makes it look like the triples are indeed different.  Ie, the original resource will have this: </p>
+
+<p> &lt;<a href="http://localhost:50173/71f92dba-8692-44bd-acbe-91d38480e080" class="external-link" rel="nofollow noreferrer">http://localhost:50173/71f92dba-8692-44bd-acbe-91d38480e080</a>&gt; &lt;<a href="http://fedora.info/definitions/v4/repository#lastModified" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModified</a>&gt; "2018-09-19T13:14:49.37Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt;</p>
+
+<p>And the memento will have: </p>
+
+<p>&lt;<a href="http://localhost:50173/71f92dba-8692-44bd-acbe-91d38480e080" class="external-link" rel="nofollow noreferrer">http://localhost:50173/71f92dba-8692-44bd-acbe-91d38480e080</a>&gt; &lt;<a href="http://fedora.info/definitions/v4/repository#lastModified" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModified</a>&gt; "2018-09-19T13:14:49.037Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt;</p>
+
+<p>I <b>think</b> I know where it's happening and can wrap this up today or tomorrow.  Or, I'll file a new ticket and leave this in.  But the issue is that it will cause a new test I put in to randomly fail if the date has a millisecond field less the &lt;100ms.   </p>
+{sigh}</div></div>
+<div class="comment" id="comment-20273"><div class="by">Bethany Seeger, 2018-09-21 12:45 UTC</div><div class="text"><p>Danny Bernstein Ben Pennell  - I have a fix for this now and just need to clean up the code. Technically today is a vacation day for me, so I can clean up the code and submit a PR on Monday morning.   Hopefully that timing is okay. </p>
+
+<p>Also, I think I need to submit a ticket to modeshape, but am not sure how and don't really want to sign-up for one more account.   Do you have to signup for jira to submit a ticket there?  (have either of you done this before?)</p></div></div>
+<div class="comment" id="comment-20278"><div class="by">Ben Pennell, 2018-09-21 14:35 UTC</div><div class="text"><p>Thanks for digging through this labyrinth of random bugs, Bethany Seeger! I am fine with waiting. If we really want to wrap things up before the end of the sprint I could try rebasing/doing a little cleanup and opening the PR. Up to Andrew Woods and Danny Bernstein</p></div></div>
+<div class="comment" id="comment-20279"><div class="by">Ben Pennell, 2018-09-21 14:37 UTC</div><div class="text"><p>And I get the impression that PRs to modeshape are going unanswered these days, so if we want to fix this issue in modeshape it will probably have to wait until we are using a forked version.</p></div></div>
+<div class="comment" id="comment-20289"><div class="by">Bethany Seeger, 2018-09-24 17:47 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1420" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1420</a></p></div></div>
+<div class="comment" id="comment-20299"><div class="by">Danny Bernstein, 2018-09-27 16:32 UTC</div><div class="text"><p>Resolved by  <a href="https://github.com/fcrepo4/fcrepo4/commit/60b35d6bae88d51cb3aca3532a71d9b7acded33a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/60b35d6bae88d51cb3aca3532a71d9b7acded33a</a></p></div></div>
+<p><a href="data/FCREPO-2848.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

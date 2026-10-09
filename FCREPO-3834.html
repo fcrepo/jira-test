@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3834 Enable Camel toolbox to send xml records to Solr indexing service</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3834</span> Enable Camel toolbox to send xml records to Solr indexing service</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>James Alexander</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2022-07-21 08:00 UTC</td></tr><tr><th>Updated</th><td>2024-04-25 15:44 UTC</td></tr><tr><th>Resolved</th><td>2024-04-25 15:44 UTC</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox-6.0.0-SNAPSHOT</td></tr></table>
+<h2>Description</h2>
+<p>I'm requesting creation of a configurable camel service (similar to fcrepo-indexing-solr or http endpoint service) enabling fedora CRUD records to be sent to Solr (or any configurable endpoint) in xml/rdf format. </p>
+
+<p>This would enable users to adopt a sustainable solution and bypass dependency on Marmotta (now retired) for Solr indexing transformation. It would be easier and more natural to configure this way for anyone with xslt experience (and GSearch in particular). This might make migrating from GSearch less challenging.</p>
+
+<p>For most use cases Solr has sufficient functionality to execute xslt transformations itself when presented with a single record in xml format: the Solr UpdateRequestHandler can automatically perform xslt transformations on xml to generate index records using the tr=&lt;myArbitraryXlstHere.xslt&gt; parameter (see <a href="https://solr.apache.org/guide/8_2/uploading-data-with-index-handlers.html)." class="external-link" rel="nofollow noreferrer">https://solr.apache.org/guide/8_2/uploading-data-with-index-handlers.html).</a>  </p>
+
+<p>More complex use cases can already use the camel toolbox http endpoint service to configure their own service exactly as they want - but it would be nice for everyone without additional requirements if they didn’t have to build their own service this way&#33;</p>
+
+<p><b>Use case summary</b></p>
+
+<p>Send fedora content as xml  to solr for indexing through xslt transformation.</p>
+
+<p><b>Actor:</b> systems architect/developer</p>
+
+<p><b>Scope:</b> Useful to a wide rang of fedora installations currently utilising solr (most?), including those using or contemplating using ldpath. Facilitates migration from fedora 3.x to fedora 6.</p>
+
+<p><b>Level:</b> High level impact with focus on technical inter-operability. Extend current camel-toolbox functionality by enabling it to send xml-formatted records to solr This would leverage fedora API’s ability to send records as xml and solr’s ability to perform arbitrary xslt transformations on ingest.</p>
+
+<p><b>Story:</b> I want to customise transformation of fedora content into a solr index using xslt. This service would align with fedora 3.x praxis, where GSearch plugin is/was widely used to perform xslt transformation on index. It would be more sustainable than using (deprecated) ldpath and offers more flexibility. It would facilitate migration where integration with solr is a requirement. </p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-22671"><div class="by">Jared Whiklo, 2022-07-28 15:44 UTC</div><div class="text"><p>Hi James, we discussed this at the July 28, 2022 and decided this type of change to the camel toolbox would both support your use case and provide an exit strategy from LDPath due to it’s deprecation.</p>
+
+<p>Do you have anyone on your team that might be willing to give this an attempt if we (as the Fedora community) would provide some support and guidance?</p></div></div>
+<div class="comment" id="comment-22795"><div class="by">Dan Field, 2023-02-07 17:12 UTC</div><div class="text"><p>I have a first draft of this functionality available. It currently:</p>
+
+<ul>
+	<li>Removes ldpath entirely from the camel toolbox</li>
+	<li>Replaces the ldpath indexing routes with XSLT processing routes</li>
+	<li>XSLT processing is currently processed within the Camel route, utilising XSLT component <a href="https://camel.apache.org/components/3.20.x/xslt-component.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://camel.apache.org/components/3.20.x/xslt-component.html</a></li>
+	<li>XSLT Processing could be handed to Solr if there is a good use-case but I see no advantage as yet, in doing so.</li>
+	<li>XSLT to be used is configured via the <tt>solr.fcrepo.defaultTransform</tt> when no transform is provided in the object metadata.</li>
+</ul>
+
+
+<p>Is this suitable for your needs James Alexander ?</p></div></div>
+<div class="comment" id="comment-22797"><div class="by">James Alexander, 2023-02-10 16:45 UTC</div><div class="text"><p>Hi Dan, that all sounds very good. I don’t see any advantage in getting Solr to do the xslt processing either: it just didn’t occur to me that Camel could do it. As discussed, it’s probably more efficient to use Camel and Solr’s xslt has not had much attention for some time - it looks like it got moved out of core for some reason. Also, it hadn’t occurred to me to provide a transform in the object metadata, I was intending on relying on a default, so that would be a bonus.</p></div></div>
+<div class="comment" id="comment-22809"><div class="by">Dan Field, 2023-03-02 14:16 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo-exts/fcrepo-camel-toolbox/pull/191" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel-toolbox/pull/191</a> <br/>
+Note the question about doucmentation towards the end. </p></div></div>
+<div class="comment" id="comment-22825"><div class="by">James Alexander, 2023-04-20 08:50 UTC</div><div class="text"><p>I was going through the new Solr service (using the docker setup) and when I create a fedora record I’m getting –</p>
+
+<p><em>org.apache.camel.ResolveEndpointFailedException:</em> </p>
+
+<p><em>Failed to resolve endpoint: xslt: due to: Endpoint should include scheme:path</em></p>
+
+<p>It looks like I need to set a default transform path in the configuration.properties (but what should it be)? Is this one of the changes to the .properties that need adding to the documentation?</p></div></div>
+<div class="comment" id="comment-22826"><div class="by">Dan Field, 2023-04-20 13:32 UTC</div><div class="text"><p>James, the 3 properties used by the solr indexer are:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>solr.indexing.enabled=true
+solr.baseUrl=http://localhost:8983/solr/fcrepo
+solr.fcrepo.defaultTransform=org/fcrepo/camel/indexing/solr/default_transform.xsl</pre>
+</div></div>
+
+<p>Where in this case, the default transofrm is the one which should have been packaged with the camel toolbox. It might be missing in your environment? THat might be a bug we need to address. Its a fairly simple transform</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> &lt;?xml version="1.0" ?&gt;
+&lt;xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:fedora="http://fedora.info/definitions/v4/repository#"
+    xmlns:ldp="http://www.w3.org/ns/ldp#"&gt;
+
+    &lt;xsl:template match="/"&gt;
+    &lt;add&gt;
+        &lt;doc&gt;
+            &lt;field name="id"&gt;&lt;xsl:value-of select="rdf:RDF/rdf:Description/@rdf:about" /&gt;&lt;/field&gt;
+        &lt;/doc&gt;
+    &lt;/add&gt;
+    &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;</pre>
+</div></div></div></div>
+<div class="comment" id="comment-22829"><div class="by">James Alexander, 2023-04-24 13:00 UTC</div><div class="text"><p>Dan, the Solr transform works fine with the default and also when an xstl is specified within a document.</p>
+
+<p>The problem I encountered with testing using docker-compose setup was with the location of the fcrepo-camel-toolbox.properties file. I had to manually alter the location of this in BasePropsConfig.java to get the mounted volume /config/configuration.properties to be picked up. Looks like things were moved around to enable the docker-compose setup but now the configuration file compiles to the wrong location. So for docker-compose, the setup could be altered.  </p>
+
+<p>I see in the current documentation that it's suggested that allowing to set things with ENV values was on the to do list bu this never got done. </p></div></div>
+<div class="comment" id="comment-22872"><div class="by">Dan Field, 2023-07-27 13:52 UTC</div><div class="text"><p>I’ve added the properties to the properties file which is packaged with the docker-compose setup. I’m going to open another ticket to deal with the properties file not being addressed in the correct place though as its a bit off topic here</p></div></div>
+<div class="comment" id="comment-22977"><div class="by">Dan Field, 2024-02-14 18:30 UTC</div><div class="text"><p>I’ve pushed a number of changes as requested by Jared Whiklo </p></div></div>
+<div class="comment" id="comment-23033"><div class="by">Jared Whiklo, 2024-04-25 15:44 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo-exts/fcrepo-camel-toolbox/commit/e71b893920b8a75e2f71c94a472f1a07fd8ad6ff" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel-toolbox/commit/e71b893920b8a75e2f71c94a472f1a07fd8ad6ff</a></p></div></div>
+<p><a href="data/FCREPO-3834.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

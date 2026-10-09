@@ -1,0 +1,71 @@
+Index: src/java/fedora/server/ServerController.java
+===================================================================
+--- src/java/fedora/server/ServerController.java	(revision 7920)
++++ src/java/fedora/server/ServerController.java	(working copy)
+@@ -12,8 +12,8 @@
+ import javax.servlet.http.HttpServlet;
+ import javax.servlet.http.HttpServletRequest;
+ import javax.servlet.http.HttpServletResponse;
+-
+ import fedora.common.Constants;
++import org.apache.log4j.Logger;
+ 
+ import fedora.server.errors.authorization.AuthzDeniedException;
+ import fedora.server.errors.authorization.AuthzOperationalException;
+@@ -38,6 +38,7 @@
+ 
+     private static final long serialVersionUID = 1L;
+ 
++    private static Logger logger = Logger.getLogger(ServerController.class);
+     private static Server s_server;
+ 
+     private ServerStatusFile _status;
+@@ -185,14 +186,18 @@
+     @Override
+     public void init() throws ServletException {
+ 
+-        // make sure fedora.home is defined first
+-        File fedoraHomeDir = getFedoraHomeDir();
+ 
+         // FIXME: This is set here for legacy server code that still picks up
+         // these values from fedora.home.  When the code is updated, this
+         // can be removed.
+-        System.setProperty("fedora.home", fedoraHomeDir.getPath());
++        
++        //overrride w/ context value!
++        String contextFH = (String)getServletContext().getInitParameter("fedora.home");
++        //this will make Constants.FEDORA_HOME reflect the servletcontext value.
++        System.setProperty("servlet.fedora.home", contextFH);
+ 
++        File fedoraHomeDir = getFedoraHomeDir();
++
+         // get file for writing startup status
+         try {
+             _status = new ServerStatusFile(new File(fedoraHomeDir, "server"));
+Index: src/java/fedora/common/Constants.java
+===================================================================
+--- src/java/fedora/common/Constants.java	(revision 7920)
++++ src/java/fedora/common/Constants.java	(working copy)
+@@ -686,11 +686,19 @@
+          *          places.
+          */
+         public static final String getValue() {
+-            if (System.getProperty("fedora.home") != null) {
+-                return System.getProperty("fedora.home");
++          //try to use the one set in the servlet container (if present) first.
++          //let's cache it for the fun of it too.
++          String value = null;
++          if (value == null){
++            if (System.getProperty("servlet.fedora.home")!=null){
++              value= System.getProperty("servlet.fedora.home");
++            }else if (System.getProperty("fedora.home") != null) {
++              value= System.getProperty("fedora.home");
+             } else {
+-                return System.getenv("FEDORA_HOME");
++              value= System.getenv("FEDORA_HOME");
+             }
++          }
++          return value;
+         }
+     }
+ 

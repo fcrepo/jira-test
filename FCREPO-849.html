@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-849 Updating an &quot;M&quot; DC datastream with versionable = false fails</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-849</span> Updating an &quot;M&quot; DC datastream with versionable = false fails</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2011-01-18 00:33 UTC</td></tr><tr><th>Updated</th><td>2015-04-02 18:13 UTC</td></tr><tr><th>Resolved</th><td>2015-04-02 18:13 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4, Fedora 3.4.1, Fedora 3.5, Fedora 3.6, Fedora 3.6.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-246.html">FCREPO-246</a> Transactional Resource Index Updates</td></tr></table>
+<h2>Description</h2>
+<p>Reported by Janna Wemekamp, see <a href="http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/6275" class="external-link" rel="nofollow noreferrer">http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/6275</a></p>
+
+<p>Updating a DC datastream stored as Managed Content fails if the datastream is not versionable.</p>
+
+<p>This is due to a RI update error.</p>
+
+<p>The triple update compares the "before" and "after" states of an object.  Currently it does this after managed content datastream changes have been persisted - so the "before" state is unavailable, and it therefore fails.</p>
+
+<p>We could move the update to happen before the managed datastreams are saved, however if there is an error/exception later in the code, this means that the RI will be out of sync with the object contents.</p>
+
+<p>(note that for a purge, this does in fact happen in this sequence - so we potentially already have the problem that if a purge fails then the RI is out of sync).</p>
+
+<p>Moving the update to happen before the managed datastreams are updated is probably ok as a short-term solution, but ideally we need some kind of transactional behaviour - maybe we modify the RI update code so that it can (a) get a list of updates (adds and deletes) and then (b) later persist those updates.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-11770"><div class="by">Stephen Bayliss, 2011-01-18 05:15 UTC</div><div class="text"><p>Moving the RI update code to before the managed datastream-save code does seem to resolve this issue (I have a test case and a fix, using this).</p>
+
+<p>But need to work out what to do about the transaction-less nature of this (and when to deal with this).</p></div></div>
+<div class="comment" id="comment-11774"><div class="by">Stephen Bayliss, 2011-01-18 17:47 UTC</div><div class="text"><p>Summary of options:</p>
+
+<p>1) Move RI update code to before object changes are committed so that before-state is available<br/>
+nb if committal of object changes results in an error, RI is out of sync with objects</p>
+<ul class="alternate" type="square">
+	<li>but might be ok as an interim fix?<br/>
+2) Cache "old" state of object - cache all object data necesary for RI update, do RI update right at the end based on this cached info and the new object<br/>
+nb note we need to ensure all data that drive the RI are cached, this includes object properties in the FOXML, object-&gt;datastream relationships, datastream content for DC, RELS-EXT, RELS-INT<br/>
+3) Modify RI update code so that:</li>
+	<li>instead of modifyObject(...) we have getObjectModifications(...), return two lists of triples, a set of adds and a set of deletes (this is what modifyObject does under the hood).  Do this first thing, before any modifications to object are saved (ie whilst old object is still available)</li>
+	<li>commit these changes later, noting that RI module already exposes methods for add and delete, that could make use of the two sets of triples from above<br/>
+4) Modify RI update code</li>
+	<li>implementing proper transactioning semantics, ie RI module has ability to cache a set of changes for later application by a commit (note this is still not truly transactioned in terms of eg Mulgara transactions; but then we don't have proper transactioning currently anyway; this might be appropriate to revisit after High Level Storage?)</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11780"><div class="by">Stephen Bayliss, 2011-01-19 14:59 UTC</div><div class="text"><p>Discussed at committer meeting 2011/01/18 - it was decided that this would not be included in the 3.4.2 release (due very shortly) due to time constraints on implementing a proper solution that would allow backing-out of RI changes if commiting the datastreams/foxml generates an error (a situation that could arise by moving the RI index update to before the object/datastream update).</p>
+
+<p>In the meantime, warnings added to documentation in the wiki.</p></div></div>
+<div class="comment" id="comment-12456"><div class="by">eddie, 2012-09-28 13:19 UTC</div><div class="text"><p>updating affects version to include 3.5, 3.6, 3.6.1</p></div></div>
+<div class="comment" id="comment-12520"><div class="by">Jonathan Green, 2013-03-12 22:06 UTC</div><div class="text"><p>A note for anyone coming across this ticket that might happen to have a large number of objects that are broken because of this problem. A somewhat quick workaround for this without re-ingesting all the objects is to turn off the triple-store, set version-able to true on your objects, turn back on the triple-store.</p></div></div>
+<div class="comment" id="comment-13126"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<div class="comment" id="comment-13796"><div class="by">Benjamin Armintor, 2015-03-21 19:48 UTC</div><div class="text"><p><a href="https://github.com/fcrepo3/fcrepo/pull/25" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/pull/25</a></p></div></div>
+<div class="comment" id="comment-13865"><div class="by">Benjamin Armintor, 2015-04-02 18:13 UTC</div><div class="text"><p><a href="https://github.com/fcrepo3/fcrepo/commit/53ca4926e928ebb43d9042b807c1e0cb05ea4bfc" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/53ca4926e928ebb43d9042b807c1e0cb05ea4bfc</a></p></div></div>
+<p><a href="data/FCREPO-849.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

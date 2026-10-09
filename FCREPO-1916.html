@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1916 Add support for PostgreSQL</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1916</span> Add support for PostgreSQL</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-02-18 15:14 UTC</td></tr><tr><th>Updated</th><td>2016-02-23 17:48 UTC</td></tr><tr><th>Resolved</th><td>2016-02-23 17:48 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>preservation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1927.html">FCREPO-1927</a> Documentation: Add support for PostgreSQL</td></tr></table>
+<h2>Description</h2>
+<p><em>No description.</em></p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-16161"><div class="by">Esmé Cowles, 2016-02-18 15:18 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/986" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/986</a></p>
+
+<p>The generic JDBC config can be used with both MySQL and PostgreSQL.  But there are two complications:</p>
+
+<p>1. Having to manually download the JDBC driver and database pooling JARs, and add them to the classpath<br/>
+2. The MySQL- and PostgreSQL-specific configs use non-standard types (LONGBLOB and BYTEA instead of the standard TEXT).  Using the standard TEXT type works, but I'd like to repeat some of my tests to see if there are any performance implications.</p></div></div>
+<div class="comment" id="comment-16179"><div class="by">Andrew Woods, 2016-02-22 20:56 UTC</div><div class="text"><p>Like the MySQL case, it would be nice to have a packaged installation approach for Postgres. <br/>
+Are you saying that is not the case with Postgres now? If not, would you be opposed to making that happen in this PR?</p></div></div>
+<div class="comment" id="comment-16181"><div class="by">Esmé Cowles, 2016-02-22 21:30 UTC</div><div class="text"><p>The PR as it stands makes a packaged installation that supports both MySQL and Postgres.  I was hoping that we could have a single generic JDBC config, rather than separate ones for each database.  So the issues I listed were if we could use that generic config.</p>
+
+<p>I did some testing with PostgreSQL and it isn't able to use the TEXT column type, so it will need its own config.  And the convenience of bundling the JDBC drivers in the WAR file is nice too.  So maybe it makes sense to include MySQL and Postgres drivers and config?  Or maybe they could be moved to webapp-plus?</p></div></div>
+<div class="comment" id="comment-16187"><div class="by">Andrew Woods, 2016-02-23 01:23 UTC</div><div class="text"><p>Can you describe the setup you did for your postgres? I would like to test this.</p></div></div>
+<div class="comment" id="comment-16189"><div class="by">Esmé Cowles, 2016-02-23 01:48 UTC</div><div class="text"><p>My Postgres setup is pretty much the same as the MySQL setup.  I built and deployed the WAR file to Tomcat with these system properties set:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-none">
+  JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.modeshape.configuration=classpath:/config/jdbc-postgresql/repository.json"
+  JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.ispn.postgresql.username=$USER"
+  JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.ispn.postgresql.password=$PASS"
+</pre>
+</div></div>
+
+<p>The one change was that Postgres doesn't allow automatically creating the database, so I had to create it manually with:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-none">
+createdb -O $USER ispn
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16190"><div class="by">Andrew Woods, 2016-02-23 01:54 UTC</div><div class="text"><p>Tips on creating the user?</p></div></div>
+<div class="comment" id="comment-16191"><div class="by">Esmé Cowles, 2016-02-23 03:12 UTC</div><div class="text"><p>To create a new Postgres user:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-none">
+createuser -P foo
+</pre>
+</div></div>
+
+<p>The -P option will prompt you for the new user's password.</p></div></div>
+<div class="comment" id="comment-16192"><div class="by">Andrew Woods, 2016-02-23 14:44 UTC</div><div class="text"><p>Looks good and works well. See comment: <a href="https://github.com/fcrepo4/fcrepo4/pull/986#issuecomment-187724743" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/986#issuecomment-187724743</a></p></div></div>
+<div class="comment" id="comment-16196"><div class="by">Esmé Cowles, 2016-02-23 17:23 UTC</div><div class="text"><p>I've updated PR 986 to remove the generic JDBC configs:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/986" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/986</a></p></div></div>
+<div class="comment" id="comment-16197"><div class="by">Andrew Woods, 2016-02-23 17:48 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/71c568cf19c8589540f041619e3f50b08d070c80" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/71c568cf19c8589540f041619e3f50b08d070c80</a></p>
+
+<p>See follow-on ticket: <a href="https://jira.duraspace.org/browse/FCREPO-1927" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1927</a></p></div></div>
+<p><a href="data/FCREPO-1916.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

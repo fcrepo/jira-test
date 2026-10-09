@@ -1,0 +1,37 @@
+diff --git a/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/NamedFieldsRetriever.java b/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/NamedFieldsRetriever.java
+index 71ef1ef..5409319 100644
+--- a/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/NamedFieldsRetriever.java
++++ b/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/NamedFieldsRetriever.java
+@@ -26,6 +26,8 @@ import java.io.InputStreamReader;
+ import java.io.Reader;
+ import java.lang.reflect.Type;
+ import java.net.URI;
++
++import com.hp.hpl.jena.rdf.model.Resource;
+ import org.apache.http.HttpException;
+ import org.apache.http.HttpResponse;
+ import org.apache.http.client.HttpClient;
+@@ -85,14 +87,21 @@ public class NamedFieldsRetriever implements Supplier<NamedFields> {
+         LOGGER.debug("Retrieving RDF representation for: {}", uri);
+         try {
+             final Model rdf = rdfr.get();
+-            if (!rdf.contains(createResource(uri.toString()), INDEXING_TRANSFORM_PREDICATE)) {
++
++            Resource target = createResource(uri.toString());
++
++            if (!rdf.contains(target, INDEXING_TRANSFORM_PREDICATE)) {
++                target = createResource(uri.toString() + "/fcr:metadata");
++            }
++
++            if (!rdf.contains(target, INDEXING_TRANSFORM_PREDICATE)) {
+                 LOGGER.info(
+                         "Found no property locating LDPath transform for: {}, will not retrieve transformed content.",
+                         uri);
+                 throw new AbsentTransformPropertyException(uri.toString());
+             }
+             final RDFNode indexingTransform =
+-                rdf.listObjectsOfProperty(createResource(uri.toString()),
++                rdf.listObjectsOfProperty(target,
+                         INDEXING_TRANSFORM_PREDICATE).next();
+             final String transformKey =
+                 indexingTransform.asLiteral().getString();

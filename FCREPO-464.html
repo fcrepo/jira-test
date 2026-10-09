@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-464 Broken relative includes in stylesheets -- only absolute paths work</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-464</span> Broken relative includes in stylesheets -- only absolute paths work</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Renaud Waldura</td></tr><tr><th>Assignee</th><td>Gert Schmeltz Pedersen</td></tr><tr><th>Created</th><td>2009-03-05 02:43 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2011-09-12 12:31 UTC</td></tr><tr><th>Components</th><td>legacy - GSearch</td></tr><tr><th>Fix versions</th><td>GSearch 2.3</td></tr></table>
+<h2>Description</h2>
+<p>GSearch results are transformed using stylesheets. Said stylesheets include other stylesheets using &lt;xsl:include/&gt; elements. Unfortunately, only full absolute paths appear to work for the purpose of inclusion; relative includes don't.</p>
+
+<p>E.g. in basicGfindObjectsToHtml.xslt at<br/>
+<a href="https://fedora-commons.svn.sourceforge.net/svnroot/fedora-commons/services/genericsearch/tags/release-2.2/FgsConfig/configBasic/rest/basicGfindObjectsToHtml.xslt" class="external-link" rel="nofollow noreferrer">https://fedora-commons.svn.sourceforge.net/svnroot/fedora-commons/services/genericsearch/tags/release-2.2/FgsConfig/configBasic/rest/basicGfindObjectsToHtml.xslt</a><br/>
+line 12 reads:<br/>
+	&lt;xsl:include href="CONFIGPATH/rest/basicCommon.xslt"/&gt;<br/>
+CONFIGPATH is replaced at configuration time to become the full path. This configuration step appears un-necessary &#8211; I should be able to use a relative include such as:<br/>
+	&lt;xsl:include href="basicCommon.xslt"/&gt;<br/>
+since basicCommon.xslt in the same directory as the including stylesheet basicGfindObjectsToHtml.xslt.</p>
+
+<p>On the grand scheme of things, not a big deal. It's just one extra bit of configuration right? Unfortunately, I'd like to offer my opinion that it's configuration such as this (compounded over many files) that makes the software hard to install and use in the end. </p>
+
+<p>In this particular case, it's easy enough to fix. The attached patch sets the system ID on the including stylesheet, which allows to successfully process relative includes. </p>
+
+<p>Note about patch: the first part applies to GTransformer.java and sets the system ID, which solves the issue.<br/>
+The second part applies to Config.java and disables the proactive checking of stylesheets. I'll voluntarily admit this is rather aggressive, and it should be reworked. I merely didn't want to deal with the code duplication between GTransformer.java and Config.java, as it would have complicated the patch quite a bit. </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-464/10047_relative-include.patch">relative-include.patch</a>, 4721 bytes, added by Renaud Waldura on 2009-03-05</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12048"><div class="by">Gert Schmeltz Pedersen, 2011-09-12 12:30 UTC</div><div class="text"><p>The code of Gtransformer.java was modified based on the patch by Renaud Waldura in this</p>
+
+<p>commit 405612d3728515fc6ac2110ca808164ab1acbc30<br/>
+Author: Gert Schmeltz Pedersen &lt;gsp@dtic.dtu.dt&gt; 2010-04-22 17:03:20<br/>
+Committer: Gert Schmeltz Pedersen &lt;gsp@dtic.dtu.dt&gt; 2010-04-22 17:03:20</p>
+
+<p>Since then all includes have been relative.</p></div></div>
+<p><a href="data/FCREPO-464.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

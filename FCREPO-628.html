@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-628 FieldSearch query with bad syntax does not immediately release connection to pool</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-628</span> FieldSearch query with bad syntax does not immediately release connection to pool</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-02-04 22:50 UTC</td></tr><tr><th>Updated</th><td>2010-09-01 16:11 UTC</td></tr><tr><th>Resolved</th><td>2010-03-21 22:28 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>Martin Tilma ( m dot tilma at func dot nl ) reported this to fedora-commons-users on Feb 4th, 2010:</p>
+
+<p>Hello,</p>
+
+<p>I have an issue with with fedora 3.3 after sending a few wrong<br/>
+findObject webservice requests. Fedora seems to block when you send a<br/>
+lot of "wrong" requests.</p>
+
+<p>The request:<br/>
+&lt;soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"&gt;<br/>
+  &lt;soap:Body&gt;<br/>
+    &lt;ns2:findObjects<br/>
+xmlns:ns2="http://www.fedora.info/definitions/1/0/types/"&gt;<br/>
+      &lt;resultFields&gt;<br/>
+        &lt;item&gt;pid&lt;/item&gt;<br/>
+      &lt;/resultFields&gt;<br/>
+      &lt;maxResults&gt;50&lt;/maxResults&gt;<br/>
+      &lt;query&gt;<br/>
+        &lt;conditions&gt;<br/>
+          &lt;condition&gt;<br/>
+            &lt;property&gt;label&lt;/property&gt;<br/>
+            &lt;operator&gt;eq&lt;/operator&gt;<br/>
+            &lt;value&gt;?&lt;/value&gt;<br/>
+          &lt;/condition&gt;<br/>
+        &lt;/conditions&gt;<br/>
+      &lt;/query&gt;<br/>
+    &lt;/ns2:findObjects&gt;<br/>
+  &lt;/soap:Body&gt;<br/>
+&lt;/soap:Envelope&gt;</p>
+
+<p>Response:<br/>
+&lt;soapenv:Envelope<br/>
+xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"<br/>
+xmlns:xsd="http://www.w3.org/2001/XMLSchema"<br/>
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;<br/>
+   &lt;soapenv:Body&gt;<br/>
+      &lt;soapenv:Fault&gt;<br/>
+         &lt;faultcode&gt;soapenv:Server.userException&lt;/faultcode&gt;<br/>
+         &lt;faultstring&gt;fedora.server.errors.QueryParseException: The =<br/>
+operator cannot be used with wildcards.&lt;/faultstring&gt;<br/>
+         &lt;detail&gt;<br/>
+            &lt;ns1:hostname<br/>
+xmlns:ns1="http://xml.apache.org/axis/"&gt;jones&lt;/ns1:hostname&gt;<br/>
+         &lt;/detail&gt;<br/>
+      &lt;/soapenv:Fault&gt;<br/>
+   &lt;/soapenv:Body&gt;<br/>
+&lt;/soapenv:Envelope&gt;</p>
+
+<p>It is complaining about the "?" in the value when using a Equals<br/>
+Condition. (to fix this you have to escape the "?" with a slash "&#63;")</p>
+
+<p>The response seems valid and correct to me. But after sending a lot<br/>
+requests (using soap-ui with 5 threads running for one minute) fedora<br/>
+stops responding and the requests will time out.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11227"><div class="by">Chris Wilper, 2010-02-04 22:56 UTC</div><div class="text"><p>I've verified this behavior by repeatedly running wget on a malformed FieldSearch query against the REST api using wget: </p>
+
+<p>wget <a href="http://localhost:8080/fedora/objects?pid=true&amp;query=label%3D%3F&amp;maxResults=20" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects?pid=true\&amp;query=label%3D%3F\&amp;maxResults=20</a></p>
+
+<p>It looks like a connection is borrowed from the pool, and when the query fails in this way, the connection is not immediately released as it should be.  If this is done many times in a row, eventually the connection pool will be exhausted and will cause Fedora to block (hang) on subsequent requests.</p></div></div>
+<div class="comment" id="comment-11230"><div class="by">Martin Tilma, 2010-02-09 14:23 UTC</div><div class="text"><p>typo in mail address, should be: m dot tilma at func dot nl </p></div></div>
+<div class="comment" id="comment-11268"><div class="by">Chris Wilper, 2010-03-21 22:28 UTC</div><div class="text"><p>Fixed and added regression test in trunk and maintenance-3.3.</p></div></div>
+<p><a href="data/FCREPO-628.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

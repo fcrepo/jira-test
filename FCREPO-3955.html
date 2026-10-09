@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3955 500 response for range request with content size as end of range</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3955</span> 500 response for range request with content size as end of range</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2024-09-04 16:23 UTC</td></tr><tr><th>Updated</th><td>2024-09-19 15:29 UTC</td></tr><tr><th>Resolved</th><td>2024-09-19 15:17 UTC</td></tr></table>
+<h2>Description</h2>
+<p>This is a bit of an oddity, but if you request a byte range for a binary where the end of the range is the exact same as the content length of the binary, then fedora responds with a 500. I’ve confirmed this behavior in fedora 5 and 6, although we probably only need to fix it in 6.</p>
+
+<p>Given a file that is 1713 bytes in size:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -v -o /dev/null http://localhost:48080/rest/76ec0df2-17f3-4ad3-a79c-aa2a19c09e2f  -H"Range: bytes=1000-1713"
+
+&lt; HTTP/1.1 500 Server Error
+
+curl -v -o /dev/null http://localhost:48080/rest/76ec0df2-17f3-4ad3-a79c-aa2a19c09e2f  -H"Range: bytes=1000-1712"
+
+&lt; HTTP/1.1 206 Partial Content
+
+curl -v -o /dev/null http://localhost:48080/rest/76ec0df2-17f3-4ad3-a79c-aa2a19c09e2f  -H"Range: bytes=1000-1714"
+
+&lt; HTTP/1.1 416 Requested Range Not Satisfiable
+
+curl -v -o /dev/null http://localhost:48080/rest/76ec0df2-17f3-4ad3-a79c-aa2a19c09e2f  -H"Range: bytes=1713-1715"
+
+&lt; HTTP/1.1 416 Requested Range Not Satisfiable
+
+curl -v -o /dev/null http://localhost:48080/rest/76ec0df2-17f3-4ad3-a79c-aa2a19c09e2f  -H"Range: bytes=1713-1713"
+
+&lt; HTTP/1.1 500 Server Error</pre>
+</div></div>
+
+<p>My impression from the specification is that we should actually return a 206 for any range request where the end of the byte range is equal or greater than the content size since it means the client is requesting the rest of the file:</p>
+
+<p><a href="https://httpwg.org/specs/rfc7233.html#byte.ranges" title="smart-link" class="external-link" rel="nofollow noreferrer">https://httpwg.org/specs/rfc7233.html#byte.ranges</a> </p>
+
+
+
+<blockquote><p>A client can limit the number of bytes requested without knowing the size of the selected representation. If the <a href="https://httpwg.org/specs/rfc7233.html#rule.ranges-specifier" class="external-link" rel="nofollow noreferrer">last-byte-pos</a> value is absent, or if the value is greater than or equal to the current length of the representation data, the byte range is interpreted as the remainder of the representation (i.e., the server replaces the value of <a href="https://httpwg.org/specs/rfc7233.html#rule.ranges-specifier" class="external-link" rel="nofollow noreferrer">last-byte-pos</a> with a value that is one less than the current length of the selected representation).</p></blockquote>
+
+<p>So while the 500 responses would be especially good to fix, it seems like we should be returning 206 for requests like these. It sounds like 416 is expected if the start of the range is greater than the end, or greater than or equal to the size of the file.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-23218"><div class="by">Jared Whiklo, 2024-09-06 18:18 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/2091" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2091</a></p></div></div>
+<p><a href="data/FCREPO-3955.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

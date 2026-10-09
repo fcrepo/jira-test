@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2656 Support external binaries of access-type=local-file</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2656</span> Support external binaries of access-type=local-file</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2017-11-28 16:57 UTC</td></tr><tr><th>Updated</th><td>2018-04-25 17:47 UTC</td></tr><tr><th>Resolved</th><td>2018-01-10 21:59 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2748.html">FCREPO-2748</a> Implement new External Content Handling Interaction for Redirects</td></tr></table>
+<h2>Description</h2>
+<p>Add support for the local-file access-type of external content binaries as described in:</p>
+
+<p><a href="https://fcrepo.github.io/fcrepo-specification/#external-content" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#external-content</a></p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19568"><div class="by">Ben Pennell, 2017-11-28 21:50 UTC</div><div class="text"><p>Andrew Woods Benjamin Armintor</p>
+
+<p>I was hoping you could help clarify the expectations for this feature, and external binaries more generally.</p>
+
+<p>If the expectation is that providing a header on POST/PUT:</p>
+
+<p>"Content-Type: message/external-body; access-type=local-file; local-file=\"file:///path/to/file.txt\""</p>
+
+<p>would produce a binary that responds with the same Content-Type header on GET, then it seems straightforward. </p>
+
+<p>Web browser requests to the binary will give an error page, but if retrieved by an informed client on the same file system it can work.  Is this how it is expected to behave, no proxying, as with URL access-types?  That is how the spec reads to me, but wanted to confirm.</p>
+
+<p>The fixity behavior with external binaries seems a bit confusing.  If you submit a checksum when creating a binary it will fail because it is actually storing a 0 byte "file" in modeshape, and checksumming that.  Meanwhile, fcr:fixity always passes since it is checksumming the 0 byte file.  However, if you supply the Want-Digest header, it will stream the referenced file and compute a fresh checksum.</p>
+
+<p>From a preservation perspective, I'm unsure about storing premis:hasSize=0, but I understand that we can't expect to track filesystem info.  I wonder if the property shouldn't be stored in that case?  Similarly, the ebucore:filename is empty, which seems like could be populated.  And perhaps we shouldn't store an empty binary?</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19569"><div class="by">Andrew Woods, 2017-11-28 22:44 UTC</div><div class="text"><p>There are two scenarios that the Modeshape impl should support: proxy and copy</p>
+
+<p>1 - Proxy</p>
+
+<p>PUT/POST creates a resource with "Content-Type: message/external-body; access-type=local-file; local-file=\"file://path/to/file.txt\"".<br/>
+Subsequent GET returns the same "Content-Type" as provided.<br/>
+The body of the response to GET is the actual content of "file.txt".<br/>
+GET/HEAD response MUST recalculate the value of requested digest on requests with `Want-Digest` header.</p>
+
+<p>2 - Copy</p>
+
+<p>PUT/POST creates a resource with "Content-Type: message/external-body; access-type=local-file; local-file=\"file://path/to/file.txt\"; expiration=anything".<br/>
+This behavior should ingest the file found at `/path/to/file.txt` in a similar fashion to the current functionality of:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -i -ufedoraAdmin:fedoraAdmin -XPUT localhost:8080/rest/sample-pdf -H"Content-Location: http://www.dillonrangerdistrict.com/trails/Buffalo_Mountain.pdf" -H"Content-Type: application/pdf"</pre>
+</div></div>
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19590"><div class="by">Ben Pennell, 2018-01-10 20:59 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1275" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1275</a></p>
+
+<p>It should support both proxied and ingested local files</p></div></div>
+<div class="comment" id="comment-19591"><div class="by">Ben Pennell, 2018-01-10 22:07 UTC</div><div class="text"><p>Sorry about the failing test, it is passing locally.  I'll try to fix that soon.</p></div></div>
+<div class="comment" id="comment-19938"><div class="by">Andrew Woods, 2018-04-25 17:47 UTC</div><div class="text"><p>Will be addressed by: <a href="https://jira.duraspace.org/browse/FCREPO-2748" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2748</a></p></div></div>
+<p><a href="data/FCREPO-2656.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

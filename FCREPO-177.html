@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-177 Dissemination problems in objects with POLICY datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-177</span> Dissemination problems in objects with POLICY datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Wayland, Rosser L (rlw)</td></tr><tr><th>Created</th><td>2008-01-08 13:41 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-11-13 18:33 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.0b1</td></tr></table>
+<h2>Description</h2>
+<p>Under 2.2.x, there is a policy in the set of default repo-wide policies named  deny-policy-management-if-not-administrator.xml that restricts all access to the POLICY datastream unless you have fedoraRole=administrator. This attribute is only available if basciAuth is enabled. This is always the case for API-M so administrator can always access POLICY datastream through API-M. For API-A, the POLICY datastream cannot be accessed unless basicAuth is enabled for API-A and user has fedoraRole=administrator.</p>
+
+<p>Under 3.0b1, we seem to have introduced some new dependency on the POLICY datastream with regard to disseminations so that if an object contains a POLICY datastream, this causes an AuthZException to be consistently thrown when attempting any getDisseminations. Removing the deny-policy-management-if-not-administrator.xml repo-wide policy or removing the POLICY datastream from the data object eliminates the problem, but this is a bug we need to run down before 3.0final release.</p>
+
+<p>I believe this bug is related to how DefaultAccess.GetCMDADisseminationBindingInfo populates the dissBindingInfo data structure. Under 2.2.x, dissBindingInfo used a dbms join to select only those datastreams that were needed to fulfill the dissemination request. It appears that under 3.0b1, all datastreams in the object are being included in the dissBindingInfo data structure. Current logic in DisseminationService applies the policy constraint of "enforce_Internal_DSState" to each datastream found in dissBindingInfo. If an object happens to have a POLICY datastream, access to this datastream is denied unless the requesting user has fedoraRole=administrator. This will never happen when basicAuth is disabled for API-A. If basicAuth is enabled for API-A, access to the POLICY datastream is only allowed for fedoraRole=administrator, but this is still not the desired behavior. The result is that the initial dissemination request is denied because the requesting user does not have access to the POLICY datastream which is really irrelevant to the dissemination request. The fix seems to be either to filter the datastreams that are populated in dissBindingInfo to only include those datastreams that are needed in dissemination request or change logic in DisseminationService so policy constraint of "enforce_Internal_DSState" is only applied to those datastreams that are needed in dissemination request.</p>
+
+<p>You can quickly test this in 3.0b1 by adding a POLICY datastream that permits-to-all(see attached) to one of the demo objects with disseminators. Attempts to run any disseminations on that object will result in AuthZExceptions. Remove the POLICY datastream and the disseminations will work. Note this is only an issue with getDissemination;  getDatastreamDissemination uses different logic and is unaffected.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-177/10023_sf-1866787-permit-to-all.xml">sf-1866787-permit-to-all.xml</a>, 1206 bytes, added by Chris Wilper on 2008-01-08</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10374"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: rwayland3<br/>
+Item #: 1866787<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1866787" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1866787</a></p></div></div>
+<div class="comment" id="comment-10798"><div class="by">Bill Branan, 2008-11-13 18:33 UTC</div><div class="text"><p>This bug cannot be reproduced in Fedora 3.1. It appears that this issue was fixed as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-254" >
+                <a href="FCREPO-254.html" class="jira-issue-macro-key issue-link"  title="Extend dissemination architecture to support datastream binding from multiple objects" >
+            
+            FCREPO-254
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<p><a href="data/FCREPO-177.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

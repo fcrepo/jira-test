@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-866 Inconsistent namespaces in REST API responses</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-866</span> Inconsistent namespaces in REST API responses</h1>
+<table class="meta"><tr><th>Type</th><td>Technical task</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-03-01 21:08 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2011-03-13 17:24 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Parent</th><td><a href="FCREPO-713.html">FCREPO-713</a> Responses to various API requests are not schema-valid</td></tr><tr><th>Is related to</th><td><a href="FCREPO-612.html">FCREPO-612</a> Datastream Profile in /objects/{pid}/datastreams/{dsId}?format=xml use attribute datetime, which is not in the schema</td></tr></table>
+<h2>Description</h2>
+<p>Thought we had caught all of these.</p>
+
+<p>/objects/</p>
+{pid} - getObjectProfile - is in a default namespace <a href="http://www.fedora.info/definitions/1/0/access/" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/access/</a><br/>
+/objects/{pid}
+<p>/datastreams - listDatastreams - has no namespace</p>
+
+<p>I haven't checked if these two responses are schema-valid.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11838"><div class="by">Stephen Bayliss, 2011-03-12 14:52 UTC</div><div class="text"><p>See also <a href="http://www.mail-archive.com/fedora-commons-users@lists.sourceforge.net/msg02643.html" class="external-link" rel="nofollow noreferrer">http://www.mail-archive.com/fedora-commons-users@lists.sourceforge.net/msg02643.html</a></p>
+
+<p>This suggests that the default namespace is only missing on FeSL (perhaps some XML processing that's not namespace-aware?)</p></div></div>
+<div class="comment" id="comment-11841"><div class="by">eddie, 2011-03-12 23:36 UTC</div><div class="text"><p>Steve, can you post the listDatastreams response you're seeing?</p>
+
+<p>I just tested this via the REST-API and the following output I get on a test object does include the FedoraAccessNamespace as the default namespace:<br/>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;objectDatastreams  xmlns="http://www.fedora.info/definitions/1/0/access/"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:schemaLocation="http://www.fedora.info/definitions/1/0/access/ <a href="http://www.fedora-commons.org/definitions/1/0/listDatastreams.xsd" class="external-link" rel="nofollow noreferrer">http://www.fedora-commons.org/definitions/1/0/listDatastreams.xsd</a>" pid="test-rest:1"  baseURL="http://localhost:8080/fedora/" &gt;    &lt;datastream dsid="DC" label="Dublin Core Record for this object" mimeType="text/xml" /&gt;    &lt;datastream dsid="testListDatastreams" label="" mimeType="text/xml" /&gt;&lt;/objectDatastreams&gt;</p></div></div>
+<div class="comment" id="comment-11842"><div class="by">Stephen Bayliss, 2011-03-12 23:52 UTC</div><div class="text"><p>Seems to be only related to FeSL - see the linked thread (and I had FeSL AuthZ turned on when I found this).</p>
+
+<p>Currently seeing if I can implement schema validation for all TestRESTAPI responses (that return XML) so we catch anything like this in the future</p></div></div>
+<div class="comment" id="comment-11845"><div class="by">Stephen Bayliss, 2011-03-13 00:35 UTC</div><div class="text"><p>Schema validation reveals the following (added as sub-tasks of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-713" >
+                <a href="FCREPO-713.html" class="jira-issue-macro-key issue-link"  title="Responses to various API requests are not schema-valid" >
+            
+            FCREPO-713
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+):</p>
+
+<ul>
+	<li>getObjectHistory - response has xsi:schemaLocation="http://www.fedora.info/definitions/1/0/access/ <a href="http://www.fedora.info/definitions/1/0/objectHistory.xsd" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/objectHistory.xsd</a>" but the schema file is fedoraObjectHistory.xsd (404 from the given location) : schema location in response needs correcting or the xsd file needs renaming</li>
+	<li>datastream profile with asOfDateTIme - cvc-complex-type.3.2.2: Attribute 'dateTime' is not allowed to appear in element 'datastreamProfile' : schema needs updating to allow this (optional) attribute OR don't have the attribute in the response</li>
+	<li>findObjects/resumeFindObjects do not seem to have schema - they should, so we can avoid unintentionally breaking the API response</li>
+	<li>validation - does not specify schema in response (there is one at <a href="http://www.fedora.info/definitions/1/0/validation.xsd" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/validation.xsd</a>)</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11851"><div class="by">Stephen Bayliss, 2011-03-13 02:03 UTC</div><div class="text"><p>And back to the original issue...</p>
+
+<p>Looks like org.fcrepo.server.security.xacml.pep.rest.objectshandlers.ListDatastreams.filterXML(...)</p>
+
+<p>This is using a javax.xml.parsers.DocumentBuilderFactory which has not been set to be namespace-aware.</p>
+
+<p>Potentially could affect other classes in org.fcrepo.server.security.xacml.pep.rest.objectshandlers</p>
+
+<p>Update: this was the issue.  Fixed, plus one other instance in objecthandlers.</p></div></div>
+<div class="comment" id="comment-11854"><div class="by">eddie, 2011-03-15 00:23 UTC</div><div class="text"><p>datastreamProfile schema in the source tree does include dateTime attribute. It's the copy on the web server that's out of date. Looks like it was never updated after 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-612" >
+                <a href="FCREPO-612.html" class="jira-issue-macro-key issue-link"  title="Datastream Profile in /objects/{pid}/datastreams/{dsId}?format=xml use attribute datetime, which is not in the schema" >
+            
+            FCREPO-612
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<p><a href="data/FCREPO-866.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

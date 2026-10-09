@@ -1,0 +1,21 @@
+curl -i -I http://localhost:8080/rest/test/1
+curl -i -XPUT http://localhost:8080/rest/test/1
+curl -i -I http://localhost:8080/rest/test/2
+curl -i -XPUT http://localhost:8080/rest/test/2
+curl -i -I http://localhost:8080/rest/test/1/members
+curl -i -XPUT -H"Content-Type: text/turtle" --data-binary @body-indirect.ttl http://localhost:8080/rest/test/1/members
+
+--body--
+<http://localhost:8080/rest/test/1/members> a <http://www.w3.org/ns/ldp#IndirectContainer>;
+   <http://www.w3.org/ns/ldp#hasMemberRelation> <http://pcdm.org/models#hasMember>;
+   <http://www.w3.org/ns/ldp#insertedContentRelation> <http://openarchives.org/ore/terms/proxyFor>;
+   <http://www.w3.org/ns/ldp#membershipResource> <http://localhost:8080/rest/test/1> .
+--body--
+
+curl -i -XPOST -H"Content-Type: text/turtle" --data-binary @body-proxy.ttl http://localhost:8080/rest/test/1/members/
+--body--
+<> <http://openarchives.org/ore/terms/proxyFor> <http://localhost:8080/rest/test/2> .
+--body--
+
+curl -i http://localhost:8080/rest/test/1
+curl -i -H"Prefer: return=representation; include=\"http://fedora.info/definitions/v4/repository#InboundReferences\"" http://localhost:8080/rest/test/2

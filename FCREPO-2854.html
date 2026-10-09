@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2854 Defining acl:accessToClass without an acl:default predicate has no benefit</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2854</span> Defining acl:accessToClass without an acl:default predicate has no benefit</h1>
+<table class="meta"><tr><th>Type</th><td>Documentation</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2018-09-06 19:53 UTC</td></tr><tr><th>Updated</th><td>2018-10-03 19:28 UTC</td></tr><tr><th>Resolved</th><td>2018-10-03 19:28 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p><b>The task here is to clarify the best practice in the documentation.</b></p>
+
+<p> </p>
+
+<p>Because of the way that acl:default takes the ACL and re-writes it onto child objects, then any object that is underneath gets the same permissions.</p>
+
+<p>Because you would need the parent object to have the class defined in the acl:accessToClass, then why not specify acl:accessTo.</p>
+
+<p>If instead you use acl:default and acl:accessToClass, then this seems to be a method to assign these permissions to a subset of the children (those with the specified class).</p>
+
+<p>ie.</p>
+
+<p>/rest/trunk</p>
+
+<p>&lt;&gt; a pcdm-use:Image</p>
+
+<p>/rest/trunk/fcr:acl</p>
+
+<p> &lt;&gt; a webac:Acl .<br/>
+  &lt;#auth1&gt; a acl:Authorization ;<br/>
+     acl:accessToClass pcdm-use:Image ;<br/>
+     acl:mode acl:Read ;<br/>
+     acl:agent "somebody" ;<br/>
+     acl:default &lt;/rest/trunk&gt; .</p>
+
+<p>Then any child item that shares the type pcdm-use:Image would get these authorizations, others would continue up the tree.</p>
+
+<p> </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20177"><div class="by">Danny Bernstein, 2018-09-07 18:20 UTC</div><div class="text"><p>Jared Whiklo:  Is this a problem? Are you suggesting we return a 400 with a descriptive warning?  </p></div></div>
+<div class="comment" id="comment-20179"><div class="by">Jared Whiklo, 2018-09-07 19:22 UTC</div><div class="text"><p>This could be a question of best practices. But I am seeing no use for the acl:accessToClass predicate without an acl:default in the same acl:Authorization. Maybe what I am suggesting is we code a best practice into the implementation and maybe that is a bad idea? But I really don't see why you use acl:accessToClass to refer to a single specific resource which is how our WebAC implementation works without an acl:default predicate.</p>
+
+<p>This seemed more problematic when discussing with Aaron Birkland and Peter Matthew Eichman yesterday. But I am fine letting people use acl:accessToClass however they want, I'm just thinking people may expect this to work differently than it will.</p>
+
+<p>If Aaron Birkland and Peter Matthew Eichman don't have a good reason, then I'm good with closing this and letting the cats run un-herded.</p></div></div>
+<div class="comment" id="comment-20197"><div class="by">Peter Matthew Eichman, 2018-09-12 18:37 UTC</div><div class="text"><p>My current feeling on this is that we should not enforce this in the implementation, but instead make it clear in a best practices document that authorizations with <tt>acl:accessToClass</tt> without <tt>acl:default</tt> are likely to be useless, or not be doing what you think you are doing. (Until, of course, someone comes along with a strange edge case where it <b>does</b> make sense )</p></div></div>
+<div class="comment" id="comment-20280"><div class="by">Peter Matthew Eichman, 2018-09-21 15:16 UTC</div><div class="text"><p>I have added a note to this effect to the WebAC authorizations documentation: <a href="https://wiki.duraspace.org/display/FEDORA5x/WebAC+Authorizations" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/WebAC+Authorizations</a></p></div></div>
+<p><a href="data/FCREPO-2854.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

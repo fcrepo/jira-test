@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1672 Migrate to Jena 3.0.0</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1672</span> Migrate to Jena 3.0.0</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-08-04 00:28 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:53 UTC</td></tr><tr><th>Resolved</th><td>2016-08-25 14:19 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0, Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr><tr><th>Labels</th><td>housekeeping</td></tr><tr><th>Required by</th><td><a href="FCREPO-1799.html">FCREPO-1799</a> IllegalArgumentException when trying to INSERT</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2070.html">FCREPO-2070</a> Use linked data backend for fcrepo-transform</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2124.html">FCREPO-2124</a> Fixity service error in HTML UI</td></tr></table>
+<h2>Description</h2>
+<p>At present, Fedora depends on Jena 2.12.1</p>
+
+<p>The 3.x series has just been released. After some initial investigation, there are a few issues related to upgrading to the new version at this point.</p>
+
+<p>Two minor issues relate to dependency conflicts between the fedora libraries and the LDP integration tests (which uses 2.12.x). The fcrepo-transform module also depends on an older 2.x version of the Jena API.</p>
+
+<p>In the fedora kernel, the main change from 2 to 3 involves how string literals are represented. With RDF 1.1, there is no difference between the literal "abc" and "abc"^^<a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>. But at present, they are serialized differently in the JCR layer. Transitioning to Jena 3 would require normalizing how those string literals are persisted.</p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-14899"><div class="by">Unknown, 2015-08-04 01:25 UTC</div><div class="text"><p>Just to be clear, this ticket should remain "on hold" until the above-mentioned transitive dependency conflicts can be eliminated.</p></div></div>
+<div class="comment" id="comment-15936"><div class="by">Esmé Cowles, 2015-12-15 15:36 UTC</div><div class="text"><p>Unknown: I took a look at Jena 3.0 and saw the same issue you've outlined.  I think for the change to how untyped literals are handled, we could just update the tests to expect the typed version to be emitted.  And then it would be good to make sure that untyped literals are stored in JCR as string typed.  I'm less sure about what we'd do for the LDP TCK.  It hasn't been updated for a new version of Jena, but I suppose we could update it ourselves (presumably they'd accept a PR along those lines, and we could use our fork until that happens).</p>
+
+<p>This strikes me as much the same issue as FCREPO-1799: there are some changes in RDF 1.1 that break RDF 1.0 handling in small and subtle ways.  So I think an important consideration is whether RDF 1.1 adoption is happening quickly enough that we need to push forward with it, or whether it's more important to maintain RDF 1.0 support.  I don't know how quickly RDF 1.1 adoption is going.  I wonder whether you (or A. Soroka or cb) have a better sense on that?</p></div></div>
+<div class="comment" id="comment-15943"><div class="by">A. Soroka, 2015-12-17 15:30 UTC</div><div class="text"><p>I don't think RDF 1.1 adoption is the most important thing (he wrote, as someone who thinks the "no type is string type" move was a big mistake). The important thing is all the improvements we get for upgrading Jena's internals (he wrote, having made some of those PRs). That's worth the price of normalizing output. I don't quite agree with Esmé Cowles that just normalizing to string-type all over is the best approach. I think we should record the type and return it. That should pass all correctly-written tests.</p></div></div>
+<div class="comment" id="comment-16008"><div class="by">Esmé Cowles, 2016-01-14 16:33 UTC</div><div class="text"><p>Based on discussion in the 1/14 tech call: we should just update the tests.</p></div></div>
+<div class="comment" id="comment-16009"><div class="by">A. Soroka, 2016-01-14 16:37 UTC</div><div class="text"><p>At the risk of being overly fulsome in comment, I withdraw my remark above about storing/returning types. Just doing plain RDF 1.1 should indeed be fine.</p></div></div>
+<div class="comment" id="comment-16398"><div class="by">Benjamin Armintor, 2016-03-24 15:51 UTC</div><div class="text"><p>A. Soroka volunteered to open a ticket with <a href="https://github.com/w3c/ldp-testsuite" class="external-link" rel="nofollow noreferrer">https://github.com/w3c/ldp-testsuite</a> about the test dependency; we'll see about running those tests in a separate container or somesuch as well.</p></div></div>
+<div class="comment" id="comment-16405"><div class="by">A. Soroka, 2016-03-25 15:14 UTC</div><div class="text"><p>Indeed, tracking at:</p>
+
+<p><a href="https://github.com/w3c/ldp-testsuite/issues/229" class="external-link" rel="nofollow noreferrer">https://github.com/w3c/ldp-testsuite/issues/229</a><br/>
+and<br/>
+<a href="https://github.com/w3c/ldp-testsuite/pull/228" class="external-link" rel="nofollow noreferrer">https://github.com/w3c/ldp-testsuite/pull/228</a></p>
+</div></div>
+<div class="comment" id="comment-17115"><div class="by">Unknown, 2016-07-25 00:45 UTC</div><div class="text"><p>I have a branch with Jena 3.1.0 that is ready to be merged as soon as master is unfrozen (at which point a PR will be submitted):</p>
+
+<p><a href="https://github.com/acoburn/fcrepo4/tree/fcrepo-1672" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/fcrepo4/tree/fcrepo-1672</a></p>
+
+<p>This branch uses the current ldp-testsuite (v.0.1.1) without requiring the changes outlined in <a href="https://github.com/w3c/ldp-testsuite/pull/228" class="external-link" rel="nofollow noreferrer">https://github.com/w3c/ldp-testsuite/pull/228</a> (and without encountering version conflicts between jena 2 and 3)</p></div></div>
+<div class="comment" id="comment-17116"><div class="by">Unknown, 2016-07-25 01:12 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1075" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1075</a></p>
+
+<p>I went ahead an issued the PR to get this out and ready for review. I intentionally did not target the DEV branch. I also do not think this should be merged until after the various pom.xml files have version incremented to 4.7.0-SNAPSHOT.</p></div></div>
+<div class="comment" id="comment-17139"><div class="by">Unknown, 2016-07-27 18:17 UTC</div><div class="text"><p>Additional PRs:</p>
+
+<p>fcrepo-audit: <a href="https://github.com/fcrepo4-exts/fcrepo-audit/pull/38" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/pull/38</a><br/>
+fcrepo-module-auth-webac: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/71" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/71</a><br/>
+fcrepo-module-auth-xacml: <a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/54" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/54</a><br/>
+fcrepo-module-auth-rbacl: <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/35" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/35</a><br/>
+fcrepo-webapp-plus: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/46" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/46</a></p></div></div>
+<div class="comment" id="comment-17262"><div class="by">Andrew Woods, 2016-08-24 20:42 UTC</div><div class="text"><p>Now with the fcrepo-transform issues resolved, are we ready to move this set of PRs forward?</p></div></div>
+<div class="comment" id="comment-17263"><div class="by">Unknown, 2016-08-24 20:47 UTC</div><div class="text"><p>Yes, I believe so.</p></div></div>
+<div class="comment" id="comment-17265"><div class="by">Andrew Woods, 2016-08-25 14:19 UTC</div><div class="text"><p>Resolved with:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/46497f50f214d2ed8ebfa414f02f75138ea5a105" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/46497f50f214d2ed8ebfa414f02f75138ea5a105</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/a9dd8478bda6ccf54832d347d5e25e6568a23004" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a9dd8478bda6ccf54832d347d5e25e6568a23004</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/336424ab6a010df725301a77501e288d8e3c1f5d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/336424ab6a010df725301a77501e288d8e3c1f5d</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/4bfdd2594f6f31e12413c151323f9a89b2af6e63" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/4bfdd2594f6f31e12413c151323f9a89b2af6e63</a></li>
+</ul>
+
+
+<p>And:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/e53b9bfe24f395b0d748ebab0dfd6ebef26598fc" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/e53b9bfe24f395b0d748ebab0dfd6ebef26598fc</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/46891e91dfadd419491f7d8cb91bdc8d3f084550" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/46891e91dfadd419491f7d8cb91bdc8d3f084550</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/2fc13b8c7674234791ff0eedca926413401d2a02" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/2fc13b8c7674234791ff0eedca926413401d2a02</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/2bd8a7caef3c0eb9cd5ee9cd1859b9227a506b44" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/2bd8a7caef3c0eb9cd5ee9cd1859b9227a506b44</a></li>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-audit/commit/5f32f5dbd82cc9962714f1f48cf1e47d8bba8d4a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/commit/5f32f5dbd82cc9962714f1f48cf1e47d8bba8d4a</a></li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-1672.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

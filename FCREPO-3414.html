@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3414 Stacktrace in response: PUT without Content-Type</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3414</span> Stacktrace in response: PUT without Content-Type</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2020-09-08 20:33 UTC</td></tr><tr><th>Updated</th><td>2020-11-14 21:07 UTC</td></tr><tr><th>Resolved</th><td>2020-11-14 21:07 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>This bug can be seen when attempting to create a BasicContainer with an RDF body, but without a provided content-type. The bug is that the body of the HTTP response to the client is an internal stacktrace. The fix should catch the exception, include a simple error message (e.g. "Content-Type header required"), and a 400 response code.</p>
+
+<p>To recreate this bug:<br/>
+$ curl -i -d "&lt;&gt; &lt;<a href="http://awoods.com#title" class="external-link" rel="nofollow noreferrer">http://awoods.com#title</a>&gt; 'A title'" -XPUT localhost:8080/rest/test -H'Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"'</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21601"><div class="by">Jared Whiklo, 2020-11-13 21:18 UTC</div><div class="text"><p>As of commit <a href="https://github.com/fcrepo/fcrepo/commit/93a8e636ab22559a9100eedea20f83f8bb9077d6" class="external-link" rel="nofollow noreferrer">93a8e63</a><br/>
+ I am seeing this:</p>
+
+
+<p>{{ &gt; curl -i -d "&lt;&gt; &lt;<a href="http://awoods.com/#title" class="external-link" rel="nofollow noreferrer">http://awoods.com#title</a>&gt; 'A title'" -XPUT localhost:8080/rest/test -H'Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"' -ufedoraAdmin:fedoraAdmin}}</p>
+
+<p>{{ HTTP/1.1 415 Unsupported Media Type}}<br/>
+{{ Date: Fri, 13 Nov 2020 21:13:03 GMT}}<br/>
+{{ Set-Cookie: JSESSIONID=node010g0b7lwj5cyzr869w7hty62v0.node0; Path=/}}<br/>
+{{ Expires: Thu, 01 Jan 1970 00:00:00 GMT}}<br/>
+{{ Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Thu, 12-Nov-2020 21:13:04 GMT; SameSite=lax}}<br/>
+{{ Content-Type: text/plain;charset=utf-8}}<br/>
+{{ Content-Length: 70}}<br/>
+{{ Server: Jetty(9.4.34.v20201102)}}<tt>Media type application/x-www-form-urlencoded is not a valid RDF format</tt></p>
+
+<p>{{ However tricking cUrl to not send the Content-type header does this.}}</p>
+
+<p><tt>&gt; curl -i -d "&lt;&gt; &lt;<a href="http://awoods.com/#title" class="external-link" rel="nofollow noreferrer">http://awoods.com#title</a>&gt; 'A title'" -XPUT localhost:8080/rest/test -H'Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"' -ufedoraAdmin:fedoraAdmin -H"Content-type:"</tt></p>
+
+<p>{{ HTTP/1.1 201 Created}}<br/>
+{{ Date: Fri, 13 Nov 2020 21:17:28 GMT}}<br/>
+{{ Set-Cookie: JSESSIONID=node0169f9d1ip9aebntkwn1r425tk1.node0; Path=/}}<br/>
+{{ Expires: Thu, 01 Jan 1970 00:00:00 GMT}}<br/>
+{{ Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Thu, 12-Nov-2020 21:17:28 GMT; SameSite=lax}}<br/>
+{{ ETag: W/"960D4697989317E715798913D9EEEC44"}}<br/>
+{{ X-State-Token: 960D4697989317E715798913D9EEEC44}}<br/>
+{{ Last-Modified: Fri, 13 Nov 2020 21:17:28 GMT}}<br/>
+{{ Link: &lt;<a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a>&gt;; rel="timegate"}}<br/>
+{{ Link: &lt;<a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a>&gt;; rel="original"}}<br/>
+{{ Link: &lt;<a href="http://localhost:8080/rest/test/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test/fcr:versions</a>&gt;; rel="timemap"}}<br/>
+{{ Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Resource" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Resource</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Container" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Container</a>&gt;; rel="type"}}<br/>
+{{ Link: &lt;<a href="http://localhost:8080/rest/test/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test/fcr:acl</a>&gt;; rel="acl"}}<br/>
+{{ Location: <a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a>}}<br/>
+{{ Content-Type: text/plain}}<br/>
+{{ Content-Length: 31}}<br/>
+{{ Server: Jetty(9.4.34.v20201102)}}<tt><a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a></tt></p>
+
+<p>{{ So I think this is fixed.}}</p></div></div>
+<div class="comment" id="comment-21602"><div class="by">Jared Whiklo, 2020-11-13 21:20 UTC</div><div class="text"><p>Also, Jira sucks for formatting</p></div></div>
+<p><a href="data/FCREPO-3414.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

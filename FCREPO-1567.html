@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1567 Changing registered namespace prefixes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1567</span> Changing registered namespace prefixes</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-06-04 22:55 UTC</td></tr><tr><th>Updated</th><td>2016-11-04 14:55 UTC</td></tr><tr><th>Resolved</th><td>2016-11-04 14:55 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to create a backend utility that allows Fedora administrators to provide preferred namespace prefixes that will then override existing prefix mappings in the repository. </p>
+
+<p>As a part of this task or a follow-on documentation ticket, this utility should be documented in the wiki.</p>
+
+<p>See: <a href="https://groups.google.com/d/msg/fedora-tech/1F0paNOp9GY/lUHI9niwOpQJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/1F0paNOp9GY/lUHI9niwOpQJ</a></p>
+<h2>Comments (17)</h2>
+<div class="comment" id="comment-16623"><div class="by">Unknown, 2016-05-03 19:41 UTC</div><div class="text"><p>I have written a sample utility for this. I have tested it with the default leveldb cachestore as well as with a postgres-based JDBC cachestore.</p>
+
+<p><a href="https://github.com/acoburn/fcrepo-namespace-util" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/fcrepo-namespace-util</a></p>
+
+<p>That said, I don't actually have any unit tests for this at present.</p></div></div>
+<div class="comment" id="comment-16703"><div class="by">Andrew Woods, 2016-05-20 13:51 UTC</div><div class="text"><p>The <tt>fcrepo-namespace-util</tt> project would be a great addition to -labs and eventually -exts. What would you like to happen now, however?</p></div></div>
+<div class="comment" id="comment-16704"><div class="by">Unknown, 2016-05-20 13:54 UTC</div><div class="text"><p>Actually, it already is in -labs: <a href="https://github.com/fcrepo4-labs/fcrepo-namespace-util" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-namespace-util</a></p>
+
+<p>I think the question is: does this utility address the ticket?</p></div></div>
+<div class="comment" id="comment-16705"><div class="by">Andrew Woods, 2016-05-20 13:59 UTC</div><div class="text"><p>Peter Matthew Eichman, does this utility address the ticket?</p></div></div>
+<div class="comment" id="comment-16706"><div class="by">Peter Matthew Eichman, 2016-05-20 14:15 UTC</div><div class="text"><p>Andrew Woods, I am going to take a look at it today.</p></div></div>
+<div class="comment" id="comment-16719"><div class="by">Andrew Woods, 2016-05-20 21:54 UTC</div><div class="text"><p>Based on IRC feedback, this utility as it currently stands has the potential to render a Fedora installation unusable.<br/>
+See: <a href="http://irclogs.fcrepo.org/2016-05-20.html" class="external-link" rel="nofollow noreferrer">http://irclogs.fcrepo.org/2016-05-20.html</a> &#8211; starting at 16:39</p></div></div>
+<div class="comment" id="comment-16750"><div class="by">Peter Matthew Eichman, 2016-05-25 19:06 UTC</div><div class="text"><p>I have been unable to reproduce the error I encountered last Friday (5/20). I did notice a couple of other things:</p>
+<ol>
+	<li>Attempting to change an existing prefix to another namespace appears to succeed in the tool, but after restarting the repository, then re-running the tool, the original prefix is restored to its original URI, and the other namespace URI disappears from the list of prefixes.</li>
+	<li>There is a <tt>ns00X</tt> prefix with the URI <tt><a href="http://www.w3.org/ns/auth/acl#accessControl:" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#accessControl:</a></tt> that cannot be changed, because it is part of a node type definition. That is an odd-looking URI to be a prefix from a pure RDF standpoint, so I was wondering if this is an expected prefix or something that has gotten screwed up on our local installation.</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-16752"><div class="by">Unknown, 2016-05-26 00:41 UTC</div><div class="text"><p>Just as a clarifying point &#8211; when you ran the namespace-changing utility, was the repository stopped? (It is expected that the repository be stopped) </p></div></div>
+<div class="comment" id="comment-16753"><div class="by">Peter Matthew Eichman, 2016-05-26 13:14 UTC</div><div class="text"><p>Yes, the repository was stopped before running namespace-util.</p></div></div>
+<div class="comment" id="comment-16756"><div class="by">Unknown, 2016-05-26 17:13 UTC</div><div class="text"><p>Peter Matthew Eichman I modified the code so that any namespace registered as a <tt>nodetype</tt> is filtered out of the list and so a user can't even attempt to change those values (as opposed to the earlier, naive approach &#8211; just try to change everything but catch exceptions).</p></div></div>
+<div class="comment" id="comment-16757"><div class="by">Peter Matthew Eichman, 2016-05-26 17:41 UTC</div><div class="text"><p>Unknown, to follow up on (1) from my comment above, I have noticed further behavior. In my original test, I re-assigned the <tt>dc</tt> prefix from <tt><a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a></tt> to <tt><a href="http://purl.org/dc/terms/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/</a></tt> (the latter was showing up with a <tt>ns00X</tt> prefix, although I currently had no objects using any properties in that namespace). The tool accepted the changes, and Fedora started up alright, but when I shut down Fedora and restarted the tool, the `dc` namespace had reverted to <tt><a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a></tt>.</p>
+
+<p>But now when I try to add a property in the <tt><a href="http://purl.org/dc/terms/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/</a></tt> namespace, I keep getting a "Not Implemented" error. This happens both when I try using the full URI in the predicate position of if I define a prefix in the SPARQL update.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>INSERT { &lt;&gt; &lt;http://purl.org/dc/terms/title&gt; "Foobar" }
+</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PREFIX dcterms: &lt;http://purl.org/dc/terms/&gt;
+INSERT { &lt;&gt; dcterms:title "Foobar" }
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16758"><div class="by">Andrew Woods, 2016-05-26 17:58 UTC</div><div class="text"><p>I suspect the namespaces defined in the CND file may complicate the use of this utility, as seen in the case of:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/resources/fedora-node-types.cnd#L19" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/resources/fedora-node-types.cnd#L19</a></p></div></div>
+<div class="comment" id="comment-16759"><div class="by">Peter Matthew Eichman, 2016-05-26 18:04 UTC</div><div class="text"><p>To prevent unpleasant interactions with the CND file, would it help to define a blacklist of namespaces/prefixes not to touch?</p></div></div>
+<div class="comment" id="comment-16760"><div class="by">Unknown, 2016-05-26 18:08 UTC</div><div class="text"><p>Peter Matthew Eichman Yes, a blacklist with those values from the CND would be a good idea &#8211; I'll add that now</p></div></div>
+<div class="comment" id="comment-17807"><div class="by">Unknown, 2016-10-12 19:49 UTC</div><div class="text"><p>Peter Matthew Eichman I am inclined to deep-6 the namespace changing tool I wrote earlier, and instead recommend that users define namespaces in a custom CND file. Do you have any objections to closing this ticket?</p></div></div>
+<div class="comment" id="comment-17811"><div class="by">Peter Matthew Eichman, 2016-10-12 20:23 UTC</div><div class="text"><p>Unknown Fine by me. Custom CND sounds like a better option.</p></div></div>
+<div class="comment" id="comment-17954"><div class="by">Unknown, 2016-11-04 14:55 UTC</div><div class="text"><p>Closing this as a back-end utility appears not to be the best way to approach this. Instead, a recommendation to use a custom CND file with the defined namespace prefixes seems to be a better approach.</p></div></div>
+<p><a href="data/FCREPO-1567.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

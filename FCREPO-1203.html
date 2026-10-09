@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1203 Authorization fails for APIM access via IPv6</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1203</span> Authorization fails for APIM access via IPv6</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>jgm106@psu.edu</td></tr><tr><th>Created</th><td>2013-10-16 23:54 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Environment</h2>FedoraOS 19. Tomcat 7. Java 1.7. FedoraCommons 3.7
+<h2>Description</h2>
+<p>On upgrade from 3.5.0 to 3.7.0, I discovered that IPv6 authorization now fails from systems defined in deny-apim-if-not-localhost.xml.</p>
+
+<p>Steps to reproduce:<br/>
+1. Fresh install of a Fedora3.7 webpp.<br/>
+2. copy over the working Fedora3.5 data directory.<br/>
+3. Rebuilt the Resource Index and SQL database via the fedora-rebuild.sh script.<br/>
+4. start up the Fedora3.7 webapp.<br/>
+5. access a datastream profile via IPv4 and it works.<br/>
+6. access the same datastream profile via IPv6 and it fails.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12568"><div class="by">jgm106@psu.edu, 2013-10-16 23:55 UTC</div><div class="text"><p>I forgot to state that with the same configuration on Fedora3.5, accessing the datastream profiles works fine via IPv4 and IPv6.</p>
+
+<p>working: rhel6, tomcat7, java1.6, fcrepo3.5<br/>
+not working: fedora19, tomcat7, java1.7, fcrepo3.7</p></div></div>
+<div class="comment" id="comment-12569"><div class="by">jgm106@psu.edu, 2013-10-17 00:33 UTC</div><div class="text"><p>INFO 2013-10-16 14:41:38.815 <span class="error">&#91;http-bio-8080-exec-2&#93;</span> (DefaultManagement) Completed getDatastream(pid: sufia:gt54kz92n, datastreamID: RELS-EXT, asOfDateTime: null)<br/>
+WARN 2013-10-16 14:41:38.818 <span class="error">&#91;http-bio-8080-exec-2&#93;</span> (BaseRestResource) Authorization failed; unable to fulfill REST API request<br/>
+org.fcrepo.server.errors.authorization.AuthzDeniedException:<br/>
+	at org.fcrepo.server.security.impl.DefaultPolicyEnforcementPoint.enforce(DefaultPolicyEnforcementPoint.java:143) ~<span class="error">&#91;fcrepo-server-3.7.0.jar:na&#93;</span><br/>
+	at org.fcrepo.server.security.DefaultAuthorization.enforceGetDatastream(DefaultAuthorization.java:368) ~<span class="error">&#91;fcrepo-server-3.7.0.jar:na&#93;</span><br/>
+	at org.fcrepo.server.management.DefaultManagement.getDatastream(DefaultManagement.java:1148) ~<span class="error">&#91;fcrepo-server-3.7.0.jar:na&#93;</span><br/>
+	at sun.reflect.GeneratedMethodAccessor52.invoke(Unknown Source) ~<span class="error">&#91;na:na&#93;</span><br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~<span class="error">&#91;na:1.7.0_40&#93;</span><br/>
+	at java.lang.reflect.Method.invoke(Method.java:606) ~<span class="error">&#91;na:1.7.0_40&#93;</span><br/>
+	at org.fcrepo.server.messaging.NotificationInvocationHandler.invoke(NotificationInvocationHandler.java:76) ~<span class="error">&#91;fcrepo-server-3.7.0.jar:na&#93;</span><br/>
+	at com.sun.proxy.$Proxy6.getDatastream(Unknown Source) ~<span class="error">&#91;na:na&#93;</span><br/>
+	at org.fcrepo.server.management.ManagementModule.getDatastream(ManagementModule.java:299) ~<span class="error">&#91;fcrepo-server-3.7.0.jar:na&#93;</span><br/>
+	at org.fcrepo.server.rest.DatastreamResource.getDatastreamProfile(DatastreamResource.java:143) ~<span class="error">&#91;fcrepo-server-3.7.0.jar:na&#93;</span><br/>
+	at sun.reflect.GeneratedMethodAccessor51.invoke(Unknown Source) ~<span class="error">&#91;na:na&#93;</span><br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~<span class="error">&#91;na:1.7.0_40&#93;</span><br/>
+	at java.lang.reflect.Method.invoke(Method.java:606) ~<span class="error">&#91;na:1.7.0_40&#93;</span><br/>
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:180) <span class="error">&#91;cxf-api-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:96) <span class="error">&#91;cxf-api-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:193) <span class="error">&#91;cxf-rt-frontend-jaxrs-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:102) <span class="error">&#91;cxf-rt-frontend-jaxrs-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:58) <span class="error">&#91;cxf-api-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:94) <span class="error">&#91;cxf-api-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:271) <span class="error">&#91;cxf-api-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:121) <span class="error">&#91;cxf-api-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:239) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.ServletController.invokeDestination(ServletController.java:218) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.ServletController.invoke(ServletController.java:163) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.ServletController.invoke(ServletController.java:137) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.CXFNonSpringServlet.invoke(CXFNonSpringServlet.java:158) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.AbstractHTTPServlet.handleRequest(AbstractHTTPServlet.java:243) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.AbstractHTTPServlet.doGet(AbstractHTTPServlet.java:168) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:621) <span class="error">&#91;tomcat-servlet-3.0-api.jar:na&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.AbstractHTTPServlet.service(AbstractHTTPServlet.java:219) <span class="error">&#91;cxf-rt-transports-http-2.7.3.jar:2.7.3&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:305) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:210) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:369) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.fcrepo.server.security.jaas.AuthFilterJAAS.doFilter(AuthFilterJAAS.java:329) <span class="error">&#91;fcrepo-security-jaas-3.7.0.jar:na&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:381) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.security.web.access.channel.ChannelProcessingFilter.doFilter(ChannelProcessingFilter.java:109) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:381) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:168) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:237) <span class="error">&#91;spring-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:167) <span class="error">&#91;spring-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:243) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:210) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:222) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:123) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:502) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:171) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:99) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:953) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:118) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:408) <span class="error">&#91;catalina.jar:7.0.42&#93;</span><br/>
+	at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1023) <span class="error">&#91;tomcat-coyote.jar:7.0.42&#93;</span><br/>
+	at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:589) <span class="error">&#91;tomcat-coyote.jar:7.0.42&#93;</span><br/>
+	at org.apache.tomcat.util.net.JIoEndpoint$SocketProcessor.run(JIoEndpoint.java:310) <span class="error">&#91;tomcat-coyote.jar:7.0.42&#93;</span><br/>
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145) <span class="error">&#91;na:1.7.0_40&#93;</span><br/>
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615) <span class="error">&#91;na:1.7.0_40&#93;</span><br/>
+	at java.lang.Thread.run(Thread.java:724) <span class="error">&#91;na:1.7.0_40&#93;</span></p></div></div>
+<div class="comment" id="comment-12570"><div class="by">jgm106@psu.edu, 2013-10-17 01:03 UTC</div><div class="text"><p>If I change the entry in deny-apim-if-not-localhost.xml from compressed IPv6 notation to uncompressed, e.g.</p>
+
+<p>2610:8:6800:1a::157   ===&gt;   2610:8:6800:1a:0:0:0:157</p>
+
+<p>it works.</p></div></div>
+<div class="comment" id="comment-12854"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1203.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2771 Mementos have incorrect subject returned</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2771</span> Mementos have incorrect subject returned</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2018-04-24 17:23 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-08-03 15:11 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Mementos get a new subject when they are created, but if you GET the Memento it should have the original subject returned.</p>
+
+<p> </p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-19927"><div class="by">Jared Whiklo, 2018-04-24 17:25 UTC</div><div class="text"><div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&gt; curl -ufedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/testObject
+</span>
+@prefix premis:  &lt;http:<span class="code-comment">//www.loc.gov/premis/rdf/v1#&gt; .
+</span>@prefix test:  &lt;info:fedora/test/&gt; .
+@prefix memento:  &lt;http:<span class="code-comment">//mementoweb.org/ns#&gt; .
+</span>@prefix rdfs:  &lt;http:<span class="code-comment">//www.w3.org/2000/01/rdf-schema#&gt; .
+</span>@prefix webac:  &lt;http:<span class="code-comment">//fedora.info/definitions/v4/webac#&gt; .
+</span>@prefix acl:  &lt;http:<span class="code-comment">//www.w3.org/ns/auth/acl#&gt; .
+</span>@prefix xsi:  &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema-instance&gt; .
+</span>@prefix xmlns:  &lt;http:<span class="code-comment">//www.w3.org/2000/xmlns/&gt; .
+</span>@prefix rdf:  &lt;http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+</span>@prefix fedora:  &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#&gt; .
+</span>@prefix xml:  &lt;http:<span class="code-comment">//www.w3.org/XML/1998/namespace&gt; .
+</span>@prefix ebucore:  &lt;http:<span class="code-comment">//www.ebu.ch/metadata/ontologies/ebucore/ebucore#&gt; .
+</span>@prefix ldp:  &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#&gt; .
+</span>@prefix dcterms:  &lt;http:<span class="code-comment">//purl.org/dc/terms/&gt; .
+</span>@prefix xs:  &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema&gt; .
+</span>@prefix fedoraconfig:  &lt;http:<span class="code-comment">//fedora.info/definitions/v4/config#&gt; .
+</span>@prefix foaf:  &lt;http:<span class="code-comment">//xmlns.com/foaf/0.1/&gt; .
+</span>@prefix dc:  &lt;http:<span class="code-comment">//purl.org/dc/elements/1.1/&gt; .
+</span>
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/testObject&gt;
+</span>        rdf:type               fedora:Container ;
+        rdf:type               fedora:Resource ;
+        rdf:type               ldp:BasicContainer ;
+        dc:title               <span class="code-quote">"The LDP-RS <span class="code-object">Object</span>"</span> ;
+        fedora:lastModifiedBy  <span class="code-quote">"fedoraAdmin"</span> ;
+        fedora:createdBy       <span class="code-quote">"fedoraAdmin"</span> ;
+        fedora:created         <span class="code-quote">"2018-04-24T14:13:22.83Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:lastModified    <span class="code-quote">"2018-04-24T14:23:57.713Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        dc:description         <span class="code-quote">"This is the <span class="code-keyword">new</span> description"</span> ;
+        rdf:type               ldp:RDFSource ;
+        rdf:type               ldp:Container ;
+        fedora:writable        <span class="code-keyword">true</span> .</pre>
+</div></div>
+<p>Versus</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&gt; curl -ufedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/testObject/fcr:versions/20180424141940
+</span>
+@prefix premis:  &lt;http:<span class="code-comment">//www.loc.gov/premis/rdf/v1#&gt; .
+</span>@prefix test:  &lt;info:fedora/test/&gt; .
+@prefix memento:  &lt;http:<span class="code-comment">//mementoweb.org/ns#&gt; .
+</span>@prefix rdfs:  &lt;http:<span class="code-comment">//www.w3.org/2000/01/rdf-schema#&gt; .
+</span>@prefix webac:  &lt;http:<span class="code-comment">//fedora.info/definitions/v4/webac#&gt; .
+</span>@prefix acl:  &lt;http:<span class="code-comment">//www.w3.org/ns/auth/acl#&gt; .
+</span>@prefix xsi:  &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema-instance&gt; .
+</span>@prefix xmlns:  &lt;http:<span class="code-comment">//www.w3.org/2000/xmlns/&gt; .
+</span>@prefix rdf:  &lt;http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+</span>@prefix fedora:  &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#&gt; .
+</span>@prefix xml:  &lt;http:<span class="code-comment">//www.w3.org/XML/1998/namespace&gt; .
+</span>@prefix ebucore:  &lt;http:<span class="code-comment">//www.ebu.ch/metadata/ontologies/ebucore/ebucore#&gt; .
+</span>@prefix ldp:  &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#&gt; .
+</span>@prefix dcterms:  &lt;http:<span class="code-comment">//purl.org/dc/terms/&gt; .
+</span>@prefix xs:  &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema&gt; .
+</span>@prefix fedoraconfig:  &lt;http:<span class="code-comment">//fedora.info/definitions/v4/config#&gt; .
+</span>@prefix foaf:  &lt;http:<span class="code-comment">//xmlns.com/foaf/0.1/&gt; .
+</span>@prefix dc:  &lt;http:<span class="code-comment">//purl.org/dc/elements/1.1/&gt; .
+</span>
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/testObject/fcr:versions/20180424141940&gt;
+</span>        rdf:type               ldp:RDFSource ;
+        rdf:type               ldp:Container ;
+        rdf:type               fedora:Resource ;
+        rdf:type               ldp:BasicContainer ;
+        rdf:type               fedora:Container ;
+        fedora:created         <span class="code-quote">"2018-04-24T14:13:22.083Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:writable        <span class="code-keyword">true</span> ;
+        dc:title               <span class="code-quote">"The LDP-RS <span class="code-object">Object</span>"</span> ;
+        fedora:lastModified    <span class="code-quote">"2018-04-24T14:13:22.083Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:lastModifiedBy  <span class="code-quote">"fedoraAdmin"</span> ;
+        fedora:createdBy       <span class="code-quote">"fedoraAdmin"</span> ;
+        rdf:type               ldp:RDFSource ;
+        rdf:type               ldp:Container ;
+        fedora:writable        <span class="code-keyword">true</span> .</pre>
+</div></div></div></div>
+<div class="comment" id="comment-20023"><div class="by">Bethany Seeger, 2018-06-22 20:46 UTC</div><div class="text"><p>Does anyone have suggestions on how to approach this? </p>
+
+<p>I see two ways: </p>
+
+<p>1)  change the subject after the data is retrieved from the lower level but before it is sent to client.  Ie, on a GET, the http layer would fetch the memento and change the subject then.  I am not a fan of this option. </p>
+
+<p>2) store the memento with the correct subject, but under the memento path, which may or may not function well, technically speaking, but seems the right way of doing this.   I'm not even sure this can be done... </p>
+
+<p>Thoughts? Other options? </p>
+
+<p>(Jared Whiklo, Ben Pennell)</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20024"><div class="by">Ben Pennell, 2018-06-22 21:20 UTC</div><div class="text"><p>Bethany Seeger</p>
+
+<p>Fedora produces the subject based off the resource's internal path, so there's not really a subject stored that can be switched. Details are a little hazy at the moment, but I seem to recall that for binary's (or maybe just binary mementos) I had to remap the subject on the way out in order to get it to return the uri of the binary rather than of the description resource.</p>
+
+<p>I believe it is taking place here, so not quite at the HTTP layer:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/NonRdfSourceDescriptionImpl.java#L95" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/NonRdfSourceDescriptionImpl.java#L95</a></p></div></div>
+<div class="comment" id="comment-20025"><div class="by">Jared Whiklo, 2018-06-25 17:07 UTC</div><div class="text"><p>I'd say change it on the way out the door. Only versions of the current resource should be contained here so I feel like we can calculate the path to display as.</p></div></div>
+<div class="comment" id="comment-20076"><div class="by">Danny Bernstein, 2018-07-18 23:26 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1374" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1374</a></p></div></div>
+<div class="comment" id="comment-20109"><div class="by">Andrew Woods, 2018-08-02 16:04 UTC</div><div class="text"><p>Pending response to code review.</p></div></div>
+<div class="comment" id="comment-20116"><div class="by">Danny Bernstein, 2018-08-03 15:11 UTC</div><div class="text"><p>PR feedback has been addressed.</p></div></div>
+<div class="comment" id="comment-20119"><div class="by">Andrew Woods, 2018-08-03 16:20 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/39067c78e12a2e9fc9ba8881ae786524cd8d5d42" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/39067c78e12a2e9fc9ba8881ae786524cd8d5d42</a></p></div></div>
+<p><a href="data/FCREPO-2771.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

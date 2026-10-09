@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1884 WebAC acl:accessTo property requires a trailing slash when the protected resource is the repsitory root</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1884</span> WebAC acl:accessTo property requires a trailing slash when the protected resource is the repsitory root</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-02-01 18:52 UTC</td></tr><tr><th>Updated</th><td>2016-03-17 16:52 UTC</td></tr><tr><th>Resolved</th><td>2016-03-17 16:07 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>webac</td></tr></table>
+<h2>Description</h2>
+<p>When creating a WebAC ACL to protect the repository root, you must include a trailing slash in the Authorizations's acl:accessTo predicate, otherwise the Authorization will not match the resource's path in Fedora, and won't get applied.</p>
+
+<p>The desired behavior is to allow the URI to the repository root to omit the trailing slash (e.g., &lt;<a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>&gt;) but still have the Authorization apply. In other words, this should be valid:</p>
+
+<p>&lt;&gt; a acl:Authorization ; acl:accessTo &lt;<a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>&gt; .</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-16299"><div class="by">Unknown, 2016-03-10 22:25 UTC</div><div class="text"><p>It appears that the fix for this would involve a change to Fedora's core IdentifierTranslator classes, which I am somewhat hesitant to do. A much simpler resolution would be to make the documentation clear that a trailing slash is necessary.</p>
+
+<p>Technically, the URI without the trailing slash is considered an out-of-domain URI, not managed by Fedora. So, strictly speaking, in a repository-wide sense, no one should ever refer to the repository root without a trailing slash.</p>
+
+<p>Esmé Cowles, Andrew Woods or A. Soroka do any of you have opinions on this?</p></div></div>
+<div class="comment" id="comment-16300"><div class="by">Andrew Woods, 2016-03-10 23:27 UTC</div><div class="text"><p>In the context of the "root resource", it does not seem unreasonable to consider the <tt>rest/</tt> slash the leading slash vs. a trailing slash. It is the slash, itself, that signifies the root.</p>
+
+<p>On the other hand, Unknown, do you have a sense of extent necessary for a potential change to <tt>IdentifierTranslator</tt>?</p></div></div>
+<div class="comment" id="comment-16301"><div class="by">Unknown, 2016-03-11 01:10 UTC</div><div class="text"><p>I don't actually think the change to <tt>IDentifierTranslater</tt> would require too much work, though it may also be an opportunity to reevaluate our use of Guava's <tt>Converter</tt> class. If that is replaced with a simple class with two (bidirectional) {{Function}}s, the kernel-api would no longer depend on Guava (I think). I see a lot of advantages to keeping kernel-api very light weight in terms of dependencies.</p>
+
+<p>And the more I think about it, it seems that repository users who inadvertently omit a trailing slash when referring to the Root resource may encounter quite a few unexpected situations. Furthermore, there is an inconsistency here &#8211; HTTP requests for the root without the trailing slash return triples whose subject contain a trailing slash. For any child container, however, the subject never contains the trailing slash, whether the HTTP request contained the trailing slash or not. </p>
+
+<p>That is, I think it makes sense that references to the root resource should be considered "in domain" whether they contain a trailing slash or not.</p></div></div>
+<div class="comment" id="comment-16317"><div class="by">Andrew Woods, 2016-03-11 15:30 UTC</div><div class="text"><p>Your first comment above seemed to be leaning towards resolving this issue with better documentation.<br/>
+Your second comment, directly above, seems to be leaning towards resolving this issue in line with the ticket description.</p>
+
+<p>If that is the case, please feel free to proceed with the required updates to <tt>IdentifierTranslator</tt>.</p></div></div>
+<div class="comment" id="comment-16320"><div class="by">A. Soroka, 2016-03-11 16:39 UTC</div><div class="text"><p>Are <em>all</em> trailing-slash URIs out-of-domain? That doesn't seem right.</p></div></div>
+<div class="comment" id="comment-16321"><div class="by">Unknown, 2016-03-11 16:52 UTC</div><div class="text"><p>No, no. All trailing-slash URIs that point to a location in the repository are in-domain. For example, these are both valid in-domain URIs:</p>
+
+<p>INSERT </p>
+{
+&lt;&gt; ex:related &lt;/fcrepo/rest/foo&gt;, &lt;/fcrepo/rest/bar/&gt; .
+}
+<p> WHERE {}</p>
+
+<p>But only the first one here is in-domain:</p>
+
+<p>INSERT </p>
+{
+&lt;&gt; ex:hasRoot &lt;/fcrepo/rest/&gt;, &lt;/fcrepo/rest&gt; .
+}
+<p> WHERE {}</p>
+
+<p>(The second one will be translated to an http:// URI, depending on the host and port of the request, and that HTTP address will persist across changes in the repository's domain name).</p>
+
+<p>That is:<br/>
+&lt;<a href="http://localhost:8080/fcrepo/rest/some/resource" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/some/resource</a>&gt; ex:hasRoot &lt;<a href="http://localhost:8080/fcrepo/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/</a>&gt; .<br/>
+&lt;<a href="http://localhost:8080/fcrepo/rest/some/resource" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/some/resource</a>&gt; ex:hasRoot &lt;<a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>&gt; .</p>
+
+<p>But if you change the domain name, this is what you get:<br/>
+&lt;<a href="http://fedora.myhost.edu/fcrepo/rest/some/resource" class="external-link" rel="nofollow noreferrer">http://fedora.myhost.edu/fcrepo/rest/some/resource</a>&gt; ex:hasRoot &lt;<a href="http://fedora.myhost.edu/fcrepo/rest/" class="external-link" rel="nofollow noreferrer">http://fedora.myhost.edu/fcrepo/rest/</a>&gt; .<br/>
+&lt;<a href="http://fedora.myhost.edu/fcrepo/rest/some/resource" class="external-link" rel="nofollow noreferrer">http://fedora.myhost.edu/fcrepo/rest/some/resource</a>&gt; ex:hasRoot &lt;<a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>&gt; .</p></div></div>
+<div class="comment" id="comment-16356"><div class="by">Unknown, 2016-03-15 19:32 UTC</div><div class="text"><p>PRs:</p>
+
+<p>fcrepo: <a href="https://github.com/fcrepo4/fcrepo4/pull/1007" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1007</a><br/>
+webac: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/61" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/61</a></p></div></div>
+<div class="comment" id="comment-16359"><div class="by">Jared Whiklo, 2016-03-17 16:07 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/b36d2ed92bd7aee25a2635b484ae0fd8f3cc9c1f" class="external-link" rel="nofollow noreferrer">b36d2ed</a></p></div></div>
+<div class="comment" id="comment-16360"><div class="by">Jared Whiklo, 2016-03-17 16:52 UTC</div><div class="text"><p>WebAC tests added with <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/7f8c5ee1690f03a6c8a25ec71f12c76deca2ab5e" class="external-link" rel="nofollow noreferrer">7f8c5ee</a></p></div></div>
+<p><a href="data/FCREPO-1884.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

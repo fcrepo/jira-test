@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2648 Tomcat stuck threads during object ingest into Fedora with fcrepo-audit module enabled</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2648</span> Tomcat stuck threads during object ingest into Fedora with fcrepo-audit module enabled</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2017-10-19 16:22 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-audit, f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.4</td></tr></table>
+<h2>Description</h2>
+<p>At UMD, during our batch ingest operations, we started encountering frequent stuck threads in Tomcat. After some number of successful transactions containing many write operations, finally a transaction would hang up during the request to commit it, and we would be alerted by the Tomcat stuck thread monitor.</p>
+
+<p>We eventually determined that if we removed the fcrepo-audit module from our webapp build, the stuck threads stopped occurring. Our current theory is that since the fcrepo-audit module was causing additional writes to the repository for every piece of content that we were writing, somehow these write events were getting into some sort of lock or resource contention state, and filling up the Modeshape event buffer to the point that it was no longer able to process writes to the repository.</p>
+
+<p>It should be noted that while in this stuck thread state all writes to the repository would hang, reads (e.g., as performed by the indexers) continued to succeed.</p>
+
+<p>Mailing list threads with more details about the stuck thread issue, and our various solution attempts:</p>
+
+<ul>
+	<li><a href="https://groups.google.com/d/topic/fedora-tech/0CletEhKO7s/discussion" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/topic/fedora-tech/0CletEhKO7s/discussion</a></li>
+	<li><a href="https://groups.google.com/d/topic/fedora-tech/oAwFFHaRu8Q/discussion" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/topic/fedora-tech/oAwFFHaRu8Q/discussion</a></li>
+	<li><a href="https://groups.google.com/d/topic/fedora-tech/b8Eap28sL1M/discussion" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/topic/fedora-tech/b8Eap28sL1M/discussion</a></li>
+	<li><a href="https://groups.google.com/d/topic/fedora-tech/r4qR2mF4eGk/discussion" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/topic/fedora-tech/r4qR2mF4eGk/discussion</a></li>
+	<li><a href="https://groups.google.com/d/topic/fedora-tech/lPY4QGacnMg/discussion" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/topic/fedora-tech/lPY4QGacnMg/discussion</a></li>
+</ul>
+
+
+<p>(Note that the stuck thread issue recurred several times, each time with a different solution. In particular, the first two mailing list threads linked above were not necessarily connected to the fcrepo-audit module.)</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-19552"><div class="by">Harshakumar Ummerpillai, 2017-11-10 12:35 UTC</div><div class="text"><p>Peter Matthew Eichman, we are also having some problems with the transaction manager when doing bulk loads, can you please let us know how to disable fcrepo-audit, is it enabled by default?</p></div></div>
+<div class="comment" id="comment-19553"><div class="by">Peter Matthew Eichman, 2017-11-10 16:16 UTC</div><div class="text"><p>Harshakumar Ummerpillai, it depends on how you have deployed fcrepo. The fcrepo-audit module is compiled into the fcrepo-webapp-plus WAR file by default. However, you can disable it by making sure this line is not present (or commented out) in your spring configuration:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-xml">
+<span class="code-tag">&lt;bean class=<span class="code-quote">"org.fcrepo.audit.InternalAuditor"</span>/&gt;</span></pre>
+</div></div></div></div>
+<div class="comment" id="comment-19554"><div class="by">Harshakumar Ummerpillai, 2017-11-10 16:31 UTC</div><div class="text"><p>Thank you. I will check it out, I dont think we are using fcrepo-webapp-plus.</p></div></div>
+<div class="comment" id="comment-22397"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2648.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

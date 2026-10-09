@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2745 Always Create (paths for) ACLs, and expose in link headers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2745</span> Always Create (paths for) ACLs, and expose in link headers</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2018-04-04 13:06 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-04-17 21:51 UTC</td></tr><tr><th>Components</th><td>auth</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Section 5.3 of the Fedora spec states:<br/>
+ "A conforming server MUST advertise the individual resource ACL for every controlled resource in HTTP responses with a rel="acl" link in the Link header, whether or not the ACL exists."</p>
+
+<p>So Fedora needs to <em>always</em> advertise an ACL location the client can PUT to to create an ACL, even if it doesn't exist already.</p>
+
+<p><a href="https://fcrepo.github.io/fcrepo-specification/#link-rel-acl" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#link-rel-acl</a></p>
+
+<p> </p>
+
+<p>Peter Matthew Eichman's proposed the path:  /resource/fcr:acl</p>
+
+<p> </p>
+
+<p>As documented in a related, overlapping, and now closed ticket ( <a href="https://jira.duraspace.org/browse/FCREPO-2744" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2744</a> )  this ticket will entail removing the use of acl:accessControl in order to create the rel=acl header link.</p>
+
+<p>To complete the issue, </p>
+<ol>
+	<li>Every resource with the exception of all resource's ending in /fcr:acl should return a link header as follows:  Link: &lt;resource-uri/fcr:acl&gt;; rel="acl"</li>
+	<li>The old way of doing things (populating the rel="acl" using the &lt;&gt; acl:accessControl &lt;aclpath&gt;  statement),  acl validation , and support for specifying an ACL on resource creation, should be removed.</li>
+</ol>
+
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-19815"><div class="by">Danny Bernstein, 2018-04-04 16:22 UTC</div><div class="text"><p>Aaron Birkland:  Is that the intent of Section 5.3? Or is it just saying that the link should point to the  resolved ACL if no ACL is explicitly defined directly on the resource? </p></div></div>
+<div class="comment" id="comment-19817"><div class="by">Aaron Birkland, 2018-04-04 16:33 UTC</div><div class="text"><p>The link MUST be present and point to the resource's individual ACL.  If the resource doesn't have an ACL (and therefore relies on the algorithm to traverse the tree to find an ACL), then the link points to a resource that returns a 404, explicitly indicating that the resource does not have an ACL directly applied to it.  Clients can PUT to that ACL link URI to create an ACL for the resource.</p>
+
+<p>See background conversation:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo-specification/pull/198#issuecomment-326126675" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-specification/pull/198#issuecomment-326126675</a></p></div></div>
+<div class="comment" id="comment-19818"><div class="by">Danny Bernstein, 2018-04-04 16:50 UTC</div><div class="text"><p>Aaron Birkland:  thanks for the reference to the background discussion.  That all makes sense though it seems to create some confusion with respect to Section 5.4 which allows the user to define the location of the ACL.  So am I correct in saying that if the user does not use a rel=acl request link header on creation, then a default location is presented whether or not the acl exists? If the user wishes to define the acl on the resource  he/she must perform a PUT to the default location returned in the rel=acl response link header?</p></div></div>
+<div class="comment" id="comment-19819"><div class="by">Aaron Birkland, 2018-04-04 16:55 UTC</div><div class="text"><p>Danny Bernstein Yes, precisely - a default location is provided that the user can PUT to.  </p></div></div>
+<div class="comment" id="comment-19838"><div class="by">Peter Matthew Eichman, 2018-04-12 17:09 UTC</div><div class="text"><p>Danny Bernstein, Aaron Birkland In light of the discussion of ACL locations on today's tech call, I am in favor of removing <a href="https://fcrepo.github.io/fcrepo-specification/#link-acl-on-create" class="external-link" rel="nofollow noreferrer">section 5.4</a>, which would have the effect of removing the ability to link a resource to an arbitrary location for an ACL. That would make this issue simpler, since the location of a resource's (nominal) ACL is always known, even without additional information.</p>
+
+<p>I'll also put in a pitch for naming that default location "fcr:acl", in parallel to things like "fcr:versions" and "fcr:metadata". So if you have a resource <a href="http://example.com/fcrepo/rest/foo" class="external-link" rel="nofollow noreferrer">http://example.com/fcrepo/rest/foo</a>, it's ACL location would be <a href="http://example.com/fcrepo/rest/foo/fcr:acl" class="external-link" rel="nofollow noreferrer">http://example.com/fcrepo/rest/foo/fcr:acl</a>.</p>
+
+<p>I'll also raise the question of whether a GET to a non-existent ACL should return a 404, or if it should return a 303 See Other, with the effective (inherited) ACL in the response?<br/>
+  </p></div></div>
+<div class="comment" id="comment-19841"><div class="by">Danny Bernstein, 2018-04-12 18:41 UTC</div><div class="text"><p>+1 on fcr:acl. </p>
+
+<p>Peter Matthew Eichman: Re the return code:  404 would be sufficient I would think.  In response to your question,  I ask a counter question:  are there client use cases where producing a 303 with reference to the effective acl would be useful? </p></div></div>
+<div class="comment" id="comment-19864"><div class="by">Situ, Longshou, 2018-04-17 21:51 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1322" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1322</a></p></div></div>
+<div class="comment" id="comment-19869"><div class="by">Jared Whiklo, 2018-04-18 15:32 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/8f02f4f49037ab960e0169d48ee3035a79a34cdf" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8f02f4f49037ab960e0169d48ee3035a79a34cdf</a></p></div></div>
+<p><a href="data/FCREPO-2745.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-552 Configurable parameters for the Fedora internal http client</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-552</span> Configurable parameters for the Fedora internal http client</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2009-10-21 23:41 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-08-17 13:02 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 4, Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>I ran into a curious performance issue when several students were testing a digital collection interface we have developed.  When all the students accessed the same search results page at the same time (a "canned" search page), the application would freeze up for several minutes.  The search results page contained 10 thumbnails, all of which were served up by Fedora via a disseminator.</p>
+
+<p>After several hours of targeted load testing and debugging, I narrowed down the source of the problem to communication between Fedora and the backend web service that delivers the thumbnails.  I started digging through the source code, and found fedora.common.http.WebClient:</p>
+
+<p>public class WebClient {</p>
+
+<p>    /** Seconds to wait before a connection is established. */<br/>
+    public int TIMEOUT_SECONDS = 20;</p>
+
+<p>    /** Seconds to wait while waiting for data over the socket (SO_TIMEOUT). */<br/>
+    public int SOCKET_TIMEOUT_SECONDS = 120;</p>
+
+<p>    /** Maxiumum http connections per host */<br/>
+    public int MAX_CONNECTIONS_PER_HOST = 5;</p>
+
+<p>    /** Maxiumum total http connections */<br/>
+    public int MAX_TOTAL_CONNECTIONS = 20;</p>
+
+<p>    /** Whether to automatically follow HTTP redirects. */<br/>
+    public boolean FOLLOW_REDIRECTS = true;</p>
+
+<p>    /**</p>
+<ul>
+	<li>Maximum number of redirects to follow per request if FOLLOW_REDIRECTS is</li>
+	<li>true.<br/>
+     */<br/>
+    public int MAX_REDIRECTS = 3;</li>
+</ul>
+
+
+<p> ...<br/>
+}</p>
+
+<p>Suspecting that Fedora had run out of connections for making requests to my backend web service, I manually changed WebClient.java to bump up MAX_CONNECTIONS_PER_HOST to 256, and MAX_TOTAL_CONNECTIONS to 256, recompiled, then put the changed class file in place, restarted Tomcat, and re-executed my load tests.  The problem disappeared.</p>
+
+<p>I'd like to request the following features be added to a future release of Fedora:</p>
+
+<p>1.  Make the internal web client parameters configurable in fedora.fcfg (TIMEOUT_SECONDS, SOCKET_TIMEOUT_SECONDS, MAX_CONNECTIONS_PER_HOST, FOLLOW_REDIRECTS, MAX_REDIRECTS)</p>
+
+<p>2.  Throw a meaningful exception that can be captured in the logs whenever one of the above constraints is exceeded. </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11108"><div class="by">Chris Wilper, 2009-11-24 15:24 UTC</div><div class="text"><p>Note: This also applies to fedora.common.http.WebClient.</p>
+
+<p>Related: 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-437" >
+                <a href="FCREPO-437.html" class="jira-issue-macro-key issue-link"  title="usage of HTTP proxy when getting external content" >
+            
+            FCREPO-437
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ recently made WebClient proxy-configurable.</p></div></div>
+<div class="comment" id="comment-11378"><div class="by">Chris Wilper, 2010-05-18 17:32 UTC</div><div class="text"><p>Note: This should be configurable in fedora.fcfg...in the external content manager's configuration</p></div></div>
+<div class="comment" id="comment-11523"><div class="by">Stephen Bayliss, 2010-08-11 00:41 UTC</div><div class="text"><p>Discussed on committer call 2010-08-10</p>
+<ul class="alternate" type="square">
+	<li>a version of this for the 3.4 release, based on config parameters in fedora.fcfg</li>
+	<li>in a subsequent release, revise to use the Spring DI framework being introduced in 3.4</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11531"><div class="by">Stephen Bayliss, 2010-08-17 13:01 UTC</div><div class="text"><p>New parameters in fedora.fcfg (under server) are:</p>
+
+<p>  &lt;param name="httpClientTimeoutSecs" value="20"&gt;<br/>
+    &lt;comment&gt;Number of seconds Fedora http client will wait for a connection before timing <br/>
+		out.&lt;/comment&gt;<br/>
+  &lt;/param&gt;<br/>
+  &lt;param name="httpClientSocketTimeoutSecs" value="120"&gt;<br/>
+    &lt;comment&gt;Number of seconds Fedora http client will wait for data coming across an <br/>
+		established http connection.&lt;/comment&gt;<br/>
+  &lt;/param&gt;<br/>
+  &lt;param name="httpClientMaxConnectionsPerHost" value="5"&gt;<br/>
+    &lt;comment&gt;Maximum number of Fedora http client connections allowed to a given host.&lt;/comment&gt;<br/>
+  &lt;/param&gt;<br/>
+  &lt;param name="httpClientMaxTotalConnections" value="5"&gt;<br/>
+    &lt;comment&gt;Maximum number of total Fedora http client connections allowed at once.&lt;/comment&gt;<br/>
+  &lt;/param&gt;<br/>
+  &lt;param name="httpClientFollowRedirects" value="true"&gt;<br/>
+    &lt;comment&gt;Should the Fedora http client follow redirects?&lt;/comment&gt;<br/>
+  &lt;/param&gt;<br/>
+  &lt;param name="httpClientMaxFollowRedirects" value="3"&gt;<br/>
+    &lt;comment&gt;Maximun number of redirects the Fedora http client will follow (only if <br/>
+		httpClientFollowRedirects is set to true.)&lt;/comment&gt;<br/>
+  &lt;/param&gt;<br/>
+  &lt;param name="httpClientUserAgent" value="Fedora"&gt;<br/>
+    &lt;comment&gt;The value to be set for the User-Agent HTTP request header.&lt;/comment&gt;<br/>
+  &lt;/param&gt;</p>
+
+</div></div>
+<p><a href="data/FCREPO-552.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

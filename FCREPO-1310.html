@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1310 Sparql processors should support named graphs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1310</span> Sparql processors should support named graphs</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-01-28 14:14 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-01-30 18:36 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Description</h2>
+<p>The processor classes in fcrepo-camel will transform an RDF representation of a fedora node into a SPARQL-Update query capable of being sent to an external triplestore. It would be useful to be able to optionally store these in named graphs.</p>
+
+<p>The implementation should accept a new header value, for example CamelFcrepoNamedGraph, which would allow for dynamic changes to this value without needing a separate processor class.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-13244"><div class="by">Andrew Woods, 2015-01-28 16:47 UTC</div><div class="text"><p>Are you thinking that the named graphs will be defined in fcrepo-camel? since there are no named graphs natively in F4.</p></div></div>
+<div class="comment" id="comment-13245"><div class="by">Unknown, 2015-01-28 16:51 UTC</div><div class="text"><p>It's for the external triplestore. The current processor classes will take an RDF graph and format it into a sparql-update query for use with an external triplestore. Those queries, however, don't support named graphs, which may be useful in several different contexts. The idea is that if an appropriate header is present, the sparql-update query will add a GRAPH &lt;graph-name&gt; </p>
+{ ... }
+<p> wrapper to the queries.</p></div></div>
+<div class="comment" id="comment-13246"><div class="by">Andrew Woods, 2015-01-28 16:57 UTC</div><div class="text"><p>The part that is not clear to me is which request adds the header? I assume the request that fcrepo-camel makes to the external triplestore. If so, is such a header the standard mechanism for defining named graph... it seems unlikely, hence my confusion.</p></div></div>
+<div class="comment" id="comment-13247"><div class="by">Unknown, 2015-01-28 17:08 UTC</div><div class="text"><p>fcrepo-camel doesn't make the triplestore request. The request would typically be made with the camel-http4 component like this:</p>
+
+<p>from("fcrepo:localhost:8080/rest")<br/>
+  .process(new SparqlUpdateProcessor())<br/>
+  .to("http4://triplestore-host:8080/ds/update");</p>
+
+<p>In this example, the RDF body is picked up from fedora, based on the value of the CamelFcrepoIdentifier header; it is then passed to the SparqlUpdateProcessor processor, which converts the payload into a sparql-update body; and finally the payload is POSTed to the triplestore with the appropriate headers. The processor classes are really just convenience classes for implementors. The proposal is to support this:</p>
+
+<p>from("fcrepo:localhost:8080/rest")<br/>
+  .setHeader(FcrepoHeaders.FCREPO_NAMED_GRAPH)<br/>
+      .simple("<tt>default.graph</tt>")<br/>
+  .process(new SparqlUpdateProcessor())<br/>
+  .to("http4://triplestore-host:8080/ds/update");</p>
+
+<p>This provides the ability to dynamically set a named graph for these processor classes so that the payload that is sent to the external triplestore contains the appropriate GRAPH &lt;&gt; </p>
+{ ... }
+<p> syntax.</p></div></div>
+<div class="comment" id="comment-13249"><div class="by">Unknown, 2015-01-28 22:49 UTC</div><div class="text"><p>The relevant PR is here: <a href="https://github.com/fcrepo4/fcrepo-camel/pull/48" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/pull/48</a></p></div></div>
+<div class="comment" id="comment-13253"><div class="by">A. Soroka, 2015-01-29 16:21 UTC</div><div class="text"><p>It's true that there are no "native" named graphs in Fedora, but there is a fairly obvious idea of partitioning: triples retrieved from a given URI (under a give resource) could be understood to be in a named graph named by that URI.</p></div></div>
+<div class="comment" id="comment-13276"><div class="by">Andrew Woods, 2015-01-30 18:36 UTC</div><div class="text"><p>PR-48 has been merged with master.</p></div></div>
+<p><a href="data/FCREPO-1310.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

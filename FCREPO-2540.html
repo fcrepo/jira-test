@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2540 Possible memory leak in org.fcrepo.event.serializer.JsonLDSerializer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2540</span> Possible memory leak in org.fcrepo.event.serializer.JsonLDSerializer</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2017-07-21 19:12 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-messaging</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.0</td></tr></table>
+<h2>Description</h2>
+<p>Analysis of the heap dumps during a load process that created 7000+ objects in the repository demonstrated a possible memory leak in the org.fcrepo.event.serializer.JsonLDSerializer class.</p>
+
+<p>The ObjectMapper used by that class is accumulating what looks like a Jackson JSON Deserializer and Serializer object for each event created by fcrepo. These objects are each about 1MB in size, but are never cleared out of the ObjectMapper. This lead to the ObjectMapper retaining approximately 456MB of heap space during the load process. See <span class="nobr"><a href="attachments/FCREPO-2540/10311_jsonldserializer-memory.csv" title="jsonldserializer-memory.csv attached to FCREPO-2540" data-attachment-type="file" data-attachment-name="jsonldserializer-memory.csv" data-media-services-type="file" data-media-services-id="9de2df79-05cb-415c-a81b-40c6687f6a42" rel="noreferrer">jsonldserializer-memory.csv</a></span> for the tracking of that growth across the 4 heap dumps. Heap dump 1 occurred about 7 minutes after the start of the load, and heap dump 4 is just after then conclusion of the load.</p>
+
+<p>See <span class="error">&#91;^memory-analysis-20170721T105651.png&#93;</span> for a screenshot of the top dominator objects from the fourth heap dump.</p>
+
+<p>Original fedora-tech thread: <a href="https://groups.google.com/d/topic/fedora-tech/oAwFFHaRu8Q/discussion" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/topic/fedora-tech/oAwFFHaRu8Q/discussion</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2540/10313_4.7.0.png">4.7.0.png</a>, 117310 bytes, added by Aaron Birkland on 2017-07-21</li>
+<li><a href="attachments/FCREPO-2540/10314_4.7.4-SNAPSHOT.png">4.7.4-SNAPSHOT.png</a>, 114651 bytes, added by Aaron Birkland on 2017-07-21</li>
+<li><a href="attachments/FCREPO-2540/10311_jsonldserializer-memory.csv">jsonldserializer-memory.csv</a>, 293 bytes, added by Peter Matthew Eichman on 2017-07-21</li>
+<li><a href="attachments/FCREPO-2540/10310_memory-analysis-_20170721T105651.png">memory-analysis- 20170721T105651.png</a>, 99533 bytes, added by Peter Matthew Eichman on 2017-07-21</li>
+<li><a href="attachments/FCREPO-2540/10312_test.sh">test.sh</a>, 180 bytes, added by Aaron Birkland on 2017-07-21</li>
+</ul>
+<h2>Comments (15)</h2>
+<div class="comment" id="comment-19215"><div class="by">Peter Matthew Eichman, 2017-07-21 19:13 UTC</div><div class="text"><p>I have listed 4.7.0 as the affected version, since that is the only version I have tested this on. However, it is quite possible that this affects the entire 4.7.x series.</p></div></div>
+<div class="comment" id="comment-19216"><div class="by">Peter Matthew Eichman, 2017-07-21 19:15 UTC</div><div class="text"><p>Comments from Jared Whiklo on IRC:</p>
+
+<p>&gt; Maybe if we just instantiated one serializer here?<br/>
+&gt; <a href="https://github.com/fcrepo4/fcrepo4/blob/fcrepo-4.7.0/fcrepo-jms/src/main/java/org/fcrepo/jms/DefaultMessageFactory.java#L72" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/fcrepo-4.7.0/fcrepo-jms/src/main/java/org/fcrepo/jms/DefaultMessageFactory.java#L72</a><br/>
+&gt; instead of in every getMessage call</p>
+
+<p>Ping: Unknown</p></div></div>
+<div class="comment" id="comment-19217"><div class="by">Peter Matthew Eichman, 2017-07-21 19:19 UTC</div><div class="text"><p>Andrew Woods: For scheduling purposes, I've gotten the go-ahead from Ben to devote next week (7/24-28) to looking into this.</p></div></div>
+<div class="comment" id="comment-19218"><div class="by">Andrew Woods, 2017-07-21 19:46 UTC</div><div class="text"><p>This ticket and your time are very helpful, Peter Matthew Eichman.</p></div></div>
+<div class="comment" id="comment-19219"><div class="by">Aaron Birkland, 2017-07-21 21:38 UTC</div><div class="text"><p>It looks like 4.7.0 has some sort of Jackson-related memory leak, but 4.7.4-SHAPSHOT doesn't.</p>
+
+<p>What I did:</p>
+<ul>
+	<li>Write a script that endlessly issues PATCH requests against a resource</li>
+	<li>Attach a listener which receives messages, and dumps to /dev/null</li>
+	<li>Monitor the memory with jvisualvm</li>
+</ul>
+
+
+<p>What I found:</p>
+<ul>
+	<li>Using 4.7.0, memory slowly crept up.  In 10 minutes, the heap (i.e. the things that don't go away after GC) increased from 141MB to 203MB.  The top culprits were HashMap$Node and com.fasterxml.jackson.databind.type.ClassKey</li>
+	<li>Using 4.7.4-SNAPSHOT, memory basically stayed constant.  in 15 minutes, the heap went from 69.2MB to 69.6MB. None of the above noticed classes remained in heap in any significant amounts.</li>
+</ul>
+
+
+<p>Things of note:</p>
+<ul>
+	<li>I used a STOMP to consume messages, for what it's worth</li>
+	<li>I used the standalone jetty console jar on Windows 10, with no arguments, jvm flags, or system properties.  Just the defaults.</li>
+</ul>
+
+
+<p>The script:</p>
+
+<p><span class="nobr"><a href="attachments/FCREPO-2540/10312_test.sh" title="test.sh attached to FCREPO-2540" data-attachment-type="file" data-attachment-name="test.sh" data-media-services-type="file" data-media-services-id="0b2990d1-623b-49d7-a51b-a06e7c932ed8" rel="noreferrer">test.sh</a></span></p>
+
+<p> </p>
+
+<p>Objects in 4.7.0 heap, ordered by size:</p>
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-2540/10313_4.7.0.png" style="border: 0px solid black" /></span></p>
+
+<p> </p>
+
+<p> </p>
+
+<p> Objects in 4.7.4-SNAPSHOT heap, ordered by size <span class="image-wrap" style=""><img src="attachments/FCREPO-2540/10314_4.7.4-SNAPSHOT.png" style="border: 0px solid black" /></span></p></div></div>
+<div class="comment" id="comment-19220"><div class="by">Andrew Woods, 2017-07-21 21:42 UTC</div><div class="text"><p>That is helpful, Aaron Birkland... because using the master branch, I was not seeing any JSON-related memory build-up.</p>
+
+<p>Peter Matthew Eichman: are you in a position to rerun your tests using the 4.7.4-RC-2? <a href="https://github.com/fcrepo4/fcrepo4/releases/tag/fcrepo-4.7.4-RC-2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/releases/tag/fcrepo-4.7.4-RC-2</a></p></div></div>
+<div class="comment" id="comment-19224"><div class="by">Peter Matthew Eichman, 2017-07-24 14:01 UTC</div><div class="text"><p>Andrew Woods, I should be able to test that today. Is there a build on Maven central? I would like to try dropping 4.7.4-RC-2 into our webapp build, so it is the closest to our current setup.</p></div></div>
+<div class="comment" id="comment-19225"><div class="by">Andrew Woods, 2017-07-24 14:12 UTC</div><div class="text"><p>The release candidate is not in Maven central, but is available here:</p>
+
+<ul>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/releases/tag/fcrepo-4.7.4-RC-2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/releases/tag/fcrepo-4.7.4-RC-2</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19226"><div class="by">Peter Matthew Eichman, 2017-07-24 18:47 UTC</div><div class="text"><p>Andrew Woods, I got the 4.7.4-RC-2 inserted into our umd-fcrepo-webapp and have started re-running the extraction process. So far, I haven't seen the Jackson serializers/deserializers piling up as before.</p>
+
+<p>However, I may have uncovered another issue, in that the Modeshape event bus ring buffer <span class="error">&#91;1&#93;</span> keeps filling up. I bumped it up from the default (1024) first to 2048, and then to 4096, but both times it filled up to that point and then Tomcat hangs until I restart it.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://modeshape.wordpress.com/2014/04/25/using-a-ring-buffer-for-events-in-4-0/" class="external-link" rel="nofollow noreferrer">https://modeshape.wordpress.com/2014/04/25/using-a-ring-buffer-for-events-in-4-0/</a></p></div></div>
+<div class="comment" id="comment-19227"><div class="by">Andrew Woods, 2017-07-24 20:04 UTC</div><div class="text"><p>How are you seeing that the event bus is filling up?</p>
+
+<p>Is it correct that the configuration change you are making is to the following element of you repository.json:</p>
+
+<p><a href="https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/resources/org/modeshape/jcr/repository-config-schema.json#L21" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/resources/org/modeshape/jcr/repository-config-schema.json#L21</a></p></div></div>
+<div class="comment" id="comment-19228"><div class="by">Peter Matthew Eichman, 2017-07-24 21:00 UTC</div><div class="text"><p>Andrew Woods, yes, that is the config element I have been changing.</p>
+
+<p>I confirmed that it was full by taking heap dumps after the process hung. In the dominator tree, the org.modeshape.common.collection.ring.RingBuffer was showing that there were 1024, 2048, and 4096 elements in it, respectively for each of the runs where I was increasing the eventBusSize config.</p></div></div>
+<div class="comment" id="comment-19229"><div class="by">Peter Matthew Eichman, 2017-07-24 22:28 UTC</div><div class="text"><p>It's possible that I was misreading the information on the ring buffer in the heap dump. I took the subscript to be the number of objects it contains, when it was in fact the total number of slots allocated (even if they are not filled). Which would explain why it was always matching up 1024, 2048, 4096.</p>
+
+<p>After introducing an artificial delay in the script that is creating the new resources, I am not seeing the same hanging that I was seeing. I am also seeing better memory performance. It is staying under 1.25GB for 230+ pages processed in the latest run.</p></div></div>
+<div class="comment" id="comment-19230"><div class="by">Peter Matthew Eichman, 2017-07-25 17:54 UTC</div><div class="text"><p>Andrew Woods, after running a couple more test loads today, I am pretty certain the JsonLDSerializer memory leak is gone in 4.7.4-RC-2. What is the projected release date for 4.7.4?</p></div></div>
+<div class="comment" id="comment-19231"><div class="by">Andrew Woods, 2017-07-25 20:58 UTC</div><div class="text"><p>Aug 7 is the planned 4.7.4 release date: <a href="https://groups.google.com/d/msg/fedora-tech/RjpAGqQV5Zg/-09DDBXmBAAJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/RjpAGqQV5Zg/-09DDBXmBAAJ</a></p></div></div>
+<div class="comment" id="comment-22356"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2540.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

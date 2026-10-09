@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2187 ERROR on export of dataset - plantpatents</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2187</span> ERROR on export of dataset - plantpatents</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-09-08 20:41 UTC</td></tr><tr><th>Updated</th><td>2016-09-15 20:43 UTC</td></tr><tr><th>Resolved</th><td>2016-09-09 18:24 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2216.html">FCREPO-2216</a> PUTing files with a large number of property values fails</td></tr></table>
+<h2>Description</h2>
+<p>Setup:</p>
+<ul class="alternate" type="square">
+	<li>Download dataset: <a href="https://github.com/fcrepo4-labs/fcrepo-sample-dataset/blob/master/plantpatents/plants.tar.gz" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-sample-dataset/blob/master/plantpatents/plants.tar.gz</a></li>
+	<li>Start up an empty F4</li>
+	<li>Upload the sample dataset:<br/>
+&gt; curl -i -XPOST --data-binary /path/to/1473315261896-0 localhost:8080/rest/fcr:restore</li>
+	<li>Export the repository:<br/>
+&gt; java -jar fcrepo-import-export-driver-0.0.1-SNAPSHOT.jar -b /tmp/bin -m export -d /tmp/rdf -r <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a></li>
+</ul>
+
+
+<p>! Notice output log for each external-body binary:<br/>
+&#8212;<br/>
+ERROR 16:10:46.097 (Exporter) Resource is neither an LDP Container nor an LDP NonRDFSource: <a href="http://localhost:8080/rest/10/69/e9/cd/1069e9cd-3024-442a-a683-4f8930be992d/external" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/10/69/e9/cd/1069e9cd-3024-442a-a683-4f8930be992d/external</a><br/>
+&#8212;</p>
+
+<p>However, the HEAD request shows correct link headers:<br/>
+&#8212;<br/>
+&gt; curl -I <a href="http://localhost:8080/rest/10/69/e9/cd/1069e9cd-3024-442a-a683-4f8930be992d/external" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/10/69/e9/cd/1069e9cd-3024-442a-a683-4f8930be992d/external</a><br/>
+&#8212;<br/>
+Output: <br/>
+&#8212;<br/>
+HTTP/1.1 307 Temporary Redirect<br/>
+Date: Thu, 08 Sep 2016 20:15:16 GMT<br/>
+ETag: "f074729b6e3608542c34bbb5443e10d0e741ecf5"<br/>
+Last-Modified: Thu, 08 Sep 2016 06:05:42 GMT<br/>
+Content-Type: message/external-body;access-type=URL;url="http://www.lib.umd.edu/plantpatents/binaries/09000/pp09075.pdf"<br/>
+Accept-Ranges: bytes<br/>
+Content-Disposition: attachment; filename=""; creation-date="Thu, 08 Sep 2016 06:05:42 GMT"; modification-date="Thu, 08 Sep 2016 06:05:42 GMT"; size=0<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/10/69/e9/cd/1069e9cd-3024-442a-a683-4f8930be992d/external/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/10/69/e9/cd/1069e9cd-3024-442a-a683-4f8930be992d/external/fcr:metadata</a>&gt;; rel="describedby"<br/>
+Allow: DELETE,HEAD,GET,PUT,OPTIONS<br/>
+Location: <a href="http://www.lib.umd.edu/plantpatents/binaries/09000/pp09075.pdf" class="external-link" rel="nofollow noreferrer">http://www.lib.umd.edu/plantpatents/binaries/09000/pp09075.pdf</a><br/>
+Content-Length: 0<br/>
+&#8212;</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-17455"><div class="by">Esmé Cowles, 2016-09-09 14:21 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/21" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/21</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/29" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/29</a></p></div></div>
+<div class="comment" id="comment-17473"><div class="by">Andrew Woods, 2016-09-09 17:37 UTC</div><div class="text"><p>Testing looks good!</p></div></div>
+<div class="comment" id="comment-17483"><div class="by">Andrew Woods, 2016-09-09 18:24 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/d1051014198bcebf57cf2f417fc7678a86428231" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/d1051014198bcebf57cf2f417fc7678a86428231</a><br/>
+and<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/commit/fd4514410f37a399cced6302503db8974781a894" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/commit/fd4514410f37a399cced6302503db8974781a894</a></p></div></div>
+<p><a href="data/FCREPO-2187.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

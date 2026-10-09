@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3869 &#x27;+&#x27; character in URI identifier causes issues with `Accept:text/html` GET requests</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3869</span> &#x27;+&#x27; character in URI identifier causes issues with `Accept:text/html` GET requests</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Low</td></tr><tr><th>Reporter</th><td>Quinn Hart</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2023-01-10 22:05 UTC</td></tr><tr><th>Updated</th><td>2023-01-30 23:22 UTC</td></tr><tr><th>Resolved</th><td>2023-01-27 21:03 UTC</td></tr><tr><th>Components</th><td>fcrepo-java-client</td></tr><tr><th>Affects versions</th><td>Fedora 6.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.4.0</td></tr></table>
+<h2>Environment</h2>docker 
+<h2>Description</h2>
+<p>Adding the '+' character in URI identifiers seems to work fine, and properly decodes for PUTs and GETs for most <tt>Accept</tt> mime-types, but seems to mess up<br/>
+the http interface to fcrepo.  The URI seems to be decoded twice, converting<br/>
+the '+' as shorthand for ' '.  Other http encoded characters to not seem to be affected.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>      version=6.3.0
+      docker image pull fcrepo/fcrepo:$version
+      docker run --rm --name=fcrepo --publish 8666:8080 fcrepo/fcrepo:${version} 2&gt;fcrepo.err &gt;fcrepo.log &amp;
+      sleep 5
+     info_fedora="http://localhost:8666/fcrepo/rest"
+     put="curl -XPUT -u fedoraAdmin:fedoraAdmin -H'Content-Type:application/ld+json'"
+     
+     for n in 'c&amp;h' 'c+h' 'c_h'; do
+         encoded=$(jq -sRr --arg x $n '$x|@uri');
+         v=$(echo -n "info:fedora/$n" | shasum -a 256); echo $n $encoded $v;
+         curl -XPUT -u fedoraAdmin:fedoraAdmin -H'Content-Type:application/ld+json' --data "{\"@id\":\"\",\"http://schema.org/name\":\"$n\"}" ${info_fedora}/$encoded &gt; /dev/null
+     done
+     
+     for n in 'c&amp;h' 'c+h' 'c_h'; do
+         encoded=$(jq -sRr --arg x $n '$x|@uri');
+         echo "=$n or $encoded ="
+         curl -XGET -u fedoraAdmin:fedoraAdmin -H'Accept:application/ld+json' --head ${info_fedora}/$encoded | grep HTTP
+         curl -XGET -u fedoraAdmin:fedoraAdmin -H'Accept:application/ld+json' ${info_fedora}/$encoded | jq -r '[.[]["@id"],.[]["http://schema.org/name"][]["@value"]]'
+         echo '==html=='
+         curl -XGET -u fedoraAdmin:fedoraAdmin -H'Accept:text/html' --head ${info_fedora}/$encoded | grep HTTP
+     done
+     docker stop fcrepo
+</pre>
+</div></div>
+
+<p>Results in : </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> c&amp;h c%26h f05fb5650f440c20c37bdf8491e1905e158c57dfe9113276dd8f67f171683541 -
+ c+h c%2Bh b25add6aca7d68eae8a7cb6b7e08d79d4b6ee1206ad420200767a30e04675b68 -
+ c_h c_h d8ccdb4e35bcbd4101541470052de60d15327ec5a5f852b03b9d032ee0b7044d -
+ =c&amp;h or c%26h =
+ HTTP/1.1 200 
+ [
+   "http://localhost:8666/fcrepo/rest/c&amp;h",
+   "c&amp;h"
+ ]
+ ==html==
+ HTTP/1.1 200 
+ =c+h or c%2Bh =
+ HTTP/1.1 200 
+ [
+   "http://localhost:8666/fcrepo/rest/c+h",
+   "c+h"
+ ]
+ ==html==
+ HTTP/1.1 404 
+ =c_h or c_h =
+ HTTP/1.1 200 
+ [
+   "http://localhost:8666/fcrepo/rest/c_h",
+   "c_h"
+ ]
+ ==html==
+ HTTP/1.1 200 </pre>
+</div></div>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-22779"><div class="by">Michael Ritter, 2023-01-13 21:52 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo/fcrepo/pull/2022" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2022</a></p></div></div>
+<div class="comment" id="comment-22793"><div class="by">Jared Whiklo, 2023-01-27 21:03 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/8f6844b43d45041f3bee06a452ed66fba6ecbaee" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/8f6844b43d45041f3bee06a452ed66fba6ecbaee</a></p></div></div>
+<div class="comment" id="comment-22794"><div class="by">Quinn Hart, 2023-01-30 23:22 UTC</div><div class="text"><p>Works for me !  </p></div></div>
+<p><a href="data/FCREPO-3869.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

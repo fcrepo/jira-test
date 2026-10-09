@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1872 javax.jcr.ItemExistsException returns a 500 and stack trace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1872</span> javax.jcr.ItemExistsException returns a 500 and stack trace</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>justin</td></tr><tr><th>Created</th><td>2015-12-28 23:21 UTC</td></tr><tr><th>Updated</th><td>2016-10-07 00:18 UTC</td></tr><tr><th>Resolved</th><td>2016-10-07 00:18 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>See: <a href="https://github.com/fcrepo4/fcrepo4/issues/957" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/957</a></p>
+
+<p>It should be caught and a 4xx should be returned instead.</p>
+
+<p>```<br/>
+    STATUS: 500 javax.jcr.ItemExistsException: A node definition that allows same name siblings could not be found for the node "{}42" in workspace "default"<br/>
+    at org.modeshape.jcr.JcrSession$JcrPreSave.processAfterLocking(JcrSession.java:2422)<br/>
+    at org.modeshape.jcr.cache.document.WritableSessionCache.runPreSaveAfterLocking(WritableSessionCache.java:541)<br/>
+    at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:614)<br/>
+    at org.modeshape.jcr.JcrSession.save(JcrSession.java:1166)<br/>
+    at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:301)<br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)<br/>
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+    at java.lang.reflect.Method.invoke(Method.java:606)<br/>
+    at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java...<br/>
+```</p>
+
+<p>I think this occurs when two threads simultaneously try to create the same resource at the same time. Reported by @ojlyytinen here: <a href="https://github.com/projecthydra/sufia/issues/1362" class="external-link" rel="nofollow noreferrer">https://github.com/projecthydra/sufia/issues/1362</a></p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-16288"><div class="by">A. Soroka, 2016-03-10 16:19 UTC</div><div class="text"><p>I think this is a <tt>409 Conflict</tt>, yes?</p></div></div>
+<div class="comment" id="comment-16319"><div class="by">Andrew Woods, 2016-03-11 15:49 UTC</div><div class="text"><p>Yes, <tt>409 Conflict</tt></p></div></div>
+<div class="comment" id="comment-17727"><div class="by">Unknown, 2016-10-07 00:18 UTC</div><div class="text"><p>Closing as this appears to be a duplicate of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2086" >
+                <a href="FCREPO-2086.html" class="jira-issue-macro-key issue-link"  title="Fedora object created with &quot;indexed&quot; path element" >
+            
+            FCREPO-2086
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<p><a href="data/FCREPO-1872.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

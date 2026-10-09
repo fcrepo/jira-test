@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-239 OutOfMemory Errors when modifying large objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-239</span> OutOfMemory Errors when modifying large objects</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2008-08-11 16:53 UTC</td></tr><tr><th>Updated</th><td>2009-02-23 02:54 UTC</td></tr><tr><th>Resolved</th><td>2008-10-24 21:44 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2, Fedora 2.2.1, Fedora 3.0b1, Fedora 2.2.2, Fedora 3.0b2, Fedora 3.0, Fedora 2.2.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.1</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-253.html">FCREPO-253</a> Fix FCREPO-239, FCREPO-227, and FCREPO-252 for 3.1</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-255.html">FCREPO-255</a> Fix FCREPO-239 and FCREPO-227 for 2.x</td></tr><tr><th>Is duplicated by</th><td><a href="FCREPO-367.html">FCREPO-367</a> Diagnose and address bug 2046608 in trunk</td></tr></table>
+<h2>Description</h2>
+<p>We frequently encounter OutOfMemoryErrors when calling modifyDatastreamByValue and other API-M methods on relatively large digital objects using Fedora Commons 3.0b1, 3.0b2 and 3.0. In order to better understand the issue we triggered heap dumps and analyzed them. The dumps revealed that up to 140M of heap space get used by Fedora when calling modifyDatastreamByValue on a digital object of 15M.</p>
+
+<p>In order to provoke heap dumps at each api call the heap size was reduced. Additionally we triggered heap dumps at specific locations programmatically using the Java6 HotSpotDiagnosticMXBean.</p>
+
+<p>The OutOfMemoryError always occurs at DOTranslationUtility.writeToStream() after the serialization. This appears to be the peak of heap usage for modifyDatastreamByValue.<br/>
+The heap dump shows the following composition of objects at the time of writeToStream() (see attached screenshot):</p>
+<ul>
+	<li>StringBuffer (60M) (15M * 2 (internal UTF-16 representation)) + 30M memory allocated by StringBuffer (StringBuffer doubles its capacity automatically when unsufficient capacity is left for appending a new String. Hence the capacity is likely to exceed the actual memory needed unless explicitly allocated).</li>
+	<li>char[] array at writeToStream (StringBuffer.toString()) (31M) (15M * 2 + overhead)</li>
+	<li>BasicDigitalObject 24M (15M DatastreamXMLMetadata, 9M AuditRecord)</li>
+	<li>DOReaderCache 25M (1 BasicDigitalObject in cache at the time)</li>
+	<li>Some other small objects</li>
+</ul>
+
+
+<p>If the heap space is already consumed to a large extent, allocating another chunk of memory may fail and subsequently trigger an OutOfMemoryError. Explicitly calling the garbage collector is not a viable option, because most of the objects involved are still bound locally to the thread, so they are still reachable. </p>
+
+<p>Increasing the heap will solve the issue temporarily. Depending on the size of the digital object the problem may however resurface: Suppose the digital object is 30M, then according to our findings a heap space of 60M*2 StringBuffer + 60M char array + ~50M DO + ~50M cache = 280M would be needed for a single digital object (we haven't tried this however).</p>
+
+<p>We modified the Fedora code and tried the following options:</p>
+<ul>
+	<li>We removed the indentation in the FOXMLDOSerializer and DOTranslationUtility. Removing most of the nonessential whitespaces (or replacing indentation whitespaces with tabs) results in a much smaller DO size (about 20% in our test case) and therefore reduces memory footprint.</li>
+</ul>
+
+
+<ul>
+	<li>As for the StringBuffer problem we basically tried two approaches. We trimmed the StringBuffer in FOXMLDOSerializer before the call to writeToStream() using the trimToSize() method. This adjusts the capacity of the StringBuffer to the actual size of characters contained within. Another option is to explicitly size the buffer.</li>
+</ul>
+
+
+<ul>
+	<li>The 64 bit version of Java consumes considerably more heap space compared to the 32 bit version. Using a 32 bit version reduces memory usage.</li>
+</ul>
+
+
+<p>All options mentioned above work well and reduce memory consumption significantly, but solve the underlying problem only partially.</p>
+
+<p>Perhaps a better solution would be to load and process only those parts of the digital object needed for the current operation (not viable for ingest, but e.g. modifyDatastreamByX), but that would probably involve lots of refactoring...</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-239/10032_sf-2046608-fedora_heap_dump.png">sf-2046608-fedora_heap_dump.png</a>, 45737 bytes, added by Chris Wilper on 2008-08-11</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-10495"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: kst_fiz<br/>
+Item #: 2046608<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=2046608" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=2046608</a></p></div></div>
+<p><a href="data/FCREPO-239.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1983 Binary resources do not refresh in web UI after a property is modified/added/deleted</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1983</span> Binary resources do not refresh in web UI after a property is modified/added/deleted</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-04-10 21:07 UTC</td></tr><tr><th>Updated</th><td>2016-05-27 18:41 UTC</td></tr><tr><th>Resolved</th><td>2016-05-27 18:41 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1498.html">FCREPO-1498</a> Indirectly Contained Resource Etags</td></tr><tr><th>Addresses</th><td><a href="FCREPO-1754.html">FCREPO-1754</a> eTags should be Weak eTags</td></tr></table>
+<h2>Environment</h2>Windows 7 Enterprise (server), Chrome for Windows (UI)<br/>
+may affect other environments, also
+<h2>Description</h2>
+<p>The web UI does not refresh the binary resource /fcr:metadata display page after a binary resource property is added.  In order to see the update to the property reflected, you must force a non-cached reload of the page with Shift+refresh.</p>
+
+<p>This may be related to the etag issue described in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1498" >
+                <a href="FCREPO-1498.html" class="jira-issue-macro-key issue-link"  title="Indirectly Contained Resource Etags" >
+            
+            FCREPO-1498
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-16527"><div class="by">Unknown, 2016-04-15 17:47 UTC</div><div class="text"><p>The problem here is that there is a bug in how Fedora handles and produces ETags and Last-Modified headers for Binary descriptions. See this gist for some of the peculiarities of how Fedora behaves: <a href="https://gist.github.com/acoburn/c12d07cb67143caa37009d02d955e3a0" class="external-link" rel="nofollow noreferrer">https://gist.github.com/acoburn/c12d07cb67143caa37009d02d955e3a0</a></p>
+</div></div>
+<div class="comment" id="comment-16530"><div class="by">Unknown, 2016-04-16 02:09 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1022" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1022</a></p></div></div>
+<div class="comment" id="comment-16570"><div class="by">Andrew Woods, 2016-04-21 17:43 UTC</div><div class="text"><p>Pending completion of:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1024" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1024</a></p></div></div>
+<div class="comment" id="comment-16579"><div class="by">Scott Prater, 2016-04-21 20:57 UTC</div><div class="text"><p>I pulled that change (1024) into my local fork, compiled, and tested.  The PR appears to fix the problem.</p></div></div>
+<div class="comment" id="comment-16629"><div class="by">Unknown, 2016-05-09 15:25 UTC</div><div class="text"><p>I will resume work on this after 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1498" >
+                <a href="FCREPO-1498.html" class="jira-issue-macro-key issue-link"  title="Indirectly Contained Resource Etags" >
+            
+            FCREPO-1498
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1742" >
+                <a href="FCREPO-1742.html" class="jira-issue-macro-key issue-link"  title="Last-Modified and ETag should not change with inbound references" >
+            
+            FCREPO-1742
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ are reviewed and the corresponding PR is merged.</p></div></div>
+<div class="comment" id="comment-16707"><div class="by">Unknown, 2016-05-20 15:03 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1040" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1040</a></p></div></div>
+<div class="comment" id="comment-16776"><div class="by">Andrew Woods, 2016-05-27 18:41 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/f45dbc8cd1b1280a6d556e68d5a0250c316c6482" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f45dbc8cd1b1280a6d556e68d5a0250c316c6482</a></p></div></div>
+<p><a href="data/FCREPO-1983.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

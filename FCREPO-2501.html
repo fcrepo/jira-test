@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2501 Import of &quot;inbound&quot; export fails to set properties on resource correctly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2501</span> Import of &quot;inbound&quot; export fails to set properties on resource correctly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jim Coble</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-05-26 19:20 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr></table>
+<h2>Description</h2>
+<p>Exported resource with `inbound: true` and `predicates: <a href="http://www.w3.org/ns/ldp#contains,info:fedora/fedora-system:def/relations-external#isMemberOfCollection" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains,info:fedora/fedora-system:def/relations-external#isMemberOfCollection</a>`.  Export ran without error.  Wiped repository.  Ran import for repository root (<a href="http://localhost:8984/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8984/rest</a>).  Imported objects (at least the one I looked at) reset server-managed datestamps (was running Fedora 3.8.0 in relaxed mode) and did not a number of triples in the export (in particular, none of the "object-specific" predicates appear in the imported object.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-19010"><div class="by">Jim Coble, 2017-05-26 19:29 UTC</div><div class="text"><p>Sample exported resource RDF: <a href="https://gist.github.com/coblej/50d1be1d0fa18ea7d07581036352f9c2" class="external-link" rel="nofollow noreferrer">https://gist.github.com/coblej/50d1be1d0fa18ea7d07581036352f9c2</a></p>
+
+<p>Config file used for export:<br/>
+<a href="https://gist.github.com/coblej/832c1b9b200e8614d84a84c63db73951" class="external-link" rel="nofollow noreferrer">https://gist.github.com/coblej/832c1b9b200e8614d84a84c63db73951</a></p>
+
+<p>Config file used for import: <a href="https://gist.github.com/coblej/90d564115ed623a7fb718bab0c4ccae4" class="external-link" rel="nofollow noreferrer">https://gist.github.com/coblej/90d564115ed623a7fb718bab0c4ccae4</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19011"><div class="by">Jim Coble, 2017-05-26 19:33 UTC</div><div class="text"><p>Imported object </p>
+
+<p><a href="http://localhost:8984/rest/dev/14/70/13/e7/147013e7-8320-41cf-8e79-e5edd68e49d4" class="external-link" rel="nofollow noreferrer">http://localhost:8984/rest/dev/14/70/13/e7/147013e7-8320-41cf-8e79-e5edd68e49d4</a> does not contain any of the following predicates: `ns004:local`, `ns003:isGovernedBy`, `ns001:hasModel`, `ns005:isMemberOfCollection`.  The `fedora:created` and `fedora:lastModified` dates are set to the import date.<br/>
+ </p></div></div>
+<div class="comment" id="comment-19012"><div class="by">Jim Coble, 2017-05-26 19:35 UTC</div><div class="text"><p>Properties copied from screen for imported object: <a href="https://gist.github.com/coblej/5ada23a1f87cbe4f26b8b68a0a03ee34" class="external-link" rel="nofollow noreferrer">https://gist.github.com/coblej/5ada23a1f87cbe4f26b8b68a0a03ee34</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19121"><div class="by">Andrew Woods, 2017-06-15 13:47 UTC</div><div class="text"><p>My understanding was that in order to re-import resources that were exported either with:</p>
+<ul class="alternate" type="square">
+	<li>a user-provided predicate that associates the target resource with others repository resources that are outside of the hierarchy of the target resource or</li>
+	<li>with the "inbound" flag that also associates repository resources that are outside of the target resource's hierarchy, </li>
+</ul>
+
+
+<p>it is required to import the entire data directory that was exported, versus configuring the import to point at the target resource.</p>
+
+<p>Is that your understanding, Esmé Cowles?</p></div></div>
+<div class="comment" id="comment-19122"><div class="by">Esmé Cowles, 2017-06-15 13:58 UTC</div><div class="text"><p>Andrew Woods, Yes, that's my understanding.  If you import just the exported resource, you are likely not going to get all the resources exported (because the inbound triples are filtered out).  You may get placeholder resources created to make the links to those resources work, but the actual triples from that resource may not be loaded.</p></div></div>
+<div class="comment" id="comment-22332"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2501.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

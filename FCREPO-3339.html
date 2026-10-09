@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3339 Non-admin requests to paths with empty elements cause stacktrace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3339</span> Non-admin requests to paths with empty elements cause stacktrace</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-06-04 17:19 UTC</td></tr><tr><th>Updated</th><td>2020-07-06 17:28 UTC</td></tr><tr><th>Resolved</th><td>2020-06-24 15:23 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, Fedora 5.1.1</td></tr></table>
+<h2>Description</h2>
+<p>Fedora does not allow URIs with empty path elements.</p>
+
+<p>Like<a href="http://localhost:8080/rest/something//somethingelse" class="external-link" rel="nofollow noreferrer"> http://localhost:8080/rest/something//somethingelse</a></p>
+
+<p>returns a 400 Bad Request.</p>
+
+<p>But WebAC throws a stacktrace.</p>
+
+<p>&gt; curl -utestuser:testpass <a href="http://localhost:8080/rest/something//somethingelse" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/something//somethingelse</a> -i<br/>
+HTTP/1.1 500 Server Error<br/>
+Date: Thu, 04 Jun 2020 17:13:02 GMT<br/>
+Set-Cookie: JSESSIONID=2owdf8f0pbb417ciuado1k672;Path=/<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 03-Jun-2020 17:13:02 GMT<br/>
+Cache-Control: must-revalidate,no-cache,no-store<br/>
+Content-Type: text/html;charset=iso-8859-1<br/>
+Connection: close<br/>
+Server: Jetty(9.3.25.v20180904)</p>
+
+<p> </p>
+
+<p>&lt;html&gt;<br/>
+&lt;head&gt;<br/>
+&lt;meta http-equiv="Content-Type" content="text/html;charset=utf-8"/&gt;<br/>
+&lt;title&gt;Error 500 Server Error&lt;/title&gt;<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;&lt;h2&gt;HTTP ERROR 500&lt;/h2&gt;<br/>
+&lt;p&gt;Problem accessing /rest/something//somethingelse. Reason:<br/>
+&lt;pre&gt; Server Error&lt;/pre&gt;&lt;/p&gt;&lt;h3&gt;Caused by:&lt;/h3&gt;&lt;pre&gt;javax.servlet.ServletException: Filtered request failed.<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:384)<br/>
+ at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:357)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:270)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1759)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:583)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+ at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:513)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:226)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1180)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:513)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1112)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:213)<br/>
+ at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:119)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:134)<br/>
+ at org.eclipse.jetty.server.Server.handle(Server.java:539)<br/>
+ at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:333)<br/>
+ at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:251)<br/>
+ at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:283)<br/>
+ at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:108)<br/>
+ at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:93)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.executeProduceConsume(ExecuteProduceConsume.java:303)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceConsume(ExecuteProduceConsume.java:148)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:136)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:671)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool$2.run(QueuedThreadPool.java:589)<br/>
+ at java.lang.Thread.run(Thread.java:745)<br/>
+Caused by: java.lang.NullPointerException<br/>
+ at org.fcrepo.auth.webac.WebACAuthorizingRealm.addPermissions(WebACAuthorizingRealm.java:211)<br/>
+ at org.fcrepo.auth.webac.WebACAuthorizingRealm.doGetAuthorizationInfo(WebACAuthorizingRealm.java:171)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.getAuthorizationInfo(AuthorizingRealm.java:341)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.hasRole(AuthorizingRealm.java:573)<br/>
+ at org.apache.shiro.authz.ModularRealmAuthorizer.hasRole(ModularRealmAuthorizer.java:374)<br/>
+ at org.apache.shiro.mgt.AuthorizingSecurityManager.hasRole(AuthorizingSecurityManager.java:153)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.hasRole(DelegatingSubject.java:228)<br/>
+ at org.fcrepo.auth.webac.WebACFilter.doFilter(WebACFilter.java:194)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:85)<br/>
+ at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+ ... 28 more<br/>
+&lt;/pre&gt;<br/>
+&lt;h3&gt;Caused by:&lt;/h3&gt;&lt;pre&gt;java.lang.NullPointerException<br/>
+ at org.fcrepo.auth.webac.WebACAuthorizingRealm.addPermissions(WebACAuthorizingRealm.java:211)<br/>
+ at org.fcrepo.auth.webac.WebACAuthorizingRealm.doGetAuthorizationInfo(WebACAuthorizingRealm.java:171)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.getAuthorizationInfo(AuthorizingRealm.java:341)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.hasRole(AuthorizingRealm.java:573)<br/>
+ at org.apache.shiro.authz.ModularRealmAuthorizer.hasRole(ModularRealmAuthorizer.java:374)<br/>
+ at org.apache.shiro.mgt.AuthorizingSecurityManager.hasRole(AuthorizingSecurityManager.java:153)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.hasRole(DelegatingSubject.java:228)<br/>
+ at org.fcrepo.auth.webac.WebACFilter.doFilter(WebACFilter.java:194)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:85)<br/>
+ at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+ at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:357)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:270)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1759)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:583)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+ at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:513)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:226)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1180)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:513)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1112)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:213)<br/>
+ at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:119)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:134)<br/>
+ at org.eclipse.jetty.server.Server.handle(Server.java:539)<br/>
+ at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:333)<br/>
+ at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:251)<br/>
+ at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:283)<br/>
+ at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:108)<br/>
+ at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:93)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.executeProduceConsume(ExecuteProduceConsume.java:303)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceConsume(ExecuteProduceConsume.java:148)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:136)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:671)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool$2.run(QueuedThreadPool.java:589)<br/>
+ at java.lang.Thread.run(Thread.java:745)<br/>
+&lt;/pre&gt;<br/>
+&lt;hr&gt;&lt;a href="http://eclipse.org/jetty"&gt;Powered by Jetty:// 9.3.25.v20180904&lt;/a&gt;&lt;hr/&gt;</p>
+
+<p>&lt;/body&gt;<br/>
+&lt;/html&gt;</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21281"><div class="by">Jared Whiklo, 2020-06-19 02:28 UTC</div><div class="text"><p>PR for 5.1 - <a href="https://github.com/fcrepo4/fcrepo4/pull/1704" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1704</a></p>
+
+<p>PR for 6 - <a href="https://github.com/fcrepo4/fcrepo4/pull/1705" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1705</a></p></div></div>
+<div class="comment" id="comment-21295"><div class="by">Andrew Woods, 2020-06-24 15:23 UTC</div><div class="text"><p>Resolved with:<br/>
+main - <a href="https://github.com/fcrepo4/fcrepo4/commit/fb2c5b3d181d8e08e34303325c1ef7faf7cc5052" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/fb2c5b3d181d8e08e34303325c1ef7faf7cc5052</a><br/>
+5.x - <a href="https://github.com/fcrepo4/fcrepo4/commit/3a5a6e6ffdfa16a3c4605cfdb0be8d4e281c6063" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/3a5a6e6ffdfa16a3c4605cfdb0be8d4e281c6063</a></p></div></div>
+<p><a href="data/FCREPO-3339.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

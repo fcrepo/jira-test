@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2253 Fixity of RDF Sources</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2253</span> Fixity of RDF Sources</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-09-30 16:28 UTC</td></tr><tr><th>Updated</th><td>2023-03-30 15:24 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to investigate the feasible options for creating and verifying fixity information related to RDF Sources, i.e. Fedora objects.</p>
+
+<p>This functionality already exists for Non-RDF Sources (Binaries), but the metadata in the repository does not have fixity information associated with it.</p>
+
+<p>The final outcome of this (or a follow-on) task is to have a fixity service, like the one for Binaries, that can be performed on RDF Sources on-ingest or on-demand.</p>
+
+<p>The challenges of this task are well-known, but ones that must be addressed.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-17716"><div class="by">A. Soroka, 2016-10-05 13:43 UTC</div><div class="text"><p>What's the definition of fixity here? </p></div></div>
+<div class="comment" id="comment-17728"><div class="by">Unknown, 2016-10-07 02:21 UTC</div><div class="text"><p>Shouldn't the resolution of this ticket be based on the what is defined by the Fixity specification: 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1912" >
+                <a href="FCREPO-1912.html" class="jira-issue-macro-key issue-link"  title="Initial drafting of specification: Fixity" >
+            
+            FCREPO-1912
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+?</p></div></div>
+<div class="comment" id="comment-17739"><div class="by">A. Soroka, 2016-10-07 11:39 UTC</div><div class="text"><p>No, that spec is going to address how fixity is published/discovered/linked/managed/etc., but not the semantics of a given fixity measurement.</p></div></div>
+<div class="comment" id="comment-17740"><div class="by">Andrew Woods, 2016-10-07 13:18 UTC</div><div class="text"><p>In terms of the definition of fixity in this context, let's start with something analogous to what we have for NonRdfSources: a bitwise checksum (MD5/SHA-1/SHA-256) of a canonical serialization of the RdfSource as composed by the appropriate (TBD) preference (i.e. Prefer header) set of triples.</p></div></div>
+<div class="comment" id="comment-17741"><div class="by">A. Soroka, 2016-10-07 13:19 UTC</div><div class="text"><p>How is that useful?</p></div></div>
+<div class="comment" id="comment-17742"><div class="by">A. Soroka, 2016-10-07 13:20 UTC</div><div class="text"><p>If that were useful, why wouldn't we just store RDF as bits?</p></div></div>
+<div class="comment" id="comment-17758"><div class="by">Youn Noh, 2016-10-09 11:22 UTC</div><div class="text"><p>I am sure there will be problems with this approach, but I am wondering if you could use a reasoner <span class="error">&#91;1&#93;</span> to try to demonstrate root node A owl:sameAs root node B. Alternatively, use one of the implementations listed here: <a href="https://www.w3.org/2001/sw/wiki/How_to_diff_RDF" class="external-link" rel="nofollow noreferrer">https://www.w3.org/2001/sw/wiki/How_to_diff_RDF</a></p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://jena.apache.org/documentation/inference/" class="external-link" rel="nofollow noreferrer">https://jena.apache.org/documentation/inference/</a></p></div></div>
+<div class="comment" id="comment-17759"><div class="by">A. Soroka, 2016-10-09 11:51 UTC</div><div class="text"><p>Youn Noh has picked up on an important point; every fixity use case with which we are presented is actually a demand for <em>equivalence comparison across time</em>. Fixity records are "<a href="https://en.wikipedia.org/wiki/Continuation" class="external-link" rel="nofollow noreferrer">continuations</a>" for equivalence-checking algorithms. But we don't have to introduce OWL and semantic equivalence quite yet. RDF defines a perfectly good notion of isomorphism:</p>
+
+<p><a href="https://www.w3.org/TR/rdf11-concepts/#graph-isomorphism" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/rdf11-concepts/#graph-isomorphism</a></p>
+
+<p><a href="http://www.hpl.hp.com/techreports/2001/HPL-2001-293.pdf" class="external-link" rel="nofollow noreferrer">http://www.hpl.hp.com/techreports/2001/HPL-2001-293.pdf</a></p>
+
+<p>and it is already available in Jena, the framework we are using for RDF. If we want to offer actual fixity numbers on RDF, we should begin with a good algorithm for isomorphism and work from there, for the same reason that sensible programming expects that hash-codes and type-specific equivalence functions should normally agree.</p></div></div>
+<div class="comment" id="comment-17760"><div class="by">Youn Noh, 2016-10-09 12:16 UTC</div><div class="text"><p>Would you check for graph isomorphism after inferring triples from ontologies in which properties of resources are expressed? For example, the LUBM 02 data set uses the Univ-Bench ontology <span class="error">&#91;1&#93;</span>. I added triples for ub:hasAlumnus; others could be inferred.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://swat.cse.lehigh.edu/onto/univ-bench.owl" class="external-link" rel="nofollow noreferrer">http://swat.cse.lehigh.edu/onto/univ-bench.owl</a></p></div></div>
+<div class="comment" id="comment-17761"><div class="by">A. Soroka, 2016-10-09 12:27 UTC</div><div class="text"><p>That's not something I would expect the Fedora spec to decide (it decides nothing with respect to inference). As to the JCR "community" impl-- it does no inference, so there's nothing to decide. </p></div></div>
+<div class="comment" id="comment-17774"><div class="by">Youn Noh, 2016-10-10 16:29 UTC</div><div class="text"><p>I spoke with a Yale PhD in CS now at Google and he suggested that the safest approach would be to sort by subject, object, and predicate and to run a checksum on the resulting file. Arguments in favor: sorting is widely understood whereas graph isomorphism may not be; sorting is efficient whereas graph isomorphism is not known to be solvable in polynomial time; isomorphic graphs need not be identical, which I believe is what we need to demonstrate. (Any errors in summarizing the conversation are my own. He said he'd be willing to answer additional questions.)</p></div></div>
+<div class="comment" id="comment-17780"><div class="by">A. Soroka, 2016-10-10 20:17 UTC</div><div class="text"><blockquote><p>isomorphic graphs need not be identical, which I believe is what we need to demonstrate</p></blockquote>
+
+<p>No, this is the whole point. We're not even agreed on what we mean by "identical" (what kind of "identity" do you think an RDF graph has? If that graph is translated into a different format and has exactly the same meaning, has that "identity" been preserved? If I write down that graph in Turtle and add an extra blank line, have I changed the "identity" of that graph? What if there are blank nodes in the graph and I change their labels?).</p>
+
+<p>If you want to say that "identity" is what we need to demonstrate, you have to define identity. I think the W3C has already done a perfectly good job of that for us. We gain nothing by producing our own special flavor of RDF equivalence.</p>
+
+<p>As for the computational complexity question, please forward your friend the HP tech paper I linked above. The tractability concerns don't arise in the restricted context in which we are working.</p></div></div>
+<p><a href="data/FCREPO-2253.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

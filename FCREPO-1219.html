@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1219 Maven fails to resolve dependency due to SSL Exception</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1219</span> Maven fails to resolve dependency due to SSL Exception</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Assignee</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2014-08-08 12:38 UTC</td></tr><tr><th>Updated</th><td>2014-10-10 12:12 UTC</td></tr><tr><th>Resolved</th><td>2014-08-29 00:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.8.0</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.0</td></tr></table>
+<h2>Description</h2>
+<p>Using a fresh Maven setup (empty local repository), Maven can not resolve dependencies for project org.fcrepo:fcrepo-common. Looks like there is an SSL issue with <a href="https://m2.duraspace.org/content/repositories/releases" class="external-link" rel="nofollow noreferrer">https://m2.duraspace.org/content/repositories/releases</a>.</p>
+
+<p>The repository is accessible via web browser but Maven always stops the resolving process with "peer not authenticated" error.</p>
+
+<p>I tried to trick Maven into accepting all SSL with <a href="http://stackoverflow.com/questions/21252800/maven-trusting-all-certs-unlimited-java-policy" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/21252800/maven-trusting-all-certs-unlimited-java-policy</a>, but this just leads to "unable to find valid certification path to requested target" error.</p>
+
+<p>Here is the Maven output:</p>
+
+<p><span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Reactor Summary:<br/>
+<span class="error">&#91;INFO&#93;</span> <br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Project ......................... SUCCESS <span class="error">&#91;0.610s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Common Library ............................. FAILURE <span class="error">&#91;1.317s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Server Library ............................. SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> All Fedora Clients ................................ SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Admin Client (Swing) ....................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Messaging Client Library ................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Security Modules ........................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Security PDP ............................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora JAAS Authentication ........................ SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Security PEP ............................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora HTTP-sourced Authentication ................ SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> All Fedora Webapps ................................ SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Webapp ..................................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Webapp - Demo Content ...................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Webapp - Formatting Objects Processor ...... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Webapp - Saxon XSLT Processor .............. SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Webapp - Image Manipulation ................ SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Installer .................................. SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Integration Test ........................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Integration Test - Basic Tests and Resources  SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Integration Test - Configuration A ......... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Integration Test - Configuration B ......... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Integration Test - Configuration C ......... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Integration Test - Configuration Q ......... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> BUILD FAILURE<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Total time: 2.922s<br/>
+<span class="error">&#91;INFO&#93;</span> Finished at: Fri Aug 08 09:18:20 CEST 2014<br/>
+<span class="error">&#91;INFO&#93;</span> Final Memory: 21M/430M<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;ERROR&#93;</span> Failed to execute goal on project fcrepo-common: Could not resolve dependencies for project org.fcrepo:fcrepo-common:jar:3.7.2-SNAPSHOT: Failed to collect dependencies for <span class="error">&#91;commons-codec:commons-codec:jar:1.7 (compile), org.apache.httpcomponents:httpclient:jar:4.2.5 (compile), org.apache.httpcomponents:httpmime:jar:4.2.5 (compile), javax.xml:jaxrpc-api:jar:1.1 (compile), org.fcrepo:mulgara-core:jar:2.1.13 (compile), org.jboss.security:jboss-sunxacml:jar:2.0.9.Final (compile), wsdl4j:wsdl4j:jar:1.6.2 (compile), org.slf4j:slf4j-api:jar:1.7.2 (compile), org.slf4j:log4j-over-slf4j:jar:1.7.2 (runtime), org.slf4j:jcl-over-slf4j:jar:1.7.2 (runtime), dom4j:dom4j:jar:1.6.1 (compile), org.fcrepo:saxon:jar:9.0 (compile), javax.servlet:servlet-api:jar:2.4 (provided), joda-time:joda-time:jar:1.5.2 (compile), commons-pool:commons-pool:jar:1.6 (compile), commons-io:commons-io:jar:2.4 (compile), junit:junit:jar:4.10 (test)&#93;</span>: Failed to read artifact descriptor for org.fcrepo:mulgara-core:jar:2.1.13: Could not transfer artifact org.fcrepo:mulgara-core:pom:2.1.13 from/to duraspace-releases (<a href="https://m2.duraspace.org/content/repositories/releases):" class="external-link" rel="nofollow noreferrer">https://m2.duraspace.org/content/repositories/releases):</a> peer not authenticated -&gt; <span class="error">&#91;Help 1&#93;</span><br/>
+org.apache.maven.lifecycle.LifecycleExecutionException: Failed to execute goal on project fcrepo-common: Could not resolve dependencies for project org.fcrepo:fcrepo-common:jar:3.7.2-SNAPSHOT: Failed to collect dependencies for <span class="error">&#91;commons-codec:commons-codec:jar:1.7 (compile), org.apache.httpcomponents:httpclient:jar:4.2.5 (compile), org.apache.httpcomponents:httpmime:jar:4.2.5 (compile), javax.xml:jaxrpc-api:jar:1.1 (compile), org.fcrepo:mulgara-core:jar:2.1.13 (compile), org.jboss.security:jboss-sunxacml:jar:2.0.9.Final (compile), wsdl4j:wsdl4j:jar:1.6.2 (compile), org.slf4j:slf4j-api:jar:1.7.2 (compile), org.slf4j:log4j-over-slf4j:jar:1.7.2 (runtime), org.slf4j:jcl-over-slf4j:jar:1.7.2 (runtime), dom4j:dom4j:jar:1.6.1 (compile), org.fcrepo:saxon:jar:9.0 (compile), javax.servlet:servlet-api:jar:2.4 (provided), joda-time:joda-time:jar:1.5.2 (compile), commons-pool:commons-pool:jar:1.6 (compile), commons-io:commons-io:jar:2.4 (compile), junit:junit:jar:4.10 (test)&#93;</span><br/>
+	at org.apache.maven.lifecycle.internal.LifecycleDependencyResolver.getDependencies(LifecycleDependencyResolver.java:210)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleDependencyResolver.resolveProjectDependencies(LifecycleDependencyResolver.java:117)<br/>
+	at org.apache.maven.lifecycle.internal.MojoExecutor.ensureDependenciesAreResolved(MojoExecutor.java:258)<br/>
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:201)<br/>
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:153)<br/>
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:145)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:84)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:59)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.singleThreadedBuild(LifecycleStarter.java:183)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:161)<br/>
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:320)<br/>
+	at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:156)<br/>
+	at org.apache.maven.cli.MavenCli.execute(MavenCli.java:537)<br/>
+	at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:196)<br/>
+	at org.apache.maven.cli.MavenCli.main(MavenCli.java:141)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:606)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:289)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:229)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:415)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:356)<br/>
+Caused by: org.apache.maven.project.DependencyResolutionException: Could not resolve dependencies for project org.fcrepo:fcrepo-common:jar:3.7.2-SNAPSHOT: Failed to collect dependencies for <span class="error">&#91;commons-codec:commons-codec:jar:1.7 (compile), org.apache.httpcomponents:httpclient:jar:4.2.5 (compile), org.apache.httpcomponents:httpmime:jar:4.2.5 (compile), javax.xml:jaxrpc-api:jar:1.1 (compile), org.fcrepo:mulgara-core:jar:2.1.13 (compile), org.jboss.security:jboss-sunxacml:jar:2.0.9.Final (compile), wsdl4j:wsdl4j:jar:1.6.2 (compile), org.slf4j:slf4j-api:jar:1.7.2 (compile), org.slf4j:log4j-over-slf4j:jar:1.7.2 (runtime), org.slf4j:jcl-over-slf4j:jar:1.7.2 (runtime), dom4j:dom4j:jar:1.6.1 (compile), org.fcrepo:saxon:jar:9.0 (compile), javax.servlet:servlet-api:jar:2.4 (provided), joda-time:joda-time:jar:1.5.2 (compile), commons-pool:commons-pool:jar:1.6 (compile), commons-io:commons-io:jar:2.4 (compile), junit:junit:jar:4.10 (test)&#93;</span><br/>
+	at org.apache.maven.project.DefaultProjectDependenciesResolver.resolve(DefaultProjectDependenciesResolver.java:158)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleDependencyResolver.getDependencies(LifecycleDependencyResolver.java:185)<br/>
+	... 22 more<br/>
+Caused by: org.sonatype.aether.collection.DependencyCollectionException: Failed to collect dependencies for <span class="error">&#91;commons-codec:commons-codec:jar:1.7 (compile), org.apache.httpcomponents:httpclient:jar:4.2.5 (compile), org.apache.httpcomponents:httpmime:jar:4.2.5 (compile), javax.xml:jaxrpc-api:jar:1.1 (compile), org.fcrepo:mulgara-core:jar:2.1.13 (compile), org.jboss.security:jboss-sunxacml:jar:2.0.9.Final (compile), wsdl4j:wsdl4j:jar:1.6.2 (compile), org.slf4j:slf4j-api:jar:1.7.2 (compile), org.slf4j:log4j-over-slf4j:jar:1.7.2 (runtime), org.slf4j:jcl-over-slf4j:jar:1.7.2 (runtime), dom4j:dom4j:jar:1.6.1 (compile), org.fcrepo:saxon:jar:9.0 (compile), javax.servlet:servlet-api:jar:2.4 (provided), joda-time:joda-time:jar:1.5.2 (compile), commons-pool:commons-pool:jar:1.6 (compile), commons-io:commons-io:jar:2.4 (compile), junit:junit:jar:4.10 (test)&#93;</span><br/>
+	at org.sonatype.aether.impl.internal.DefaultDependencyCollector.collectDependencies(DefaultDependencyCollector.java:258)<br/>
+	at org.sonatype.aether.impl.internal.DefaultRepositorySystem.collectDependencies(DefaultRepositorySystem.java:308)<br/>
+	at org.apache.maven.project.DefaultProjectDependenciesResolver.resolve(DefaultProjectDependenciesResolver.java:150)<br/>
+	... 23 more<br/>
+Caused by: org.sonatype.aether.resolution.ArtifactDescriptorException: Failed to read artifact descriptor for org.fcrepo:mulgara-core:jar:2.1.13<br/>
+	at org.apache.maven.repository.internal.DefaultArtifactDescriptorReader.loadPom(DefaultArtifactDescriptorReader.java:296)<br/>
+	at org.apache.maven.repository.internal.DefaultArtifactDescriptorReader.readArtifactDescriptor(DefaultArtifactDescriptorReader.java:186)<br/>
+	at org.sonatype.aether.impl.internal.DefaultDependencyCollector.process(DefaultDependencyCollector.java:412)<br/>
+	at org.sonatype.aether.impl.internal.DefaultDependencyCollector.collectDependencies(DefaultDependencyCollector.java:240)<br/>
+	... 25 more<br/>
+Caused by: org.sonatype.aether.resolution.ArtifactResolutionException: Could not transfer artifact org.fcrepo:mulgara-core:pom:2.1.13 from/to duraspace-releases (<a href="https://m2.duraspace.org/content/repositories/releases):" class="external-link" rel="nofollow noreferrer">https://m2.duraspace.org/content/repositories/releases):</a> peer not authenticated<br/>
+	at org.sonatype.aether.impl.internal.DefaultArtifactResolver.resolve(DefaultArtifactResolver.java:538)<br/>
+	at org.sonatype.aether.impl.internal.DefaultArtifactResolver.resolveArtifacts(DefaultArtifactResolver.java:216)<br/>
+	at org.sonatype.aether.impl.internal.DefaultArtifactResolver.resolveArtifact(DefaultArtifactResolver.java:193)<br/>
+	at org.apache.maven.repository.internal.DefaultArtifactDescriptorReader.loadPom(DefaultArtifactDescriptorReader.java:281)<br/>
+	... 28 more<br/>
+Caused by: org.sonatype.aether.transfer.ArtifactTransferException: Could not transfer artifact org.fcrepo:mulgara-core:pom:2.1.13 from/to duraspace-releases (<a href="https://m2.duraspace.org/content/repositories/releases):" class="external-link" rel="nofollow noreferrer">https://m2.duraspace.org/content/repositories/releases):</a> peer not authenticated<br/>
+	at org.sonatype.aether.connector.wagon.WagonRepositoryConnector$4.wrap(WagonRepositoryConnector.java:951)<br/>
+	at org.sonatype.aether.connector.wagon.WagonRepositoryConnector$4.wrap(WagonRepositoryConnector.java:939)<br/>
+	at org.sonatype.aether.connector.wagon.WagonRepositoryConnector$GetTask.run(WagonRepositoryConnector.java:669)<br/>
+	at org.sonatype.aether.util.concurrency.RunnableErrorForwarder$1.run(RunnableErrorForwarder.java:60)<br/>
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)<br/>
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)<br/>
+	at java.lang.Thread.run(Thread.java:744)<br/>
+Caused by: org.apache.maven.wagon.TransferFailedException: peer not authenticated<br/>
+	at org.apache.maven.wagon.providers.http.AbstractHttpClientWagon.fillInputData(AbstractHttpClientWagon.java:892)<br/>
+	at org.apache.maven.wagon.StreamWagon.getInputStream(StreamWagon.java:116)<br/>
+	at org.apache.maven.wagon.StreamWagon.getIfNewer(StreamWagon.java:88)<br/>
+	at org.apache.maven.wagon.StreamWagon.get(StreamWagon.java:61)<br/>
+	at org.sonatype.aether.connector.wagon.WagonRepositoryConnector$GetTask.run(WagonRepositoryConnector.java:601)<br/>
+	... 4 more<br/>
+Caused by: javax.net.ssl.SSLPeerUnverifiedException: peer not authenticated<br/>
+	at sun.security.ssl.SSLSessionImpl.getPeerCertificates(SSLSessionImpl.java:397)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.conn.ssl.AbstractVerifier.verify(AbstractVerifier.java:126)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.conn.ssl.SSLSocketFactory.connectSocket(SSLSocketFactory.java:437)<br/>
+	at org.apache.maven.wagon.providers.http.ConfigurableSSLSocketFactoryDecorator.connectSocket(ConfigurableSSLSocketFactoryDecorator.java:64)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.impl.conn.DefaultClientConnectionOperator.openConnection(DefaultClientConnectionOperator.java:180)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.impl.conn.ManagedClientConnectionImpl.open(ManagedClientConnectionImpl.java:294)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.impl.client.DefaultRequestDirector.tryConnect(DefaultRequestDirector.java:643)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.impl.client.DefaultRequestDirector.execute(DefaultRequestDirector.java:479)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:906)<br/>
+	at org.apache.maven.wagon.providers.http.httpclient.impl.client.AbstractHttpClient.execute(AbstractHttpClient.java:805)<br/>
+	at org.apache.maven.wagon.providers.http.AbstractHttpClientWagon.execute(AbstractHttpClientWagon.java:746)<br/>
+	at org.apache.maven.wagon.providers.http.AbstractHttpClientWagon.fillInputData(AbstractHttpClientWagon.java:886)<br/>
+	... 8 more</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1219/10186_compilation-result-sample-3.8.0.txt">compilation-result-sample-3.8.0.txt</a>, 1983 bytes, added by Hugh Barnard on 2014-10-10</li>
+</ul>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-12611"><div class="by">Scott Prater, 2014-08-08 22:03 UTC</div><div class="text"><p>Ralf,</p>
+
+<p>I pushed a fix to the top-level pom.xml in the 3.7.2-SNAPSHOT branch this morning:  <a href="https://github.com/fcrepo3/fcrepo/commit/2acb15a517955af52cb2b3e50971776ccd61e4c2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/2acb15a517955af52cb2b3e50971776ccd61e4c2</a></p>
+
+<p>Can you pull this commit, and verify it fixes the issue?</p></div></div>
+<div class="comment" id="comment-12614"><div class="by">Ralf Claussnitzer, 2014-08-09 13:33 UTC</div><div class="text"><p>Doesn't work as expected. Looks like SSL error disappeared but there is some other build error now. <br/>
+Here is the order:</p>
+
+<p>1- Attempt to resolve dependencies for <a href="https://github.com/fcrepo3/fcrepo/commit/27a6bd183809d993e1a7640ecb5a6333263928c0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/27a6bd183809d993e1a7640ecb5a6333263928c0</a> (expected result):<br/>
+<span class="error">&#91;ERROR&#93;</span> Failed to execute goal on project fcrepo-common: Could not resolve dependencies for project org.fcrepo:fcrepo-common:jar:3.7.2-SNAPSHOT: Failed to collect dependencies for <span class="error">&#91;commons-codec:commons-codec:jar:1.7 (compile), org.apache.httpcomponents:httpclient:jar:4.2.5 (compile), org.apache.httpcomponents:httpmime:jar:4.2.5 (compile), javax.xml:jaxrpc-api:jar:1.1 (compile), org.fcrepo:mulgara-core:jar:2.1.13 (compile), org.jboss.security:jboss-sunxacml:jar:2.0.9.Final (compile), wsdl4j:wsdl4j:jar:1.6.2 (compile), org.slf4j:slf4j-api:jar:1.7.2 (compile), org.slf4j:log4j-over-slf4j:jar:1.7.2 (runtime), org.slf4j:jcl-over-slf4j:jar:1.7.2 (runtime), dom4j:dom4j:jar:1.6.1 (compile), org.fcrepo:saxon:jar:9.0 (compile), javax.servlet:servlet-api:jar:2.4 (provided), joda-time:joda-time:jar:1.5.2 (compile), commons-pool:commons-pool:jar:1.6 (compile), commons-io:commons-io:jar:2.4 (compile), junit:junit:jar:4.10 (test)&#93;</span>: Failed to read artifact descriptor for org.fcrepo:mulgara-core:jar:2.1.13: Could not transfer artifact org.fcrepo:mulgara-core:pom:2.1.13 from/to duraspace-releases (<a href="https://m2.duraspace.org/content/repositories/releases):" class="external-link" rel="nofollow noreferrer">https://m2.duraspace.org/content/repositories/releases):</a> peer not authenticated -&gt; <span class="error">&#91;Help 1&#93;</span></p>
+
+<p>2-Attempt to resolve dependencies for <a href="https://github.com/fcrepo3/fcrepo/commit/2acb15a517955af52cb2b3e50971776ccd61e4c2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/2acb15a517955af52cb2b3e50971776ccd61e4c2</a> (new error)<br/>
+<span class="error">&#91;ERROR&#93;</span> Failed to execute goal on project fcrepo-server: Could not resolve dependencies for project org.fcrepo:fcrepo-server:jar:3.7.2-SNAPSHOT: The following artifacts could not be resolved: org.trippi:trippi-core:jar:1.5.10-SNAPSHOT, org.trippi:trippi-mptstore:jar:1.5.10-SNAPSHOT, org.trippi:trippi-mulgara:jar:1.5.10-SNAPSHOT, org.fcrepo:fcrepo-common:jar:3.7.2-SNAPSHOT, org.fcrepo:fcrepo-common:jar:tests:3.7.2-SNAPSHOT: Could not find artifact org.trippi:trippi-core:jar:1.5.10-SNAPSHOT in apache-releases (<a href="https://repository.apache.org/content/groups/public/" class="external-link" rel="nofollow noreferrer">https://repository.apache.org/content/groups/public/</a>) -&gt; <span class="error">&#91;Help 1&#93;</span></p></div></div>
+<div class="comment" id="comment-12615"><div class="by">Ralf Claussnitzer, 2014-08-11 13:37 UTC</div><div class="text"><p>Ok, looks like the reason here is the requested trippi version 1.5.10-SNAPSHOT. I get that this has been introduced to fix <a href="https://jira.duraspace.org/browse/FCREPO-1214" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1214</a> with commit <a href="https://github.com/fcrepo3/fcrepo/commit/27a6bd183809d993e1a7640ecb5a6333263928c0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/27a6bd183809d993e1a7640ecb5a6333263928c0</a></p>
+
+<p>After installing 1.5.10-SNAPSHOT (as Benjamin actually suggested) build to my local repository it worked. </p></div></div>
+<div class="comment" id="comment-12638"><div class="by">Scott Prater, 2014-08-29 00:36 UTC</div><div class="text"><p>trippi 1.5.10 is now available in the main maven repositories, and the fcrepo project poms have been updated.</p></div></div>
+<div class="comment" id="comment-12643"><div class="by">Hugh Barnard, 2014-10-09 21:01 UTC</div><div class="text"><p>I've just downloaded the 3.8.0 source snapshot from Github and something very similar is happening when I try and build with Maven. I am not a heavyweight Java person and don't have that much fedora-commons experience, so if this is something simple, apologies:</p>
+
+<p><span class="error">&#91;INFO&#93;</span> BUILD FAILURE<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Total time: 6.723s<br/>
+<span class="error">&#91;INFO&#93;</span> Finished at: Thu Oct 09 16:51:22 BST 2014<br/>
+<span class="error">&#91;INFO&#93;</span> Final Memory: 16M/119M<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;ERROR&#93;</span> Failed to execute goal on project fcrepo-common: Could not resolve dependencies for project org.fcrepo:fcrepo-common:jar:3.7.2-SNAPSHOT: Failed to collect dependencies for <span class="error">&#91;commons-codec:commons-codec:jar:1.7 (compile), org.apache.httpcomponents:httpclient:jar:4.2.5 (compile), org.apache.httpcomponents:httpmime:jar:4.2.5 (compile), javax.xml:jaxrpc-api:jar:1.1 (compile), org.fcrepo:mulgara-core:jar:2.1.13 (compile), org.fcrepo:sunxacml:jar:melcoe:1.2 (compile), wsdl4j:wsdl4j:jar:1.6.2 (compile), org.slf4j:slf4j-api:jar:1.7.2 (compile), org.slf4j:log4j-over-slf4j:jar:1.7.2 (runtime), org.slf4j:jcl-over-slf4j:jar:1.7.2 (runtime), dom4j:dom4j:jar:1.6.1 (compile), org.fcrepo:saxon:jar:9.0 (compile), javax.servlet:servlet-api:jar:2.4 (provided), joda-time:joda-time:jar:1.5.2 (compile), junit:junit:jar:4.10 (test)&#93;</span>: Failed to read artifact descriptor for org.fcrepo:mulgara-core:jar:2.1.13: Could not transfer artifact org.fcrepo:mulgara-core:pom:2.1.13 from/to duraspace-releases (<a href="https://m2.duraspace.org/content/repositories/releases):" class="external-link" rel="nofollow noreferrer">https://m2.duraspace.org/content/repositories/releases):</a> sun.security.validator.ValidatorException: PKIX path validation failed: java.security.cert.CertPathValidatorException: Path does not chain with any of the trust anchors -&gt; </p>
+
+<p>All the best Hugh Barnard</p></div></div>
+<div class="comment" id="comment-12644"><div class="by">Scott Prater, 2014-10-09 21:09 UTC</div><div class="text"><p>Hugh,</p>
+
+<p>Did you check out the 3.8.0-SNAPSHOT branch from master?  That branch has all the latest changes and fixes, and should build.</p>
+
+<p><a href="https://github.com/fcrepo3/fcrepo/tree/3.8.0-SNAPSHOT" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/tree/3.8.0-SNAPSHOT</a></p></div></div>
+<div class="comment" id="comment-12646"><div class="by">Hugh Barnard, 2014-10-09 22:43 UTC</div><div class="text"><p>Hi Scott, Thanks and thanks for being so quick, no it was a read-only page here: <a href="https://github.com/fcrepo3/fcrepo/releases/tag/v3.8.0-RC1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/releases/tag/v3.8.0-RC1</a>  I'll try again tomorrow morning with your suggestion. Currently I'm using my own Linux desktop system, but I'll migrate the trial build to Amazon EC2, if necessary, just to chase away any local idiosyncracies. All the best Hugh</p></div></div>
+<div class="comment" id="comment-12647"><div class="by">Hugh Barnard, 2014-10-10 12:12 UTC</div><div class="text"><p>Hi Scott, folks<br/>
+That looks much better, gets much further, but it fails here, see sample attached. Given the errors, it probably won't work on Amazon either. Best regards Hugh</p></div></div>
+<p><a href="data/FCREPO-1219.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

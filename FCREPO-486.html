@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-486 References to in-fedora resources don&#x27;t work properly in alternate app server contexts</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-486</span> References to in-fedora resources don&#x27;t work properly in alternate app server contexts</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2009-05-05 22:08 UTC</td></tr><tr><th>Updated</th><td>2009-05-08 22:42 UTC</td></tr><tr><th>Resolved</th><td>2009-05-08 22:42 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.2</td></tr><tr><th>Addresses</th><td><a href="FCREPO-406.html">FCREPO-406</a> Remove assumption of /fedora as webapp path</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-487.html">FCREPO-487</a> Implement relative-path solution to deployment-independantlinks</td></tr></table>
+<h2>Description</h2>
+<p>General, portable, "relative" links to in-fedora content were previously handled by variable substitution.  e.g. in a redirect datastream or WSDL text body "http://local.fedora.server/fedora/risearch" would be translated at runtime or at serialization time (depending on context) to "http://localhost:8080/fedora/risearch", and vice versa.</p>
+
+<p>Now, with repository app server context (e.g. the '/fedora' part) a configurable option, the existing substitution mechanism breaks down.  Since it does NOT substitute local app server context, the app server context will remain an assumption hard-coded in the object and links will fail if the object is ingested into a repository with a different app server context.</p>
+
+<p>That is to say, if an object contains "http://local.fedora.server/fedora/risearch", and is ingested into a repository that has app server context "fedora32", the resulting URL as dereferenced at runtime will be   "http://localhost:8080/fedora/risearch", which is WRONG.  It should be "http://localhost:8080/fedora32/risearch.  </p>
+
+<p>This can be addressed by a) introducing a variable substitution for context only, as in "http://local.fedora.server/local.fedora.context/risearch" or b) abandoning explicit variable substitution, and adopt relative or absolute path conventions.</p>
+
+<p>In the case of (b) suggested conventions as discussed at a recent committers meeting (<a href="http://fedora-commons.org/confluence/x/w4mv" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/confluence/x/w4mv</a>) are </p>
+<ul class="alternate" type="square">
+	<li>absolute paths are interpreted as belonging to the same server and port as the fedora instance (equivalent to current local.fedora.server substitution).  i.e. ("/saxon/transform?x=y" might translate to "http://localhost:8080/saxon/transform?x=y)</li>
+	<li>relative paths are interpreted as belonging to the fedora app server context.  i.e. ("risearch?x=y" might translate to "http://localhost:8080/fedora32/risearch?x=y)</li>
+</ul>
+
+
+<p>CAVEAT<br/>
+The general consensus was to go with (b), path conventions.  However, either (a) or (b)  presents a compatibility problem with previous versions of Fedora, in that objects exported and complying with (a) or (b) conventions will be broken if exported and ingested into any earlier Fedora version.  The reason for this is that earlier fedora versions would not support either expansion scheme, and would not be able to interpret the URLs appropriately.  At present, there doesn't seem to be a good way to support differing app server contexts and link expansion without breaking compatibility.  </p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-10925"><div class="by">Chris Wilper, 2009-05-08 22:42 UTC</div><div class="text"><p>This was resolved by treating http<span class="error">&#91;s&#93;</span>://local.fedora.server/fedora as a special replacement variable itself, so when the Fedora server sees it, it translates it to http<span class="error">&#91;s&#93;</span>://actualHost:actualPort/actualContext when necessary</p>
+
+<p>Demo objects were updated accordingly.</p></div></div>
+<p><a href="data/FCREPO-486.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

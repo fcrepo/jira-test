@@ -1,0 +1,45 @@
+diff --git fcrepo-server/src/main/java/org/fcrepo/server/storage/DefaultDOManager.java fcrepo-server/src/main/java/org/fcrepo/server/storage/DefaultDOManager.java
+index 97595cc..8dbbe7b 100755
+--- fcrepo-server/src/main/java/org/fcrepo/server/storage/DefaultDOManager.java
++++ fcrepo-server/src/main/java/org/fcrepo/server/storage/DefaultDOManager.java
+@@ -1050,6 +1050,7 @@ public class DefaultDOManager
+                          String logMessage,
+                          boolean remove) throws ServerException {
+         // OBJECT REMOVAL...
++        Date lastModDate=null;
+         if (remove) {
+ 
+             logger.info("Committing removal of " + obj.getPid());
+@@ -1239,6 +1240,7 @@ public class DefaultDOManager
+                             }
+                         }
+                     }
++                    lastModDate=dStream.DSCreateDT;
+                 }
+ 
+                 // MANAGED DATASTREAM PURGE:
+@@ -1257,7 +1259,11 @@ public class DefaultDOManager
+ 
+                 // MODIFIED DATE:
+                 // set digital object last modified date, in UTC
+-                obj.setLastModDate(Server.getCurrentDate(context));
++                if (lastModDate != null){
++                	obj.setLastModDate(lastModDate);
++                }else{
++                	obj.setLastModDate(Server.getCurrentDate(context));
++                }
+                 ByteArrayOutputStream out = new ByteArrayOutputStream();
+ 
+                 // FINAL XML SERIALIZATION:
+@@ -1323,6 +1329,11 @@ public class DefaultDOManager
+                 // write XML serialization of object to persistent storage
+                 logger.debug("Storing digital object");
+                 if (obj.isNew()) {
++                	logger.debug("storing new object");
++                	if (lastModDate!=null){
++                    	logger.debug("storing new object with modDate " + lastModDate);
++                		obj.setLastModDate(lastModDate);
++                	}
+                     m_permanentStore.addObject(obj.getPid(),
+                                                new ByteArrayInputStream(out
+                                                        .toByteArray()));

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3092 Support caching headers in transactions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3092</span> Support caching headers in transactions</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2019-09-27 18:38 UTC</td></tr><tr><th>Updated</th><td>2019-11-22 18:50 UTC</td></tr><tr><th>Resolved</th><td>2019-11-05 16:27 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.2, Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>At present, neither etag or the fedora state token are returned when making requests within a transaction. So a client is unable to tell that the state of resource which is being used for read only purposes in a transaction is unchanged, and therefore cached versions may be used. Accessing the same state of a resource in and outside of a transaction gives different cache headers.</p>
+
+<p>Additionally, no last modified header is returned in a transaction, which makes optimistic locking when inside of a transaction impossible. So it would be helpful to provide up to date last-modified headers.</p>
+
+<p>So from the perspective of a client, it would be helpful to return these headers when making requests within a transaction.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-20840"><div class="by">Peter Matthew Eichman, 2019-11-04 15:49 UTC</div><div class="text"><p>Ben Pennell Should the Batch Atomic sidecar spec be updated to mandate the inclusion of these headers?</p></div></div>
+<div class="comment" id="comment-20843"><div class="by">Ben Pennell, 2019-11-04 18:27 UTC</div><div class="text"><p>I'm not sure that is necessary, they are defined in the fcrepo/http specifications and this ticket is mostly concerned with them being present on requests against the fcrepo resource API rather than the transaction API. But I'm not opposed to there being some language in the sidecar specification if it seems like it would be helpful to clarify that requests made within transactions may return these headers like we requests outside of transactions.</p></div></div>
+<div class="comment" id="comment-20847"><div class="by">Peter Matthew Eichman, 2019-11-04 19:30 UTC</div><div class="text"><p>Ben Pennell That makes sense. I may add an informative note, if it seems appropriate.</p></div></div>
+<div class="comment" id="comment-20851"><div class="by">Peter Matthew Eichman, 2019-11-05 16:27 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1568" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1568</a></p></div></div>
+<div class="comment" id="comment-20859"><div class="by">Ben Pennell, 2019-11-07 17:02 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/commit/8c7879e7e0fe013c36ed0d80e3e8c64d3d6bc242" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8c7879e7e0fe013c36ed0d80e3e8c64d3d6bc242</a></p></div></div>
+<p><a href="data/FCREPO-3092.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2836 Setting content from an HTTPS URL on an inline datastream causes trustStore exceptions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2836</span> Setting content from an HTTPS URL on an inline datastream causes trustStore exceptions</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jordan Dukart</td></tr><tr><th>Created</th><td>2018-07-16 14:04 UTC</td></tr><tr><th>Updated</th><td>2018-07-16 14:08 UTC</td></tr><tr><th>Resolved</th><td>2018-07-16 14:06 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.8.1</td></tr></table>
+<h2>Description</h2>
+<p>To reproduce:</p>
+
+<p>Construct an inline datastream and attempt to modify it via an HTTPS URL. For example, a MODS datastream with the URL coming from LoC. It's to be noted that doing this process as a managed datastream the requests work as expected.</p>
+
+<p>See below for reproducing:</p>
+
+<p>Create a datastream with the initial version from binary.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+vagrant@tophat-vagrant-test: curl -u user:pw -X POST <span class="code-quote">"http:<span class="code-comment">//localhost:8080/fedora/objects/test:test/datastreams/managed?controlGroup=M&amp;mimeType=application/xml"</span> --data-binary <span class="code-quote">"&lt;test/&gt;"</span>
+</span>&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;&lt;datastreamProfile  xmlns=<span class="code-quote">"http:<span class="code-comment">//www.fedora.info/definitions/1/0/management/"</span>  xmlns:xsd=<span class="code-quote">"http://www.w3.org/2001/XMLSchema"</span> xmlns:xsi=<span class="code-quote">"http://www.w3.org/2001/XMLSchema-instance"</span> xsi:schemaLocation=<span class="code-quote">"http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd"</span> pid=<span class="code-quote">"test:test"</span> dsID=<span class="code-quote">"test"</span>&gt;&lt;dsLabel&gt;&lt;/dsLabel&gt;
+</span>&lt;dsVersionID&gt;test.0&lt;/dsVersionID&gt;
+&lt;dsCreateDate&gt;2018-07-16T13:43:56.849Z&lt;/dsCreateDate&gt;
+&lt;dsState&gt;A&lt;/dsState&gt;
+&lt;dsMIME&gt;application/xml&lt;/dsMIME&gt;
+&lt;dsFormatURI&gt;&lt;/dsFormatURI&gt;
+&lt;dsControlGroup&gt;X&lt;/dsControlGroup&gt;
+&lt;dsSize&gt;15&lt;/dsSize&gt;
+&lt;dsVersionable&gt;<span class="code-keyword">true</span>&lt;/dsVersionable&gt;
+&lt;dsInfoType&gt;&lt;/dsInfoType&gt;
+&lt;dsLocation&gt;test:test+test+test.0&lt;/dsLocation&gt;
+&lt;dsLocationType&gt;INTERNAL_ID&lt;/dsLocationType&gt;
+&lt;dsChecksumType&gt;DISABLED&lt;/dsChecksumType&gt;
+&lt;dsChecksum&gt;none&lt;/dsChecksum&gt;
+</pre>
+</div></div>
+
+<p>Create a datastream version from HTTP.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+vagrant@tophat-vagrant-test: curl -u user:pw -X PUT <span class="code-quote">"https:<span class="code-comment">//localhost:8080/fedora/objects/test:test/datastreams/test?dsLocation=http://www.loc.gov/standards/mods/v3/modsejournal.xml"</span>
+</span>&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;&lt;datastreamProfile  xmlns=<span class="code-quote">"http:<span class="code-comment">//www.fedora.info/definitions/1/0/management/"</span>  xmlns:xsd=<span class="code-quote">"http://www.w3.org/2001/XMLSchema"</span> xmlns:xsi=<span class="code-quote">"http://www.w3.org/2001/XMLSchema-instance"</span> xsi:schemaLocation=<span class="code-quote">"http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd"</span> pid=<span class="code-quote">"test:test"</span> dsID=<span class="code-quote">"test"</span>&gt;&lt;dsLabel&gt;&lt;/dsLabel&gt;
+</span>&lt;dsVersionID&gt;test.1&lt;/dsVersionID&gt;
+&lt;dsCreateDate&gt;2018-07-16T13:44:39.972Z&lt;/dsCreateDate&gt;
+&lt;dsState&gt;A&lt;/dsState&gt;
+&lt;dsMIME&gt;application/xml&lt;/dsMIME&gt;
+&lt;dsFormatURI&gt;&lt;/dsFormatURI&gt;
+&lt;dsControlGroup&gt;X&lt;/dsControlGroup&gt;
+&lt;dsSize&gt;1364&lt;/dsSize&gt;
+&lt;dsVersionable&gt;<span class="code-keyword">true</span>&lt;/dsVersionable&gt;
+&lt;dsInfoType&gt;&lt;/dsInfoType&gt;
+&lt;dsLocation&gt;test:test+test+test.1&lt;/dsLocation&gt;
+&lt;dsLocationType&gt;INTERNAL_ID&lt;/dsLocationType&gt;
+&lt;dsChecksumType&gt;DISABLED&lt;/dsChecksumType&gt;
+&lt;dsChecksum&gt;none&lt;/dsChecksum&gt;
+</pre>
+</div></div>
+
+<p>Create a datastream version from HTTPS.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+vagrant@tophat-vagrant-test: curl -u user:pw -X PUT <span class="code-quote">"http:<span class="code-comment">//localhost:8080/fedora/objects/test:test/datastreams/test?dsLocation=https://www.loc.gov/standards/mods/v3/modsejournal.xml"</span></span></pre>
+</div></div>
+
+<p>This pops the following in the fedora.log.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+WARN 2018-07-16 10:49:09.291 [http-bio-8080-exec-21] (DatastreamResource) Could not retrive content from https:<span class="code-comment">//www.loc.gov/standards/mods/v3/modsejournal.xml due to error: java.lang.RuntimeException: Unexpected error: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+</span>java.lang.Exception: Could not retrive content from https:<span class="code-comment">//www.loc.gov/standards/mods/v3/modsejournal.xml due to error: java.lang.RuntimeException: Unexpected error: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+</span>	at org.fcrepo.server.<span class="code-keyword">rest</span>.DatastreamResource.addOrUpdateDatastream(DatastreamResource.java:550) [fcrepo-server-3.8.1.jar:na]
+	at org.fcrepo.server.<span class="code-keyword">rest</span>.DatastreamResource.modifyDatastream(DatastreamResource.java:351) [fcrepo-server-3.8.1.jar:na] and so on.
+ </pre>
+</div></div>
+
+
+<p>Working on managed as follows:</p>
+
+<p>Create a datastream with the initial version from binary.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+vagrant@tophat-vagrant-test: curl -u user:pw -X POST <span class="code-quote">"http:<span class="code-comment">//localhost:8080/fedora/objects/test:test/datastreams/managed?controlGroup=M&amp;mimeType=application/xml"</span> --data-binary <span class="code-quote">"&lt;test/&gt;"</span>
+</span>&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;&lt;datastreamProfile  xmlns=<span class="code-quote">"http:<span class="code-comment">//www.fedora.info/definitions/1/0/management/"</span>  xmlns:xsd=<span class="code-quote">"http://www.w3.org/2001/XMLSchema"</span> xmlns:xsi=<span class="code-quote">"http://www.w3.org/2001/XMLSchema-instance"</span> xsi:schemaLocation=<span class="code-quote">"http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd"</span> pid=<span class="code-quote">"test:test"</span> dsID=<span class="code-quote">"managed"</span>&gt;&lt;dsLabel&gt;&lt;/dsLabel&gt;
+</span>&lt;dsVersionID&gt;managed.0&lt;/dsVersionID&gt;
+&lt;dsCreateDate&gt;2018-07-16T13:55:11.028Z&lt;/dsCreateDate&gt;
+&lt;dsState&gt;A&lt;/dsState&gt;
+&lt;dsMIME&gt;application/xml&lt;/dsMIME&gt;
+&lt;dsFormatURI&gt;&lt;/dsFormatURI&gt;
+&lt;dsControlGroup&gt;M&lt;/dsControlGroup&gt;
+&lt;dsSize&gt;7&lt;/dsSize&gt;
+&lt;dsVersionable&gt;<span class="code-keyword">true</span>&lt;/dsVersionable&gt;
+&lt;dsInfoType&gt;&lt;/dsInfoType&gt;
+&lt;dsLocation&gt;test:test+managed+managed.0&lt;/dsLocation&gt;
+&lt;dsLocationType&gt;INTERNAL_ID&lt;/dsLocationType&gt;
+&lt;dsChecksumType&gt;DISABLED&lt;/dsChecksumType&gt;
+&lt;dsChecksum&gt;none&lt;/dsChecksum&gt;
+</pre>
+</div></div>
+
+<p>Create a datastream version from HTTP.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+vagrant@tophat-vagrant-test: curl -u user:pw -X PUT <span class="code-quote">"http:<span class="code-comment">//localhost:8080/fedora/objects/test:test/datastreams/managed?dsLocation=http://www.loc.gov/standards/mods/v3/modsejournal.xml"</span>
+</span>&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;&lt;datastreamProfile  xmlns=<span class="code-quote">"http:<span class="code-comment">//www.fedora.info/definitions/1/0/management/"</span>  xmlns:xsd=<span class="code-quote">"http://www.w3.org/2001/XMLSchema"</span> xmlns:xsi=<span class="code-quote">"http://www.w3.org/2001/XMLSchema-instance"</span> xsi:schemaLocation=<span class="code-quote">"http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd"</span> pid=<span class="code-quote">"test:test"</span> dsID=<span class="code-quote">"managed"</span>&gt;&lt;dsLabel&gt;&lt;/dsLabel&gt;
+</span>&lt;dsVersionID&gt;managed.1&lt;/dsVersionID&gt;
+&lt;dsCreateDate&gt;2018-07-16T13:56:22.226Z&lt;/dsCreateDate&gt;
+&lt;dsState&gt;A&lt;/dsState&gt;
+&lt;dsMIME&gt;application/xml&lt;/dsMIME&gt;
+&lt;dsFormatURI&gt;&lt;/dsFormatURI&gt;
+&lt;dsControlGroup&gt;M&lt;/dsControlGroup&gt;
+&lt;dsSize&gt;1355&lt;/dsSize&gt;
+&lt;dsVersionable&gt;<span class="code-keyword">true</span>&lt;/dsVersionable&gt;
+&lt;dsInfoType&gt;&lt;/dsInfoType&gt;
+&lt;dsLocation&gt;test:test+managed+managed.1&lt;/dsLocation&gt;
+&lt;dsLocationType&gt;INTERNAL_ID&lt;/dsLocationType&gt;
+&lt;dsChecksumType&gt;DISABLED&lt;/dsChecksumType&gt;
+&lt;dsChecksum&gt;none&lt;/dsChecksum&gt;
+</pre>
+</div></div>
+
+<p>Create a datastream version from HTTPS.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+vagrant@tophat-vagrant-test: curl -u user:pw -X PUT <span class="code-quote">"http:<span class="code-comment">//localhost:8080/fedora/objects/test:test/datastreams/managed?dsLocation=https://www.loc.gov/standards/mods/v3/modsejournal.xml"</span>
+</span>&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;&lt;datastreamProfile  xmlns=<span class="code-quote">"http:<span class="code-comment">//www.fedora.info/definitions/1/0/management/"</span>  xmlns:xsd=<span class="code-quote">"http://www.w3.org/2001/XMLSchema"</span> xmlns:xsi=<span class="code-quote">"http://www.w3.org/2001/XMLSchema-instance"</span> xsi:schemaLocation=<span class="code-quote">"http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd"</span> pid=<span class="code-quote">"test:test"</span> dsID=<span class="code-quote">"managed"</span>&gt;&lt;dsLabel&gt;&lt;/dsLabel&gt;
+</span>&lt;dsVersionID&gt;managed.2&lt;/dsVersionID&gt;
+&lt;dsCreateDate&gt;2018-07-16T13:56:55.225Z&lt;/dsCreateDate&gt;
+&lt;dsState&gt;A&lt;/dsState&gt;
+&lt;dsMIME&gt;application/xml&lt;/dsMIME&gt;
+&lt;dsFormatURI&gt;&lt;/dsFormatURI&gt;
+&lt;dsControlGroup&gt;M&lt;/dsControlGroup&gt;
+&lt;dsSize&gt;1355&lt;/dsSize&gt;
+&lt;dsVersionable&gt;<span class="code-keyword">true</span>&lt;/dsVersionable&gt;
+&lt;dsInfoType&gt;&lt;/dsInfoType&gt;
+&lt;dsLocation&gt;test:test+managed+managed.2&lt;/dsLocation&gt;
+&lt;dsLocationType&gt;INTERNAL_ID&lt;/dsLocationType&gt;
+&lt;dsChecksumType&gt;DISABLED&lt;/dsChecksumType&gt;
+&lt;dsChecksum&gt;none&lt;/dsChecksum&gt;
+&lt;/datastreamProfile
+</pre>
+</div></div>
+
+<p>Digging around it's likely in this area where trustStore needs to be accounted for: <a href="https://github.com/fcrepo3/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java#L545" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java#L545</a>.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-20072"><div class="by">Jared Whiklo, 2018-07-16 14:06 UTC</div><div class="text"><p>As there is no continuing work on the Fedora 3 branch this will not be fixed.</p>
+
+<p>But thanks Jordan Dukart for documenting this behaviour for any one else out there.</p></div></div>
+<p><a href="data/FCREPO-2836.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

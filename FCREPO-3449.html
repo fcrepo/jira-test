@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3449 DbSearchIndexImpl to be thread-safe</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3449</span> DbSearchIndexImpl to be thread-safe</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-10-08 16:57 UTC</td></tr><tr><th>Updated</th><td>2020-10-28 17:58 UTC</td></tr><tr><th>Resolved</th><td>2020-10-28 17:58 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Description</h2>
+<p>When running the jmeter performance tests against Fedora (with any DB configuration, even H2) with 4 client threads, the stacktrace at the bottom of this description is consistently produced.</p>
+
+<p>To reproduce the error:</p>
+<ul class="alternate" type="square">
+	<li>Clean the environment:<br/>
+$ rm -rf fcrepo-home
+	<ul>
+		<li>..clean the database, if an external DB is configured</li>
+	</ul>
+	</li>
+	<li>Start Fedora:<br/>
+$ java -jar fcrepo-webapp/target/fcrepo-webapp-6.0.0-SNAPSHOT-jetty-console.jar --headless
+	<ul>
+		<li>..or start Fedora in Tomcat, or via mvn jetty:run</li>
+	</ul>
+	</li>
+	<li>Download the master branch of fcrepo4-jmeter (<a href="https://github.com/fcrepo4-labs/fcrepo4-jmeter" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-jmeter</a>)</li>
+	<li>Run jmeter in the following configuration, and watch Fedora log/console<br/>
+$ jmeter -Dfedora_4_context=/rest -Dcontainer_threads=4 -n -t fedora.jmx<br/>
+```<br/>
+INFO 12:40:20.075 (FedoraLdp) POST to create resource with ID: /595e415e-bc33-4788-b0ce-52aafa776825, slug: null<br/>
+INFO 12:40:20.079 (FedoraLdp) PUT to create resource with ID: perf/perf_1608085757<br/>
+INFO 12:40:20.109 (FedoraLdp) POST to create resource with ID: /e7605e4a-c449-44bd-9bab-673746331dc5, slug: null<br/>
+Oct 08, 2020 12:40:20 PM com.google.common.eventbus.EventBus$LoggingHandler handleException<br/>
+SEVERE: Exception thrown by subscriber method onEvent(org.fcrepo.kernel.api.observer.Event) on subscriber org.fcrepo.search.impl.SearchIndexUpdater@6f52a229 when dispatching event: EventImpl
+{eventId='urn:uuid:1ee8419d-567a-4859-a08d-91ac452ca986', fedoraId=info:fedora/perf/perf_1608085757, types=[RESOURCE_CREATION], resourceTypes=[http://www.w3.org/ns/ldp#Resource, http://www.w3.org/ns/ldp#RDFSource, http://fedora.info/definitions/v4/repository#Container, http://mementoweb.org/ns#TimeGate, http://www.w3.org/ns/ldp#BasicContainer, http://fedora.info/definitions/v4/repository#Resource, http://mementoweb.org/ns#OriginalResource, http://www.w3.org/ns/ldp#Container], userID='null', userURI=null, userAgent=Apache-HttpClient/4.5.12 (Java/11.0.8), baseUrl=http://localhost:8080/rest, date=2020-10-08T16:40:20.174416Z}
+<p>org.fcrepo.kernel.api.exception.RepositoryRuntimeException: Failed add/updated the search index for : info:fedora/perf/perf_1608085757<br/>
+	at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:325)<br/>
+	at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:279)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:344)<br/>
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:205)<br/>
+	at com.sun.proxy.$Proxy40.addUpdateIndex(Unknown Source)<br/>
+	at org.fcrepo.search.impl.SearchIndexMetrics.lambda$addUpdateIndex$0(SearchIndexMetrics.java:62)<br/>
+	at io.micrometer.core.instrument.composite.CompositeTimer.record(CompositeTimer.java:79)<br/>
+	at org.fcrepo.search.impl.SearchIndexMetrics.addUpdateIndex(SearchIndexMetrics.java:61)<br/>
+	at org.fcrepo.search.impl.SearchIndexUpdater.onEvent(SearchIndexUpdater.java:85)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+	at com.google.common.eventbus.Subscriber.invokeSubscriberMethod(Subscriber.java:87)<br/>
+	at com.google.common.eventbus.Subscriber$1.run(Subscriber.java:72)<br/>
+	at com.google.common.util.concurrent.DirectExecutor.execute(DirectExecutor.java:30)<br/>
+	at com.google.common.eventbus.Subscriber.dispatchEvent(Subscriber.java:67)<br/>
+	at com.google.common.eventbus.Dispatcher$PerThreadQueuedDispatcher.dispatch(Dispatcher.java:108)<br/>
+	at com.google.common.eventbus.EventBus.post(EventBus.java:212)<br/>
+	at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.lambda$emitEvents$1(EventAccumulatorImpl.java:96)<br/>
+	at com.google.common.collect.Maps$KeySet.lambda$forEach$0(Maps.java:3705)<br/>
+	at java.base/java.util.HashMap.forEach(HashMap.java:1336)<br/>
+	at com.google.common.collect.Maps$KeySet.forEach(Maps.java:3705)<br/>
+	at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.emitEvents(EventAccumulatorImpl.java:82)<br/>
+	at org.fcrepo.kernel.impl.TransactionImpl.commit(TransactionImpl.java:92)<br/>
+	at org.fcrepo.kernel.impl.TransactionImpl.commitIfShortLived(TransactionImpl.java:191)<br/>
+	at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:480)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+	at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:124)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:167)<br/>
+	at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:79)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:469)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:391)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:80)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:253)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:292)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:274)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:244)<br/>
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)<br/>
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:232)<br/>
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:680)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:392)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:365)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:318)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)<br/>
+	at org.eclipse.jetty.servlet.ServletHolder$NotAsyncServlet.service(ServletHolder.java:1391)<br/>
+	at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:760)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:547)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+	at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:590)<br/>
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:235)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:1607)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1297)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:485)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:1577)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1212)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:221)<br/>
+	at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)<br/>
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)<br/>
+	at org.eclipse.jetty.server.Server.handle(Server.java:500)<br/>
+	at org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:383)<br/>
+	at org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:547)<br/>
+	at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:375)<br/>
+	at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:270)<br/>
+	at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)<br/>
+	at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:103)<br/>
+	at org.eclipse.jetty.io.ChannelEndPoint$2.run(ChannelEndPoint.java:117)<br/>
+	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:336)<br/>
+	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:313)<br/>
+	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:171)<br/>
+	at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.produce(EatWhatYouKill.java:135)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:806)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:938)<br/>
+	at java.base/java.lang.Thread.run(Thread.java:834)<br/>
+Caused by: org.springframework.dao.DuplicateKeyException: PreparedStatementCallback; Unique index or primary key violation: "PUBLIC.RDF_TYPE_URI_INDEX_8 ON PUBLIC.SEARCH_RDF_TYPE(RDF_TYPE_URI) VALUES 2"; SQL statement:<br/>
+INSERT INTO search_rdf_type (RDF_TYPE_URI) VALUES <span class="error">&#91;23505-200&#93;</span>; nested exception is org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: Unique index or primary key violation: "PUBLIC.RDF_TYPE_URI_INDEX_8 ON PUBLIC.SEARCH_RDF_TYPE(RDF_TYPE_URI) VALUES 2"; SQL statement:<br/>
+INSERT INTO search_rdf_type (RDF_TYPE_URI) VALUES <span class="error">&#91;23505-200&#93;</span><br/>
+	at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:243)<br/>
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:72)<br/>
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1443)<br/>
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:633)<br/>
+	at org.springframework.jdbc.core.JdbcTemplate.update(JdbcTemplate.java:893)<br/>
+	at org.springframework.jdbc.core.simple.AbstractJdbcInsert.executeInsertAndReturnKeyHolderInternal(AbstractJdbcInsert.java:433)<br/>
+	at org.springframework.jdbc.core.simple.AbstractJdbcInsert.executeInsertAndReturnKeyInternal(AbstractJdbcInsert.java:413)<br/>
+	at org.springframework.jdbc.core.simple.AbstractJdbcInsert.doExecuteAndReturnKey(AbstractJdbcInsert.java:382)<br/>
+	at org.springframework.jdbc.core.simple.SimpleJdbcInsert.executeAndReturnKey(SimpleJdbcInsert.java:132)<br/>
+	at org.fcrepo.search.impl.DbSearchIndexImpl.findOrCreateRdfTypesInDb(DbSearchIndexImpl.java:360)<br/>
+	at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:301)<br/>
+	... 90 more<br/>
+Caused by: org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: Unique index or primary key violation: "PUBLIC.RDF_TYPE_URI_INDEX_8 ON PUBLIC.SEARCH_RDF_TYPE(RDF_TYPE_URI) VALUES 2"; SQL statement:<br/>
+INSERT INTO search_rdf_type (RDF_TYPE_URI) VALUES <span class="error">&#91;23505-200&#93;</span><br/>
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:459)<br/>
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:429)<br/>
+	at org.h2.message.DbException.get(DbException.java:205)<br/>
+	at org.h2.message.DbException.get(DbException.java:181)<br/>
+	at org.h2.index.BaseIndex.getDuplicateKeyException(BaseIndex.java:103)<br/>
+	at org.h2.mvstore.db.MVSecondaryIndex.checkUnique(MVSecondaryIndex.java:221)<br/>
+	at org.h2.mvstore.db.MVSecondaryIndex.add(MVSecondaryIndex.java:196)<br/>
+	at org.h2.mvstore.db.MVTable.addRow(MVTable.java:531)<br/>
+	at org.h2.command.dml.Insert.insertRows(Insert.java:195)<br/>
+	at org.h2.command.dml.Insert.update(Insert.java:151)<br/>
+	at org.h2.command.CommandContainer.executeUpdateWithGeneratedKeys(CommandContainer.java:272)<br/>
+	at org.h2.command.CommandContainer.update(CommandContainer.java:191)<br/>
+	at org.h2.command.Command.executeUpdate(Command.java:251)<br/>
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdateInternal(JdbcPreparedStatement.java:191)<br/>
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdate(JdbcPreparedStatement.java:152)<br/>
+	at com.mchange.v2.c3p0.impl.NewProxyPreparedStatement.executeUpdate(NewProxyPreparedStatement.java:1502)<br/>
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$update$1(JdbcTemplate.java:894)<br/>
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:617)<br/>
+	... 97 more<br/>
+```</p></li>
+</ul>
+
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-21493"><div class="by">Jared Whiklo, 2020-10-12 21:37 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1773" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1773</a></p></div></div>
+<p><a href="data/FCREPO-3449.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

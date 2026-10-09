@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3922 NonRdfSource metadata throws stacktrace once deleted</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3922</span> NonRdfSource metadata throws stacktrace once deleted</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2024-02-28 20:44 UTC</td></tr><tr><th>Updated</th><td>2024-08-20 14:08 UTC</td></tr><tr><th>Resolved</th><td>2024-05-21 14:50 UTC</td></tr><tr><th>Components</th><td>core</td></tr><tr><th>Affects versions</th><td>Fedora 6.4.0</td></tr><tr><th>Fix versions</th><td>fcrepo 6.5.1</td></tr><tr><th>Labels</th><td>html-ui</td></tr></table>
+<h2>Description</h2>
+<p>Due to the changes in <a href="FCREPO-3882.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3882</a> when you try to access the final version of a binary using the HTML UI it throws a 500 Server Error.</p>
+
+<p>This is because while the <a href="http://localhost:8080/rest/some-binary" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/some-binary</a> will return the 410 Gone, the HTML UI automatically tries to go to <a href="http://localhost:8080/rest/some-binary/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/some-binary/fcr:metadata</a> and that throws the stack trace.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-22995"><div class="by">Jared Whiklo, 2024-02-28 21:25 UTC</div><div class="text"><p>Correction this is a problem with the HTML UI, which sticks the /fcr:metadata on the end. </p>
+
+<p>i.e.</p>
+
+<p>Create a binary, edit it’s metadata, delete it (preferably taking a second or more for each action to get 3 mementos).</p>
+
+<p>eg. <a href="http://localhost:8080/rest/some-binary" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/some-binary</a></p>
+
+<p>Access the first or second memento with HTML UI</p>
+
+<p>eg. <a href="http://localhost:8080/rest/some-binary/fcr:metadata/fcr:versions/20240228211850" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/some-binary/fcr:metadata/fcr:versions/20240228211850</a></p>
+
+<p>Then choose the last memento, and end up at </p>
+
+<p><a href="http://localhost:8080/rest/some-binary/fcr:versions/20240228211935/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/some-binary/fcr:versions/20240228211935/fcr:metadata</a></p>
+
+<p>fcr:metadata is in the wrong location and this causes the stacktrace. </p></div></div>
+<div class="comment" id="comment-22996"><div class="by">Jared Whiklo, 2024-02-29 14:37 UTC</div><div class="text"><p>This should probably not throw a Stack trace and could be caught and dealt with in FedoraId.</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/identifiers/FedoraId.java#L485" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/identifiers/FedoraId.java#L485</a> </p></div></div>
+<div class="comment" id="comment-23027"><div class="by">Michael Ritter, 2024-04-18 20:37 UTC</div><div class="text"><p>Jared Whiklo something strange I’m seeing - it seems like the only time the 500 is produced is when using <tt>jetty:run</tt>. When running in tomcat or with the one-click I get a 400 response {{Invalid request for memento at $</p>
+{memento}
+<p>}} and a constrainedBy link header. I’m wondering if the jetty config is causing the exception mapper to not register correctly. Going to dig a bit more to see if there’s anything obvious missing.</p></div></div>
+<div class="comment" id="comment-23028"><div class="by">Michael Ritter, 2024-04-18 21:59 UTC</div><div class="text"><p>Oh, the 500 is because the exception is being thrown from the WebACFilter so the exception ends up being handled by shiro instead of the exception mapper.</p></div></div>
+<div class="comment" id="comment-23029"><div class="by">Jared Whiklo, 2024-04-19 13:07 UTC</div><div class="text"><p>Ahhh okay that makes sense. So this is why I was thinking of the FedoraId, because we generate it here (<a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACFilter.java#L214" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACFilter.java#L214</a> ) and then catch any errors to return a better error message here (<a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACFilter.java#L246-L248" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACFilter.java#L246-L248</a> ). </p></div></div>
+<div class="comment" id="comment-23030"><div class="by">Michael Ritter, 2024-04-19 19:19 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo/fcrepo/pull/2078" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2078</a></p></div></div>
+<div class="comment" id="comment-23047"><div class="by">Jared Whiklo, 2024-05-21 14:50 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/0bc9737d6a2183ccaeff6906f620654dd7b8ed08" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/0bc9737d6a2183ccaeff6906f620654dd7b8ed08</a></p></div></div>
+<p><a href="data/FCREPO-3922.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

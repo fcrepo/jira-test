@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3830 Update root ACL to have transaction endpoint specific permissions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3830</span> Update root ACL to have transaction endpoint specific permissions</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2022-06-02 15:37 UTC</td></tr><tr><th>Updated</th><td>2024-02-29 22:00 UTC</td></tr><tr><th>Resolved</th><td>2023-05-01 18:39 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 6.5.0</td></tr><tr><th>Addresses</th><td><a href="FCREPO-3827.html">FCREPO-3827</a> NPE when fedoraUser tries to rollback transaction</td></tr></table>
+<h2>Description</h2>
+<p>Currently Fedora allows any user with the fedoraUser role to start a transaction and after <a href="FCREPO-3827.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3827</a> they will be able to commit/rollback any transaction.</p>
+
+<p>This work is to alter the root ACL to allow a separate set of permissions for the /fcr:tx </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-22727"><div class="by">Danny Bernstein, 2022-10-13 15:28 UTC</div><div class="text"><p>This one is on Michael Ritter 's list.</p></div></div>
+<div class="comment" id="comment-22742"><div class="by">Michael Ritter, 2022-10-27 20:10 UTC</div><div class="text"><p>I have a few questions from things I’ve run into today while writing integration tests to cover use cases: </p>
+
+<ul>
+	<li>in <a href="FCREPO-3321.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3321</a> the webac filter  was updated so that authenticated users could start transactions. Is this something we want to keep? Or should we have the default acl restrict to authorized only.</li>
+	<li>I was working on an integration test to show a case with an acl which allows fedoraUsers to write on <tt>rest/fcr:tx</tt> and was realized that the changes I made shouldn’t have impacted the root acl. I rolledback my commits and retried using the default acl and receive 403s for PUT/POST/DELETE on {{rest/fcr:tx/$
+{uuid}
+<p>}} so I guess at this point I’m wondering if there’s anything that needs to be done other than the question above.</p></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-22805"><div class="by">Michael Ritter, 2023-02-21 20:34 UTC</div><div class="text"><p>PR available: <a href="https://github.com/fcrepo/fcrepo/pull/2030" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2030</a></p></div></div>
+<div class="comment" id="comment-22833"><div class="by">Jared Whiklo, 2023-05-01 18:39 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/80b52f906b695784e92e9b3c6a7b54bea2567082" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/80b52f906b695784e92e9b3c6a7b54bea2567082</a></p></div></div>
+<p><a href="data/FCREPO-3830.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

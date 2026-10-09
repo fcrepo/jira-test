@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1771 Create base box for fcrepo4-vagrant</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1771</span> Create base box for fcrepo4-vagrant</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Nick Ruest</td></tr><tr><th>Assignee</th><td>Nick Ruest</td></tr><tr><th>Created</th><td>2015-10-13 14:23 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:51 UTC</td></tr><tr><th>Resolved</th><td>2015-10-20 16:51 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>housekeeping</td></tr></table>
+<h2>Description</h2>
+<p>As per consensus in the 2015-10-08 Fedora Tech call<span class="error">&#91;1&#93;</span>, create a fcrepo4-vagrant base box that contains:</p>
+
+<ul>
+	<li>Java 8</li>
+	<li>Maven</li>
+	<li>Karaf</li>
+	<li>Tomcat</li>
+	<li>Solr</li>
+	<li>Fuseki</li>
+</ul>
+
+
+<p>Host this base box on Atlas, which then can be used in fcrepo4-vagrant to speed up builds.</p>
+
+<p>This would be similar to what the Islandora community did with Islandora Vagrant<span class="error">&#91;2&#93;</span> and Islandora Vagrant Base Box<span class="error">&#91;3&#93;</span>.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://wiki.duraspace.org/display/FF/2015-10-08+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2015-10-08+-+Fedora+Tech+Meeting</a><br/>
+<span class="error">&#91;2&#93;</span> <a href="https://github.com/islandora-labs/islandora_vagrant" class="external-link" rel="nofollow noreferrer">https://github.com/islandora-labs/islandora_vagrant</a><br/>
+<span class="error">&#91;3&#93;</span> <a href="https://github.com/islandora-labs/islandora_vagrant_base_box" class="external-link" rel="nofollow noreferrer">https://github.com/islandora-labs/islandora_vagrant_base_box</a></p>
+<h2>Comments (22)</h2>
+<div class="comment" id="comment-15445"><div class="by">Nick Ruest, 2015-10-13 14:31 UTC</div><div class="text"><p>Plan:</p>
+
+<ul>
+	<li>Create a new repo based on[ fcrepo4-vagrant|https://github.com/fcrepo4-exts/fcrepo4-vagrant] called fcrepo4-vagrant-base-box</li>
+	<li>Remove anything that would just be in fcrepo4-vagrant from frcrepo4-vagrant-base-box</li>
+	<li>Remove anything that would just be in fcrepo4-vagrant-base-box from fcrepo4-vagrant</li>
+	<li>Create test package box to use with fcrepo4-vagrant</li>
+	<li>Coordinate sanity testing and code review with Jared Whiklo and James Griffin</li>
+	<li>Create atlas account for fcrepo &#8211; see <a href="https://atlas.hashicorp.com/islandora" class="external-link" rel="nofollow noreferrer">https://atlas.hashicorp.com/islandora</a></li>
+	<li>Upload reviewed base box to fcrepo atlas account</li>
+	<li>Transfer git repo to appropriate Fedora GitHub organization</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15446"><div class="by">Jared Whiklo, 2015-10-13 14:33 UTC</div><div class="text"><p>I'm a little unclear on "Create a test package box to use with fcrepo4-vagrant", can you explain that one to me a little.</p></div></div>
+<div class="comment" id="comment-15447"><div class="by">Nick Ruest, 2015-10-13 14:35 UTC</div><div class="text"><p>Jared Whiklo it'd be basically what I did with the Islandora base box on my atlas account: <a href="https://atlas.hashicorp.com/ruebot" class="external-link" rel="nofollow noreferrer">https://atlas.hashicorp.com/ruebot</a></p></div></div>
+<div class="comment" id="comment-15469"><div class="by">James Griffin, 2015-10-14 17:48 UTC</div><div class="text"><p>Nick Ruest and Jared Whiklo it appears that a Fedora 4 solution which has been developed by parties responsible for the Digital Repository of Ireland (kcassidy) in Ansible seems to be quite mature (from what I understand, it can support clustering):</p>
+
+<p><a href="https://github.com/Digital-Repository-of-Ireland/ansible-fedora4" class="external-link" rel="nofollow noreferrer">https://github.com/Digital-Repository-of-Ireland/ansible-fedora4</a></p>
+
+<p>As working with Ansible would require significantly less overhead than attempting to implement a solution using Puppet or Chef (as well as it being fairly easy to locate a Ubuntu base Box with Ansible installed), I would please propose this be investgated as a possible community-backed solution.</p></div></div>
+<div class="comment" id="comment-15472"><div class="by">Nick Ruest, 2015-10-14 19:33 UTC</div><div class="text"><p>James Griffin how would you propose we investigate this? Can you take the lead on this? I think it would be helpful to propose an alternative path and plan if you can do that.</p></div></div>
+<div class="comment" id="comment-15478"><div class="by">James Griffin, 2015-10-15 17:47 UTC</div><div class="text"><p>Nick Ruest I've attempted to contact the contributor for the Ansible solution regarding the possibility of addressing two factors:</p>
+
+<ul>
+	<li>Quality assurance (tests analogous to those lints present in the BASH-based solution)</li>
+	<li>External documentation (whether or not this would suffice as a viable alternative to the documented BASH-based solution driven by the Islandora community)</li>
+</ul>
+
+
+<p>If both of these factors receive lower prioritization, I would completely withdraw my proposal for investigating this as a potential solution.  Otherwise, I would look to any additional parties (I am thinking, specifically, of those voicing an interest in the recently discussed Hydra DevOps Interest Group) who would be interested in working to specify some basic functional requirements for the solution (e. g. users must be able to cluster using one or many virtual machines).</p>
+
+<p>Of course, if time is a far more critical factor here, then please freely override this proposal.  I do not mean to stand as a lone party in opposition to progressing towards a stable solution.</p></div></div>
+<div class="comment" id="comment-15485"><div class="by">Nick Ruest, 2015-10-16 17:17 UTC</div><div class="text"><p>Ready for some sanity testing for folks when they have time, and thoughts around how I've tweaked the READMEs:</p>
+
+<p><a href="https://github.com/ruebot/fcrepo4-vagrant/tree/FCREPO-1771" class="external-link" rel="nofollow noreferrer">https://github.com/ruebot/fcrepo4-vagrant/tree/FCREPO-1771</a><br/>
+<a href="https://github.com/ruebot/fcrepo4-vagrant-base-box" class="external-link" rel="nofollow noreferrer">https://github.com/ruebot/fcrepo4-vagrant-base-box</a><br/>
+<a href="https://atlas.hashicorp.com/ruebot/boxes/fcrepo4-base" class="external-link" rel="nofollow noreferrer">https://atlas.hashicorp.com/ruebot/boxes/fcrepo4-base</a></p>
+
+<p>Note: The first time you build the vagrant, it'll take a bit to download the new base box. But after that, things should be much faster </p></div></div>
+<div class="comment" id="comment-15486"><div class="by">Andrew Woods, 2015-10-16 17:45 UTC</div><div class="text"><p>Could you please add a pull-request to facilitate testing? Especially for: <br/>
+<a href="https://github.com/ruebot/fcrepo4-vagrant/tree/FCREPO-1771" class="external-link" rel="nofollow noreferrer">https://github.com/ruebot/fcrepo4-vagrant/tree/FCREPO-1771</a></p>
+
+<p>Will <a href="https://github.com/ruebot/fcrepo4-vagrant-base-box" class="external-link" rel="nofollow noreferrer">https://github.com/ruebot/fcrepo4-vagrant-base-box</a> become its own GitHub repository?</p></div></div>
+<div class="comment" id="comment-15487"><div class="by">Yinlin Chen, 2015-10-16 18:58 UTC</div><div class="text"><p>Should you include Apache Karaf  in both fcrepo4-vagrant-base-box and fcrepo4-vagrant READMEs?<br/>
+Do you forget to remove <a href="https://github.com/ruebot/fcrepo4-vagrant-base-box/blob/master/install_scripts/fedora_camel_toolbox.sh" class="external-link" rel="nofollow noreferrer">https://github.com/ruebot/fcrepo4-vagrant-base-box/blob/master/install_scripts/fedora_camel_toolbox.sh</a> ?</p></div></div>
+<div class="comment" id="comment-15488"><div class="by">Nick Ruest, 2015-10-17 11:06 UTC</div><div class="text"><p>Andrew Woods: Here is a pull request: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/27" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/27</a> &#8211; as for fcrepo4-vagrant-base-box becoming it's own repository, that is the intention. Once we're good with the base box, I'll just transfer the repository over to the fcrepo4-exts or fcrepo4-labs GitHub organization.</p>
+
+<p>Yinlin Chen good catch about Karaf, and fedora_camel_toolbox.sh. Looks like we never included that. I'll make sure we get some information added about that as well. I've also removed fedora_camel_toolbox.sh from fcrepo4-vagrant-base-box.</p></div></div>
+<div class="comment" id="comment-15489"><div class="by">James Griffin, 2015-10-17 16:59 UTC</div><div class="text"><p>Nick Ruest thank you very much for this release.  I have not found any faults with the build thus far.</p>
+
+<p>I have attempted to structure some acceptance tests for the build using <a href="https://github.com/puppetlabs/beaker/wiki" class="external-link" rel="nofollow noreferrer">Beaker</a>.  Please see the following:</p>
+
+<p><a href="https://github.com/jrgriffiniii/fcrepo4-vagrant-base-box/tree/FCREPO-1771-jrgriffiniii-beaker" class="external-link" rel="nofollow noreferrer">https://github.com/jrgriffiniii/fcrepo4-vagrant-base-box/tree/FCREPO-1771-jrgriffiniii-beaker</a></p>
+
+<p>Using an extension of RSpec, Beaker permits me to validate the state of the Box after it has been built.  For example:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+[...]
+  describe file(<span class="code-quote">'/opt/apache-karaf-4.0.1'</span>) <span class="code-keyword">do</span>
+    it { should be_directory }
+  end
+
+  describe file(<span class="code-quote">'/opt/karaf'</span>) <span class="code-keyword">do</span>
+    it { should be_symlink }
+  end
+[...]
+</pre>
+</div></div>
+
+<p>Should this approach to quality assurance seem appealing, I encourage you to clone the branch within the forked repository, and execute the following:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ bundle exec rspec spec/acceptance/
+</pre>
+</div></div>
+
+<p>By default, I am testing against the Atlas build (this is a proof of concept).  I can just as easily restructure this to build against the environment provisioned using the BASH scripts.</p>
+
+<p>Further (and, I would argue, ideally) this could be restructured for a CI environment.  Assuming that TravisCI builds do not timeout when downloading the base Box, I would speculate that this could be attempted using a .travis.yml file alone.</p>
+
+<p>Please let me know if this is useful.  Thank you again.</p></div></div>
+<div class="comment" id="comment-15490"><div class="by">Nick Ruest, 2015-10-17 17:06 UTC</div><div class="text"><p>James Griffin glad to see the testing! I'm not sure that this is in scope for this particular ticket. Would you be willing to create another ticket for this, and then we could work on it there after this one is completed?</p></div></div>
+<div class="comment" id="comment-15492"><div class="by">James Griffin, 2015-10-17 17:17 UTC</div><div class="text"><p>Nick Ruest I completely understand.  I have created 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1777" >
+                <a href="FCREPO-1777.html" class="jira-issue-macro-key issue-link"  title="Provide Quality Assurance for fcrepo4-vagrant" >
+            
+            FCREPO-1777
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ in response to this request.</p>
+
+<p>Andrew Woods Unfortunately, I am uncertain as to how best to structure this (an Improvement? Sub-Task?), and, further, whether I should attempt to assign to this a Priority (currently "Trivial") or Version (currently none).</p></div></div>
+<div class="comment" id="comment-15493"><div class="by">Andrew Woods, 2015-10-17 17:44 UTC</div><div class="text"><p>Thanks for taking the initiative on this James Griffin! In terms of JIRA ticket creation, here are some guidelines which you may find helpful:</p>
+<ul class="alternate" type="square">
+	<li>ticket type: stick with "bug", "documentation", or "improvement" (improvement seems perfect in this case)</li>
+	<li>ticket priority: I would say this new ticket is "minor", i.e. it requires effort and is very helpful, but not on the critical path. "trivial" does not give this justice.</li>
+	<li>ticket "Affects Version": always give it some 4.x value so that queries know the ticket relates to Fedora4</li>
+	<li>ticket "Fix Version": if you are working on something now, give this the next release value so that it shows up in current work queries. (4.4.1 in this case)</li>
+</ul>
+
+
+<p>Thanks again!</p></div></div>
+<div class="comment" id="comment-15494"><div class="by">Nick Ruest, 2015-10-18 14:17 UTC</div><div class="text"><p>Yinlin Chen I've added a Karaf section to the READMEs.</p></div></div>
+<div class="comment" id="comment-15526"><div class="by">Andrew Woods, 2015-10-19 22:22 UTC</div><div class="text"><p>This is very nice and works like a charm. Before closing this ticket I would like to pull together the following pieces:</p>
+<ol>
+	<li>Update the base-box readme <span class="error">&#91;1&#93;</span> with a section that details the exact steps for creating/updating the box and uploading it to hashicorp.</li>
+	<li>Transfer ownership of the base-box repo to fcrepo4-exts</li>
+	<li>Create an "fcrepo" account with hashicorp</li>
+	<li>Update the fcrepo4-vagrant Vagrantfile to use:<br/>
+config.vm.box = "fcrepo/fcrepo4-base"</li>
+</ol>
+
+
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://github.com/ruebot/fcrepo4-vagrant-base-box/blob/master/README.md" class="external-link" rel="nofollow noreferrer">https://github.com/ruebot/fcrepo4-vagrant-base-box/blob/master/README.md</a></p></div></div>
+<div class="comment" id="comment-15529"><div class="by">Nick Ruest, 2015-10-19 23:14 UTC</div><div class="text"><p>Andrew Woods sounds like a plan. </p>
+
+<p>1. Can do! Something like <a href="https://github.com/Islandora-Labs/islandora_vagrant_base_box#custom-base-box" class="external-link" rel="nofollow noreferrer">this</a>? <br/>
+2. Should we do that at the very end of the process?<br/>
+3. Do you want to create the hashicorp account, or do you want me to? I can create it and send you the password via keybase.io if you'd like.<br/>
+4 That might have to wait until the weekend since I'm on hotel wifi. If UCONN wifi is fast, I might be able to pull it off during the day at the Islandora Camp.</p>
+</div></div>
+<div class="comment" id="comment-15530"><div class="by">Andrew Woods, 2015-10-19 23:57 UTC</div><div class="text"><p>1. Perfect<br/>
+2. Yes<br/>
+3. Go for it<br/>
+4. No rush</p>
+
+<p>Thanks!</p></div></div>
+<div class="comment" id="comment-15532"><div class="by">Nick Ruest, 2015-10-20 12:03 UTC</div><div class="text"><p>1. done &#8211; let me know if <a href="https://github.com/ruebot/fcrepo4-vagrant-base-box#how-to-build-base-box-for-hashicorp" class="external-link" rel="nofollow noreferrer">https://github.com/ruebot/fcrepo4-vagrant-base-box#how-to-build-base-box-for-hashicorp</a> is sufficient<br/>
+2. todo<br/>
+3. done<br/>
+4. done</p></div></div>
+<div class="comment" id="comment-15533"><div class="by">Andrew Woods, 2015-10-20 13:49 UTC</div><div class="text"><p>1. Thank you - done<br/>
+2. This should be trivial, is there a hold-up?<br/>
+3. Please pass me the credentials<br/>
+4. Thank you - done</p></div></div>
+<div class="comment" id="comment-15535"><div class="by">Nick Ruest, 2015-10-20 14:41 UTC</div><div class="text"><p>Transferred! <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant-base-box" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant-base-box</a></p></div></div>
+<div class="comment" id="comment-15540"><div class="by">Andrew Woods, 2015-10-20 16:51 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/5e66c379e236b6448699b06688a4208077f482ab" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/5e66c379e236b6448699b06688a4208077f482ab</a><br/>
+and<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant-base-box" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant-base-box</a></p></div></div>
+<p><a href="data/FCREPO-1771.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

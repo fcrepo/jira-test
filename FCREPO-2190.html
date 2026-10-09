@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2190 Verify files on disk against their counterparts imported in a Fedora</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2190</span> Verify files on disk against their counterparts imported in a Fedora</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2016-09-09 13:58 UTC</td></tr><tr><th>Updated</th><td>2016-12-09 22:18 UTC</td></tr><tr><th>Resolved</th><td>2016-12-09 22:18 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Labels</th><td>import-export-phase-1, verification</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2332.html">FCREPO-2332</a> verification tool should handle up-to-date config file</td></tr></table>
+<h2>Description</h2>
+<p>The goal is to create a tool that will verify that data exported to disk, via the import-export client, is the same as what was in the original fedora system.   </p>
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-17461"><div class="by">Andrew Woods, 2016-09-09 15:28 UTC</div><div class="text"><p>Would it make sense to split this work into two tickets:</p>
+<ul class="alternate" type="square">
+	<li>Verify files on disk against their counterparts imported in a Fedora</li>
+	<li>Verify resources in a Fedora are the same as their exported counterparts on disk</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17465"><div class="by">Bethany Seeger, 2016-09-09 16:17 UTC</div><div class="text"><p>Andrew Woods - yes, I think that would make sense.   I can do that later today, if that sounds good. </p></div></div>
+<div class="comment" id="comment-17467"><div class="by">Andrew Woods, 2016-09-09 16:46 UTC</div><div class="text"><p>Bethany Seeger, that would be great.</p></div></div>
+<div class="comment" id="comment-17497"><div class="by">Bethany Seeger, 2016-09-12 13:54 UTC</div><div class="text"><p>Hi Andrew Woods, Can I change this bug to one of the two and then create a new one for the other, or should this issue remain around with 2  related issues? </p></div></div>
+<div class="comment" id="comment-17498"><div class="by">Andrew Woods, 2016-09-12 14:36 UTC</div><div class="text"><p>Bethany Seeger, yes, please, change this ticket and add another one.</p></div></div>
+<div class="comment" id="comment-17500"><div class="by">Andrew Woods, 2016-09-12 16:24 UTC</div><div class="text"><p>Bethany Seeger, you can decide as this effort progresses whether the script/utility for verification is one or two. I can imagine that you simply produce one script/utility that looks at two things to see that they are the same: fedora repository, files on disk.<br/>
+In that sense, it may not matter if you are verifying an export or an import.</p></div></div>
+<div class="comment" id="comment-17511"><div class="by">Nick Ruest, 2016-09-14 00:05 UTC</div><div class="text"><p>Moving Joshua Allan Westgard's comment from <a href="https://jira.duraspace.org/browse/FCREPO-2204" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2204</a> over here:</p>
+
+<p>"[~bseeger, I started trying out a few ideas for verification scripts here: <a href="https://github.com/jwestgard/fcrepo-sample-dataset-tests" class="external-link" rel="nofollow noreferrer">https://github.com/jwestgard/fcrepo-sample-dataset-tests</a></p>
+
+<p>This is not really the sort of general-purpose tool envisioned by the ticket, I think, but maybe it's food for thought."</p></div></div>
+<div class="comment" id="comment-17517"><div class="by">Bethany Seeger, 2016-09-14 20:10 UTC</div><div class="text"><p>Andrew Woods,  Joshua Allan Westgard,<br/>
+I just created this repo:  <a href="https://github.com/bseeger/fcrepo-sample-dataset-tests" class="external-link" rel="nofollow noreferrer">https://github.com/bseeger/fcrepo-sample-dataset-tests</a></p>
+
+<p>It's a work in progress, however it <em>will</em> l verify that all the items on disk are currently in fedora4.  I call that an export test, but I'm not so sure that it is actually.   The reverse test is not yet implemented and coming soon (once the code added to walk every resource in the fedora 4 system and see if it's on disk is written).  Ideally both tests would be run to verify that there are no missing / extra records sitting around.   </p>
+
+<p>Can someone other then me give it a spin, in what I call 'export' mode?</p>
+
+<p>I tested it on the LUBM data set - once where they matched completely and once where I tweaked/deleted a few things in Fedora4.  It picked up the differences just fine.  </p></div></div>
+<div class="comment" id="comment-17518"><div class="by">Bethany Seeger, 2016-09-14 20:11 UTC</div><div class="text"><p>And actually, this will probably die if you work with any binaries, since I haven't tested that yet (none in LUBM). </p>
+
+<p>And once it does work with binaries, we can probably roll Joshua Allan Westgard's fixity check into it. </p></div></div>
+<div class="comment" id="comment-17521"><div class="by">Andrew Woods, 2016-09-14 22:16 UTC</div><div class="text"><p>One initial comment: It would be great if this script were able to simply read the <tt>importexport.config</tt> created by the import/export utility... since the configuration information has significant overlap.</p></div></div>
+<div class="comment" id="comment-17525"><div class="by">Bethany Seeger, 2016-09-15 13:33 UTC</div><div class="text"><p>Hi Andrew Woods- sounds like a great idea, I'll look into that. </p></div></div>
+<div class="comment" id="comment-18060"><div class="by">Nick Ruest, 2016-12-05 16:35 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify</a></p></div></div>
+<div class="comment" id="comment-18061"><div class="by">Joshua Allan Westgard, 2016-12-05 16:37 UTC</div><div class="text"><p>Current codebase ready for testing and review/approval, as of the import/export sprint 3 kickoff:</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify</a></p></div></div>
+<div class="comment" id="comment-18089"><div class="by">Andrew Woods, 2016-12-07 05:28 UTC</div><div class="text"><p>My first test was to:</p>
+<ul class="alternate" type="square">
+	<li>manually create some simple resources in Fedora</li>
+	<li>export them</li>
+	<li>then run the verify.py</li>
+</ul>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>AttributeError: 'Config' object has no attribute 'bin'
+</pre>
+</div></div>
+
+<p>This should not be a required configuration element.</p></div></div>
+<div class="comment" id="comment-18091"><div class="by">Joshua Allan Westgard, 2016-12-07 11:48 UTC</div><div class="text"><p>Thanks, Andrew. I think the solution here is for us to know how to set the value of config.bin when there is no -b flag in the config (i.e. set it to the location of the exported binaries).  Once -binDir and -descDir are removed (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2226" >
+                <a href="FCREPO-2226.html" class="jira-issue-macro-key issue-link"  title="Rip out the --binDir and --descDir" >
+            
+            FCREPO-2226
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) what can we count on in terms of values that will always be present in the import-export config?</p></div></div>
+<div class="comment" id="comment-18093"><div class="by">Nick Ruest, 2016-12-07 13:30 UTC</div><div class="text"><p>Joshua Allan Westgard 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2226" >
+                <a href="FCREPO-2226.html" class="jira-issue-macro-key issue-link"  title="Rip out the --binDir and --descDir" >
+            
+            FCREPO-2226
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ has been resolved. There should always be a path in the config now. Does that help?</p></div></div>
+<div class="comment" id="comment-18094"><div class="by">Joshua Allan Westgard, 2016-12-07 13:42 UTC</div><div class="text"><p>Nick Ruest, yes, that helps. So if I'm understanding correctly the resulting config file will now have a -d with a path to the location of both binaries and rdf resources. We'll need to rewrite the verifcation tool accordingly.</p></div></div>
+<div class="comment" id="comment-18097"><div class="by">Nick Ruest, 2016-12-07 14:43 UTC</div><div class="text"><p>Joshua Allan Westgard here is some sample output:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ java -jar target/fcrepo-<span class="code-keyword">import</span>-export-0.0.1-SNAPSHOT.jar --mode export --resource http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span> --dir /home/nruest/tmp/<span class="code-keyword">import</span>-export-sprint-03/test/fcrepo-2226 --binaries</span>
+</pre>
+</div></div>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+-m
+export
+-r
+http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>
+</span>-d
+/home/nruest/tmp/<span class="code-keyword">import</span>-export-sprint-03/test/fcrepo-2226
+-b
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18098"><div class="by">Joshua Allan Westgard, 2016-12-07 14:52 UTC</div><div class="text"><p>Thanks, Nick Ruest.  I've created a separate ticket for this issue: 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2332" >
+                <a href="FCREPO-2332.html" class="jira-issue-macro-key issue-link"  title="verification tool should handle up-to-date config file" >
+            
+            FCREPO-2332
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-18137"><div class="by">Nick Ruest, 2016-12-09 22:18 UTC</div><div class="text"><p>Resolved with resolving <a href="https://jira.duraspace.org/browse/FCREPO-2332" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2332</a></p></div></div>
+<p><a href="data/FCREPO-2190.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

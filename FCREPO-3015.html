@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3015 PUT on NonRdfSourceDescription is additive, does not replace triples</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3015</span> PUT on NonRdfSourceDescription is additive, does not replace triples</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Daniel Lamb</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2019-06-17 16:40 UTC</td></tr><tr><th>Updated</th><td>2019-06-19 16:44 UTC</td></tr><tr><th>Resolved</th><td>2019-06-18 19:43 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.1.0</td></tr></table>
+<h2>Environment</h2>Islandora 8 vagrant - Ubuntu 16.04
+<h2>Description</h2>
+<p>PUT requests to update metdata for a NonRdfSourceDescription adds triples to the RDF representation instead of replacing them.</p>
+
+<p>To reproduce, make a NonRdfSource (I PUT'd a text file)</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -i -X PUT -H <span class="code-quote">"Content-Type: text/plain"</span> --data-binary <span class="code-quote">"@text.txt"</span> http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text</span>
+</pre>
+</div></div>
+<p>Update its title using the following RDF and command</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+@prefix dcterms:  &lt;http:<span class="code-comment">//purl.org/dc/terms/&gt; .
+</span>&lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text/fcr:metadata&gt;
+</span>        dcterms:title               <span class="code-quote">"ORIGINAL"</span>@en ;
+</pre>
+</div></div>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -X PUT -H <span class="code-quote">"Content-Type: text/turtle"</span> -H <span class="code-quote">"Prefer: <span class="code-keyword">return</span>=minimal; handling=lenient"</span> --data-binary <span class="code-quote">"@rdf.ttl"</span> http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text/fcr:metadata</span>
+</pre>
+</div></div>
+<p>If you GET the resource you'll see the title,  and if you update it with another PUT, you'll get both in the resulting RDF:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+@prefix dcterms: &lt;http:<span class="code-comment">//purl.org/dc/terms/&gt; .
+</span>&lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text/fcr:metadata&gt;
+</span>        dcterms:title            <span class="code-quote">"CHANGED"</span>@en ;
+</pre>
+</div></div>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -X PUT -H <span class="code-quote">"Content-Type: text/turtle"</span> -H <span class="code-quote">"Prefer: <span class="code-keyword">return</span>=minimal; handling=lenient"</span> --data-binary <span class="code-quote">"@rdf.ttl"</span> http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text/fcr:metadata</span>
+</pre>
+</div></div>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text/fcr:metadata
+@prefix premis:  &lt;http:<span class="code-comment">//www.loc.gov/premis/rdf/v1#&gt; .
+</span>@prefix rdf:  &lt;http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+</span>@prefix fedora:  &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#&gt; .
+</span>@prefix ebucore:  &lt;http:<span class="code-comment">//www.ebu.ch/metadata/ontologies/ebucore/ebucore#&gt; .
+</span>@prefix ldp:  &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#&gt; .
+</span>@prefix dcterms:  &lt;http:<span class="code-comment">//purl.org/dc/terms/&gt; .
+</span>@prefix iana:  &lt;http:<span class="code-comment">//www.iana.org/assignments/relation/&gt; .&lt;http://localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text&gt;
+</span>        rdf:type                 fedora:NonRdfSourceDescription ;
+        rdf:type                 fedora:Binary ;
+        rdf:type                 fedora:Resource ;
+        fedora:lastModifiedBy    <span class="code-quote">"bypassAdmin"</span> ;
+        premis:hasSize           <span class="code-quote">"15"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#<span class="code-object">long</span>&gt; ;
+</span>        ebucore:hasMimeType      <span class="code-quote">"text/plain"</span> ;
+        fedora:createdBy         <span class="code-quote">"bypassAdmin"</span> ;
+        fedora:created           <span class="code-quote">"2019-06-17T16:18:54.19Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:lastModified      <span class="code-quote">"2019-06-17T16:20:44.624Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        premis:hasMessageDigest  &lt;urn:sha1:9d8b92c51da294c82d42a0cb35629259b1573f43&gt; ;
+        ebucore:filename         "" ;
+        dcterms:title            <span class="code-quote">"ORIGINAL"</span>@en ;
+        dcterms:title            <span class="code-quote">"CHANGED"</span>@en ;
+        rdf:type                 ldp:NonRDFSource ;
+        iana:describedby         &lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text/fcr:metadata&gt; ;
+</span>        fedora:hasFixityService  &lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/text/fcr:fixity&gt; .
+</span>
+</pre>
+</div></div>
+<p> </p>
+
+<p> </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20706"><div class="by">Jared Whiklo, 2019-06-17 17:49 UTC</div><div class="text"><p>Confirmed, as well I tried to GET the description without ServerManaged triples and edit it then put it back. That results a 204 No Content but the changes are not persisted at all, either a new predicate, new value or edited value.</p></div></div>
+<div class="comment" id="comment-20707"><div class="by">Jared Whiklo, 2019-06-18 05:19 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1532" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1532</a></p></div></div>
+<div class="comment" id="comment-20708"><div class="by">Danny Bernstein, 2019-06-18 19:42 UTC</div><div class="text"><p>Resolved on master by <a href="https://github.com/fcrepo4/fcrepo4/commit/b1098003ca56a27e82fa7a5a5dddd5fc62cdc23a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/b1098003ca56a27e82fa7a5a5dddd5fc62cdc23a</a></p>
+
+<p>Resolve on 5.1.0-RC by <a href="https://github.com/fcrepo4/fcrepo4/commit/b13e98210de3f1e2d7aa93ef22975654666432e7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/b13e98210de3f1e2d7aa93ef22975654666432e7</a></p></div></div>
+<div class="comment" id="comment-20709"><div class="by">Andrew Woods, 2019-06-19 13:54 UTC</div><div class="text"><p>Correction to above:<br/>
+Resolved on master by: <a href="https://github.com/fcrepo4/fcrepo4/commit/8720685465b9045d3e2dbdcecf471f45e8cacdce" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8720685465b9045d3e2dbdcecf471f45e8cacdce</a><br/>
+Resolved on 5.1.0-RC by: <a href="https://github.com/fcrepo4/fcrepo4/commit/db88e2847910a508a4ea9493c20d41758a2ca711" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/db88e2847910a508a4ea9493c20d41758a2ca711</a></p></div></div>
+<p><a href="data/FCREPO-3015.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

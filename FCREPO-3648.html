@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3648 PUT to invalid fcr:metadata endpoint gives 500 response</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3648</span> PUT to invalid fcr:metadata endpoint gives 500 response</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2021-02-18 21:09 UTC</td></tr><tr><th>Updated</th><td>2021-02-19 20:54 UTC</td></tr><tr><th>Resolved</th><td>2021-02-19 20:54 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Description</h2>
+<p>Making a PUT request to a fcr:metadata endpoint for an object that doesn't exist returns a 500 error and logs a lengthy stacktrace, and actually leaves behind ghost nodes for the intermediate container. It seems like the fcr:metadata path should be rejected before anything is created, and give a 4xx response.</p>
+
+<p>In this example, "what" does not exist:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -ufedoraAdmin:fedoraAdmin -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/what/fcr:metadata -v
+</span>
+HTTP/1.1 500 Internal Server Error
+</pre>
+</div></div>
+<p>It logs the following:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+WARN 16:05:35.303 (WildcardExceptionMapper) Unmapped exception
+org.fcrepo.storage.ocfl.exception.ValidationException: Resource info:fedora/what/fcr:metadata is not a valid Fedora 6 resource. The following problems were identified:
+  1. Must define property <span class="code-quote">'objectRoot'</span> as <span class="code-quote">'<span class="code-keyword">true</span>'</span> but was <span class="code-quote">'<span class="code-keyword">false</span>'</span>
+	at org.fcrepo.storage.ocfl.exception.ValidationException.createForResource(ValidationException.java:51)
+	at org.fcrepo.storage.ocfl.DefaultOcflObjectSession.validateHeaders(DefaultOcflObjectSession.java:628)
+	at org.fcrepo.storage.ocfl.DefaultOcflObjectSession.writeHeaders(DefaultOcflObjectSession.java:605)
+	at org.fcrepo.storage.ocfl.DefaultOcflObjectSession.writeResource(DefaultOcflObjectSession.java:204)
+	at org.fcrepo.persistence.ocfl.impl.FcrepoOcflObjectSessionWrapper.lambda$writeResource$0(FcrepoOcflObjectSessionWrapper.java:81)
+	at org.fcrepo.persistence.ocfl.impl.FcrepoOcflObjectSessionWrapper.exec(FcrepoOcflObjectSessionWrapper.java:202)
+	at org.fcrepo.persistence.ocfl.impl.FcrepoOcflObjectSessionWrapper.lambda$writeResource$1(FcrepoOcflObjectSessionWrapper.java:81)
+	at org.fcrepo.common.metrics.MetricsHelper.time(MetricsHelper.java:45)
+	at org.fcrepo.persistence.ocfl.impl.FcrepoOcflObjectSessionWrapper.writeResource(FcrepoOcflObjectSessionWrapper.java:80)
+	at org.fcrepo.persistence.ocfl.impl.AbstractRdfSourcePersister.writeRdf(AbstractRdfSourcePersister.java:146)
+	at org.fcrepo.persistence.ocfl.impl.AbstractRdfSourcePersister.persistRDF(AbstractRdfSourcePersister.java:81)
+	at org.fcrepo.persistence.ocfl.impl.CreateRdfSourcePersister.persist(CreateRdfSourcePersister.java:77)
+	at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.persist(OcflPersistentStorageSession.java:187)
+	at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSessionMetrics.lambda$persist$0(OcflPersistentStorageSessionMetrics.java:68)
+	at io.micrometer.core.instrument.composite.CompositeTimer.record(CompositeTimer.java:79)
+	at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSessionMetrics.persist(OcflPersistentStorageSessionMetrics.java:67)
+	at org.fcrepo.kernel.impl.services.CreateResourceServiceImpl.perform(CreateResourceServiceImpl.java:201)
+	at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:474)
+</pre>
+</div></div>
+<p>Also worth noting, if the container exists before making the request, it produces the following somewhat confusing response:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -ufedoraAdmin:fedoraAdmin -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/new_c
+</span>
+curl -ufedoraAdmin:fedoraAdmin -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/new_c/fcr:metadata -v
+</span># HTTP/1.1 404 Not Found
+# Error: No OCFL mapping found <span class="code-keyword">for</span> info:fedora/new_c/fcr:metadata
+
+</pre>
+</div></div>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-22078"><div class="by">Peter Winckles, 2021-02-18 22:29 UTC</div><div class="text"><p>It's interesting that the ghost nodes aren't being rolled back when the transaction fails. This sounds like two bugs:</p>
+
+<p>1. PUTs to fcr:metadata should be rejected if it does not already exist (fcr:metadata resources should only be created as a side-effect of creating a non-RDF resource)<br/>
+2. Ghost nodes are not rolled back if the transaction that created them fails.</p></div></div>
+<div class="comment" id="comment-22082"><div class="by">Ben Pennell, 2021-02-19 13:42 UTC</div><div class="text"><p>Doing a PUT to a fcr:metadata is a legit method of updating the user RDF in the binary's description, as long as it is the child of a non-rdf resource.</p></div></div>
+<div class="comment" id="comment-22084"><div class="by">Peter Winckles, 2021-02-19 13:50 UTC</div><div class="text"><p>Yes, it's valid for <em>updating</em>. So, if there is a PUT on a fcr:metadata resource that does not exist, it should be rejected.</p></div></div>
+<div class="comment" id="comment-22087"><div class="by">Jared Whiklo, 2021-02-19 16:07 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1881" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1881</a></p></div></div>
+<div class="comment" id="comment-22092"><div class="by">Peter Winckles, 2021-02-19 20:54 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/e88e0e35fae85e5152c83715bcca1fd5b4058283" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/e88e0e35fae85e5152c83715bcca1fd5b4058283</a></p></div></div>
+<p><a href="data/FCREPO-3648.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1821 Add one-click functionality to fcrepo-webapp-plus</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1821</span> Add one-click functionality to fcrepo-webapp-plus</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-11-05 22:02 UTC</td></tr><tr><th>Updated</th><td>2018-08-16 14:54 UTC</td></tr><tr><th>Resolved</th><td>2018-08-16 14:54 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>Add the jetty-console-maven-plugin to fcrepo-webapp-plus to allow an executable war file for easy deployment.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-15775"><div class="by">Jared Whiklo, 2015-11-05 22:52 UTC</div><div class="text"><p>Added branch here:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/tree/fcrepo-1821" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/tree/fcrepo-1821</a></p>
+
+<p>By default it seems that authentication has to be explicitly defined. Using the jetty-console plugin I can get closer but only by adding in the jettyXml plugin <tt>jetty-console-log4j-plugin</tt> and setting up a jetty-web.xml or jetty-console.xml and passing them via command line.</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>java -jar target/crepo-webapp-plus-4.4.1-SNAPSHOT-jetty-console.jar --jettyXml jetty-console.xml
+</pre>
+</div></div>
+<p>or</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>java -jar target/crepo-webapp-plus-4.4.1-SNAPSHOT-jetty-console.jar --jettyWebXml jetty-web.xml
+</pre>
+</div></div>
+
+<p>Not much <a href="http://simplericity.com/2009/11/10/1257880778509.html" class="external-link" rel="nofollow noreferrer">documentation</a> on this plugin.</p>
+
+<p>I tried to add the jetty-web.xml to the individual WEB-INF directories for each profile, but that breaks the setting up jetty for integration testing.</p>
+</div></div>
+<div class="comment" id="comment-15842"><div class="by">Andrew Woods, 2015-11-15 01:07 UTC</div><div class="text"><p>Jared Whiklo, here is a first draft... it runs and does authz, but needs some help in getting the right classes loaded.<br/>
+<a href="https://github.com/awoods/fcrepo-jetty-security-plugin" class="external-link" rel="nofollow noreferrer">https://github.com/awoods/fcrepo-jetty-security-plugin</a> &#8211; new plugin for adding the AuthHandler to jetty, and<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/32" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/32</a></p></div></div>
+<div class="comment" id="comment-15857"><div class="by">Jared Whiklo, 2015-11-19 03:59 UTC</div><div class="text"><p>This is a nice piece of work Andrew Woods. Other than the error about missing system property fcrepo.audit.container with the rbacl build, I didn't seem to have any problems. What are the classes that are missing?</p></div></div>
+<div class="comment" id="comment-15914"><div class="by">Nick Ruest, 2015-12-10 16:34 UTC</div><div class="text"><p>Jared Whiklo checking in from the December 10 Tech Call to see if there updates on this, and Unknown recalled that might be a roadblock here.</p></div></div>
+<div class="comment" id="comment-15916"><div class="by">Jared Whiklo, 2015-12-10 18:15 UTC</div><div class="text"><p>Actually, I did hit a roadblock. But Mr. Andrew Woods used his formidable skills to create the above fcrepo-jetty-security-plugin and PR/32. He makes mention of it needing help getting the right classes loaded. But I did not encounter any issues (I might have failed in testing). Perhaps Nick Ruest would like to try them, it could be another Ubuntu thing?</p></div></div>
+<div class="comment" id="comment-15918"><div class="by">Andrew Woods, 2015-12-11 13:01 UTC</div><div class="text"><p>The <tt>spring.handlers</tt> and <tt>spring.schemas</tt> should not be necessary to define in:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/32/files" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/32/files</a></p>
+
+<p>I would like to see them removed from this PR. I will try to give it a look soonish (immediately and/or before the New Year)</p></div></div>
+<div class="comment" id="comment-15944"><div class="by">Jared Whiklo, 2015-12-17 16:11 UTC</div><div class="text"><p>Not that I fully understand much about spring, but is this due to the multiple profiles defined in this artifact some dependencies wiping out others? If so would the <a href="https://maven.apache.org/plugins/maven-shade-plugin" class="external-link" rel="nofollow noreferrer">Apache Maven Shade plugin</a> help? It appears with that type of issue.</p></div></div>
+<div class="comment" id="comment-15948"><div class="by">Andrew Woods, 2015-12-17 21:38 UTC</div><div class="text"><p>Shade may be a solution here. I had not yet determined why shade is not needed when creating:<br/>
+fcrepo-webapp-4.4.1-SNAPSHOT-jetty-console.jar<br/>
+..but may be when creating:<br/>
+fcrepo-webapp-plus-audit-4.4.1-SNAPSHOT-jetty-console.jar</p>
+
+<p>Shade reference: <a href="https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/blob/master/pom.xml#L145-L171" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/blob/master/pom.xml#L145-L171</a></p></div></div>
+<div class="comment" id="comment-20135"><div class="by">Andrew Woods, 2018-08-16 14:54 UTC</div><div class="text"><p>fcrepo-webapp-plus has been discontinued.</p></div></div>
+<p><a href="data/FCREPO-1821.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

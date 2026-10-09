@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2624 Enable Versioning on a new LDPR</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2624</span> Enable Versioning on a new LDPR</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2017-09-22 19:09 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2017-10-06 15:33 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2639.html">FCREPO-2639</a> Create LDPCv resource</td></tr></table>
+<h2>Description</h2>
+<p>A PUT or POST request to create an object will make a resource versionable if it includes header Link: rel="type" with type of <a href="http://fedora.info/definitions/fcrepo#VersionedResource" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/fcrepo#VersionedResource</a></p>
+<ul>
+	<li>A LDPR will be created as a LDPRv with the versioning type.</li>
+	<li>A LDPCv will be created</li>
+</ul>
+
+
+<p>The newly created LDPCv:</p>
+<ul>
+	<li>must be a child of the LDPRv</li>
+	<li>must be a LDPC ( <a href="https://fcrepo.github.io/fcrepo-specification/#LDPC" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#LDPC</a> )</li>
+	<li>Note: it will be replacing the current "fcr:versions" path, which was previously used to access modeshape versions.  Versioning will no longer be using built in modeshape tree snapshotting features features.</li>
+</ul>
+
+
+<p>See this document for what REST ful interactions should look like in regards to LDPCv: <a href="https://wiki.duraspace.org/pages/viewpage.action?pageId=90964507#Versioning/AuthorizationDesign-restRESTfulInteractions" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/pages/viewpage.action?pageId=90964507#Versioning/AuthorizationDesign-restRESTfulInteractions</a></p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-19385"><div class="by">Jared Whiklo, 2017-09-27 16:25 UTC</div><div class="text"><p>Ben Pennell just wondering why </p>
+
+<p>"The newly created LDPCv: <br/>
+   * must not be a child of the LDPRv"</p>
+
+<p>that seemed like a good idea, but I'm sure I missed something?</p></div></div>
+<div class="comment" id="comment-19391"><div class="by">Andrew Woods, 2017-09-27 17:13 UTC</div><div class="text"><p>I could see there being an implementation benefit of structuring the JCR nodes such that an LDPCv is a child node of the LDPRv, but we would not want that to be visible to users.</p></div></div>
+<div class="comment" id="comment-19393"><div class="by">Jared Whiklo, 2017-09-27 17:25 UTC</div><div class="text"><p>Andrew Woods yes it would definitely not be visible, but for lifecycle management it seemed helpful. But I am still not strong on the JCR interaction.</p></div></div>
+<div class="comment" id="comment-19394"><div class="by">Bethany Seeger, 2017-09-27 17:25 UTC</div><div class="text"><p>It's very clear in the spec under this section: </p>
+
+<p> </p>
+
+<p><a href="http://fedora.info/2017/06/30/spec/#version-containers-ldpcv" class="external-link" rel="nofollow noreferrer">http://fedora.info/2017/06/30/spec/#version-containers-ldpcv</a></p>
+
+<p> </p>
+
+<p>`An implementation <em>must not</em> allow the creation of an <a href="http://fedora.info/2017/06/30/spec/#dfn-ldpcv" class="external-link" rel="nofollow noreferrer">LDPCv</a> that is <a href="http://fedora.info/2017/06/30/spec/#dfn-ldp-contained" class="external-link" rel="nofollow noreferrer">LDP-contained</a> by its associated <a href="http://fedora.info/2017/06/30/spec/#dfn-ldprv" class="external-link" rel="nofollow noreferrer">LDPRv</a>.`</p></div></div>
+<div class="comment" id="comment-19395"><div class="by">Aaron Birkland, 2017-09-27 17:31 UTC</div><div class="text"><p>So modeshape childhood is fine as long as it doesn't get manifested as ldp:contains in the real world.  URI paths are irrelevant, but it would be nice (from the perspective of being able to use relative URIs) to have something like /path/to/object/fcr:versions/abc123</p></div></div>
+<div class="comment" id="comment-19399"><div class="by">Jared Whiklo, 2017-09-27 18:54 UTC</div><div class="text"><p>We can avoid the LDPCv being listed as ldp:contained by the LDPRv, so that avoids that Spec issue.</p>
+
+<p>I think we can re-use the fcr:versions endpoint as the address of the LDPCv and the LDPRm(s) would be contained within.</p></div></div>
+<div class="comment" id="comment-19466"><div class="by">Danny Bernstein, 2017-10-05 20:47 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1256" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1256</a></p></div></div>
+<div class="comment" id="comment-19473"><div class="by">Andrew Woods, 2017-10-06 13:47 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19477"><div class="by">Andrew Woods, 2017-10-06 18:46 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/335b5f9473b0a252abb0a99c59456678722e5736" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/335b5f9473b0a252abb0a99c59456678722e5736</a></p></div></div>
+<p><a href="data/FCREPO-2624.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

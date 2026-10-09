@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1981 Create Version web UI fails on Firefox browsers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1981</span> Create Version web UI fails on Firefox browsers</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-04-07 20:11 UTC</td></tr><tr><th>Updated</th><td>2016-04-29 23:01 UTC</td></tr><tr><th>Resolved</th><td>2016-04-08 22:30 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>versioning</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1982.html">FCREPO-1982</a> Make jQuery.ajax calls consistent</td></tr></table>
+<h2>Environment</h2>Firefox browsers on Linux, Windows, and Mac
+<h2>Description</h2>
+<p>When you click on "Create Version" for a resource (binary or container, named or unnamed version) in the Firefox web browser, the results page just shows the single word "false".</p>
+
+<p>The URL in the navigation bar is "javascript:createVersionSnapshot()".</p>
+
+<p>The version is created on the server, but some WARNings are thrown:</p>
+
+<p>INFO 14:20:51.702 (FedoraVersioning) Request to add version 'version.201647142051' for 'x2'<br/>
+WARN 14:20:51.736 (DefaultMessageFactory) MessageFactory event UserData is empty!<br/>
+WARN 14:20:51.742 (DefaultMessageFactory) MessageFactory event UserData is empty!<br/>
+WARN 14:20:51.749 (DefaultMessageFactory) MessageFactory event UserData is empty!</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-16483"><div class="by">Jared Whiklo, 2016-04-08 14:31 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1017" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1017</a></p></div></div>
+<div class="comment" id="comment-16484"><div class="by">Andrew Woods, 2016-04-08 14:43 UTC</div><div class="text"><p>This worked for me on Ubuntu: FF, Chrome and Opera.</p>
+
+<p>Scott Prater, are you in a position to pull down this PR, build it, and test?</p></div></div>
+<div class="comment" id="comment-16485"><div class="by">Jared Whiklo, 2016-04-08 14:50 UTC</div><div class="text"><p>Assuming this works for Scott Prater as well.</p>
+
+<p>I am wondering if we should go through the common.js and make the implementation of jQuery.ajax consistent.</p>
+
+<p>Some cases use <tt>error:</tt> (<a href="https://github.com/whikloj/fcrepo4/blob/fcrepo-1981/fcrepo-http-api/src/main/resources/views/common.js#L214" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/blob/fcrepo-1981/fcrepo-http-api/src/main/resources/views/common.js#L214</a>) others use <tt>.fail()</tt> (<a href="https://github.com/whikloj/fcrepo4/blob/fcrepo-1981/fcrepo-http-api/src/main/resources/views/common.js#L242" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/blob/fcrepo-1981/fcrepo-http-api/src/main/resources/views/common.js#L242</a>)</p>
+
+<p>Most everyone does a <tt>return false;</tt> but in at least one instance the (as I understand it) more correct <tt>event.preventDefault();</tt> is also used (<a href="https://github.com/whikloj/fcrepo4/blob/fcrepo-1981/fcrepo-http-api/src/main/resources/views/common.js#L173" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/blob/fcrepo-1981/fcrepo-http-api/src/main/resources/views/common.js#L173</a>)</p></div></div>
+<div class="comment" id="comment-16486"><div class="by">Scott Prater, 2016-04-08 14:53 UTC</div><div class="text"><p>I'll pull and test this afternoon.</p></div></div>
+<div class="comment" id="comment-16487"><div class="by">Andrew Woods, 2016-04-08 14:58 UTC</div><div class="text"><p>To minimize scope creep into the 4.5.1-RC branch, could you please create a new ticket for your follow-on updates, Jared Whiklo?</p></div></div>
+<div class="comment" id="comment-16488"><div class="by">Jared Whiklo, 2016-04-08 15:03 UTC</div><div class="text"><p>Done - <a href="https://jira.duraspace.org/projects/FCREPO/issues/FCREPO-1982" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/projects/FCREPO/issues/FCREPO-1982</a></p></div></div>
+<div class="comment" id="comment-16493"><div class="by">Scott Prater, 2016-04-08 22:22 UTC</div><div class="text"><p>I pulled the commit from Jared Whiklo's fcrepo4 repo, applied the change, and tested on Firefox on Windows, Linux, and Mac.  All the versioning tests (and other manual tests) now pass.  </p></div></div>
+<div class="comment" id="comment-16494"><div class="by">Andrew Woods, 2016-04-08 22:29 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/1dc77afc3ba43a554277d55f9483a5eb9b79eeb8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1dc77afc3ba43a554277d55f9483a5eb9b79eeb8</a></p></div></div>
+<p><a href="data/FCREPO-1981.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

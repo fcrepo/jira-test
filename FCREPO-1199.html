@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1199 RmiTransport not closing the journal</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1199</span> RmiTransport not closing the journal</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Glen Robson</td></tr><tr><th>Created</th><td>2013-08-30 20:14 UTC</td></tr><tr><th>Updated</th><td>2013-09-18 23:33 UTC</td></tr><tr><th>Resolved</th><td>2013-09-18 23:33 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>I reported the following back in January:</p>
+
+<p>Hi,</p>
+
+<p>We are having trouble getting the RMI Journal Receiver to close journal files and I wonder if anyone can provide assistance. We have two Fedora 3.3 instances setup with the Primary named Moscow and the Secondary named Kiev. The journaling setup for Moscow is as follows:</p>
+
+<p> &lt;module role="fedora.server.management.Management" class="fedora.server.journal.Journaler"&gt;<br/>
+   &lt;param name="journalFileSizeLimit" value="100M"/&gt; <br/>
+   &lt;param name="journalFileAgeLimit" value="1M"/&gt;<br/>
+   &lt;param name="journalWriterClassname" value="fedora.server.journal.readerwriter.multicast.MulticastJournalWriter"/&gt;<br/>
+   &lt;param name="transport.local.classname" value="fedora.server.journal.readerwriter.multicast.LocalDirectoryTransport"/&gt;<br/>
+   &lt;param name="transport.local.directoryPath" value="/usr/local/journals/archiveFiles"/&gt;<br/>
+   &lt;param name="transport.local.crucial" value="true"/&gt;<br/>
+   &lt;param name="transport.follow1.classname" value="fedora.server.journal.readerwriter.multicast.rmi.RmiTransport"/&gt;<br/>
+   &lt;param name="transport.follow1.crucial" value="true"/&gt;<br/>
+   &lt;param name="transport.follow1.hostName" value="kiev"/&gt;<br/>
+   &lt;param name="transport.follow1.service" value="RmiJournalReceiver"/&gt;<br/>
+ &lt;/module&gt;</p>
+
+<p>I've set the follower to crucial for testing so I know when its failed. When I make a change on the Moscow Fedora it creates a journal file in /usr/local/journals/archiveFiles on moscow and also sends a copy to kiev:</p>
+
+<p><span class="error">&#91;root@kiev journals&#93;</span># ls /usr/local/ndr-content/journals/journalFiles/<br/>
+_fedoraJournal20130104.112651.626Z</p>
+
+<p>but the above journal is never closed, so when I make a second change on Moscow I get the following error from the RMI Journal Receiver:</p>
+
+<p>java -jar RmiJournalReceiver.jar /usr/local/ndr-content/journals/journalFiles<br/>
+ERROR - Attempting to open file 'fedoraJournal20130104.112928.178Z' when file 'fedoraJournal20130104.112651.626Z' has not been closed.</p>
+
+<p>Note the RMIJournal Receiver is running on kiev. I've tried manually copying the journal files from Moscow /usr/local/journals/archiveFiles to kiev /usr/local/ndr-content/journals/journalFiles/ and these get applied correctly so I think the problem is with the RMIJournalReciever. The journals are correctly closed on Moscow:</p>
+
+<p><span class="error">&#91;root@moscow objects&#93;</span># ls /usr/local/journals/archiveFiles<br/>
+fedoraJournal20121109.150753.709Z  fedoraJournal20130104.092118.451Z  fedoraJournal20130104.104736.028Z  fedoraJournal20130104.111949.758Z  fedoraJournal20130104.112928.178Z<br/>
+fedoraJournal20130104.085612.224Z  fedoraJournal20130104.092225.537Z  fedoraJournal20130104.105831.895Z  fedoraJournal20130104.112411.838Z<br/>
+fedoraJournal20130104.085936.569Z  fedoraJournal20130104.092911.764Z  fedoraJournal20130104.110746.708Z  fedoraJournal20130104.112651.626Z</p>
+
+<p>Thanks for your help</p>
+
+<p>Glen Robson<br/>
+Head of Systems<br/>
+National Library of Wales</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-12563"><div class="by">Glen Robson, 2013-08-30 20:17 UTC</div><div class="text"><p>I think I have discovered the problem in the fedora 33 source:<br/>
+./fcrepo-server/src/main/java/fedora/server/journal/readerwriter/multicast/rmi/RmiTransport.java<br/>
+Source code was:<br/>
+194     @Override<br/>
+195     public void closeFile() throws JournalException {<br/>
+196         try </p>
+{
+197             super.testStateChange(State.FILE_CLOSED);
+198             parent.writeDocumentTrailer(xmlWriter);
+199             xmlWriter.close();
+201             super.setState(State.FILE_CLOSED);
+202         }
+<p> catch (XMLStreamException e) </p>
+{
+203             throw new JournalException(e);
+204         }<br/>
+205     }<br/>
+<br/>
+Which meant the RMI process was never calling the remove close function. I changed it to:<br/>
+<br/>
+194     @Override<br/>
+195     public void closeFile() throws JournalException {<br/>
+196         try {
+197             super.testStateChange(State.FILE_CLOSED);
+198             parent.writeDocumentTrailer(xmlWriter);
+199             xmlWriter.close();
+200             writer.close();
+201             super.setState(State.FILE_CLOSED);
+202         } catch (XMLStreamException e) {203             throw new JournalException(e);204         }
+<p> catch (IOException tExcpt) </p>
+{
+205             throw new JournalException(tExcpt);
+206         }
+<p>207     }</p>
+
+<p>i.e. added the writer.close() and it now closes it correctly. I built the source code by downloading the src and running mvn package in the root source dir. I've deployed this rebuilt jar to our Fedora journalling infrastructure and its been working well for the past 2 months. </p></div></div>
+<div class="comment" id="comment-12564"><div class="by">Benjamin Armintor, 2013-09-18 23:33 UTC</div><div class="text"><p>A similar fix was included in v3.4.0, see also:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/v3.4/fcrepo-server/src/main/java/org/fcrepo/server/journal/readerwriter/multicast/rmi/RmiTransport.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/v3.4/fcrepo-server/src/main/java/org/fcrepo/server/journal/readerwriter/multicast/rmi/RmiTransport.java</a></p></div></div>
+<p><a href="data/FCREPO-1199.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

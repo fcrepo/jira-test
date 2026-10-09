@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1514 Revisit Blank Node implementation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1514</span> Revisit Blank Node implementation</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-05-04 17:43 UTC</td></tr><tr><th>Updated</th><td>2016-10-07 13:34 UTC</td></tr><tr><th>Resolved</th><td>2016-10-07 13:27 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr><tr><th>Labels</th><td>remove?</td></tr><tr><th>Addresses</th><td><a href="FCREPO-1385.html">FCREPO-1385</a> Anonymous Blank Nodes</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1496.html">FCREPO-1496</a> the HTML display of containers with bnodes causes exceptions</td></tr></table>
+<h2>Description</h2>
+<p>This task is to reintroduce the following commits:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/ceacc9832890906c8dee8f4533f5b33679d9b875" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ceacc9832890906c8dee8f4533f5b33679d9b875</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/03c2bef5aa68ef224a86aa432d5ecfb378ff7c99" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/03c2bef5aa68ef224a86aa432d5ecfb378ff7c99</a></p>
+
+<p>That were reverted with these commits:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/ae5aa5d2b2cafc8ebcb67baf226e57547e81bc5d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ae5aa5d2b2cafc8ebcb67baf226e57547e81bc5d</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-audit/commit/578626c0b8ff602920e95b78697dfba72a612d54" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-audit/commit/578626c0b8ff602920e95b78697dfba72a612d54</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/c507414f4c9489a71291386c09f06525a6f1e666" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/c507414f4c9489a71291386c09f06525a6f1e666</a></p>
+
+<p>Because PATCH and PUT were not yet supported.<br/>
+An initial cut at a PATCH fix can be found in this PR: <br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/786" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/786</a></p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-14217"><div class="by">A. Soroka, 2015-05-06 12:44 UTC</div><div class="text"><p>It is not yet clear whether it is appropriate to reintroduce those commits or whether a completely different approach is needed.</p>
+
+<p>In any event, that PR is not an appropriate place to start work on this ticket. It contains fundamental misunderstandings.</p></div></div>
+<div class="comment" id="comment-14218"><div class="by">Andrew Woods, 2015-05-06 13:26 UTC</div><div class="text"><p>A. Soroka, From my testing, your initial PR modeled blank nodes very well. The only missing element was full-resource replacement with PUT. Are you suggesting there is a more significant "misunderstanding"? Can you elaborate on the short-comings of your initial approach?</p></div></div>
+<div class="comment" id="comment-14219"><div class="by">A. Soroka, 2015-05-06 13:30 UTC</div><div class="text"><p>No, it is your PR which misunderstands my commits. Besides my objection to restarting this work without a much more serious conversation with the community, what I'm saying is that either we start from my commits, or we start fresh, but not from your PR. You pulled deskolemization out of the internal processing for updates, and that's not at all how the types I built are to work. We could take some completely different approach (and maybe should), but starting from your PR is going to confuse the code.</p></div></div>
+<div class="comment" id="comment-14220"><div class="by">A. Soroka, 2015-05-06 13:31 UTC</div><div class="text"><p>Also, PATCH that altered properties on blank nodes didn't work. That's why Unknown found the bug originally.</p>
+
+<p>I have grave reservations about blank nodes, as you know, but if we're going to go anywhere near them, I have even graver reservations about <em>mutable</em> blank nodes.</p></div></div>
+<div class="comment" id="comment-17735"><div class="by">Unknown, 2016-10-07 03:09 UTC</div><div class="text"><p>What is the status of this ticket? Are we really going to revisit supporting blank nodes? (I hope not)</p></div></div>
+<div class="comment" id="comment-17743"><div class="by">Andrew Woods, 2016-10-07 13:27 UTC</div><div class="text"><p>No intention of revisiting blank nodes at this point.</p></div></div>
+<div class="comment" id="comment-17748"><div class="by">A. Soroka, 2016-10-07 13:34 UTC</div><div class="text"><p>Thank you, Andrew Woods.</p>
+
+<p>"Our long national nightmare is over."</p></div></div>
+<p><a href="data/FCREPO-1514.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

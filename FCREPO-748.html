@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-748 Ability to Authenticate to http-based storage when getting &quot;E&quot; datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-748</span> Ability to Authenticate to http-based storage when getting &quot;E&quot; datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-07-27 23:40 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>Fedora currently allows one to point to files hosted on external services via http, using the "E" control group.  This is a read-only connection.  If such content is protected via HTTP-Basic, it'd be nice if Fedora could be configured to authenticate to the service it's hosted on, so it can provide the content to the caller.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-11495"><div class="by">Chris Wilper, 2010-08-03 21:55 UTC</div><div class="text"><p>Options:</p>
+<ul class="alternate" type="square">
+	<li>Put in FOXML with each datastream</li>
+	<li>Directly code a http prefix + credentials map into Fedora</li>
+</ul>
+
+
+<p>Options for doing outside Fedora:</p>
+<ul class="alternate" type="square">
+	<li>Don't have E datastream go to the real content location, reference service that has credentials</li>
+	<li>Use a disseminator service that keeps necessary credentials/mapping for various authN-protected paths</li>
+</ul>
+
+
+<p>In any case, credentials+mappings could be saved in various Fedora objects.</p>
+
+<p>Dan noted: If we want Fedora to authenticate "on behalf of" a given requester (the user of Fedora), the userId is available, so could be passed to a service/proxy that has access to the credentials necessary to make the real request.</p></div></div>
+<div class="comment" id="comment-11496"><div class="by">Benjamin Armintor, 2010-08-04 19:48 UTC</div><div class="text"><p>If this is a feature we're discussing in the context of 4.x, it's important to remember that we have a much more flexible SDep model in mind for that release.  We might have a content model for objects storing ppk credentials, and a deployment impl that can use such objects to do client-cert authentication; we could stash basic credentials in an external file datastream and have them pulled in for authentication.</p></div></div>
+<div class="comment" id="comment-11633"><div class="by">Stephen Bayliss, 2010-10-16 14:30 UTC</div><div class="text"><p>See also <a href="http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/5808" class="external-link" rel="nofollow noreferrer">http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/5808</a></p>
+
+<p>A request to be able to authenticate at ingest time</p></div></div>
+<div class="comment" id="comment-11634"><div class="by">Stephen Bayliss, 2010-10-16 15:06 UTC</div><div class="text"><p>Another implementation thought:</p>
+
+<p>External content is in general (on ingest, "E" datastreams, etc) grabbed by ExternalContentManager -&gt; DefaultExternalContentManager</p>
+
+<p>This is configured a a module in fedora.fcfg.</p>
+
+<p>We could therefore provide additional configuration information (either directly in fedora.fcfg, or as a separate module config file) providing for example</p>
+<ul class="alternate" type="square">
+	<li>per domain or per url-path auth credentials</li>
+	<li>any additional auth information required (eg whether to pre-emptively provide credentials)</li>
+</ul>
+
+
+<p>However this would mean that plain-text auth credentials would be present in the file system - is there any alternative trust mechanism that could be used?</p></div></div>
+<div class="comment" id="comment-11637"><div class="by">Chris Wilper, 2010-10-20 20:39 UTC</div><div class="text"><p>FYI, I've done an experimental implementation that has a Fedora-wide credentials file to be used when getting external content.  See the README in the branch: <a href="https://fedora-commons.svn.sourceforge.net/svnroot/fedora-commons/fedora/branches/fcrepo-748/EDS-CREDS-README" class="external-link" rel="nofollow noreferrer">https://fedora-commons.svn.sourceforge.net/svnroot/fedora-commons/fedora/branches/fcrepo-748/EDS-CREDS-README</a>  This might not be how we ultimately choose to implement it, but for now it provides the capability and acts as a good strawman for discussion.  </p></div></div>
+<div class="comment" id="comment-11638"><div class="by">Chris Wilper, 2010-10-21 11:49 UTC</div><div class="text"><p>Note: a pre-built installer based on this branch is now available at <a href="http://fedora-commons.org/download/fcrepo-748/" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/download/fcrepo-748/</a>  ...to make kicking the tires easier.</p></div></div>
+<div class="comment" id="comment-11739"><div class="by">Stephen Bayliss, 2010-12-17 13:11 UTC</div><div class="text"><p>This would also be useful in the context of SDep methods; the external service called in these cases may also require authentication.  Arguably that could be a different JIRA issue, however both go through the ExternalContentManager so it would seem logical to extend the scope of this issue.</p>
+
+<p>Within this it would also be useful to:<br/>
+1) Pass through selected request context information.  See <a href="http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/6178" class="external-link" rel="nofollow noreferrer">http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/6178</a> and <a href="http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/6180" class="external-link" rel="nofollow noreferrer">http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/6180</a> - in this case the logged-in user.  Potentially this could include the auth credentials from the request thus allowing the external service to call-back to Fedora using the user's original auth details (with appropriate health-warnings as this could compromise security if the service is not trusted).<br/>
+2) Perform cross-context requests within the same servlet container - if the service is within the same container then using the RequestDispatcher may be more efficient than a request going through the IP stack.  For instance defining something like a context:// protocol.</p></div></div>
+<div class="comment" id="comment-12254"><div class="by">A. Soroka, 2012-03-01 20:39 UTC</div><div class="text"><p>+1 to using the same design for dynamic disseminations and E-datastreams. It's all about how Fedora acts as an HTTP client. In fact, it might be worth taking a look around to see what other kinds of middleware do for this. It seems like an affordance that other systems must have implemented in good ways.</p></div></div>
+<div class="comment" id="comment-12942"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-748.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

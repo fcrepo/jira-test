@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-194 Close RMI connection after each journal file</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-194</span> Close RMI connection after each journal file</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Trivial</td></tr><tr><th>Reporter</th><td>Jim Blake</td></tr><tr><th>Created</th><td>2008-02-20 16:12 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>Currently RmiTransportWriter opens a connection to the RmiJournalReceiver at startup, and keeps the connection open until shutdown. This means that the receiver must not be shut down, and the network transport must not be interrupted, even if the leading Fedora instance is quiescent.</p>
+
+<p>New behavior would be:<br/>
+1) RmiTransportWriter opens the connection to RmiJournalReceiver at startup, to test the connection, and then immediately closes the connection.<br/>
+2) At the beginning of each Journal file, a new connection is established.<br/>
+3) At the end of each Journal file, the connection is closed.</p>
+
+<p>This would allow system maintenance in quiescent times. It would also allow a non-crucial RMI transport to resume operation after losing one or more files, without restarting the leading Fedora.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10402"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: j2blake<br/>
+Item #: 1897946<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1897946" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1897946</a></p></div></div>
+<div class="comment" id="comment-12954"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-194.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

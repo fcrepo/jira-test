@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2104 Fedora breaks when commiting extra large transactions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2104</span> Fedora breaks when commiting extra large transactions</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Lukáš Jáně</td></tr><tr><th>Created</th><td>2016-08-04 15:18 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:49 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:49 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr></table>
+<h2>Description</h2>
+<p>When using Fedora 4 transactions and making many thousand changes in single transaction, if commiting this transaction takes more than 2 minutes, Fedora returns internal error and is unusable after.</p>
+
+<p>We catalogize books, where every page has several objects, including high-res scan and such, so when saving a book, we have a transaction that can include thousands of objects and quite a few gigabytes. This prolongs the commit time of Fedora transaction. However, once it takes more than 2 minutes, everything breaks.</p>
+
+<p>There seems to be internal transaction reaper in infinispan that execs after 2-3 minutes and destroys this long running (internal, not fedora) transaction. Immediately after this Fedora can not continue commiting its own transaction so fails.</p>
+
+<p>However, this thread remains broken - I understand that Fedora uses pool of about 8 threads when serving requests and accessing its internal Infinispan. When this happens, approximately every 8th request on Fedora fails because it's assigned to thread whose Infinispan transaction has been destroyed and it never opens a new one. This persists until Fedora is restarted, rendering it unusable.</p>
+
+<p>There should be a way to control and prevent this timeout, or at least Fedora should not break when this timeout happens.</p>
+
+<p>Log when this happens including stack trace:<br/>
+...many updates in fedora transaction...<br/>
+INFO 17:01:33.665 (FedoraLdp) PATCH for 'tx:3b7196cd-80c6-4b12-9cbf-7f4d0499b58e/ce/d7/af/6f/ced7af6f-8e95-4e1d-9b41-ecdb5181b632/fcr:metadata'<br/>
+INFO 17:01:33.718 (FedoraLdp) PUT resource 'tx:3b7196cd-80c6-4b12-9cbf-7f4d0499b58e/ea/8f/50/f7/ea8f50f7-88dc-416b-884e-73bb7c745368'<br/>
+INFO 17:01:33.751 (FedoraTransactions) Commit transaction 'tx:3b7196cd-80c6-4b12-9cbf-7f4d0499b58e'<br/>
+...fedora silently processes commit...<br/>
+WARN 17:04:01.998 (arjuna) ARJUNA012117: TransactionReaper::check timeout for TX 0:ffff7f000101:a356:575eb4bb:16 in state  RUN<br/>
+WARN 17:04:02.018 (arjuna) ARJUNA012095: Abort of action id 0:ffff7f000101:a356:575eb4bb:16 invoked while multiple threads active within it.<br/>
+WARN 17:04:02.018 (arjuna) ARJUNA012108: CheckedAction::check - atomic action 0:ffff7f000101:a356:575eb4bb:16 aborting with 1 threads active!<br/>
+WARN 17:04:02.036 (arjuna) ARJUNA012121: TransactionReaper::doCancellations worker Thread<span class="error">&#91;Transaction Reaper Worker 0,5,main&#93;</span> successfully canceled TX 0:ffff7f000101:a356:575eb4bb:16<br/>
+ERROR 17:04:02.045 (InvocationContextInterceptor) ISPN000136: Execution error<br/>
+java.lang.IllegalStateException: Transaction TransactionImple &lt; ac, BasicAction: 0:ffff7f000101:a356:575eb4bb:16 status: ActionStatus.ABORTED &gt; is not in a valid state to be invoking cache operations on.<br/>
+        at org.infinispan.interceptors.TxInterceptor.enlist(TxInterceptor.java:389) ~<span class="error">&#91;TxInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.TxInterceptor.enlistIfNeeded(TxInterceptor.java:351) ~<span class="error">&#91;TxInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.TxInterceptor.enlistReadAndInvokeNext(TxInterceptor.java:345) ~<span class="error">&#91;TxInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.TxInterceptor.visitGetKeyValueCommand(TxInterceptor.java:318) ~<span class="error">&#91;TxInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) ~<span class="error">&#91;GetKeyValueCommand.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) ~<span class="error">&#91;CommandInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.CacheMgmtInterceptor.visitDataReadCommand(CacheMgmtInterceptor.java:103) ~<span class="error">&#91;CacheMgmtInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.CacheMgmtInterceptor.visitGetKeyValueCommand(CacheMgmtInterceptor.java:91) ~<span class="error">&#91;CacheMgmtInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) ~<span class="error">&#91;GetKeyValueCommand.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97) ~<span class="error">&#91;CommandInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.InvocationContextInterceptor.handleAll(InvocationContextInterceptor.java:102) ~<span class="error">&#91;InvocationContextInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.InvocationContextInterceptor.handleDefault(InvocationContextInterceptor.java:71) ~<span class="error">&#91;InvocationContextInterceptor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.commands.AbstractVisitor.visitGetKeyValueCommand(AbstractVisitor.java:86) ~<span class="error">&#91;AbstractVisitor.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40) ~<span class="error">&#91;GetKeyValueCommand.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.interceptors.InterceptorChain.invoke(InterceptorChain.java:336) ~<span class="error">&#91;InterceptorChain.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.cache.impl.CacheImpl.get(CacheImpl.java:430) <span class="error">&#91;CacheImpl.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.cache.impl.CacheImpl.get(CacheImpl.java:422) <span class="error">&#91;CacheImpl.class:7.2.4.Final&#93;</span><br/>
+        at org.infinispan.schematic.internal.CacheSchematicDb.get(CacheSchematicDb.java:77) <span class="error">&#91;CacheSchematicDb.class:4.5.0.Final&#93;</span><br/>
+        at org.modeshape.jcr.cache.document.LocalDocumentStore.get(LocalDocumentStore.java:71) <span class="error">&#91;LocalDocumentStore.class:4.5.0.Final&#93;</span><br/>
+        at org.modeshape.jcr.cache.document.WorkspaceCache.documentFor(WorkspaceCache.java:188) <span class="error">&#91;WorkspaceCache.class:4.5.0.Final&#93;</span><br/>
+        at org.modeshape.jcr.cache.document.WorkspaceCache.documentFor(WorkspaceCache.java:207) <span class="error">&#91;WorkspaceCache.class:4.5.0.Final&#93;</span><br/>
+        at org.modeshape.jcr.cache.document.WorkspaceCache.persistedCache(WorkspaceCache.java:418) <span class="error">&#91;WorkspaceCache.class:4.5.0.Final&#93;</span><br/>
+        at org.modeshape.jcr.cache.document.WritableSessionCache.lockNodes(WritableSessionCache.java:1499) <span class="error">&#91;WritableSessionCache.class:4.5.0.Final&#93;</span><br/>
+        at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:638) <span class="error">&#91;WritableSessionCache.class:4.5.0.Final&#93;</span><br/>
+        at org.modeshape.jcr.JcrSession.save(JcrSession.java:1171) <span class="error">&#91;JcrSession.class:4.5.0.Final&#93;</span><br/>
+        at org.fcrepo.kernel.modeshape.TransactionImpl.commit(TransactionImpl.java:130) <span class="error">&#91;TransactionImpl.class:4.5.1&#93;</span><br/>
+        at org.fcrepo.kernel.modeshape.services.TransactionServiceImpl.commit(TransactionServiceImpl.java:202) <span class="error">&#91;TransactionServiceImpl.class:4.5.1&#93;</span><br/>
+        at org.fcrepo.http.api.FedoraTransactions.finalizeTransaction(FedoraTransactions.java:143) <span class="error">&#91;FedoraTransactions.class:4.5.1&#93;</span><br/>
+        at org.fcrepo.http.api.FedoraTransactions.commit(FedoraTransactions.java:103) <span class="error">&#91;FedoraTransactions.class:4.5.1&#93;</span><br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~<span class="error">&#91;na:1.8.0_66&#93;</span><br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~<span class="error">&#91;na:1.8.0_66&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~<span class="error">&#91;na:1.8.0_66&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:497) ~<span class="error">&#91;na:1.8.0_66&#93;</span><br/>
+        at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81) <span class="error">&#91;ResourceMethodInvocationHandlerFactory$1.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:151) <span class="error">&#91;AbstractJavaResourceMethodDispatcher$1.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:171) <span class="error">&#91;AbstractJavaResourceMethodDispatcher.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:152) <span class="error">&#91;JavaResourceMethodDispatcherProvider$ResponseOutInvoker.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:104) <span class="error">&#91;AbstractJavaResourceMethodDispatcher.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:384) <span class="error">&#91;ResourceMethodInvoker.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:342) <span class="error">&#91;ResourceMethodInvoker.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:101) <span class="error">&#91;ResourceMethodInvoker.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:271) <span class="error">&#91;ServerRuntime$1.class:na&#93;</span><br/>
+        at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271) <span class="error">&#91;Errors$1.class:na&#93;</span><br/>
+        at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267) <span class="error">&#91;Errors$1.class:na&#93;</span><br/>
+        at org.glassfish.jersey.internal.Errors.process(Errors.java:315) <span class="error">&#91;Errors.class:na&#93;</span><br/>
+        at org.glassfish.jersey.internal.Errors.process(Errors.java:297) <span class="error">&#91;Errors.class:na&#93;</span><br/>
+        at org.glassfish.jersey.internal.Errors.process(Errors.java:267) <span class="error">&#91;Errors.class:na&#93;</span><br/>
+        at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:297) <span class="error">&#91;RequestScope.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:254) <span class="error">&#91;ServerRuntime.class:na&#93;</span><br/>
+        at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1030) <span class="error">&#91;ApplicationHandler.class:na&#93;</span><br/>
+        at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:373) <span class="error">&#91;WebComponent.class:na&#93;</span><br/>
+        at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:381) <span class="error">&#91;ServletContainer.class:na&#93;</span><br/>
+        at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:344) <span class="error">&#91;ServletContainer.class:na&#93;</span><br/>
+        at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:221) <span class="error">&#91;ServletContainer.class:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:291) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52) <span class="error">&#91;tomcat-websocket.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:239) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:219) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:106) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:506) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:142) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:79) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:610) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:88) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:537) <span class="error">&#91;catalina.jar:8.0.14&#93;</span><br/>
+        at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1081) <span class="error">&#91;tomcat-coyote.jar:8.0.14&#93;</span><br/>
+        at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:658) <span class="error">&#91;tomcat-coyote.jar:8.0.14&#93;</span><br/>
+        at org.apache.coyote.http11.Http11NioProtocol$Http11ConnectionHandler.process(Http11NioProtocol.java:222) <span class="error">&#91;tomcat-coyote.jar:8.0.14&#93;</span><br/>
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1566) <span class="error">&#91;tomcat-coyote.jar:8.0.14&#93;</span><br/>
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.run(NioEndpoint.java:1523) <span class="error">&#91;tomcat-coyote.jar:8.0.14&#93;</span><br/>
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) <span class="error">&#91;na:1.8.0_66&#93;</span><br/>
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) <span class="error">&#91;na:1.8.0_66&#93;</span><br/>
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) <span class="error">&#91;tomcat-util.jar:8.0.14&#93;</span><br/>
+        at java.lang.Thread.run(Thread.java:745) <span class="error">&#91;na:1.8.0_66&#93;</span><br/>
+...from now, any request on this thread fails...<br/>
+ERROR 17:04:02.049 (RepositoryExceptionMapper) Caught a repository exception: org.modeshape.common.SystemFailureException: java.lang.IllegalStateException: Transaction TransactionImple &lt; ac, BasicAction: 0:ffff7f000101:a356:575eb4bb:16 status: ActionStatus.ABORTED &gt; is not in a valid state to be invoking cache operations on.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-17232"><div class="by">A. Soroka, 2016-08-12 15:51 UTC</div><div class="text"><p>I'm not actually sure that Fedora can do anything about this, because it's not Fedora that maintains that threadpool, it's ModeShape. Fedora's code doesn't have any access to those threads, so far as I can tell.</p>
+
+<p>Would it be possible for you to set up this problematic situation with a profiler running so that we can see who owns the dead thread? If you do not have a profiler, we could be able to get you access to YourKit for this specific purpose (ping Andrew Woods).</p></div></div>
+<div class="comment" id="comment-17233"><div class="by">A. Soroka, 2016-08-12 15:52 UTC</div><div class="text"><p>The other thing we can look at is whether there is some Infinispan config we can tweak to change the timing at play. But I'm not sure how worthwhile that work would be for you or anyone else because Fedora &gt;=4.7.0 will not be using Infinispan at all.</p></div></div>
+<div class="comment" id="comment-17234"><div class="by">Lukáš Jáně, 2016-08-12 16:58 UTC</div><div class="text"><p>Thank you for your comment. I tried to search for some such infinispan settings through config files before, but with no luck. I hoped Fedora has some internal control over that, but if it's not the case either, I'll have to try asking some infinispan or modeshape people for help.</p>
+
+<p>Any E.T.A. for the infinispan-less Fedora? I guess we can't wait that long or our customers eat us alive, so we'll have to make some workaround, I just wonder if it's more difficult to dive deep into infinispan to find how to disable that impatient reaper if there is no external config for that, or not using transactions from repo at all and recreating them on application level.</p></div></div>
+<div class="comment" id="comment-17235"><div class="by">A. Soroka, 2016-08-12 17:41 UTC</div><div class="text"><ul class="alternate" type="square">
+	<li>The ETA is this fall, but to be more precise than that will be difficult, as we are currently releasing 4.6.0. I can tell you that all of the work to go Infinispan-less is already done and committed.</li>
+	<li>Can I ask you why you are using such gigantic transactions? Is it not possible to alter your workflow enough to create smaller, more frequent transactions, even temporarily?</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17236"><div class="by">Lukáš Jáně, 2016-08-12 18:01 UTC</div><div class="text"><p>Well, we were thinking about it, but one book is probably as atomic as we can go, during loading data from external system. It was all fine until we hit books with &gt; 1300 pages. We store every page with hi res scans, thumbnails we generate, user copies with watermark, ocr text in several formats, lots of book metadata. It makes little sense to parse half of a book, because in our process we'd hardly put it all together after, without manual interventions. It's all complicated enough as-is.</p></div></div>
+<div class="comment" id="comment-17237"><div class="by">A. Soroka, 2016-08-12 18:43 UTC</div><div class="text"><p>I can see that a book is a pretty natural unit. Let me suggest one workaround, which may or may not be any use to you: you could use multiple transactions to assemble the book in a temporary location in the repository, then use a single <a href="https://wiki.duraspace.org/display/FEDORA4x/RESTful+HTTP+API#RESTfulHTTPAPI-trueRedMOVEMovearesource(anditssubtree)toanewlocation" class="external-link" rel="nofollow noreferrer">MOVE</a> request to shift your completed resource into its proper position. That way, a fouled assembly can be deleted without any ill effects. It's not a simple transaction and you would have to hand around the temporary location as a "handle", but it might get you further down the road.</p></div></div>
+<div class="comment" id="comment-17247"><div class="by">Lukáš Jáně, 2016-08-16 12:35 UTC</div><div class="text"><p>Currently we have decided to wait for the new version, release this year is good enough news, hopefully there won't be many problems with the transition. Meanwhile we'll pull through books that failed commiting (and can't wait) in transactionless mode. After they had reached final commit without any problem, we know they will most likely get through again, so we risk it without transactions. Your suggested workaround makes sense, unfortunately with the way we have the store organized we can't use that either. Anyway, we thank you for your help and wish you bright and bugless future for Fedora </p></div></div>
+<div class="comment" id="comment-18018"><div class="by">Lukáš Jáně, 2016-11-18 09:59 UTC</div><div class="text"><p>I can confirm the problem no longer exists in 4.7.</p></div></div>
+<div class="comment" id="comment-19546"><div class="by">Harshakumar Ummerpillai, 2017-11-06 20:00 UTC</div><div class="text"><p>We are still on version 4.5.2, can any one point out what change was made in 4.7 that we can port back to our version? Upgrading to 4.7 might take longer for us to do at least for the time being. </p></div></div>
+<div class="comment" id="comment-22453"><div class="by">Danny Bernstein, 2021-09-17 17:49 UTC</div><div class="text"><p>Closing as part of a jira repository effort.  It is being closed for one of the following reasons:  1) it is no longer applicable,  2) it has been fixed in future version or 3) no one seems to be interested in it .</p></div></div>
+<p><a href="data/FCREPO-2104.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

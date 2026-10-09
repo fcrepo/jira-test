@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1194 Rebuilders fail when a Management Delegate bean is configured</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1194</span> Rebuilders fail when a Management Delegate bean is configured</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Javi Molina</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2013-07-18 21:19 UTC</td></tr><tr><th>Updated</th><td>2013-10-03 22:35 UTC</td></tr><tr><th>Resolved</th><td>2013-08-21 03:09 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Description</h2>
+<p>Hi all,</p>
+
+<p>I am in the process to upgrade from Fedora 3.3.1 to 3.6.2</p>
+
+<p>I just noticed that after enabling journaling the fedora-rebuild.sh script won't work anymore.</p>
+
+
+<p>Basically in fedora.fcfg I added the relevant section for normal mode as described here <a href="https://wiki.duraspace.org/display/FEDORA36/Journaling#Journaling-impl-config" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA36/Journaling#Journaling-impl-config</a></p>
+
+<p>When starting the fedora web applications everything looks fine but, when stopping it and running fedora-rebuild.sh  I get a  Error creating bean with name 'org.fcrepo.server.security.Authorization': Bean definition is abstract.</p>
+
+
+<p>This suggest to me that enabling journaling, introduces more spring beans behind the scenes but I have not been able to figure out where or how, enabling DEBUG logging for springframework in logback.xml shows that it is loading beans from the standard locations in server/conf/spring but it does not reveal much detail about the other locations where it is loadging beans from.</p>
+
+<p>This is a snippet:</p>
+
+<p>************************************************************************<br/>
+DEBUG (DefaultBeanDefinitionDocumentReader) Loading bean definitions<br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#546ce79d" rel="noreferrer">org.fcrepo.server.security.AuthorizationConfiguration$created#546ce79d</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#42dd8bec" rel="noreferrer">org.fcrepo.server.security.AuthorizationConfiguration$created#42dd8bec</a><br/>
+DEBUG (DefaultNamespaceHandlerResolver) Loaded NamespaceHandler mappings: </p>
+{http://www.springframework.org/schema/task=org.springframework.scheduling.config.TaskNamespaceHandler, http://activemq.apache.org/schema/core=org.apache.xbean.spring.context.v2.XBeanNamespaceHandler, http://www.springframework.org/schema/p=org.springframework.beans.factory.xml.SimplePropertyNamespaceHandler, http://www.w3.org/2006/07/ws-policy=org.apache.cxf.ws.policy.spring.PolicyNamespaceHandler, http://www.springframework.org/schema/lang=org.springframework.scripting.config.LangNamespaceHandler, http://www.springframework.org/schema/util=org.springframework.beans.factory.xml.UtilNamespaceHandler, http://cxf.apache.org/jaxws=org.apache.cxf.jaxws.spring.NamespaceHandler, http://cxf.apache.org/policy=org.apache.cxf.ws.policy.spring.NamespaceHandler, http://www.springframework.org/schema/jee=org.springframework.ejb.config.JeeNamespaceHandler, http://cxf.apache.org/transports/http/configuration=org.apache.cxf.transport.http.spring.NamespaceHandler, http://www.springframework.org/schema/tx=org.springframework.transaction.config.TxNamespaceHandler, http://cxf.apache.org/ws/addressing=org.apache.cxf.ws.addressing.spring.NamespaceHandler, http://cxf.apache.org/simple=org.apache.cxf.frontend.spring.NamespaceHandler, http://www.springframework.org/schema/aop=org.springframework.aop.config.AopNamespaceHandler, http://www.springframework.org/schema/context=org.springframework.context.config.ContextNamespaceHandler, http://cxf.apache.org/core=org.apache.cxf.bus.spring.NamespaceHandler, http://cxf.apache.org/jaxrs=org.apache.cxf.jaxrs.spring.NamespaceHandler, http://www.springframework.org/schema/security=org.springframework.security.config.SecurityNamespaceHandler, http://schemas.xmlsoap.org/ws/2004/09/policy=org.apache.cxf.ws.policy.spring.PolicyNamespaceHandler, http://www.w3.org/ns/ws-policy=org.apache.cxf.ws.policy.spring.PolicyNamespaceHandler, http://cxf.apache.org/bindings/soap=org.apache.cxf.binding.soap.spring.NamespaceHandler}
+<p>DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#245a690" rel="noreferrer">org.fcrepo.server.config.Parameter#245a690</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#2aba391a" rel="noreferrer">org.fcrepo.server.config.Parameter#2aba391a</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#27faefe0" rel="noreferrer">org.fcrepo.server.config.Parameter#27faefe0</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#4b9a6fa1" rel="noreferrer">org.fcrepo.server.config.Parameter#4b9a6fa1</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#816d9ce" rel="noreferrer">org.fcrepo.server.config.Parameter#816d9ce</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#14356788" rel="noreferrer">org.fcrepo.server.config.Parameter#14356788</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#3e201c15" rel="noreferrer">org.fcrepo.server.config.Parameter#3e201c15</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#2e13c690" rel="noreferrer">org.fcrepo.server.config.Parameter#2e13c690</a><br/>
+DEBUG (BeanDefinitionParserDelegate) Using generated bean name <a href="#14512f92" rel="noreferrer">util:list#14512f92</a> for nested custom element 'util:list'<br/>
+DEBUG (BeanDefinitionParserDelegate) Neither XML 'id' nor 'name' specified - using generated bean name <a href="#4a5844db" rel="noreferrer">org.fcrepo.server.security.impl.SimplePolicyLoader#4a5844db</a><br/>
+INFO (XmlBeanDefinitionReader) Loading XML bean definitions from file <span class="error">&#91;/opt/fedora/fedora-3.6/server/config/spring/doobjectvalidator.xml&#93;</span><br/>
+DEBUG (DefaultDocumentLoader) Using JAXP provider <span class="error">&#91;org.apache.xerces.jaxp.DocumentBuilderFactoryImpl&#93;</span><br/>
+DEBUG (PluggableSchemaResolver) Found XML schema <a href="http://www.springframework.org/schema/beans/spring-beans-3.0.xsd" class="external-link" rel="nofollow noreferrer">http://www.springframework.org/schema/beans/spring-beans-3.0.xsd</a> in classpath: org/springframework/beans/factory/xml/spring-beans-3.0.xsd<br/>
+DEBUG (DefaultBeanDefinitionDocumentReader) Loading bean definitions<br/>
+DEBUG (BeanDefinitionParserDelegate) No XML 'id' specified - using 'org.fcrepo.server.validation.DOObjectValidator' as bean name and [] as aliases<br/>
+INFO (XmlBeanDefinitionReader) Loading XML bean definitions from file <span class="error">&#91;/opt/fedora/fedora-3.6/server/config/spring/triple-generator.xml&#93;</span><br/>
+DEBUG (DefaultDocumentLoader) Using JAXP provider <span class="error">&#91;org.apache.xerces.jaxp.DocumentBuilderFactoryImpl&#93;</span><br/>
+DEBUG (PluggableSchemaResolver) Found XML schema <a href="http://www.springframework.org/schema/beans/spring-beans-3.0.xsd" class="external-link" rel="nofollow noreferrer">http://www.springframework.org/schema/beans/spring-beans-3.0.xsd</a> in classpath: org/springframework/beans/factory/xml/spring-beans-3.0.xsd<br/>
+DEBUG (DefaultBeanDefinitionDocumentReader) Loading bean definitions<br/>
+INFO (GenericApplicationContext) Refreshing org.springframework.context.support.GenericApplicationContext@3e0d6c32: startup date <span class="error">&#91;Thu Jul 18 11:20:35 EST 2013&#93;</span>; parent: org.springframework.context.support.GenericApplicationContext@42e50215<br/>
+DEBUG (GenericApplicationContext) Bean factory for org.springframework.context.support.GenericApplicationContext@3e0d6c32: org.springframework.beans.factory.support.DefaultListableBeanFactory@50e68513: defining beans <span class="error">&#91;org.springframework.context.annotation.CommonAnnotationBeanPostProcessor,org.fcrepo.server.security.ContextRegistry,org.fcrepo.server.security.Authorization,org.fcrepo.server.security.AuthorizationConfiguration,policyFinderModules,org.fcrepo.server.security.ContextAttributeFinderModule,org.fcrepo.server.security.ResourceAttributeFinderModule,attributeFinderModules,resourceFinderModules,PDPConfigurationFactory,LegacyPDPConfig,org.fcrepo.server.security.PolicyEnforcementPoint,org.fcrepo.server.validation.DOObjectValidator,org.trippi.io.TripleIteratorFactory,Object-3.0,ContentModel-3.0,ServiceDefinition-3.0,ServiceDeployment-3.0,org.fcrepo.server.resourceIndex.TripleGenerator,org.fcrepo.server.resourceIndex.ModelBasedTripleGenerator,localMySQLPool,localDerbyPool,localOraclePool,localPostgreSQLPool,localMulgaraTriplestore,localPostgresMPTTriplestore,apimUpdateMessages,apimAccessMessages,org.fcrepo.server.storage.lowlevel.ILowlevelStorage,org.fcrepo.server.storage.lowlevel.ILowlevelStorageConfiguration,org.fcrepo.server.security.BackendSecurity,org.fcrepo.server.security.BackendSecurityConfiguration,org.fcrepo.server.storage.DOManager,org.fcrepo.server.storage.DOManagerConfiguration,org.fcrepo.server.management.Management,org.fcrepo.server.management.ManagementConfiguration,org.fcrepo.server.management.ManagementDelegate,org.fcrepo.server.management.ManagementDelegateConfiguration,org.fcrepo.server.access.Access,org.fcrepo.server.access.AccessConfiguration,org.fcrepo.server.access.DynamicAccess,org.fcrepo.server.access.DynamicAccessConfiguration,org.fcrepo.server.search.FieldSearch,org.fcrepo.server.search.FieldSearchConfiguration,org.fcrepo.server.resourceIndex.ResourceIndex,org.fcrepo.server.resourceIndex.ResourceIndexConfiguration,org.fcrepo.oai.OAIProvider,org.fcrepo.oai.OAIProviderConfiguration,org.fcrepo.server.storage.translation.DOTranslator,org.fcrepo.server.storage.translation.DOTranslatorConfiguration,org.fcrepo.server.management.PIDGenerator,org.fcrepo.server.management.PIDGeneratorConfiguration,org.fcrepo.server.messaging.Messaging,org.fcrepo.server.messaging.MessagingConfiguration,org.fcrepo.server.storage.ConnectionPoolManager,org.fcrepo.server.storage.ConnectionPoolManagerConfiguration,org.fcrepo.server.validation.DOValidator,org.fcrepo.server.validation.DOValidatorConfiguration,org.fcrepo.server.storage.ExternalContentManager,org.fcrepo.server.storage.ExternalContentManagerConfiguration,org.trippi.TriplestoreConnector,org.fcrepo.server.resourceIndex.ResourceIndexRebuilder,org.fcrepo.server.utilities.rebuild.SQLRebuilder&#93;</span>; parent: org.springframework.beans.factory.support.DefaultListableBeanFactory@7795c14c<br/>
+DEBUG (DefaultListableBeanFactory) Creating shared instance of singleton bean 'org.springframework.context.annotation.CommonAnnotationBeanPostProcessor'</p>
+
+<p>****************************************************</p>
+
+<p>And here below is the  output when running fedora-rebuild.sh with the default logback.xml config.</p>
+
+<p>Has anyone come across this? Any suggestion to fix it?</p>
+
+<p>Thanks,<br/>
+Javier</p>
+
+
+<p>************************************************************<br/>
+javier@genesis-cl:/opt/fedora/fedora-3.6/server/bin$ ./fedora-rebuild.sh </p>
+
+<p>                       Fedora Rebuild Utility<br/>
+                     ..........................</p>
+
+<p>WARNING: Live rebuilds are not currently supported.<br/>
+         Make sure your server is stopped before continuing.</p>
+
+<p>Server directory is /opt/fedora/fedora-3.6/server</p>
+
+<p>---------------------------------------------------------------------</p>
+
+<p>ERROR (Server) Fatal error while starting server<br/>
+org.springframework.beans.factory.BeanIsAbstractException: Error creating bean with name 'org.fcrepo.server.security.Authorization': Bean definition is abstract<br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.checkMergedBeanDefinition(AbstractBeanFactory.java:1208) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:277) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.springframework.context.support.AbstractApplicationContext.getBean(AbstractApplicationContext.java:1079) ~<span class="error">&#91;spring-context-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.fcrepo.server.Server.getBean(Server.java:1684) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.management.ManagementModule.postInitModule(ManagementModule.java:180) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.Server.init(Server.java:655) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.RebuildServer.getRebuildInstance(RebuildServer.java:164) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getServer(Rebuild.java:206) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getRebuilder(Rebuild.java:268) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:450) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+Error: Fatal error while starting server</p>
+
+<p>java.lang.RuntimeException: Fatal error while starting server<br/>
+        at org.fcrepo.server.Server.init(Server.java:695)<br/>
+        at org.fcrepo.server.utilities.rebuild.RebuildServer.getRebuildInstance(RebuildServer.java:164)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getServer(Rebuild.java:206)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getRebuilder(Rebuild.java:268)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:450)<br/>
+Caused by: org.springframework.beans.factory.BeanIsAbstractException: Error creating bean with name 'org.fcrepo.server.security.Authorization': Bean definition is abstract<br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.checkMergedBeanDefinition(AbstractBeanFactory.java:1208)<br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:277)<br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196)<br/>
+        at org.springframework.context.support.AbstractApplicationContext.getBean(AbstractApplicationContext.java:1079)<br/>
+        at org.fcrepo.server.Server.getBean(Server.java:1684)<br/>
+        at org.fcrepo.server.management.ManagementModule.postInitModule(ManagementModule.java:180)<br/>
+        at org.fcrepo.server.Server.init(Server.java:655)<br/>
+        ... 4 more<br/>
+ERROR (Server) Fatal error while starting server<br/>
+org.springframework.beans.factory.BeanIsAbstractException: Error creating bean with name 'org.fcrepo.server.security.Authorization': Bean definition is abstract<br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.checkMergedBeanDefinition(AbstractBeanFactory.java:1208) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:277) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.springframework.context.support.AbstractApplicationContext.getBean(AbstractApplicationContext.java:1079) ~<span class="error">&#91;spring-context-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+        at org.fcrepo.server.Server.getBean(Server.java:1684) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.management.ManagementModule.postInitModule(ManagementModule.java:180) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.Server.init(Server.java:655) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.RebuildServer.getRebuildInstance(RebuildServer.java:164) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getServer(Rebuild.java:206) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:463) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+Server shutdown error: java.lang.RuntimeException: Fatal error while starting server</p>
+
+
+<p>********************************************************************************</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-12531"><div class="by">Benjamin Armintor, 2013-07-22 23:12 UTC</div><div class="text"><p>I don't think there are any messages broadcast on the indexing of a rebuild- you have to independently rebuild the instances. Given that, the easiest workaround for this problem is to comment out the ManagementDelegate configuration when running the Rebuilder.  For 3.7, it should be easy to have the RebuildServer ignore the ManagementDelegate module (mark it as abstract, as it does the Management module).</p></div></div>
+<div class="comment" id="comment-12561"><div class="by">Benjamin Armintor, 2013-08-21 03:09 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/6f58a60f11ae9d18d2cca333e94dbdc61137746d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/6f58a60f11ae9d18d2cca333e94dbdc61137746d</a></p></div></div>
+<p><a href="data/FCREPO-1194.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

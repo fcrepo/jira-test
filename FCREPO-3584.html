@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3584 Resource locking does not take into account ghost nodes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3584</span> Resource locking does not take into account ghost nodes</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-12-10 03:35 UTC</td></tr><tr><th>Updated</th><td>2022-01-20 03:45 UTC</td></tr><tr><th>Resolved</th><td>2021-11-25 15:26 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.2.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3271.html">FCREPO-3271</a> Handle conflicts during transaction commits</td></tr></table>
+<h2>Description</h2>
+<p>The resource locking does not take into account ghost nodes. This means that there's a race condition to create the resources `a` and `a/b` where `a` is ghost node in the later request.</p>
+
+<p>Here's one example of how the problem could manifest:</p>
+
+<p>{{# Create a transactioncurl -u fedoraAdmin:fedoraAdmin -v -XPOST <a href="http://localhost:8080/rest/fcr:tx" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/fcr:tx</a><br/>
+txid=2c994f1f-3951-4805-8742-72fc93745be8</p>
+
+<ol>
+	<li>Create the binary a/b in the transaction<br/>
+curl -u fedoraAdmin:fedoraAdmin -H"Atomic-ID: $
+{txid}" <a href="http://localhost:8080/rest/a/b" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/a/b</a> -H "Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;; rel=type" -v -H "Content-Type: text/plain" -X PUT --data-binary "ghost"<br/>
+<br/>
+# Create the binary a outside of the transactioncurl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/a" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/a</a> -H "Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;; rel=type" -v -H "Content-Type: text/plain" -X PUT --data-binary "ghost"<br/>
+ <br/>
+# Commit the transaction<br/>
+curl -u fedoraAdmin:fedoraAdmin -X PUT -v <a href="http://localhost:8080/rest/fcr:tx/$" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/fcr:tx/$</a>{txid}</li>
+</ol>
+
+
+<ol>
+	<li>See that the binary a contains the child b<br/>
+curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/a" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/a</a><br/>
+curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/a/b" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/a/b</a>}}</li>
+</ol>
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-21830"><div class="by">Peter Winckles, 2020-12-10 03:36 UTC</div><div class="text"><p>I don't get jira formatting and I don't feel like fixing it.</p></div></div>
+<div class="comment" id="comment-21975"><div class="by">Danny Bernstein, 2021-01-28 19:20 UTC</div><div class="text"><p>Post-beta, possibly post-release</p></div></div>
+<div class="comment" id="comment-22568"><div class="by">Jared Whiklo, 2021-11-24 18:25 UTC</div><div class="text"><p>Is the desire here that the transaction locks <a href="http://localhost:8080/rest/a" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/a</a> so it can’t be created or that the transaction commit fails because now <a href="http://localhost:8080/rest/a/b" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/a/b</a> exists?</p></div></div>
+<div class="comment" id="comment-22569"><div class="by">Peter Winckles, 2021-11-24 18:33 UTC</div><div class="text"><p>I think either is fine for avoiding the problem, but the former behavior is more consistent with how the system currently operates. That is to say, if <tt>a</tt> is was an AG that was created in a tx, then you could not create the binary <tt>a</tt> outside of the tx at the same time.</p></div></div>
+<div class="comment" id="comment-22570"><div class="by">Jared Whiklo, 2021-11-25 15:26 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1957" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1957</a></p></div></div>
+<div class="comment" id="comment-22581"><div class="by">Peter Winckles, 2022-01-13 18:16 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/e18c6422a2be2cd73c14e8f4c52f73a535651f74" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/e18c6422a2be2cd73c14e8f4c52f73a535651f74</a></p></div></div>
+<p><a href="data/FCREPO-3584.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

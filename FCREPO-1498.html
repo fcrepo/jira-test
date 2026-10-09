@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1498 Indirectly Contained Resource Etags</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1498</span> Indirectly Contained Resource Etags</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Trey Pendragon</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-04-23 17:55 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:30 UTC</td></tr><tr><th>Resolved</th><td>2016-05-19 18:13 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1616.html">FCREPO-1616</a> /rest/ should have an etag</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1742.html">FCREPO-1742</a> Last-Modified and ETag should not change with inbound references</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1889.html">FCREPO-1889</a> Direct/Indirect Containers allow writing arbitrary triples to any resource, despite access controls</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1983.html">FCREPO-1983</a> Binary resources do not refresh in web UI after a property is modified/added/deleted</td></tr></table>
+<h2>Description</h2>
+<p>HTTP Log: <a href="https://gist.github.com/tpendragon/74d618ec8b6d71859c12" class="external-link" rel="nofollow noreferrer">https://gist.github.com/tpendragon/74d618ec8b6d71859c12</a></p>
+
+<p>When a triple is added to a resource's body because of indirect containment the etag doesn't change, despite the representation being different.</p>
+
+<p>There was some discussion in IRC about the feasability of keeping the etag up to date.<br/>
+<a href="http://irclogs.fcrepo.org/2015-04-23.html" class="external-link" rel="nofollow noreferrer">http://irclogs.fcrepo.org/2015-04-23.html</a></p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-15706"><div class="by">Esmé Cowles, 2015-11-02 14:11 UTC</div><div class="text"><p>Since the etag is calculated from the last-modified property, this is probably impacted by fcrepo-1742.  I've added this case to the draft spec of what actions should update the last-modified property: <a href="https://wiki.duraspace.org/display/FF/Design+-+Last-Modified+Property" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+Last-Modified+Property</a></p></div></div>
+<div class="comment" id="comment-15846"><div class="by">James Griffin, 2015-11-17 16:49 UTC</div><div class="text"><p>Confirming this statement from Esmé Cowles, I have found that the last-modified property does not appear to be properly updated under the conditions in which this issue was reproduced:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+[...]
+# Given two resources test/1 and test/2...
+# Create an indirect container test/1/members
+curl -v --data @create_indirect_container.ttl --header <span class="code-quote">"Content-Type:text/turtle"</span> -X PUT http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/test/1/members
+</span>
+&lt; HTTP/1.1 200 OK
+* Server Apache-Coyote/1.1 is not blacklisted
+&lt; Server: Apache-Coyote/1.1
+&lt; Cache-Control: <span class="code-keyword">private</span>
+&lt; Expires: Thu, 01 Jan 1970 00:00:00 UTC
+&lt; ETag: <span class="code-quote">"123f5db42dc101b0a3c6a4fa0ffc234178f93027"</span>
+&lt; Last-Modified: Tue, 17 Nov 2015 15:17:43 GMT
+
+[...]
+# Set test/1 as a proxy <span class="code-keyword">for</span> test/2
+curl -v --data @create_proxy.ttl --header <span class="code-quote">"Content-Type:text/turtle"</span> -X POST http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/test/1/members
+</span>[...]
+
+# Get the ETag <span class="code-keyword">for</span> test/1 (now managed using an indirect container)
+curl -v http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/test/1
+</span>
+&lt; HTTP/1.1 200 OK
+* Server Apache-Coyote/1.1 is not blacklisted
+&lt; Server: Apache-Coyote/1.1
+&lt; Cache-Control: <span class="code-keyword">private</span>
+&lt; Expires: Thu, 01 Jan 1970 00:00:00 UTC
+&lt; ETag: <span class="code-quote">"123f5db42dc101b0a3c6a4fa0ffc234178f93027"</span>
+&lt; Last-Modified: Tue, 17 Nov 2015 15:17:43 GMT
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16503"><div class="by">Scott Prater, 2016-04-10 21:10 UTC</div><div class="text"><p>This issue may also be related to binary resource properties not refreshing in the web UI, 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1983" >
+                <a href="FCREPO-1983.html" class="jira-issue-macro-key issue-link"  title="Binary resources do not refresh in web UI after a property is modified/added/deleted" >
+            
+            FCREPO-1983
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-16511"><div class="by">Unknown, 2016-04-12 19:03 UTC</div><div class="text"><p>I have what appears to be a properly working implementation of this. Because some tests rely on changes made to the 4.5.1-RC branch, I will hold off on a PR until after the 4.5.1 release.</p></div></div>
+<div class="comment" id="comment-16622"><div class="by">Unknown, 2016-05-03 14:37 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1033" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1033</a></p>
+
+<p>Related Issue: <a href="https://jira.duraspace.org/browse/FCREPO-1742" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1742</a></p></div></div>
+<div class="comment" id="comment-16673"><div class="by">Andrew Woods, 2016-05-18 16:23 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-16685"><div class="by">Andrew Woods, 2016-05-19 18:13 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975</a></p></div></div>
+<div class="comment" id="comment-17553"><div class="by">Jared Whiklo, 2016-09-18 02:49 UTC</div><div class="text"><p>In testing for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2213" >
+                <a href="FCREPO-2213.html" class="jira-issue-macro-key issue-link"  title="lastModified date not updated on parent containers when children are deleted" >
+            
+            FCREPO-2213
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, I noticed something. When I created a child in an indirect container it updated the membershipResource, but did not update the eTag or Last-Modified date...</p>
+
+<p>Here is a log of my actions<br/>
+<a href="https://gist.github.com/whikloj/0004e0acf231c4f402b05b906e841e99" class="external-link" rel="nofollow noreferrer">https://gist.github.com/whikloj/0004e0acf231c4f402b05b906e841e99</a></p>
+
+<p>I think something must have undone this work.</p></div></div>
+<p><a href="data/FCREPO-1498.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2823 Section 5.7.2 -- When acl:Append applies to a LDP-C then POST must be allowed</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2823</span> Section 5.7.2 -- When acl:Append applies to a LDP-C then POST must be allowed</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2018-07-05 18:18 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-09-06 18:42 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Quoting section 5.7.2</p>
+<blockquote><p>In addition to requirements in <a href="https://fedora.info/2018/06/25/spec/#append-ldprs" class="external-link" rel="nofollow noreferrer">5.7.1 LDP-RS</a>, when a client is allowed to perform <tt>acl:Append</tt> but not <tt>acl:Write</tt> operations on an <a href="https://fedora.info/2018/06/25/spec/#dfn-ldpc" class="external-link" rel="nofollow noreferrer">LDPC</a>, a <tt>POST</tt> request <em>MUST</em> be allowed. </p></blockquote>
+<p>So if you can acl:Append a LDP-C you can't PUT or PATCH or DELETE, but you can POST to add a new resource inside it.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-20173"><div class="by">Peter Matthew Eichman, 2018-09-06 18:41 UTC</div><div class="text"><p>This has already been implemented--. Verification steps:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -u fedoraAdmin:fedoraAdmin -i -X POST http://localhost:8080/rest/
+# returns new resource's URI: http://localhost:8080/rest/ff4f80f3-70f3-4292-9a1e-ef03c4d0df15
+
+# HEAD to follow the Link rel="acl" location
+curl -u fedoraAdmin:fedoraAdmin -I http://localhost:8080/rest/ff4f80f3-70f3-4292-9a1e-ef03c4d0df15
+
+# create the ACL to the testuser can only append to the container
+curl -u fedoraAdmin:fedoraAdmin -X PUT http://localhost:8080/rest/ff4f80f3-70f3-4292-9a1e-ef03c4d0df15/fcr:acl -H 'Content-Type: text/turtle' --data-binary @- &lt;&lt;END
+@prefix acl: &lt;http://www.w3.org/ns/auth/acl#&gt;.
+&lt;#auth&gt; a acl:Authorization;
+acl:agent "testuser";
+acl:accessTo &lt;/rest/ff4f80f3-70f3-4292-9a1e-ef03c4d0df15&gt;;
+acl:mode acl:Append .
+END
+
+curl -u testuser:testpass http://localhost:8080/rest/ff4f80f3-70f3-4292-9a1e-ef03c4d0df15
+# --&gt; 403 (cannot read the container)
+
+curl -u testuser:testpass http://localhost:8080/rest/ff4f80f3-70f3-4292-9a1e-ef03c4d0df15 -X POST
+# --&gt; 201 (can create a child resource)
+
+curl -u testuser:testpass http://localhost:8080/rest/ff4f80f3-70f3-4292-9a1e-ef03c4d0df15/a477dd32-da66-42e1-83f8-8f227f889897 -X POST
+# --&gt; 201 (can create a child resource of a child resource) </pre>
+</div></div></div></div>
+<p><a href="data/FCREPO-2823.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

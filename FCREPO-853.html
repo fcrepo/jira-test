@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-853 Fedora misuse ERROR statements for logging</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-853</span> Fedora misuse ERROR statements for logging</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Asger Askov Blekinge</td></tr><tr><th>Assignee</th><td>Asger Askov Blekinge</td></tr><tr><th>Created</th><td>2011-01-25 22:46 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3, Fedora 3.4, Fedora 3.3.1, Fedora 3.4.1, Fedora 3.4.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Description</h2>
+<p>Fedora will often report ERROR for simple operations that can hardly be called an error.</p>
+
+<p>As fedora is a server system, there are really two kinds of ERRORS</p>
+
+<p>1. User request failed<br/>
+2. Server got broken</p>
+
+<p>For a maintenance perspective, I want my maintenance department to monitor the fedora log for problems with the fedora server. These should not monitor the logs for users timing out or not knowing the correct password.</p>
+
+<p>I feel we should rework the log statements, or provide a way for the user-request problems to be filtered to a separate file.</p>
+
+<p>Examples of how fedora logs errors</p>
+
+<p>Exhibit 1<br/>
+I pressed "next" after the session timed out. Do the server operator need to informed of this server error?</p>
+
+<p>ERROR 2011-01-20 13:10:24.055 <span class="error">&#91;http-7880-4&#93;</span> (<span class="error">&#91;FieldSearchServlet&#93;</span>) Servlet.service() for servlet FieldSearchServlet threw exception<br/>
+org.fcrepo.server.errors.UnknownSessionTokenException: Session is expired or never existed.<br/>
+        at org.fcrepo.server.search.FieldSearchSQLImpl.resumeFindObjects(FieldSearchSQLImpl.java:342) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.search.FieldSearchSQLModule.resumeFindObjects(FieldSearchSQLModule.java:167) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.DefaultDOManager.resumeFindObjects(DefaultDOManager.java:1800) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.DefaultAccess.resumeFindObjects(DefaultAccess.java:729) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FieldSearchServlet.doGet(FieldSearchServlet.java:347) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FieldSearchServlet.doPost(FieldSearchServlet.java:708) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:637) <span class="error">&#91;servlet-api.jar:na&#93;</span><br/>
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:717) <span class="error">&#91;servlet-api.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.fcrepo.server.security.jaas.AuthFilterJAAS.doFilter(AuthFilterJAAS.java:295) <span class="error">&#91;fcrepo-security-jaas-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:563) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:127) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:298) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+        at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:857) <span class="error">&#91;tomcat-coyote.jar:6.0.29&#93;</span><br/>
+        at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:588) <span class="error">&#91;tomcat-coyote.jar:6.0.29&#93;</span><br/>
+        at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:489) <span class="error">&#91;tomcat-coyote.jar:6.0.29&#93;</span><br/>
+        at java.lang.Thread.run(Thread.java:619) <span class="error">&#91;na:1.6.0_15&#93;</span></p>
+
+
+<p>Exhibit 2<br/>
+A user failed to login. Is this really an ERROR?</p>
+
+<p>ERROR 2011-01-24 10:48:53.016 <span class="error">&#91;http-7880-11&#93;</span> (AuthFilterJAAS) Login Failure: all modules ignored</p>
+
+<p>Exhibit 3<br/>
+WARN, not ERROR, but attempted to load an object that does not exist. </p>
+
+<p>WARN 2011-01-24 10:53:33.513 <span class="error">&#91;http-7880-3&#93;</span> (FedoraObjectResource) Resource not found: demo:5; unable to fulfill REST API request<br/>
+org.fcrepo.server.errors.ObjectNotInLowlevelStorageException: demo:5<br/>
+        at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorage.retrieve(AkubraLowlevelStorage.java:383) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorage.retrieveObject(AkubraLowlevelStorage.java:160) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorageModule.retrieveObject(AkubraLowlevelStorageModule.java:84) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.DefaultDOManager.getReader(DefaultDOManager.java:646) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.DefaultAccess.getObjectProfile(DefaultAccess.java:637) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.rest.FedoraObjectResource.getObjectProfile(FedoraObjectResource.java:184) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at sun.reflect.GeneratedMethodAccessor147.invoke(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) <span class="error">&#91;na:1.6.0_15&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_15&#93;</span></p>
+
+
+<p>Exhibit 4<br/>
+Malformed pid, that is clearly a Server ERROR.</p>
+
+<p>ERROR 2011-01-24 10:53:49.862 <span class="error">&#91;http-7880-11&#93;</span> (FedoraObjectResource) Unexpected error fulfilling REST API request<br/>
+org.fcrepo.server.errors.MalformedPidException: PID delimiter ( is missing.<br/>
+        at org.fcrepo.server.Server.getPID(Server.java:1358) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.DefaultAccess.getObjectProfile(DefaultAccess.java:633) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.rest.FedoraObjectResource.getObjectProfile(FedoraObjectResource.java:184) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at sun.reflect.GeneratedMethodAccessor147.invoke(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) <span class="error">&#91;na:1.6.0_15&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_15&#93;</span></p>
+
+
+<p>Exhibit 5<br/>
+Same as above</p>
+
+<p>ERROR 2011-01-24 10:53:49.866 <span class="error">&#91;http-7880-11&#93;</span> (WebApplicationImpl) Internal server error<br/>
+javax.ws.rs.WebApplicationException: org.fcrepo.server.errors.MalformedPidException: PID delimiter ( is missing.<br/>
+        at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:168) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.rest.FedoraObjectResource.getObjectProfile(FedoraObjectResource.java:197) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at sun.reflect.GeneratedMethodAccessor147.invoke(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) <span class="error">&#91;na:1.6.0_15&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_15&#93;</span></p>
+
+
+<p>Exhibit 6<br/>
+Uh, getting an non-existant datastream. Is this really an ERROR?</p>
+
+<p>ERROR 2011-01-25 13:29:35.655 <span class="error">&#91;http-7880-1&#93;</span> (FedoraAPIABindingSOAPHTTPImpl) Error getting datastream dissemination<br/>
+org.fcrepo.server.errors.DatastreamNotFoundException: <span class="error">&#91;DefaulAccess&#93;</span> No datastream could be returned. Either there is no datastream for the digital object "fedora-system:FedoraObject-3.0" with datastream ID of "VIEW "  OR  there are no datastreams that match the specified date/time value of "null "  .<br/>
+        at org.fcrepo.server.access.DefaultAccess.getDatastreamDissemination(DefaultAccess.java:1150) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAPIABindingSOAPHTTPImpl.getDatastreamDissemination(FedoraAPIABindingSOAPHTTPImpl.java:156) <span class="error">&#91;fcrepo-server-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAPIABindingSOAPHTTPSkeleton.getDatastreamDissemination(FedoraAPIABindingSOAPHTTPSkeleton.java:186) <span class="error">&#91;fcrepo-common-3.4.2-SNAPSHOT.jar:na&#93;</span><br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) <span class="error">&#91;na:1.6.0_15&#93;</span><br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) <span class="error">&#91;na:1.6.0_15&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) <span class="error">&#91;na:1.6.0_15&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_15&#93;</span></p>
+
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11789"><div class="by">Chris Wilper, 2011-01-25 23:22 UTC</div><div class="text"><p>General descriptions <a href="http://www.slf4j.org/apidocs/org/apache/log4j/Level.html" class="external-link" rel="nofollow noreferrer">http://www.slf4j.org/apidocs/org/apache/log4j/Level.html</a></p></div></div>
+<div class="comment" id="comment-11790"><div class="by">Chris Wilper, 2011-01-25 23:46 UTC</div><div class="text"><p>Discussion today about levels:</p>
+
+<p>FATAL: I can't keep running.  Or I've detected a situation where there's a risk of data loss, so I'm shutting down.<br/>
+ERROR: Server detected inconsistent state between db and persistent storage, an unexpected IO error accessing either the DB or filesystem.<br/>
+WARN: Sysadmin should probably know about this, or a potential cause of future error is detected.<br/>
+INFO: Clearly user error, or signifant server events (startup, module initialization)</p></div></div>
+<div class="comment" id="comment-11791"><div class="by">Chris Wilper, 2011-01-25 23:50 UTC</div><div class="text"><p>TBD: Discussion about appropriate use of INFO vs. DEBUG vs. TRACE.  General sense on the call that a lot of places where Fedora currently uses DEBUG should probably be trace.</p></div></div>
+<div class="comment" id="comment-11792"><div class="by">Chris Wilper, 2011-01-26 00:07 UTC</div><div class="text"><p>Whoops.  I forgot that slf4j doesn't have a FATAL level....here's why:</p>
+
+<p><a href="http://www.slf4j.org/faq.html#fatal" class="external-link" rel="nofollow noreferrer">http://www.slf4j.org/faq.html#fatal</a></p>
+
+<p>So if we want to distinguish between application-stopping and and non-application-stopping ERRORs, we must do so within the text of the log message.  Actually saying something like "Really bad thing X happened! Shutting down Fedora..." would be fine I think.</p></div></div>
+<div class="comment" id="comment-12066"><div class="by">Vladimir Markovic, 2011-10-11 04:44 UTC</div><div class="text"><p>Exhibit 3 and 4</p>
+
+<p>Found the problem, you cannot change pid namespace in fedora.fcfg to whatever, this was the problem.<br/>
+I still have to find a way to change the namespace. </p></div></div>
+<div class="comment" id="comment-13044"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-853.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

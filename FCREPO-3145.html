@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3145 Fix migration-utils inline XML migration to not transform XML en route</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3145</span> Fix migration-utils inline XML migration to not transform XML en route</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2019-11-25 16:57 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 16:39 UTC</td></tr><tr><th>Resolved</th><td>2021-02-09 14:39 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-utils-4.5.0, Fedora 6.0.0</td></tr><tr><th>Labels</th><td>loose-end</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Causes</th><td><a href="FCREPO-3604.html">FCREPO-3604</a> migration-utils migrates some F3 datastreams digests that are incorrect</td></tr></table>
+<h2>Description</h2>
+<p>Inline XML datastreams migrated from Fedora 3.x to OCFL currently undergo transformations:  attributes are rearranged; XML entities are resolved to characters.  Example:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+diff &lt;(curl -qs http:<span class="code-comment">//localhost:9090/fedora/objects/1711.dl:TESTMIGRATEOBJ/datastreams/TEST1/content) /<span class="code-keyword">var</span>/tmp/ocfl/ocfl/1711.dl%3aTESTMIGRATEOBJ/v4/content/TEST1
+</span>17c17
+&lt; &lt;placeTerm script=<span class="code-quote">"Latn"</span> type=<span class="code-quote">"text"</span>&gt;New York&lt;/placeTerm&gt;
+---
+&gt; &lt;placeTerm type=<span class="code-quote">"text"</span> script=<span class="code-quote">"Latn"</span>&gt;New York&lt;/placeTerm&gt;
+20c20
+&lt; &lt;placeTerm script=<span class="code-quote">"Latn"</span> type=<span class="code-quote">"text"</span>&gt;Chicago&lt;/placeTerm&gt;
+---
+&gt; &lt;placeTerm type=<span class="code-quote">"text"</span> script=<span class="code-quote">"Latn"</span>&gt;Chicago&lt;/placeTerm&gt;
+23c23
+&lt; &lt;placeTerm script=<span class="code-quote">"Latn"</span> type=<span class="code-quote">"text"</span>&gt;Toronto, Canada&lt;/placeTerm&gt;
+---
+&gt; &lt;placeTerm type=<span class="code-quote">"text"</span> script=<span class="code-quote">"Latn"</span>&gt;Toronto, Canada&lt;/placeTerm&gt;
+29c29
+&lt; &lt;placeTerm script=<span class="code-quote">"Latn"</span> type=<span class="code-quote">"text"</span>&gt;Sydney, Australia&lt;/placeTerm&gt;
+---
+&gt; &lt;placeTerm type=<span class="code-quote">"text"</span> script=<span class="code-quote">"Latn"</span>&gt;Sydney, Australia&lt;/placeTerm&gt;
+35c35
+&lt; &lt;placeTerm script=<span class="code-quote">"Latn"</span> type=<span class="code-quote">"text"</span>&gt;London, UK&lt;/placeTerm&gt;
+---
+&gt; &lt;placeTerm type=<span class="code-quote">"text"</span> script=<span class="code-quote">"Latn"</span>&gt;London, UK&lt;/placeTerm&gt;
+39c39
+&lt; &lt;dateOther encoding=<span class="code-quote">"w3cdtf"</span> keyDate=<span class="code-quote">"yes"</span>&gt;1913&lt;/dateOther&gt;
+---
+&gt; &lt;dateOther keyDate=<span class="code-quote">"yes"</span> encoding=<span class="code-quote">"w3cdtf"</span>&gt;1913&lt;/dateOther&gt;
+62c62
+&lt; &lt;topic&gt;Choruses (Men&amp;apos;s voices, 4 parts)&lt;/topic&gt;
+---
+&gt; &lt;topic&gt;Choruses (Men's voices, 4 parts)&lt;/topic&gt;
+70c70
+&lt; &lt;accessCondition type=<span class="code-quote">"useAndReproduction"</span> xlink:href=<span class="code-quote">"http:<span class="code-comment">//rightsstatements.org/vocab/NoC-US/1.0/"</span>&gt;No copyright - United States&lt;/accessCondition&gt;
+</span>---
+&gt; &lt;accessCondition xlink:href=<span class="code-quote">"http:<span class="code-comment">//rightsstatements.org/vocab/NoC-US/1.0/"</span> type=<span class="code-quote">"useAndReproduction"</span>&gt;No copyright - United States&lt;/accessCondition&gt;</span></pre>
+</div></div>
+<p>Inline XML should be migrated the same way as managed datastreams:  an exact byte-for-byte copy of the inline XML should be written to the OCFL file.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3145/10345_test-raw-object-with-inline-xml.xml">test-raw-object-with-inline-xml.xml</a>, 18880 bytes, added by Scott Prater on 2020-01-29</li>
+</ul>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-20982"><div class="by">Andrew Woods, 2020-01-27 18:44 UTC</div><div class="text"><p>In investigating this issue, I was able to find the following F3 object with `placeTerm type="text" script="Latn"` XML attributes.<br/>
+PID of example F3 object: "1711.dl:VQ4WDCSKQWMV38D"</p>
+
+<p>After migrating that single PID with migration-utils, the diff of the source F3 "BIB0.0" datastream byte-for-byte matches the migrated datastream.</p>
+
+<p>I wonder if the F3 HTTP API is actually the culprit of the observed XML transformation noted in this ticket. <br/>
+Unfortunately, I am not currently in a position to verify this F3 hypothesis.</p>
+
+<p>"Stopping" work on this ticket, pending input from Scott Prater.</p></div></div>
+<div class="comment" id="comment-21000"><div class="by">Scott Prater, 2020-01-29 17:26 UTC</div><div class="text"><p>The problem appears when migrating inline datastreams.  In my test case, I compared the inline datastream in the test object stored on the filesystem in the Akubra structure with the OCFL versioned file of the same datastream (i.e., a direct file-to-file comparison).  The two files differed as described above.</p>
+
+<p>I then downloaded the same source datastream using the Fedora 3 API, and compared it to the OCFL versioned datastream, and the two were identical.  Which shows, as Andrew Woods surmises, that Fedora 3 is transforming the stored XML during delivery.</p>
+
+<p>So the question is:  which should be considered the canonical version of the inline XML datastream?  The version stored on disk, or the version delivered by Fedora through its API?  If the former, then OCFL contents should match the disk version, and this bug stands;  if the latter, then this issue is not a real bug, and can be closed.</p>
+
+<p>I lean towards the stored version, but I could be talked out of that.  The stored F3 version is the version that matches the original ingested XML datastream, and as such, could be considered the "truer" version to the original (pre-Fedora) source.</p></div></div>
+<div class="comment" id="comment-21012"><div class="by">Andrew Woods, 2020-01-30 18:42 UTC</div><div class="text"><p>This appears to be the source of the issue: <a href="https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/foxml/FoxmlInputStreamFedoraObjectProcessor.java#L313-L331" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/foxml/FoxmlInputStreamFedoraObjectProcessor.java#L313-L331</a></p></div></div>
+<div class="comment" id="comment-21029"><div class="by">Scott Prater, 2020-02-02 23:57 UTC</div><div class="text"><p>It may be that the transformation is happening on the way out, and not on the way in.  One approach may be to create a StringBuffer object, then as each event is processed, write the raw data read in to the string buffer, and output that as the OCFL XML file.  A similar approach is demonstrated here:  <a href="http://groovyjavathoughts.blogspot.com/2011/04/using-stax-to-extract-records-from-xml.html" class="external-link" rel="nofollow noreferrer">http://groovyjavathoughts.blogspot.com/2011/04/using-stax-to-extract-records-from-xml.html</a></p></div></div>
+<div class="comment" id="comment-21044"><div class="by">Andrew Woods, 2020-02-13 14:39 UTC</div><div class="text"><p>As a brief follow-up, the `StartElementEvent` created by the `XMLEventReader`, stores attributes in a HashMap, which has no guarantees around ordering.<br/>
+<a href="https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/foxml/FoxmlInputStreamFedoraObjectProcessor.java#L313-L331" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/foxml/FoxmlInputStreamFedoraObjectProcessor.java#L313-L331</a></p>
+
+<p>My next exploration will be:<br/>
+1. Can we get ordered attributes from the 'XMLStreamReader'?, otherwise<br/>
+2. Can we inject our own implementation of `StartElementEvent` into the `XMLEventReader` flow?</p></div></div>
+<div class="comment" id="comment-21683"><div class="by">Andrew Woods, 2020-11-18 14:30 UTC</div><div class="text"><p>Although a byte-for-byte migration is ideal, this issue of swapping the order of XML attributes is likely not a Beta-blocker. Moving to "minor".</p></div></div>
+<div class="comment" id="comment-21960"><div class="by">Peter Winckles, 2021-01-27 17:00 UTC</div><div class="text"><p>I just setup an integration test for this, and, of course, the problem does not appear. </p></div></div>
+<div class="comment" id="comment-21966"><div class="by">Peter Winckles, 2021-01-27 20:19 UTC</div><div class="text"><p>There are two issues here.</p>
+
+<p>1. The inline xml is being read by a DOM parser which does not guarantee attribute order.<br/>
+2. Fedora 3 modifies the xml before calculating the digest: <a href="https://github.com/fcrepo3/fcrepo-historical/blob/e8a3be191cce6bbf8f55cd02bf1d52ac53425146/fcrepo-server/src/main/java/fedora/server/storage/types/DatastreamXMLMetadata.java#L92" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo-historical/blob/e8a3be191cce6bbf8f55cd02bf1d52ac53425146/fcrepo-server/src/main/java/fedora/server/storage/types/DatastreamXMLMetadata.java#L92</a></p>
+
+<p>I have an uncontroversial solution for issue 1. However, if we want the migrated xml to match the recorded digest, then we will need to migrate the version of the xml that the above linked code produces.</p>
+
+<p>Do we want to do this?</p></div></div>
+<div class="comment" id="comment-21967"><div class="by">Peter Winckles, 2021-01-27 20:19 UTC</div><div class="text"><p>Example of transformed xml:</p>
+
+<p>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;rdf:RDF xmlns:fedora-model="info:fedora/fedora-system:def/model#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"&gt;&lt;rdf:Description rdf:about="info:fedora/1711.dl:CModelAudioStream"&gt;&lt;hasModel rdf:resource="info:fedora/fedora-system:ContentModel-3.0" xmlns="info:fedora/fedora-system:def/model#"/&gt;&lt;/rdf:Description&gt;&lt;/rdf:RDF&gt;</p></div></div>
+<div class="comment" id="comment-21969"><div class="by">Scott Prater, 2021-01-27 21:23 UTC</div><div class="text"><p>I think the OCFL xml file should be a copy of the inline xml that is stored on disk in the FOXML file, not transformed in any way by Fedora 3 or the migration utility.<br/>
+This raises a problem for checksum comparison, as Fedora 3 transforms the stored inline XML prior to calculating and recording, then verifying the checksum.  This means that what is stored in OCFL will have a different checksum than the one recorded in the Fedora 3 datastream record.  I'm okay with that.  The differences can be accounted for as part of a validation process, separate from the migration process.</p></div></div>
+<div class="comment" id="comment-21972"><div class="by">Peter Winckles, 2021-01-28 15:55 UTC</div><div class="text"><p><a href="https://github.com/fcrepo-exts/migration-utils/pull/141" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/pull/141</a></p></div></div>
+<div class="comment" id="comment-22013"><div class="by">Jared Whiklo, 2021-02-09 14:39 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo-exts/migration-utils/commit/9955b0adf331f028aa16a8dcc84b36ad97a88642" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/9955b0adf331f028aa16a8dcc84b36ad97a88642</a></p></div></div>
+<p><a href="data/FCREPO-3145.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

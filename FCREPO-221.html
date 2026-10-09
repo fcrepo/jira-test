@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-221 GSearch: XSLT includes with relative URIs don&#x27;t work</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-221</span> GSearch: XSLT includes with relative URIs don&#x27;t work</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Created</th><td>2008-06-05 03:03 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 19:00 UTC</td></tr><tr><th>Resolved</th><td>2008-10-29 14:36 UTC</td></tr><tr><th>Components</th><td>legacy - GSearch</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr><tr><th>Fix versions</th><td>GSearch 2.2</td></tr></table>
+<h2>Description</h2>
+<p>... at least, they don't work for the config/rest/*.xslt files.</p>
+
+<p>I think the root of the problem is in the GTransformer class.  It looks to me like most calls to getTransformer end up passing in a null URI resolver rather than a resolver that knows how to resolve relative URIs.</p>
+
+<p>Whatever the reason, having to specify absolute pathnames   in xsl:include directives is messy and introduces unwanted deployment problems.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10458"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: crawley<br/>
+Item #: 1985001<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1985001" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1985001</a></p></div></div>
+<div class="comment" id="comment-10776"><div class="by">Bill Branan, 2008-10-29 14:36 UTC</div><div class="text"><p>The current implementation (as of GSearch 2.1) is to allow the configvalues.xml ant script to set the full path of xsl:includes for all XSLT files under GSearch config. This solution guarantees all included files will be resolved correctly, regardless of the server setup or classloading policies. There does not appear to be a need to make further changes at this time.</p>
+
+<p>From Gert: I remember having problems long ago with relative paths in the xsl:includes, because they resolved to the directory from where tomcat was started (instead of the natural thing, namely resolving to the directory, where the calling xslt was), and thus did not find demoCommon.xslt. It has not seemed a problem to have absolute paths in the final config files once they are installed under tomcat. I do not have a clue how to do it otherwise, in GTransformer or elsewhere.</p>
+</div></div>
+<p><a href="data/FCREPO-221.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

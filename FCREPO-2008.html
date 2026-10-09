@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2008 Parent Container Messaging Inconsistency</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2008</span> Parent Container Messaging Inconsistency</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-04-22 21:57 UTC</td></tr><tr><th>Updated</th><td>2016-05-17 17:55 UTC</td></tr><tr><th>Resolved</th><td>2016-05-17 17:55 UTC</td></tr><tr><th>Components</th><td>f4-messaging</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>audit</td></tr></table>
+<h2>Description</h2>
+<p>This task is to make the messaging around updated containers consistent in how the fcrepo-audit and fcrepo-audit-triplestore behave.</p>
+
+<p>There is filtering in fcrepo-audit that ignores updates to parent containers when a child resource is added:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-audit/blob/master/src/main/java/org/fcrepo/audit/InternalAuditor.java#L149-L153" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/blob/master/src/main/java/org/fcrepo/audit/InternalAuditor.java#L149-L153</a></p>
+
+<p>However, these messages are still omitted for general consumption. The fcrepo-audit-triplestore consumes the parent container messages and creates audit events for them.</p>
+
+<p>This ticket is to either move the logic out of InternalAuditor.java and into JMSTopicPublisher (or the like),<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-jms/src/main/java/org/fcrepo/jms/observer/JMSTopicPublisher.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-jms/src/main/java/org/fcrepo/jms/observer/JMSTopicPublisher.java</a><br/>
+...or remove the filtering logic altogether.</p>
+
+<p>This behavior can be verified by spinning up fcrepo4-vagrant with the default configuration (Fedora and triplestore audit enabled), create a container and a child resource in Fedora. The Fedora audit will have two entries and Fuseki will have three.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-16591"><div class="by">Unknown, 2016-04-27 10:39 UTC</div><div class="text"><p>In relation to moving this filtering logic into fcrepo-jms, are you suggesting that events for parent containers should no longer be emitted?</p></div></div>
+<div class="comment" id="comment-16596"><div class="by">Andrew Woods, 2016-04-27 13:41 UTC</div><div class="text"><p>No. The primary question here is, "What events should be captured in the audit log"? ...followed by, "and let's make sure that the internal and external audit features are consistent".</p>
+
+<p>The mention of generalizing the message filtering from <tt>InternalAuditor</tt> to <tt>JMSTopicPublisher</tt> was just recognizing an approach to consolidating logic... potentially by marking certain events, etc.</p></div></div>
+<div class="comment" id="comment-16599"><div class="by">Esmé Cowles, 2016-04-27 13:53 UTC</div><div class="text"><p>I agree that the first question here is whether the events should be emitted at all.  Since if we are fine with emitting them, then just removing the filtering would be the easiest approach.</p>
+
+<p>I believe the rationale for doing that filtering was that adding a binary should emit just the event about the binary being added, and not also emit an event for the parent's last-modified being updated.  But the last-modified is indeed changed, so I can imagine people might want to update it (e.g., to update the Solr or triplestore's count of attached binaries).  So that rationale seems pretty suspect to me now.  Are there other reasons to keep the filtering?</p></div></div>
+<div class="comment" id="comment-16600"><div class="by">Andrew Woods, 2016-04-27 13:57 UTC</div><div class="text"><p>I think there are two separate questions:<br/>
+1. Should all repository updates, direct or indirect result in messages - I believe the answer is "yes".<br/>
+2. Should the audit feature create a log entry for all repository updates, or does the audit only care about direct updates? - Thoughts?</p></div></div>
+<div class="comment" id="comment-16601"><div class="by">Unknown, 2016-04-27 14:11 UTC</div><div class="text"><p>To question 1: I feel strongly that the answer is "yes". This is especially important for external indexes such as triplestores. Basically, the parent resource has changed &#8211; it has a new ldp:contains triple and the lastModified triple has changed.</p>
+
+<p>To question 2: I don't have much of an opinion here, though I do think that it will become increasingly difficult to separate direct updates from indirect updates. The Direct/Indirect container example is one such instance where a single create operation will trigger multiple messages (it doesn't at present but it will with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1742" >
+                <a href="FCREPO-1742.html" class="jira-issue-macro-key issue-link"  title="Last-Modified and ETag should not change with inbound references" >
+            
+            FCREPO-1742
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1498" >
+                <a href="FCREPO-1498.html" class="jira-issue-macro-key issue-link"  title="Indirectly Contained Resource Etags" >
+            
+            FCREPO-1498
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+). HTTP MOVE operations now also trigger all sorts of additional events.</p>
+
+<p>Overall, I would be inclined to remove the filtering.</p></div></div>
+<div class="comment" id="comment-16602"><div class="by">Esmé Cowles, 2016-04-27 14:14 UTC</div><div class="text"><p>I am also inclined to just remove the filtering.  I don't think there's a strong rationale for doing the filtering, and having limited and inconsistent filtering is worse than none.</p></div></div>
+<div class="comment" id="comment-16603"><div class="by">Andrew Woods, 2016-04-27 14:23 UTC</div><div class="text"><p>+1 for simplicity. <br/>
+This task is to remove the filtering found at:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-audit/blob/master/src/main/java/org/fcrepo/audit/InternalAuditor.java#L149-L153" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/blob/master/src/main/java/org/fcrepo/audit/InternalAuditor.java#L149-L153</a></p></div></div>
+<div class="comment" id="comment-16646"><div class="by">Esmé Cowles, 2016-05-12 21:08 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-exts/fcrepo-audit/pull/34" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/pull/34</a></p></div></div>
+<div class="comment" id="comment-16670"><div class="by">Andrew Woods, 2016-05-17 17:55 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-audit/commit/8422d7a5d8969f9402c55cac55eef2e3531e68e7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/commit/8422d7a5d8969f9402c55cac55eef2e3531e68e7</a></p></div></div>
+<p><a href="data/FCREPO-2008.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1019 Exploration of complex GSearch use cases</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1019</span> Exploration of complex GSearch use cases</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Gert Schmeltz Pedersen</td></tr><tr><th>Assignee</th><td>Gert Schmeltz Pedersen</td></tr><tr><th>Created</th><td>2011-10-24 14:24 UTC</td></tr><tr><th>Updated</th><td>2011-12-21 22:05 UTC</td></tr><tr><th>Resolved</th><td>2011-12-21 22:05 UTC</td></tr><tr><th>Components</th><td>legacy - GSearch</td></tr><tr><th>Fix versions</th><td>GSearch 2.4</td></tr></table>
+<h2>Description</h2>
+<p>This issue is created in response to the messages below. I want to explore complex GSearch use cases and sketch or implement solutions, based on existing and/or potential GSearch functionality. Such functionality includes many-repositories-to-many-indexes, indexing xslt stylesheets creating index documents across Fedora datastreams and/or objects, managing GSearch configurations in Fedora objects (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1018" >
+                <a href="FCREPO-1018.html" class="jira-issue-macro-key issue-link"  title="Management of GSearch configurations in Fedora objects" >
+            
+            FCREPO-1018
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+), and interaction between the resource index and the Lucene/Solr index(es) (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1009" >
+                <a href="FCREPO-1009.html" class="jira-issue-macro-key issue-link"  title="Interaction with the Resource Index" >
+            
+            FCREPO-1009
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).</p>
+
+
+<p>From: "ajs6f@virginia.edu" &lt;ajs6f@virginia.edu&gt;<br/>
+Date: 24. okt 2011 02.19.24 CEST<br/>
+To: Support and info exchange list for Fedora users. &lt;fedora-commons-users@lists.sourceforge.net&gt;<br/>
+Subject: Re: <span class="error">&#91;fcrepo-user&#93;</span> <span class="error">&#91;fcrepo-dev&#93;</span> GSearch planning<br/>
+Reply-To: Support and info exchange list for Fedora users. &lt;fedora-commons-users@lists.sourceforge.net&gt;</p>
+
+<p>The intention of bringing the structure of the indexing workflow out of XSLT into the RDF relationships between objects is not primarily to provide for complex cases, although it can do that. It is, instead, to make that structure part of the curation of the objects themselves.</p>
+
+<p>The interest of this move follows on the claim that the presentation of objects increasingly is dependent on indexing (in part because so many "front-end" frameworks for Fedora rely on indexes to immediately construct many user-facing web pages, and not on direct retrieval from the repository, e.g. Hydra or Islandora), and that therefore indexing workflow deserves to be curated alongside data contents in the <em>strongest practical way</em>. I claim further that the strongest possible way to curate relationships between content datastreams and indexing transforms in a Fedora repository is in explicit RDF, and that this is practical.</p>
+
+<p>I quite agree that a powerful but unwieldy or opaque style of configuration may be worse than a weaker but more transparent style, but I believe that with enough thought and attention for the specific modeling of workflow, we could provide graceful factoring in configuration through which simple GSearch indexing workflows would incur very little expense (and even less than they now do) but sophisticated workflows remain possible.</p>
+
+<p>&#8212;<br/>
+A. Soroka<br/>
+Online Library Environment<br/>
+the University of Virginia Library</p>
+
+
+
+
+<p>On Oct 23, 2011, at 8:05 PM, Conal Tuohy wrote:</p>
+
+<p>On 17/10/11 11:48, ajs6f@virginia.edu wrote:<br/>
+Heartily seconded!</p>
+
+<p>In the architecture we're exploring at UVa, we use RELS-INT to define relationships between datastreams and indexing transforms. The relevance to this issue lies in RELS-EXT. By indexing RELS-EXT as a datastream (and assuming that the molecular "para-object" that is responsible for a given index record is constructed via RELS-EXT relationships) we can obtain information about the other objects that may be involved in any index record to which a given object is associated. I'm in agreement that keeping the analysis of object relationships for indexing purposes in indexing XSLT is <em>not</em> the best way, and instead we look to combine this technique with the use of Enhanced Content Model Views to create the kind of multiobject records to which Jonathan is pointing by hiding the explicit structure of the "para-object" from the indexing XSLT. This may or may not be the best possible solution for the problem, so I'm just offering it as a place to begin discussion.</p>
+
+
+<p>&#8212;<br/>
+A. Soroka<br/>
+Online Library Environment<br/>
+the University of Virginia Library</p>
+
+
+
+
+<p>On Oct 16, 2011, at 8:15 PM, Jonathan Green wrote:</p>
+
+<p>Something that I think needs to be considered when moving forward with gsearch is that the index may not always share a 1 to 1 relationship with objects in fedora. In a very atomistic content model perhaps the solr document is actually composed of parts from many related objects. These types of decisions are currently very hard to make in XSLTs.<br/>
+In what way hard? Can you expand a little on the difficulties you see?</p>
+
+<p>While I think XSLTs have a place in transforming metadata, there needs to be something more.<br/>
+One issue to keep to in mind here is the 80/20 rule. If Fedora's <br/>
+indexing system is complex enough to allow for all manner of complex <br/>
+cases, then it may be needlessly complex for many simple cases. A more <br/>
+complex system would make complex indexing easier, but if it also makes <br/>
+simpler cases harder (even just harder to understand a configuration <br/>
+system), then the OVERALL ease-of-use might actually decrease. I don't <br/>
+think it's possible to strike a perfect balance, but a technology like <br/>
+XSLT might be a useful catch-all: it can handle simple cases very <br/>
+simply, but can also be extended arbitrarily (including, for instance, <br/>
+transcluding metadata from related Fedora objects or other XML datasources).</p>
+
+<p>In very many cases, the mapping of Fedora objects to Solr documents is <br/>
+very simple and won't, for instance, involve any aggregation. But the <br/>
+mapping from Fedora objects to Solr documents is in principle arbitrary; <br/>
+you might choose to do pretty much anything, quite legitimately. You <br/>
+might have metadata schemas of any type; you might use the RDF store, <br/>
+you might have external authority files, etc. This is where, I think, a <br/>
+system which is sufficiently configurable to be fully general could well <br/>
+end up as complex as an XSLT-based system would be, but without many of <br/>
+the advantages of XSLT (code libraries, books and mail-lists, programmer <br/>
+experience, etc).</p>
+
+<p>It might be enough to ship Fedora with a basic set of XSLT transforms, <br/>
+and a few sample transforms showing how to use the resource index, etc.<br/>
+&#8211; </p>
+
+<p>Conal Tuohy<br/>
+eResearch Business Analyst<br/>
+Victorian eResearch Strategic Initiative<br/>
++61-466324297</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12124"><div class="by">Gert Schmeltz Pedersen, 2011-11-18 15:26 UTC</div><div class="text"><p>I committed code on this issue yesterday, see</p>
+
+<p><a href="https://github.com/fcrepo/gsearch/commit/ad671857380eec7f96ac9d75b1e248445bf7ea6e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/gsearch/commit/ad671857380eec7f96ac9d75b1e248445bf7ea6e</a> and </p>
+
+<p><a href="https://github.com/fcrepo/gsearch/commit/eb06f3c357d475c72abdbe11070f699d84ab1f56" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/gsearch/commit/eb06f3c357d475c72abdbe11070f699d84ab1f56</a></p>
+
+<p>It addresses the concern that "the index may not always share a 1 to 1 relationship with objects in fedora".</p>
+
+<p>The test case committed here has both </p>
+<ul class="alternate" type="square">
+	<li>an index with contents from an itql query to risearch, thus combining or joining several Fedora objects,</li>
+	<li>and the new feature that there may be more than one index document per Fedora object, the example here has an index document for each of three datastreams.</li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-1019.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

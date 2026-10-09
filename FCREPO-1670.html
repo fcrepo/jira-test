@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1670 Factor fcrepo-transform into a separate project</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1670</span> Factor fcrepo-transform into a separate project</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-08-03 19:45 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:48 UTC</td></tr><tr><th>Resolved</th><td>2015-10-19 14:53 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>modularity</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1644.html">FCREPO-1644</a> use spring configuration for fcrepo-camel-toolbox integration tests</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1751.html">FCREPO-1751</a> Fix fcrepo-webapp-plus&#x27; use of Spring namespaces</td></tr></table>
+<h2>Description</h2>
+<p>fcrepo-transform is slated for excision from the main codebase and removal to an extension Github account. To begin that process, we can move it to a separate project inside the same Github organization.</p>
+<h2>Comments (40)</h2>
+<div class="comment" id="comment-14964"><div class="by">Unknown, 2015-08-08 14:17 UTC</div><div class="text"><p>The fcrepo-camel-webapp integration tests pull in the "standard" fcrepo-webapp warfile, and at least one of the projects (fcrepo-indexing-solr) relies on fcrepo-transform to be part of that war. Rather than using the maven-jetty plugin to startup a fedora instance, using spring should allow the integration tests to specify the fcrepo-transform module, if it is required.</p></div></div>
+<div class="comment" id="comment-15006"><div class="by">Jared Whiklo, 2015-08-13 16:18 UTC</div><div class="text"><p>Are we changing the groupId for the new external fcrepo-transform module?</p>
+
+<p>I am realizing that this may require more Maven knowledge than I have available to me. So if this is going to be more complex than cribbing from fcrepo-camel, I may defer to another.</p>
+
+<p>But for right now do we want option a)</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ &lt;groupId&gt;org.fcrepo.transform&lt;/groupId&gt;
+  &lt;artifactId&gt;fcrepo-transform&lt;/artifactId&gt;
+</pre>
+</div></div>
+<p>or option b</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ &lt;groupId&gt;org.fcrepo.exts.transform&lt;/groupId&gt;
+  &lt;artifactId&gt;fcrepo-transform&lt;/artifactId&gt;
+</pre>
+</div></div>
+
+<p>Option <b>B</b> obviously requires more work, but is it worth it? Or will it cause more trouble for other modules (like fcrepo-camel).</p></div></div>
+<div class="comment" id="comment-15041"><div class="by">Jared Whiklo, 2015-08-18 18:49 UTC</div><div class="text"><p>Okay, I couldn't get fcrepo-message-consumer to build and migration-utils was giving me stupid java compilation errors for non-existent problems.</p>
+
+<p>So someone else try building these things, 'cause I'm losing it.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/887" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/887</a></p>
+
+<p>thanks</p></div></div>
+<div class="comment" id="comment-15043"><div class="by">Andrew Woods, 2015-08-18 23:14 UTC</div><div class="text"><p>It appears that not all of fcrepo-transform was removed:<br/>
+<a href="https://github.com/whikloj/fcrepo4/tree/3002ad1729122306e630a9ee7c2c77cb1d0384f2" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/tree/3002ad1729122306e630a9ee7c2c77cb1d0384f2</a></p>
+
+<p>I am still seeing these two file:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/whikloj/fcrepo4/blob/3002ad1729122306e630a9ee7c2c77cb1d0384f2/fcrepo-transform/src/main/java/org/fcrepo/transform/TransformationFactory.java" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/blob/3002ad1729122306e630a9ee7c2c77cb1d0384f2/fcrepo-transform/src/main/java/org/fcrepo/transform/TransformationFactory.java</a></li>
+	<li><a href="https://github.com/whikloj/fcrepo4/blob/3002ad1729122306e630a9ee7c2c77cb1d0384f2/fcrepo-transform/src/test/java/org/fcrepo/transform/http/FedoraTransformTest.java" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/blob/3002ad1729122306e630a9ee7c2c77cb1d0384f2/fcrepo-transform/src/test/java/org/fcrepo/transform/http/FedoraTransformTest.java</a></li>
+</ul>
+
+
+<p>Also, fcrepo-webapp-plus needs to be updated along with this ticket.</p></div></div>
+<div class="comment" id="comment-15046"><div class="by">Jared Whiklo, 2015-08-19 16:53 UTC</div><div class="text"><p>Here is the PR with changes to fcrepo-transform, I modified the pom.xml. I separated the project.version from fcrepo.version to make it easier when/if we move to non-linked version numbers.<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/1</a></p>
+
+<p>Also, updated the fcrepo4 PR with code review changes.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/887" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/887</a></p></div></div>
+<div class="comment" id="comment-15047"><div class="by">Andrew Woods, 2015-08-19 17:59 UTC</div><div class="text"><p>Related fcrepo-webapp-plus PR: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/22" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/22</a></p></div></div>
+<div class="comment" id="comment-15050"><div class="by">Andrew Woods, 2015-08-19 20:59 UTC</div><div class="text"><ul class="alternate" type="square">
+	<li>fcrepo-camel</li>
+	<li>fcrepo-camel-toolbox</li>
+	<li>fcrepo-message-consumer</li>
+	<li>fcrepo4-release-tests<br/>
+do not build in the environment of the above PRs:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/1</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/887" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/887</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/22" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/22</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15067"><div class="by">Jared Whiklo, 2015-08-21 20:35 UTC</div><div class="text"><p>I don't understand where the fcrepo-camel integration tests gets its instance of Fcrepo4 from? I am guessing in the pom.xml file but it makes no sense to me.</p></div></div>
+<div class="comment" id="comment-15068"><div class="by">Unknown, 2015-08-21 21:19 UTC</div><div class="text"><p>Jared Whiklo the fcrepo-camel integration tests are all handled with spring. For instance see this: <a href="https://github.com/fcrepo4-exts/fcrepo-camel/blob/master/src/test/java/org/fcrepo/camel/integration/FcrepoBinaryGetIT.java#L43" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/blob/master/src/test/java/org/fcrepo/camel/integration/FcrepoBinaryGetIT.java#L43</a></p>
+
+<p>The fcrepo-camel-toolbox integration tests, on the other hand, all use the maven-jetty plugin and run a pre-existing fcrepo-webapp artifact in that container. I would much prefer if the fcrepo-camel-toolbox tests used spring, but so far I haven't had any success with that. As an alternative, it seems that it <b>may</b> be possible to run the fcrepo-webapp-plus artifact in the maven-jetty container instead.</p></div></div>
+<div class="comment" id="comment-15091"><div class="by">Andrew Woods, 2015-08-25 21:06 UTC</div><div class="text"><p>Where does this ticket stand, Jared Whiklo? Are you waiting for input?</p></div></div>
+<div class="comment" id="comment-15093"><div class="by">Jared Whiklo, 2015-08-25 22:50 UTC</div><div class="text"><p>Sorry @awoods, I just haven't got back to figure it out. I'll take a look tonight, it's still on my radar.</p></div></div>
+<div class="comment" id="comment-15094"><div class="by">Andrew Woods, 2015-08-26 00:04 UTC</div><div class="text"><p>No worries, no rush. Just making sure I was not holding you up.</p></div></div>
+<div class="comment" id="comment-15101"><div class="by">Jared Whiklo, 2015-08-27 03:55 UTC</div><div class="text"><p>Unknown/Andrew Woods, the fcrepo-camel integration tests now fail. <br/>
+The first error is</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Aug 26, 2015 9:38:52 PM org.glassfish.grizzly.servlet.ServletHandler doServletService
+SEVERE: service exception:
+java.lang.NoClassDefFoundError: org/apache/jena/atlas/RuntimeIOException
+</pre>
+</div></div>
+<p>I fixed it by adding a dependency for jena-base, but I am not sure why that would be required as I don't see it in another module or anywhere else. So I thought I would ask before opening a PR.<br/>
+This is the dependency: <a href="http://mvnrepository.com/artifact/org.apache.jena/jena-base/3.0.0" class="external-link" rel="nofollow noreferrer">http://mvnrepository.com/artifact/org.apache.jena/jena-base/3.0.0</a></p></div></div>
+<div class="comment" id="comment-15114"><div class="by">Andrew Woods, 2015-08-27 20:33 UTC</div><div class="text"><p>I see the following error:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[INFO] Reactor Summary:
+[INFO] 
+[INFO] Fedora4 Camel Workflows ........................... SUCCESS [1.498s]
+[INFO] Fedora Audit System with a Triplestore backend .... SUCCESS [24.163s]
+[INFO] Web-deployed wrapper for Camel components ......... SUCCESS [2.515s]
+[INFO] Fedora Fixity Service ............................. SUCCESS [35.475s]
+[INFO] Fedora Indexing Service with a Solr backend ....... FAILURE [1:31.773s]
+[INFO] Fedora Indexing Service with a Triplestore backend  SKIPPED
+[INFO] Fedora Re-indexing Service ........................ SKIPPED
+
+Tests in error: 
+  RouteUpdateIT.testAddedEventRouter:140 » CamelExecution Exception occurred dur...
+</pre>
+</div></div>
+<p>But do not see the `NoClassDefFoundError`. I defer to Unknown's magic touch for getting those dependencies in order. This clearly sounds like an impact of:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/890/files" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/890/files</a></p></div></div>
+<div class="comment" id="comment-15125"><div class="by">Andrew Woods, 2015-08-28 14:18 UTC</div><div class="text"><p>Jared Whiklo, this failure almost certainly relates to:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/890/files" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/890/files</a></p>
+
+<p>You may be able to fix fcrepo-camel-toolbox with something like this:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel/commit/f7f3fe304bdd8594389c7e02c944715fba17d2a5#diff-600376dffeb79835ede4a0b285078036R258" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/commit/f7f3fe304bdd8594389c7e02c944715fba17d2a5#diff-600376dffeb79835ede4a0b285078036R258</a></p></div></div>
+<div class="comment" id="comment-15200"><div class="by">Jared Whiklo, 2015-09-10 17:45 UTC</div><div class="text"><p>Status update ('cause it was mentioned on the tech call)<br/>
+I am starting to think this may be beyond me as I am not clear on what and how the dependencies get pulled in. <br/>
+So far:</p>
+<ul>
+	<li>fcrepo4 - <a href="https://github.com/fcrepo4/fcrepo4/pull/887" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/887</a> - build success</li>
+	<li>fcrepo-transform - <a href="https://github.com/whikloj/fcrepo-transform/tree/FCREPO-1670" class="external-link" rel="nofollow noreferrer">private branch</a> - build success</li>
+	<li>fcrepo-message-consumer - can't initialize Solr, problem with WhiteSpace Tokenizer. Closest thing I've found is <a href="http://stackoverflow.com/questions/24403747/debugging-solr-4-6-source-getting-classnotfoundexception-java-lang-classnotfo" class="external-link" rel="nofollow noreferrer">this stackoverflow question</a>, but not sure how to duplicate their windows Tomcat fix in a pom file.</li>
+	<li>fcrepo-camel - master branch - build success</li>
+	<li>fcrepo-camel-toolbox - <a href="https://github.com/whikloj/fcrepo-camel-toolbox/tree/FCREPO-1670" class="external-link" rel="nofollow noreferrer">private branch</a> failure in integration tests accessing Fedora (503 response).</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15201"><div class="by">A. Soroka, 2015-09-10 17:49 UTC</div><div class="text"><ul class="alternate" type="square">
+	<li>fcrepo-message-consumer  : can we just wait until it's dead?</li>
+	<li>fcrepo-camel-toolbox : can you add a stacktrace?</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15203"><div class="by">Unknown, 2015-09-11 20:01 UTC</div><div class="text"><p>Here is a working PR for fcrepo-camel-toolbox: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/51" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/51</a></p></div></div>
+<div class="comment" id="comment-15204"><div class="by">Unknown, 2015-09-11 20:07 UTC</div><div class="text"><p>With the latest change to fcrepo-camel-toolbox, I believe this is now ready for review.</p></div></div>
+<div class="comment" id="comment-15211"><div class="by">Andrew Woods, 2015-09-11 23:30 UTC</div><div class="text"><p>Unknown? Jared Whiklo? Could one of you please collect together all of the pertinent PRs related to this ticket?</p></div></div>
+<div class="comment" id="comment-15212"><div class="by">Jared Whiklo, 2015-09-11 23:51 UTC</div><div class="text"><p>Required PRs are <br/>
+fcrepo4 - <a href="https://github.com/fcrepo4/fcrepo4/pull/887" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/887</a><br/>
+fcrepo-transform - <a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/1</a><br/>
+fcrepo-webapp-plus - <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/22" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/22</a><br/>
+fcrepo-camel-toolbox - <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/51" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/51</a></p></div></div>
+<div class="comment" id="comment-15213"><div class="by">Unknown, 2015-09-12 00:00 UTC</div><div class="text"><p>Seems that we need one for fcrepo-camel, too:</p>
+
+<p>Here you go: <a href="https://github.com/fcrepo4-exts/fcrepo-camel/pull/91" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/pull/91</a></p></div></div>
+<div class="comment" id="comment-15215"><div class="by">Andrew Woods, 2015-09-12 12:59 UTC</div><div class="text"><p>Pulling in all five of these PRs, and building them in this order:</p>
+<ul class="alternate" type="square">
+	<li>fcrepo4</li>
+	<li>fcrepo-transform</li>
+	<li>fcrepo-camel</li>
+	<li>fcrepo-camel-toolbox</li>
+	<li>fcrepo-webapp-plus</li>
+</ul>
+
+
+<p>fcrepo-camel-toolbox fails to build with the following error:<br/>
+Tests in error: <br/>
+  RouteDeleteIT&gt;CamelBlueprintTestSupport.setUp:183-&gt;CamelTestSupport.setUp:216-&gt;doPreSetup:64 Runtime<br/>
+  RouteDeleteIT&gt;CamelBlueprintTestSupport.setUp:183-&gt;CamelTestSupport.setUp:216-&gt;doPreSetup:64 Runtime<br/>
+  RouteUpdateIT&gt;CamelBlueprintTestSupport.setUp:183-&gt;CamelTestSupport.setUp:216-&gt;doPreSetup:66 Runtime</p></div></div>
+<div class="comment" id="comment-15216"><div class="by">Unknown, 2015-09-12 14:27 UTC</div><div class="text"><p>The webapp-plus project must be built before camel-toolbox</p></div></div>
+<div class="comment" id="comment-15217"><div class="by">Unknown, 2015-09-12 15:16 UTC</div><div class="text"><p>following this order: </p>
+
+<p>fcrepo4 (from <a href="https://github.com/whikloj/fcrepo4" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4</a> 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1670" >
+                <a href="FCREPO-1670.html" class="jira-issue-macro-key issue-link"  title="Factor fcrepo-transform into a separate project" >
+            
+            FCREPO-1670
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+)<br/>
+fcrepo-transform (from <a href="https://github.com/whikloj/fcrepo-transform" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo-transform</a> 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1670" >
+                <a href="FCREPO-1670.html" class="jira-issue-macro-key issue-link"  title="Factor fcrepo-transform into a separate project" >
+            
+            FCREPO-1670
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+)<br/>
+fcrepo-camel (from <a href="https://github.com/acoburn/fcrepo-camel" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/fcrepo-camel</a> fcrepo-1670)<br/>
+fcrepo-webapp-plus (from <a href="https://github.com/awoods/fcrepo-webapp-plus" class="external-link" rel="nofollow noreferrer">https://github.com/awoods/fcrepo-webapp-plus</a> fcrepo-1670)<br/>
+fcrepo-camel-toolbox (from <a href="https://github.com/acoburn/fcrepo-camel-toolbox" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/fcrepo-camel-toolbox</a> fcrepo-1670)</p>
+
+<p>and with a completely empty maven (~/.m2) repository, all projects build successfully for me.</p></div></div>
+<div class="comment" id="comment-15218"><div class="by">Andrew Woods, 2015-09-12 15:29 UTC</div><div class="text"><p>I changed the build order to put fcrepo-webapp-plus before fcrepo-camel-toolbox with the same result (apparently my local webapp-plus was already up to date):<br/>
+<a href="https://gist.github.com/awoods/525eb16286b9618c5bd2" class="external-link" rel="nofollow noreferrer">https://gist.github.com/awoods/525eb16286b9618c5bd2</a></p>
+
+<p>Branch status:<br/>
+fcrepo4 =&gt; On branch pull/887 Your branch is up-to-date with 'origin/pull/887'. nothing to commit, working directory clean<br/>
+fcrepo-transform =&gt; On branch pull/1 Your branch is up-to-date with 'origin/pull/1'. Untracked files: (use "git add &lt;file&gt;..." to include in what will be committed) $</p>
+{fcrepo.ispn.repo.cache:target}
+<p>/ nothing added to commit but untracked files present (use "git add" to track)<br/>
+fcrepo-camel =&gt; On branch pull/91 Your branch is up-to-date with 'origin/pull/91'. nothing to commit, working directory clean<br/>
+fcrepo-webapp-plus =&gt; On branch pull/22 Your branch is up-to-date with 'origin/pull/22'. nothing to commit, working directory clean<br/>
+fcrepo-camel-toolbox =&gt; On branch pull/51 Your branch is up-to-date with 'origin/pull/51'. Untracked files: (use "git add &lt;file&gt;..." to include in what will be committed) $</p>
+{fcrepo.ispn.repo.cache:target}
+<p>/ compile.out nothing added to commit but untracked files present (use "git add" to track)</p></div></div>
+<div class="comment" id="comment-15219"><div class="by">Andrew Woods, 2015-09-12 15:32 UTC</div><div class="text"><p>Removed ~/.m2 and rebuilding... stepping out for a few hours, but will report back with status.</p></div></div>
+<div class="comment" id="comment-15220"><div class="by">Andrew Woods, 2015-09-12 22:19 UTC</div><div class="text"><p>Note: fcrepo4 needs to be rebased on master.<br/>
+Clean build from an empty .m2 results in the same error in fcrepo-camel-toolbox noted in the gist above.</p></div></div>
+<div class="comment" id="comment-15221"><div class="by">Andrew Woods, 2015-09-12 22:27 UTC</div><div class="text"><p>Jared Whiklo, does building all of these PRs succeed for you?</p></div></div>
+<div class="comment" id="comment-15222"><div class="by">Jared Whiklo, 2015-09-12 23:08 UTC</div><div class="text"><p>It has in the past. I will try again now.</p></div></div>
+<div class="comment" id="comment-15223"><div class="by">Jared Whiklo, 2015-09-13 02:09 UTC</div><div class="text"><p>Wiped my .m2 directory and rebuilt </p>
+
+<p>fcrepo4 pull/887<br/>
+fcrepo-transform pull/1<br/>
+fcrepo-camel pull/91<br/>
+fcrepo-webapp-plus pull/22<br/>
+fcrepo-camel-toolbox pull/51</p>
+
+<p>in that order.</p>
+
+<p>I did get a failure in the fcrepo-camel-toolbox, but it seems to have been just a slow start up. Looks like it can't connect to the JMS broker.<br/>
+<a href="https://gist.github.com/whikloj/da9b0c6057b237c8f4e5" class="external-link" rel="nofollow noreferrer">https://gist.github.com/whikloj/da9b0c6057b237c8f4e5</a></p>
+
+<p>Changed nothing and restarted the build and it completed successfully. </p></div></div>
+<div class="comment" id="comment-15229"><div class="by">Andrew Woods, 2015-09-14 18:19 UTC</div><div class="text"><p>Unknown, do you have any thoughts on how to get this to build? If it is just me, I am happy to move forward with the review. If it breaks on Jenkins, that seems like a bigger issue.</p></div></div>
+<div class="comment" id="comment-15283"><div class="by">Nick Ruest, 2015-09-24 15:30 UTC</div><div class="text"><p>Andrew Woods build output <a href="https://gist.github.com/awoods/525eb16286b9618c5bd2" class="external-link" rel="nofollow noreferrer">https://gist.github.com/awoods/525eb16286b9618c5bd2</a></p></div></div>
+<div class="comment" id="comment-15319"><div class="by">Unknown, 2015-09-25 03:00 UTC</div><div class="text"><p>I replicated Andrew Woods's error on a clean Ubuntu 14.04 LTS VM, installing the oracle-jdk like so:</p>
+
+<p>$ sudo apt-add-repository ppa:webupd8team/java<br/>
+$ sudo apt-get update<br/>
+$ sudo apt-get install oracle-java8-installer</p>
+
+<p>The main issue appears to be that the fcrepo-webapp-plus war file simply doesn't start up in the jetty container (using the <tt>jetty-maven-plugin</tt>). It seems to work fine in stand-alone mode with tomcat though (on the same machine). The deployed webapp (in <tt>jetty-maven-plugin</tt>) does respond with any static resources, but the REST api responds with 404 Not Found errors. The build and tests have no issue on CentOS (using openjdk) or on a Mac.</p></div></div>
+<div class="comment" id="comment-15331"><div class="by">A. Soroka, 2015-09-28 15:01 UTC</div><div class="text"><p>Jared Whiklo, you can't be referring to fcrepo4 pull/88, which is from years ago. What PR are you actually using here?</p></div></div>
+<div class="comment" id="comment-15332"><div class="by">Andrew Woods, 2015-09-28 15:05 UTC</div><div class="text"><p>A. Soroka, apparently that was a typo in Jared Whiklo's comment. The PR is:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/887" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/887</a></p></div></div>
+<div class="comment" id="comment-15333"><div class="by">Jared Whiklo, 2015-09-28 15:06 UTC</div><div class="text"><p>A. Soroka, you doubt my ability to build PRs from ages ago. How dare you sir. How dare you.</p>
+
+<p>Must have made a typo.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/887" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/887</a></p></div></div>
+<div class="comment" id="comment-15424"><div class="by">Unknown, 2015-10-06 02:23 UTC</div><div class="text"><p>I have made some progress on this ticket (the integration tests now all pass), but I must now also make changes to the unit tests. Basically, these changes keep the <tt>jetty-maven-plugin</tt> but replace <tt>CamelBlueprintTestSupport</tt> with the simpler <tt>CamelTestSupport</tt></p></div></div>
+<div class="comment" id="comment-15425"><div class="by">Unknown, 2015-10-06 03:16 UTC</div><div class="text"><p>The new fcrepo-camel-toolbox PR is here: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/61" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/61</a></p>
+
+<p>This is now ready for review. I have tested it successfully on a mac and on an ubuntu machine. I should note: fcrepo-camel-toolbox no longer uses fcrepo-webapp-plus. This was tested after rebasing each PR on master. Only fcrepo-transform needed manual conflict resolution (related to the .travis.yml file, which was trivial). All others could be rebased cleanly.</p>
+
+<p>I also do not intend to sneak this into the next release by submitting it at the 11th hour (literally). But this is ready for review, and as far as I can tell, it is in good shape.</p></div></div>
+<div class="comment" id="comment-15507"><div class="by">Andrew Woods, 2015-10-19 14:53 UTC</div><div class="text"><p>Resolved with following commits: <a href="https://github.com/fcrepo4/fcrepo4/commit/266bc0ab7f3bec42723f431adee4669b0b163e80" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/266bc0ab7f3bec42723f431adee4669b0b163e80</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-transform/commit/0519e6623c134d7bff8018b3c9096837050685bb" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/commit/0519e6623c134d7bff8018b3c9096837050685bb</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel/commit/5461e0c137f3d89fd6fd776d144dae5f7fac4c4f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/commit/5461e0c137f3d89fd6fd776d144dae5f7fac4c4f</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/9b2864b19ac77adf94d8510d28ed7e3216fbc214" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/9b2864b19ac77adf94d8510d28ed7e3216fbc214</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/cb7a67db0ce54c43dc058ba0275cd9153a22c2e3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/cb7a67db0ce54c43dc058ba0275cd9153a22c2e3</a></p></div></div>
+<p><a href="data/FCREPO-1670.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

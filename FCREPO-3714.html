@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3714 POST to non-existant resource should return 404</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3714</span> POST to non-existant resource should return 404</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2021-05-06 16:38 UTC</td></tr><tr><th>Updated</th><td>2021-06-03 18:50 UTC</td></tr><tr><th>Resolved</th><td>2021-05-06 20:24 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>6.0.0-rc1</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>In Fedora 5 POSTing to a non-existant resource returns a 404</p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test/bob" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test/bob</a><br/>
+HTTP/1.1 404 Not Found<br/>
+Date: Thu, 06 May 2021 16:32:33 GMT<br/>
+Set-Cookie: JSESSIONID=1prfh9s74rc3ej4q550glr5dx;Path=/<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 05-May-2021 16:32:33 GMT<br/>
+Cache-Control: must-revalidate,no-cache,no-store<br/>
+Content-Type: text/html;charset=iso-8859-1<br/>
+Content-Length: 330<br/>
+Server: Jetty(9.3.25.v20180904)</p>
+
+<p>&lt;html&gt;<br/>
+&lt;head&gt;<br/>
+&lt;meta http-equiv="Content-Type" content="text/html;charset=utf-8"/&gt;<br/>
+&lt;title&gt;Error 404 Not Found&lt;/title&gt;<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;&lt;h2&gt;HTTP ERROR 404&lt;/h2&gt;<br/>
+&lt;p&gt;Problem accessing /rest/test/bob. Reason:<br/>
+&lt;pre&gt;    Not Found&lt;/pre&gt;&lt;/p&gt;&lt;hr&gt;&lt;a href="http://eclipse.org/jetty"&gt;Powered by Jetty:// 9.3.25.v20180904&lt;/a&gt;&lt;hr/&gt;</p>
+
+<p>&lt;/body&gt;<br/>
+&lt;/html&gt;</p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test/bob" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test/bob</a> -XPOST<br/>
+HTTP/1.1 404 Not Found<br/>
+Date: Thu, 06 May 2021 16:32:40 GMT<br/>
+Set-Cookie: JSESSIONID=1unnnm6b5rql4hi39h6b0rvp0;Path=/<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 05-May-2021 16:32:40 GMT<br/>
+Cache-Control: must-revalidate,no-cache,no-store<br/>
+Content-Type: text/html;charset=iso-8859-1<br/>
+Content-Length: 330<br/>
+Server: Jetty(9.3.25.v20180904)</p>
+
+<p>&lt;html&gt;<br/>
+&lt;head&gt;<br/>
+&lt;meta http-equiv="Content-Type" content="text/html;charset=utf-8"/&gt;<br/>
+&lt;title&gt;Error 404 Not Found&lt;/title&gt;<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;&lt;h2&gt;HTTP ERROR 404&lt;/h2&gt;<br/>
+&lt;p&gt;Problem accessing /rest/test/bob. Reason:<br/>
+&lt;pre&gt;    Not Found&lt;/pre&gt;&lt;/p&gt;&lt;hr&gt;&lt;a href="http://eclipse.org/jetty"&gt;Powered by Jetty:// 9.3.25.v20180904&lt;/a&gt;&lt;hr/&gt;</p>
+
+<p>&lt;/body&gt;<br/>
+&lt;/html&gt;</p>
+
+
+<p>But in Fedora 6 it suceeds and just creates the endpoint as a ghost node</p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8081/rest/test/bob" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob</a>      <br/>
+HTTP/1.1 404 Not Found<br/>
+Date: Thu, 06 May 2021 16:36:07 GMT<br/>
+Set-Cookie: JSESSIONID=node02dgglis27umjisgjghf2yj951.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 05-May-2021 16:36:07 GMT; SameSite=lax<br/>
+Content-Type: text/turtle;charset=utf-8<br/>
+Content-Length: 53<br/>
+Server: Jetty(9.4.34.v20201102)</p>
+
+<p>Error: No OCFL mapping found for info:fedora/test/bob%                                                                                                                     </p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8081/rest/test/bob" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob</a> -XPOST<br/>
+HTTP/1.1 201 Created<br/>
+Date: Thu, 06 May 2021 16:36:13 GMT<br/>
+Set-Cookie: JSESSIONID=node01riuxicl0u3ou1crany59zdy0o2.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 05-May-2021 16:36:13 GMT; SameSite=lax<br/>
+ETag: W/"3337687282E5435097D71BF3A0C6CBAA"<br/>
+X-State-Token: 9B455CBCF8F70EEC4F8F91DF63382597<br/>
+Last-Modified: Thu, 06 May 2021 16:36:13 GMT<br/>
+Link: &lt;<a href="http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb</a>&gt;; rel="timegate"<br/>
+Link: &lt;<a href="http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb</a>&gt;; rel="original"<br/>
+Link: &lt;<a href="http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb/fcr:versions</a>&gt;; rel="timemap"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Resource" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Resource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Container" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Container</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb/fcr:acl</a>&gt;; rel="acl"<br/>
+Location: <a href="http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb</a><br/>
+Content-Type: text/plain<br/>
+Content-Length: 72<br/>
+Server: Jetty(9.4.34.v20201102)</p>
+
+<p><a href="http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb%" class="external-link" rel="nofollow noreferrer">http://localhost:8081/rest/test/bob/8af39b5c-26dd-4053-91f1-5f59f2aa56bb%</a></p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22209"><div class="by">Jared Whiklo, 2021-05-06 18:58 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1906" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1906</a></p></div></div>
+<div class="comment" id="comment-22210"><div class="by">Peter Winckles, 2021-05-06 20:24 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/ac2d689a4023ccd5de95386f0ccf7a828af19ec3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/ac2d689a4023ccd5de95386f0ccf7a828af19ec3</a></p></div></div>
+<p><a href="data/FCREPO-3714.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

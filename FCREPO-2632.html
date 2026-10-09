@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2632 Use &#x27;acl:agentClass foaf:Agent&#x27; to denote public access</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2632</span> Use &#x27;acl:agentClass foaf:Agent&#x27; to denote public access</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Daniel Lamb</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2017-09-28 12:46 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-04-23 18:46 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.4</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>auth, easy, webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>The modeshape impl: uses 'acl:agent foaf:Agent' to denote public access, but the spec defines 'acl:agentClass foaf:Agent'.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-19418"><div class="by">Daniel Lamb, 2017-09-29 19:10 UTC</div><div class="text"><p>When working through a test case, I've discovered the code as-is will accept either acl:Agent foaf:Agent or acl:AgentClass foaf:Agent.  I'm assuming we want just acl:AgentClass here and not acl:Agent at all?</p></div></div>
+<div class="comment" id="comment-19419"><div class="by">Daniel Lamb, 2017-09-29 19:13 UTC</div><div class="text"><p>Also noticed that enabling webac requires AuthN.  So iin this case, we consider "Public" viewing to be any authenticated user?  Just want to clarify scope and make sure I'm not on the hook for 'anonymous' browsing where no credentials are provided.</p></div></div>
+<div class="comment" id="comment-19422"><div class="by">Aaron Birkland, 2017-09-29 20:13 UTC</div><div class="text"><p>It's probably necessary to allow anonymous reads somehow (without credentials of any sort), where permitted by ACLs.  Maybe via choice of principal provider (i.e. provide a default URI to designate anonymous users, when no user principal has been provided by any means of authn?)  </p></div></div>
+<div class="comment" id="comment-19427"><div class="by">Andrew Woods, 2017-09-29 21:47 UTC</div><div class="text"><p>Daniel Lamb, yes, we should only support <tt>acl:AgentClass</tt>.</p>
+
+<p>As for anonymous access, this is the situation that Peter Matthew Eichman resolved with Tomcat Values. The fact is that in default configurations, requests will be prompted for AuthN before they even get to Fedora. In the context of this ticket, "allowing any authenticated user" to access resources protected by "acl:AgentClass foaf:Agent" is sufficient.</p>
+
+<p>I would suggest a follow-on ticket for allowing true open access of certain resources even when WebAC is enabled. It is not clear to me that that particular challenge is one that can be resolved exclusively at the Fedora level.</p></div></div>
+<div class="comment" id="comment-19431"><div class="by">Peter Matthew Eichman, 2017-10-02 15:53 UTC</div><div class="text"><p>Andrew Woods, I concur that this is something that we won't be able to solve exclusively at the Fedora level, as long as we are relying on the servlet container to provide AuthN. As you say, at UMD we had to implement a set of valves <span class="error">&#91;1&#93;</span> to parse out preemptive authentication information from the HTTP requests and add them as security principals to the servlet request. Plus, we had to create a separate micro-webapp <span class="error">&#91;2&#93;</span> that just prompts for AuthN and puts the credentials into a shared session.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://github.com/umd-lib/optional-authn-valve" class="external-link" rel="nofollow noreferrer">https://github.com/umd-lib/optional-authn-valve</a></p>
+
+<p><span class="error">&#91;2&#93;</span> <a href="https://github.com/umd-lib/fcrepo-user-webapp" class="external-link" rel="nofollow noreferrer">https://github.com/umd-lib/fcrepo-user-webapp</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19433"><div class="by">Aaron Birkland, 2017-10-02 17:57 UTC</div><div class="text"><p>Created issue for exploring anonymous access: <a href="https://jira.duraspace.org/browse/FCREPO-2637" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2637</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19556"><div class="by">Jared Whiklo, 2017-11-16 17:13 UTC</div><div class="text"><p>Daniel Lamb I know you've been busy, just wondering if this is close or if you need someone to help take it over?</p></div></div>
+<div class="comment" id="comment-19579"><div class="by">Daniel Lamb, 2017-12-07 16:08 UTC</div><div class="text"><p>Jared Whiklo Yes, I've dropped the ball on this one and don't see myself getting much free time in the near future.  If someone else wants to take the initiative on this, that'd be great.</p></div></div>
+<div class="comment" id="comment-19580"><div class="by">Jared Whiklo, 2017-12-07 16:29 UTC</div><div class="text"><p>Do you have any work in progress that might help the next worker?</p></div></div>
+<div class="comment" id="comment-19863"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-04-17 21:08 UTC</div><div class="text"><p>I have implemented this with PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1321" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1321</a></p></div></div>
+<div class="comment" id="comment-19910"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-04-23 16:30 UTC</div><div class="text"><p>Closed PR #1321. New PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1334" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1334</a></p></div></div>
+<div class="comment" id="comment-19913"><div class="by">Jared Whiklo, 2018-04-23 18:46 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/0843f67a8cab8ec691553be7502194482ae6ca08" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/0843f67a8cab8ec691553be7502194482ae6ca08</a></p></div></div>
+<p><a href="data/FCREPO-2632.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

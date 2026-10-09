@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1055 Shared resource for XML operations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1055</span> Shared resource for XML operations</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2012-01-27 13:14 UTC</td></tr><tr><th>Updated</th><td>2014-08-07 22:03 UTC</td></tr><tr><th>Resolved</th><td>2014-08-07 21:43 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.0</td></tr><tr><th>Sub-tasks</th><td><a href="FCREPO-1175.html">FCREPO-1175</a> Prevent validation Schematron from being recompiled for every validation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1090.html">FCREPO-1090</a> Pool DocumentBuilders Where Possible</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1089.html">FCREPO-1089</a> Pool SAXParsers if possible</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1168.html">FCREPO-1168</a> Upgrade to Apache Commons Pool 1.6</td></tr></table>
+<h2>Description</h2>
+<p>Currently object FOXML validation (via schematron - xslt - and schemata - xsd) is inefficient as the stylesheets are compiled for every validation.</p>
+
+<p>Create some kind of shared resource for XML operations such as transformations and validations with some kind of caching mechanism so that compiled invariant XML resources can be re-used.  In the future this component could form a good candidate for separate OSGi service(s).</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-12220"><div class="by">Stephen Bayliss, 2012-01-27 13:20 UTC</div><div class="text"><p>Will need to consider the lifetime of any cached resource carefully, and how to control this.</p>
+
+<p>Eg something like the FOXML schema and schematron xslt  is not likely to change; but a datastream schema specified by a CModel (ECM) may get updated.</p></div></div>
+<div class="comment" id="comment-12221"><div class="by">A. Soroka, 2012-01-27 20:47 UTC</div><div class="text"><p>A quick start would be to accept only resources that we are confident will not vary over application lifetime (e.g. schemata for FOXML or OAI DC).</p>
+
+<p>One simple approach to begin caching resources with a "sell-by" date would be to start with those such resources that can be derived purely from a Fedora object or objects, and then decorate the Management module (in time-honored Fedora fashion) to "stale-ify" a cache entry when the object or objects to which it is associated have changed.</p>
+
+<p>Starts to make me think that an internal event bus for Fedora could be a very handy thing. It could power all kinds of notifications, external or internal to the app.</p></div></div>
+<div class="comment" id="comment-12222"><div class="by">A. Soroka, 2012-01-27 21:00 UTC</div><div class="text"><p>Another possibility would be to engage with a good general-purpose object pooling system (e.g. Apache Commons' Pool component). That might be overkill for the XSLT/XSD stuff we're talking about immediately, but I'm throwing it into the conversation because I would expect that we may very well want to pool other resources in the future in the core Fedora services and also that we will want eventually to expose pooling as a service in the Fedora internal architecture. In that light, it might be better to begin with a general-purpose solution rather than generalize a specialized solution. Or maybe that's pointless and expensive generality up front. </p>
+{grin}</div></div>
+<div class="comment" id="comment-12224"><div class="by">A. Soroka, 2012-01-27 22:34 UTC</div><div class="text"><p>A practical note: we will have to generate a plan to discover all of the places that this facility might be employed. IDEs can help with the search, but we may need to produce a little machinery to help organize the work, like a list of places in the code we could alter and whether they've been done, that sort of thing. Eclipse Mylyn could be handy-- it integrates with Jira quite well.</p></div></div>
+<div class="comment" id="comment-12490"><div class="by">A. Soroka, 2012-11-13 22:51 UTC</div><div class="text"><p>Given the significance of a move to OSGi, and the fact that we've already committed to Spring, we may want to start down this process by running through the various places (mostly in fcrepo-server, I would imagine) and replacing the construction of XML tools with their injection. Then at least we can centralize the construction and pooling/caching of these guys. If we restrict ourselves (as noted above) to resources that are immutable during the lifetime of a running instance, we won't have to think any more about thread safety, staleness, etc. then is required by the underlying XML facility. In many cases (e.g. using Templates and not Transformers) we can probably dispense with pooling entirely.</p>
+
+<p>Another pure-Java way to do this would be with the ServiceLoader and provider metadata. While I like the fact that this moves us towards a registry and towards the pattern of the OSGi service model, it's probably a lot more work for not much immediate gain, and (as noted) we already are committed to Spring.</p></div></div>
+<div class="comment" id="comment-12598"><div class="by">Scott Prater, 2014-08-07 21:25 UTC</div><div class="text"><p>Change to "won't fix", as 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1175" >
+                <a href="FCREPO-1175.html" class="jira-issue-macro-key issue-link"  title="Prevent validation Schematron from being recompiled for every validation" >
+            
+            FCREPO-1175
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is all the work we'll do on this issue.</p></div></div>
+<p><a href="data/FCREPO-1055.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

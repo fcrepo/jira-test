@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-64 Datastream SIZE attribute not fully implemented</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-64</span> Datastream SIZE attribute not fully implemented</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Sandy Payette</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2007-02-21 17:18 UTC</td></tr><tr><th>Updated</th><td>2010-11-01 12:38 UTC</td></tr><tr><th>Resolved</th><td>2010-06-16 23:37 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2, Fedora 2.2.1, Fedora 3.0b1, Fedora 2.2.2, Fedora 3.0b2, Fedora 3.0, Fedora 2.2.3, Fedora 2.2.4, Fedora 3.1, Fedora 3.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 3, Fedora 3.4</td></tr><tr><th>Depends on</th><td><a href="FCREPO-551.html">FCREPO-551</a> Akubra replaces LLStore as primary blob storage abstraction</td></tr><tr><th>Is related to</th><td><a href="FCREPO-190.html">FCREPO-190</a> Inline XML Canonicalization (c14n) for SIZE and CHECKSUM</td></tr><tr><th>Depends on</th><td><a href="FCREPO-724.html">FCREPO-724</a> Provide a rebuild utility to compute and store SIZE attributes for managed content datastreams</td></tr><tr><th>Is related to</th><td><a href="FCREPO-725.html">FCREPO-725</a> Provide dynamic generation of datastream size for E and R datastreams.</td></tr><tr><th>Addresses</th><td><a href="FCREPO-182.html">FCREPO-182</a> Improved HTTP 1.1 support (Content-Length and Content-Range)</td></tr></table>
+<h2>Description</h2>
+<p>Fedora's REST API correctly reports SIZE of "X" datastreams, but the size for all other types is currently reported as "0".  For "M" datastreams, this is clearly wrong.  For "E" or "R" datastreams, the correct thing to do is less obvious.</p>
+
+<p>For example, hitting the following URL:<br/>
+<a href="http://localhost:8080/fedora/objects/demo:SmileyBeerGlass/datastreams/DC?format=xml" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/demo:SmileyBeerGlass/datastreams/DC?format=xml</a></p>
+
+<p>...reports the correct size.  But requesting the same info for an "M" datastream reports "0" as the size.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-10108"><div class="by">Chris Wilper, 2007-03-12 20:20 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: sjw46<br/>
+Logged In: YES <br/>
+user_id=1709161<br/>
+Originator: NO</p>
+
+<p>Currently the size is only set for "X" type datastreams.  It should be set for<br/>
+"M" type datastreams (since that information is available).  Whether it should<br/>
+be set for "R" or "E" type datastreams is an open question.  Should Fedora ping<br/>
+the urls (and possibly follow http redirects?) in order to determine this<br/>
+information at ingest-time?  What if it changes?  Etc..</p></div></div>
+<div class="comment" id="comment-10109"><div class="by">Chris Wilper, 2007-12-03 05:52 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>Another oddity with the SIZE attribute as currently implemented: It's never validated on ingest, and only auto-computed at deserialization time.  This causes the initial written value to llstore to be "0" when someone does an addDatastream request.  Having Fedora auto-compute this value is fine (for X and M datastreams), but it shouldn't be tied to serialization/deserialization, and should happen at a separate level in the code.</p></div></div>
+<div class="comment" id="comment-10110"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: payette<br/>
+Item #: 1665385<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1665385" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1665385</a></p></div></div>
+<div class="comment" id="comment-10932"><div class="by">Chris Wilper, 2009-05-28 12:17 UTC</div><div class="text"><p>Raising the priority of this in light of discussion w/Rebecca Koeser re:FedoraFS (workaround of actually GETting the content is very slow)</p></div></div>
+<div class="comment" id="comment-11032"><div class="by">Chris Wilper, 2009-10-20 16:55 UTC</div><div class="text"><p>This could be split out into "M" and then deal with the "E" and "R" types as a separate issue (not as important)</p></div></div>
+<div class="comment" id="comment-11309"><div class="by">Stephen Bayliss, 2010-04-11 20:00 UTC</div><div class="text"><p>Agree that we should support "M" datastreams.  Possibly investigate what we could do for "E" and "R" - perhaps we could use HEAD and examine the Content-Length response header?</p></div></div>
+<div class="comment" id="comment-11428"><div class="by">Stephen Bayliss, 2010-06-16 16:35 UTC</div><div class="text"><p>Looking at this in more detail:</p>
+
+<ul class="alternate" type="square">
+	<li>for X datastreams we are ok</li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>for M datastreams, the size could be updated as part of the DOManager.doCommit (when the new/modified datastream version is written) - this would require modifying the ILowlevelStorage interface so that the addDatastream and replaceDatastream methods returned the (long) size in bytes.  Then when the FOXML is written it would have the correct SIZE.  For filesystem storage this is fine - read the size of the file once written.  For Akubra, the Blob has a getSize() method, so as long as that works correctly this also should be fine.</li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>for E and R datastreams we could not rely on a SIZE attribute in FOXML as the content may have changed.  So all API calls that report the size would need to do a HEAD on the resource URI and report the Content-Length header.</li>
+</ul>
+
+
+<p>We would for E and R be dependent on Content-Length being correctly provided for HEAD requests by the service managing the content.</p>
+
+<p>It does raise the question of whether computing the size for E and R should be automatic, or should be done only if the user asks (an additional parameter).</p></div></div>
+<div class="comment" id="comment-11429"><div class="by">Stephen Bayliss, 2010-06-16 16:55 UTC</div><div class="text"><p>Also for E and R datastreams - it could be that the content is in another (or even the same) Fedora repository, so we should also ensure that the Content-Length response header is correctly supplied by the REST API getDatastreamDissemination - and that this call supports HEAD.</p>
+
+<p>EDIT:  HEAD seems to work fine and returns Content-Length</p></div></div>
+<div class="comment" id="comment-11430"><div class="by">Stephen Bayliss, 2010-06-16 23:37 UTC</div><div class="text"><p>Fixed for M datastreams, but see also 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-724" >
+                <a href="FCREPO-724.html" class="jira-issue-macro-key issue-link"  title="Provide a rebuild utility to compute and store SIZE attributes for managed content datastreams" >
+            
+            FCREPO-724
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for providing a tool to calculate size attribute for existing datastream versions, and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-725" >
+                <a href="FCREPO-725.html" class="jira-issue-macro-key issue-link"  title="Provide dynamic generation of datastream size for E and R datastreams." >
+            
+            FCREPO-725
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for providing dynamic size attribute for E and R datastreams.</p></div></div>
+<p><a href="data/FCREPO-64.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

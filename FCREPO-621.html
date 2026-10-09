@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-621 Move to Java 6+ (Java 5 no longer supported)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-621</span> Move to Java 6+ (Java 5 no longer supported)</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-01-11 19:38 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-02-08 23:40 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>Fedora already works with Java 6, but we are considering discontinuing support for Java 5 for several reasons:</p>
+
+<p>1) As of Nov 3, 2009, J2SE 5 has reached its End Of Service Life (EOSL).  This means there will be no more public updates to Sun's J2SE 5.<br/>
+2) Finding and installing Java 5 on the various operating systems is becoming increasingly difficult.<br/>
+3) Java 6 has several API and annotation improvements we'd like to be able to take advantage of in the source code.  (For example, IOException now has a constructor that accepts a Throable cause, and @Override can now apply to interface method implementations)</p>
+
+<p>For now, this would also reduce the number of different configurations we'd need to test prior to release, thus shortening the release cycle.</p>
+
+<p>In early January 2010, the committers agreed that this is the direction we want to go, but we should first poll our users to see what, if any, problems this might create for them.</p>
+
+<p>Upon deciding to move to Java 6, the following changes should be made immediately:</p>
+
+<p>A) Change the pom to compile to java 6 bytecode (and thus require a Java 6 JDK)<br/>
+B) Remove the JDBC3/4 code-rewriting hack in the build<br/>
+C) Modify the CI tests to run using Java 6</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11209"><div class="by">Chris Wilper, 2010-01-11 19:44 UTC</div><div class="text"><p>I sent out a survey to the fedora-users list in early January.</p>
+
+<p><a href="http://www.surveymonkey.com/s/DLRSFF5" class="external-link" rel="nofollow noreferrer">http://www.surveymonkey.com/s/DLRSFF5</a></p>
+
+<p>This survey was open for a week.  Here are the final results:</p>
+
+<p>31 people took the survey.</p>
+
+<p>Q1: Which of the following apply to you?</p>
+
+<p>24 (77%) use Fedora in production<br/>
+28 (90%) develop software that uses the SOAP/REST apis.<br/>
+16 (52%) develop software that uses Fedora's Java interfaces.<br/>
+3 (10%) are Fedora committers</p>
+
+<p>Q2: Which app server(s) do you deploy with?</p>
+
+<p>17 (55%) deploy with the bundled version of Tomcat<br/>
+9 deploy with a non-bundled Tomcat 6.x (1 of those said they were moving toward JBoss)<br/>
+5 deploy with a non-bundled Tomcat 5.5<br/>
+4 deploy with a non-bundled Tomcat but did not specify a version</p>
+
+<p>Q3: Which version of Java do you run Fedora with?</p>
+
+<p>12 (39%) said Java 5<br/>
+25 (81%) said Java 6</p>
+
+<p>Q4: Do you foresee a problem if future versions of Fedora require Java 6?</p>
+
+<p>30 (97%) said no<br/>
+1 (3%) said yes, "My App Server is not Java 6 compatible", but this person also said they were only deploying with the bundled version of Tomcat (which is Java 6 compatible), and declined to provide contact information.</p></div></div>
+<div class="comment" id="comment-11219"><div class="by">Chris Wilper, 2010-01-19 18:50 UTC</div><div class="text"><p>Officially decided at today's committer meeting: we are doing this.  It's fair game for any committer to take on now.</p></div></div>
+<div class="comment" id="comment-11228"><div class="by">Chris Wilper, 2010-02-08 23:40 UTC</div><div class="text"><p>Done in trunk.  Besides taking care of A-C above, this also D) Gets rid of now-unnecessary Exception.initCause calls in favor of providing the cause in the constructor (for IOException, SQLException, etc)</p></div></div>
+<p><a href="data/FCREPO-621.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

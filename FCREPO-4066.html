@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4066 Users with fedoraUser role are not able to auth in  Fedora 7 on Tomcat 10</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4066</span> Users with fedoraUser role are not able to auth in  Fedora 7 on Tomcat 10</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2026-02-06 14:20 UTC</td></tr><tr><th>Updated</th><td>2026-02-25 15:21 UTC</td></tr><tr><th>Resolved</th><td>2026-02-25 15:21 UTC</td></tr></table>
+<h2>Description</h2>
+<p>It appears that users other than those with <tt>fedoraAdmin</tt>  role are not available to Shiro:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ curl -X PUT -u dof:dof http://localhost:8080/fcrepo/rest/dof:dof1-root-with-acl
+
+&lt;!doctype html&gt;&lt;html lang="en"&gt;&lt;head&gt;&lt;title&gt;HTTP Status 500 – Internal Server Error&lt;/title&gt;&lt;style type="text/css"&gt;body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP Status 500 – Internal Server Error&lt;/h1&gt;&lt;hr class="line" /&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt; Exception Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt; java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null&lt;/p&gt;&lt;p&gt;&lt;b&gt;Description&lt;/b&gt; The server encountered an unexpected condition that prevented it from fulfilling the request.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Exception&lt;/b&gt;&lt;/p&gt;&lt;pre&gt;jakarta.servlet.ServletException: java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null
+
+org.apache.shiro.web.servlet.AdviceFilter.cleanup(AdviceFilter.java:198)
+
+org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:149)
+
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+
+org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:463)
+
+org.apache.shiro.web.servlet.AbstractShiroFilter.lambda$doFilterInternal$0(AbstractShiroFilter.java:378)
+
+org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:91)
+
+org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:84)
+
+org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:389)
+
+org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:376)
+
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+
+org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+
+org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+
+&lt;/pre&gt;&lt;p&gt;&lt;b&gt;Root Cause&lt;/b&gt;&lt;/p&gt;&lt;pre&gt;java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null
+
+org.fcrepo.auth.webac.WebACAuthorizingRealm.doGetAuthorizationInfo(WebACAuthorizingRealm.java:128)
+
+org.apache.shiro.realm.AuthorizingRealm.getAuthorizationInfo(AuthorizingRealm.java:362)
+
+org.apache.shiro.realm.AuthorizingRealm.hasRole(AuthorizingRealm.java:597)
+
+org.apache.shiro.authz.ModularRealmAuthorizer.hasRole(ModularRealmAuthorizer.java:386)
+
+org.apache.shiro.mgt.AuthorizingSecurityManager.hasRole(AuthorizingSecurityManager.java:154)
+
+org.apache.shiro.subject.support.DelegatingSubject.hasRole(DelegatingSubject.java:230)
+
+org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:225)
+
+org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+
+org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:74)
+
+org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:27)
+
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+
+org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:77)
+
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+
+org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+
+org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+
+org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:463)
+
+org.apache.shiro.web.servlet.AbstractShiroFilter.lambda$doFilterInternal$0(AbstractShiroFilter.java:378)
+
+org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:91)
+
+org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:84)
+
+org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:389)
+
+org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:376)
+
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+
+org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+
+org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)</pre>
+</div></div>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-27745"><div class="by">Ben Pennell, 2026-02-06 14:57 UTC</div><div class="text"><p>The same thing happens in jetty 12 for the fedoraUser role, while fedoraAdmin works fine:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;html&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1"/&gt;
+&lt;title&gt;Error 500 jakarta.servlet.ServletException: java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;&lt;h2&gt;HTTP ERROR 500 jakarta.servlet.ServletException: java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null&lt;/h2&gt;
+&lt;table&gt;
+&lt;tr&gt;&lt;th&gt;URI:&lt;/th&gt;&lt;td&gt;/fcrepo/&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;th&gt;STATUS:&lt;/th&gt;&lt;td&gt;500&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;th&gt;MESSAGE:&lt;/th&gt;&lt;td&gt;jakarta.servlet.ServletException: java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;th&gt;SERVLET:&lt;/th&gt;&lt;td&gt;default&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;th&gt;CAUSED BY:&lt;/th&gt;&lt;td&gt;java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;h3&gt;Caused by:&lt;/h3&gt;&lt;pre&gt;java.lang.NullPointerException: Cannot invoke &amp;quot;jakarta.servlet.http.HttpServletRequest.getAttribute(String)&amp;quot; because &amp;quot;this.request&amp;quot; is null
+	at org.fcrepo.auth.webac.WebACAuthorizingRealm.doGetAuthorizationInfo(WebACAuthorizingRealm.java:128)
+	at org.apache.shiro.realm.AuthorizingRealm.getAuthorizationInfo(AuthorizingRealm.java:362)
+	at org.apache.shiro.realm.AuthorizingRealm.hasRole(AuthorizingRealm.java:597)
+	at org.apache.shiro.authz.ModularRealmAuthorizer.hasRole(ModularRealmAuthorizer.java:386)
+	at org.apache.shiro.mgt.AuthorizingSecurityManager.hasRole(AuthorizingSecurityManager.java:154)
+	at org.apache.shiro.subject.support.DelegatingSubject.hasRole(DelegatingSubject.java:230)
+	at org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:225)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:74)
+	at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:27)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:77)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:109)
+	at org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:138)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:70)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:463)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.lambda$doFilterInternal$0(AbstractShiroFilter.java:378)
+	at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:91)
+	at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:84)
+	at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:389)
+	at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:376)
+	at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:156)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:208)
+	at org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1594)
+	at org.eclipse.jetty.ee10.servlet.ServletHandler$MappedServlet.handle(ServletHandler.java:1555)
+	at org.eclipse.jetty.ee10.servlet.ServletChannel.dispatch(ServletChannel.java:823)
+	at org.eclipse.jetty.ee10.servlet.ServletChannel.handle(ServletChannel.java:440)
+	at org.eclipse.jetty.ee10.servlet.ServletHandler.handle(ServletHandler.java:470)
+	at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:575)
+	at org.eclipse.jetty.ee10.servlet.SessionHandler.handle(SessionHandler.java:717)
+	at org.eclipse.jetty.server.handler.ContextHandler.handle(ContextHandler.java:1071)
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:151)
+	at org.eclipse.jetty.server.Server.handle(Server.java:182)
+	at org.eclipse.jetty.server.internal.HttpChannelState$HandlerInvoker.run(HttpChannelState.java:678)
+	at org.eclipse.jetty.server.internal.HttpConnection.onFillable(HttpConnection.java:416)
+	at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:322)
+	at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:99)
+	at org.eclipse.jetty.io.SelectableChannelEndPoint$1.run(SelectableChannelEndPoint.java:53)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:981)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1211)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1166)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+&lt;/pre&gt;
+&lt;hr/&gt;&lt;a href="https://jetty.org/"&gt;Powered by Jetty:// 12.0.23&lt;/a&gt;&lt;hr/&gt;</pre>
+</div></div></div></div>
+<div class="comment" id="comment-27746"><div class="by">Ben Pennell, 2026-02-06 15:07 UTC</div><div class="text"><p>for what its worth, I'm seeing the same thing in <tt>mvn jetty:run</tt>. I'm just running fedora with (I have to set it to a different port):</p>
+
+<p><tt>mvn -Dfcrepo.dynamic.test.port=8088 jetty:run -pl fcrepo-webapp</tt></p>
+
+<p>and then <tt>curl <a href="http://localhost:8088/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8088/rest/</a> -utestuser2:testpass</tt> triggers the error</p></div></div>
+<div class="comment" id="comment-27912"><div class="by">Dan Field, 2026-02-11 13:56 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo/fcrepo/pull/2287" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2287</a> </p></div></div>
+<p><a href="data/FCREPO-4066.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

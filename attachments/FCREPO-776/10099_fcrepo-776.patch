@@ -1,0 +1,348 @@
+Index: fcrepo-server/src/main/java/org/fcrepo/server/management/DefaultManagement.java
+===================================================================
+--- fcrepo-server/src/main/java/org/fcrepo/server/management/DefaultManagement.java	(revision 8776)
++++ fcrepo-server/src/main/java/org/fcrepo/server/management/DefaultManagement.java	(working copy)
+@@ -44,13 +44,9 @@
+ 
+ import org.w3c.dom.Document;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+ import org.fcrepo.common.Constants;
+ import org.fcrepo.common.PID;
+ import org.fcrepo.common.rdf.SimpleURIReference;
+-
+ import org.fcrepo.server.Context;
+ import org.fcrepo.server.RecoveryContext;
+ import org.fcrepo.server.Server;
+@@ -87,6 +83,8 @@
+ import org.fcrepo.server.validation.ValidationConstants;
+ import org.fcrepo.server.validation.ValidationUtility;
+ import org.fcrepo.server.validation.ecm.EcmValidator;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+ /**
+  * Implements API-M without regard to the transport/messaging protocol.
+@@ -492,9 +490,11 @@
+             } else if (controlGroup.equals("M")) {
+                 ds = new DatastreamManagedContent();
+                 ds.DSInfoType = "DATA";
++                ((DatastreamManagedContent)ds).Context = context;
+             } else if (controlGroup.equals("R") || controlGroup.equals("E")) {
+                 ds = new DatastreamReferencedContent();
+                 ds.DSInfoType = "DATA";
++                ((DatastreamReferencedContent)ds).Context = context;
+             } else {
+                 throw new GeneralException("Invalid control group: "
+                                            + controlGroup);
+@@ -722,8 +722,10 @@
+             Datastream newds;
+             if (orig.DSControlGrp.equals("M")) {
+                 newds = new DatastreamManagedContent();
++                ((DatastreamManagedContent)newds).Context = context;
+             } else {
+                 newds = new DatastreamReferencedContent();
++                ((DatastreamReferencedContent)newds).Context = context;
+             }
+             // update ds attributes that are common to all versions...
+             // first, those that cannot be changed by client...
+Index: fcrepo-server/src/main/java/org/fcrepo/server/security/DefaultAuthorization.java
+===================================================================
+--- fcrepo-server/src/main/java/org/fcrepo/server/security/DefaultAuthorization.java	(revision 8776)
++++ fcrepo-server/src/main/java/org/fcrepo/server/security/DefaultAuthorization.java	(working copy)
+@@ -4,6 +4,21 @@
+  */
+ package org.fcrepo.server.security;
+ 
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.FileOutputStream;
++import java.io.IOException;
++
++import java.util.Date;
++import java.util.Hashtable;
++import java.util.Iterator;
++import java.util.Map;
++
++import javax.xml.transform.Transformer;
++import javax.xml.transform.TransformerFactory;
++import javax.xml.transform.stream.StreamResult;
++import javax.xml.transform.stream.StreamSource;
++
+ import org.fcrepo.common.Constants;
+ import org.fcrepo.server.Context;
+ import org.fcrepo.server.Module;
+@@ -20,20 +35,7 @@
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+-import javax.xml.transform.Transformer;
+-import javax.xml.transform.TransformerFactory;
+-import javax.xml.transform.stream.StreamResult;
+-import javax.xml.transform.stream.StreamSource;
+-import java.io.File;
+-import java.io.FileInputStream;
+-import java.io.FileOutputStream;
+-import java.io.IOException;
+-import java.util.Date;
+-import java.util.Hashtable;
+-import java.util.Iterator;
+-import java.util.Map;
+ 
+-
+ /**
+  * The Authorization module, protecting access to Fedora's API-A and API-M
+  * endpoints.
+@@ -1661,7 +1663,7 @@
+                     .getSubjectValue(Constants.SUBJECT.LOGIN_ID.uri),
+                              target,
+                              Constants.ACTION.APIM.uri,
+-                             fileURI,
++                             "", //TODO Find a way to get the relevant pid here, to allow for object policy decisions
+                              extractNamespace(fileURI),
+                              context);
+         } finally {
+Index: fcrepo-server/src/main/java/org/fcrepo/server/storage/types/DatastreamManagedContent.java
+===================================================================
+--- fcrepo-server/src/main/java/org/fcrepo/server/storage/types/DatastreamManagedContent.java	(revision 8776)
++++ fcrepo-server/src/main/java/org/fcrepo/server/storage/types/DatastreamManagedContent.java	(working copy)
+@@ -11,11 +11,7 @@
+ import java.io.InputStream;
+ import java.io.OutputStream;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+ import org.fcrepo.common.Constants;
+-
+ import org.fcrepo.server.Context;
+ import org.fcrepo.server.ReadOnlyContext;
+ import org.fcrepo.server.Server;
+@@ -27,6 +23,8 @@
+ import org.fcrepo.server.storage.lowlevel.ILowlevelStorage;
+ import org.fcrepo.server.utilities.StreamUtility;
+ import org.fcrepo.server.validation.ValidationUtility;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+ 
+ 
+@@ -60,6 +58,8 @@
+ 
+     public int DSMDClass = 0;
+ 
++    public Context Context = null;
++
+     public DatastreamManagedContent() {
+     }
+ 
+@@ -160,9 +160,13 @@
+                     ValidationUtility.validateURL(DSLocation, this.DSControlGrp);
+                     // If validation has succeeded, assume an external resource.
+                     // Fetch it, store it locally, update DSLocation
+-                    Context ctx = ReadOnlyContext.EMPTY;
+-                               ContentManagerParams params = new ContentManagerParams(DSLocation);
+-                    params.setContext(ctx);
++                    ContentManagerParams params = new ContentManagerParams(DSLocation);
++                    if (this.Context == null) {
++                        params.setContext(ReadOnlyContext.EMPTY);
++                    }
++                    else {
++                        params.setContext(this.Context);
++                    }
+                     MIMETypedStream stream = getExternalContentManager()
+                             .getExternalContent(params);
+ 
+Index: fcrepo-server/src/main/java/org/fcrepo/server/storage/types/DatastreamReferencedContent.java
+===================================================================
+--- fcrepo-server/src/main/java/org/fcrepo/server/storage/types/DatastreamReferencedContent.java	(revision 8776)
++++ fcrepo-server/src/main/java/org/fcrepo/server/storage/types/DatastreamReferencedContent.java	(working copy)
+@@ -1,5 +1,5 @@
+ /* The contents of this file are subject to the license and copyright terms
+- * detailed in the license directory at the root of the source tree (also 
++ * detailed in the license directory at the root of the source tree (also
+  * available online at http://fedora-commons.org/license/).
+  */
+ package org.fcrepo.server.storage.types;
+@@ -8,6 +8,8 @@
+ import java.io.InputStream;
+ 
+ import org.fcrepo.common.Constants;
++import org.fcrepo.server.Context;
++import org.fcrepo.server.ReadOnlyContext;
+ import org.fcrepo.server.Server;
+ import org.fcrepo.server.errors.InitializationException;
+ import org.fcrepo.server.errors.StreamIOException;
+@@ -19,7 +21,7 @@
+ 
+ /**
+  * Referenced Content.
+- * 
++ *
+  * @author Chris Wilper
+  * @version $Id$
+  */
+@@ -28,6 +30,7 @@
+ 
+     private static ExternalContentManager s_ecm;
+ 
++    public Context Context = null;
+ 
+     public DatastreamReferencedContent() {
+     }
+@@ -42,8 +45,8 @@
+     /**
+      * Gets the external content manager which is used for the retrieval of
+      * content.
+-     * 
+-     * @return an instance of <code>ExternalContentManager</code> 
++     *
++     * @return an instance of <code>ExternalContentManager</code>
+      * @throws Exception is thrown in case the server is not able to find the module.
+      */
+     private ExternalContentManager getExternalContentManager()
+@@ -67,16 +70,16 @@
+     /**
+      * Gets an InputStream to the content of this externally-referenced
+      * datastream.
+-     * 
+-     * <p>The DSLocation of this datastream must be non-null before invoking 
++     *
++     * <p>The DSLocation of this datastream must be non-null before invoking
+      * this method.
+-     * 
++     *
+      * <p>If successful, the DSMIME type is automatically set based on the web
+      * server's response header. If the web server doesn't send a valid
+      * Content-type: header, as a last resort, the content-type is guessed by
+      * using a map of common extensions to mime-types.
+-     * 
+-     * <p>If the content-length header is present in the response, DSSize will 
++     *
++     * <p>If the content-length header is present in the response, DSSize will
+      * be set accordingly.
+      *
+      * @see org.fcrepo.server.storage.types.Datastream#getContentStream()
+@@ -84,18 +87,25 @@
+     @Override
+     public InputStream getContentStream() throws StreamIOException {
+         try {
++            ContentManagerParams params = new ContentManagerParams(DSLocation);
++            if (this.Context == null) {
++                params.setContext(ReadOnlyContext.EMPTY);
++            }
++            else {
++                params.setContext(this.Context);
++            }
+             MIMETypedStream stream = getExternalContentManager()
+-                    .getExternalContent(new ContentManagerParams(DSLocation));
++                    .getExternalContent(params);
+             DSSize = getContentLength(stream);
+             return stream.getStream();
+         } catch (Exception ex) {
+             throw new StreamIOException("Error getting content stream", ex);
+         }
+     }
+-    
++
+     /**
+      * Returns the length of the content of this stream.
+-     * @param stream the MIMETypedStream 
++     * @param stream the MIMETypedStream
+      * @return length the length of the content
+      */
+     public long getContentLength(MIMETypedStream stream) {
+@@ -111,5 +121,5 @@
+             }
+         }
+         return length;
+-    }    
++    }
+ }
+Index: fcrepo-server/src/test/java/org/fcrepo/mock/sql/MockConnection.java
+===================================================================
+--- fcrepo-server/src/test/java/org/fcrepo/mock/sql/MockConnection.java	(revision 8776)
++++ fcrepo-server/src/test/java/org/fcrepo/mock/sql/MockConnection.java	(working copy)
+@@ -239,80 +239,67 @@
+         throw new RuntimeException("MockConnection.setTypeMap not implemented");
+     }
+ 
+-    @Override
+     public Array createArrayOf(String arg0, Object[] arg1) throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public Blob createBlob() throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public Clob createClob() throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public NClob createNClob() throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public SQLXML createSQLXML() throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public Struct createStruct(String arg0, Object[] arg1) throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public Properties getClientInfo() throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public String getClientInfo(String arg0) throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public boolean isValid(int arg0) throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public void setClientInfo(Properties arg0) throws SQLClientInfoException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public void setClientInfo(String arg0, String arg1)
+             throws SQLClientInfoException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public boolean isWrapperFor(Class<?> iface) throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+ 
+-    @Override
+     public <T> T unwrap(Class<T> iface) throws SQLException {
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");

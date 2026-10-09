@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1868 remove dependency on javax.jcr.Session in kernel-api</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1868</span> remove dependency on javax.jcr.Session in kernel-api</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-12-22 18:46 UTC</td></tr><tr><th>Updated</th><td>2017-01-24 03:32 UTC</td></tr><tr><th>Resolved</th><td>2016-10-26 17:52 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.1</td></tr><tr><th>Labels</th><td>housekeeping</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1847.html">FCREPO-1847</a> remove jcr dependencies from the kernel-api</td></tr></table>
+<h2>Description</h2>
+<p>The fcrepo-kernel-api uses the javax.jcr.Session type in numerous places. If a Session type is needed in the kernel-api, a Fedora-specific type should be created. Otherwise, uses of javax.jcr.Session should be moved to the modeshape module.</p>
+<h2>Comments (19)</h2>
+<div class="comment" id="comment-15979"><div class="by">A. Soroka, 2015-12-22 20:58 UTC</div><div class="text"><p>Do we want to use the notion of "session"? If the HTTP layer is our true API, then I don't think we do. I think we want to use the notion of "request". Which, of course, doesn't exist at the kernel layer. Maybe "transaction" is the best choice.</p></div></div>
+<div class="comment" id="comment-15984"><div class="by">A. Soroka, 2015-12-23 18:28 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/968" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/968</a></p></div></div>
+<div class="comment" id="comment-15996"><div class="by">Andrew Woods, 2015-12-27 19:07 UTC</div><div class="text"><p>PRs to the following projects should be included with this ticket:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>fcrepo-module-auth-xacml
+fcrepo-module-auth-webac
+fcrepo-transform
+fcrepo-audit
+fcrepo-webapp-plus
+fcrepo4-oaiprovider
+fcrepo4-swordserver
+</pre>
+</div></div>
+<p>The convention used in this PR is <tt>AccessType</tt> to the name the Parameter type. "Access" seems to have a distinctly different connotation from how "Session" is used. "SessionType" may be more clear.</p></div></div>
+<div class="comment" id="comment-15998"><div class="by">A. Soroka, 2015-12-28 15:31 UTC</div><div class="text"><p><tt>fcrepo4-oaiprovider</tt> and <tt>fcrepo4-swordserver</tt>} are in <tt>fcrepo4-labs</tt>. I am certainly not going to spend time making a PR for them. The fact that the core team does not take responsibility for them is the very reason they are in <tt>fcrepo4-labs</tt> Someone else will need to do the other PRs if you want them done quickly. I am out of time for this for several weeks.</p>
+
+<p>I disagree with you about the name of the type parameter. "Session" is exactly the notion we are trying to excise from the code. "Access" may not be the best choice but "session" is wrong.</p></div></div>
+<div class="comment" id="comment-17710"><div class="by">Unknown, 2016-10-04 00:36 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1107" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1107</a><br/>
+(This is a very large change, and so it is being addressed incrementally through this PR)</p></div></div>
+<div class="comment" id="comment-17815"><div class="by">A. Soroka, 2016-10-13 14:00 UTC</div><div class="text"><p>Partially fixed with: <a href="https://github.com/fcrepo4/fcrepo4/commit/a11360d0413a604574f1025cb20422fe784771ec" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a11360d0413a604574f1025cb20422fe784771ec</a></p></div></div>
+<div class="comment" id="comment-17816"><div class="by">A. Soroka, 2016-10-13 14:00 UTC</div><div class="text"><p>Reopening for further work.</p></div></div>
+<div class="comment" id="comment-17819"><div class="by">Unknown, 2016-10-13 16:28 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1123" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1123</a></p></div></div>
+<div class="comment" id="comment-17826"><div class="by">Andrew Woods, 2016-10-14 17:21 UTC</div><div class="text"><p>In trying to test this with fcrepo-webapp-plus to ensure no surprises with authorization, I immediately hit compilation errors. Unknown, would you be able to provide a PR against fcrepo-webapp-plus?</p></div></div>
+<div class="comment" id="comment-17827"><div class="by">Unknown, 2016-10-14 17:24 UTC</div><div class="text"><p>Andrew Woods doing so would involve making all the related changes to all of the auth modules, which I am not going to do until I get the thumbs up on this change in the first place. This is a large enough change that I feel we need to go one step at a time.</p></div></div>
+<div class="comment" id="comment-17828"><div class="by">Andrew Woods, 2016-10-14 17:37 UTC</div><div class="text"><p>That certainly makes sense. We just have to be aware that we will potentially be pushing this commit with only partial understanding of whether is works or not.</p></div></div>
+<div class="comment" id="comment-17829"><div class="by">Unknown, 2016-10-14 17:40 UTC</div><div class="text"><p>My understanding (though this hasn't been made explicit) is that the order will be like this:</p>
+
+<p>1. Review the PR above (#1123)<br/>
+2. Approve, but do not merge the PR<br/>
+3. Create appropriate PRs for downstream projects based on #1123<br/>
+4. Review those PRs<br/>
+5. Merge everything</p></div></div>
+<div class="comment" id="comment-17830"><div class="by">Andrew Woods, 2016-10-14 17:48 UTC</div><div class="text"><p>+1 to the above process.</p></div></div>
+<div class="comment" id="comment-17832"><div class="by">Andrew Woods, 2016-10-14 19:45 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-17855"><div class="by">Unknown, 2016-10-17 20:50 UTC</div><div class="text"><p>Andrew Woods additional commits have been pushed to the PR to address the review comments.</p></div></div>
+<div class="comment" id="comment-17868"><div class="by">Unknown, 2016-10-24 17:30 UTC</div><div class="text"><p>Additional PRs:</p>
+
+<p>audit: <a href="https://github.com/fcrepo4-exts/fcrepo-audit/pull/40" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/pull/40</a><br/>
+rbacl: <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/40" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/40</a><br/>
+xacml: <a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/57" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/57</a><br/>
+webac: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/75" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/75</a></p></div></div>
+<div class="comment" id="comment-17869"><div class="by">Andrew Woods, 2016-10-24 19:49 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/834209528649f0ff8be6424665f883e8d0ba8055" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/834209528649f0ff8be6424665f883e8d0ba8055</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/c9fd20f830a53ae9ae3b96bde9c5d2a217473a3c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/c9fd20f830a53ae9ae3b96bde9c5d2a217473a3c</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/10fd3ff2a7775ab9815261c46102c1207dcc44ae" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/10fd3ff2a7775ab9815261c46102c1207dcc44ae</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/309c8fd9f04749c1cdca28ab4a7c8afa16246b22" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/309c8fd9f04749c1cdca28ab4a7c8afa16246b22</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-audit/commit/4b9acf8bdfbe4c1e5ec87ebf15a18681c6791a86" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/commit/4b9acf8bdfbe4c1e5ec87ebf15a18681c6791a86</a></p></div></div>
+<div class="comment" id="comment-17880"><div class="by">Andrew Woods, 2016-10-26 17:38 UTC</div><div class="text"><p>Related PR: <a href="https://github.com/fcrepo4-exts/fcrepo-connector-file/pull/3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-connector-file/pull/3</a></p></div></div>
+<div class="comment" id="comment-17881"><div class="by">Unknown, 2016-10-26 17:52 UTC</div><div class="text"><p>fcrepo-connector-file commit merged via <a href="https://github.com/fcrepo4-exts/fcrepo-connector-file/commit/4594ac19db3bb55df6043d67288f75496476075f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-connector-file/commit/4594ac19db3bb55df6043d67288f75496476075f</a></p></div></div>
+<p><a href="data/FCREPO-1868.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

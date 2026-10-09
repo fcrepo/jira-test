@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-470 port problem caused by router redirection </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-470</span> port problem caused by router redirection </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Gerard Torrent</td></tr><tr><th>Created</th><td>2009-04-06 11:08 UTC</td></tr><tr><th>Updated</th><td>2015-07-01 21:05 UTC</td></tr><tr><th>Resolved</th><td>2015-07-01 21:05 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1</td></tr></table>
+<h2>Environment</h2>Linux 2.6.27.21-170.2.56.fc10.x86_64 #1 SMP Mon Mar 23 23:08:10 EDT 2009 x86_64 x86_64 x86_64 GNU/Linux<br/>
+fedora-commons-3.1<br/>
+postgres-8-3-7
+<h2>Description</h2>
+<p>We have the following network architecture:</p>
+
+<p>FEDORASERVER:8015 &lt;-----<del>&gt; YYY:ROUTER:80 &lt;</del>---&gt; XXX:INTERNET</p>
+
+<p>As you can see, our router redirects all requests to the fedora server mapping port 80 to port 8015.</p>
+
+<p>Fedora replies have the protocol, host and port harcoded, but these values are extracted from the last hop and are of the form <a href="http://FEDORASERVER:8015/fedora/" class="external-link" rel="nofollow noreferrer">http://FEDORASERVER:8015/fedora/</a>.... These URL's are not accessible from the outside.</p>
+
+<p>Examples of requests with the problem:</p>
+<ul class="alternate" type="square">
+	<li><a href="http://fedoraserver/fedora/get/pidns:134/fedora-system:3/viewItemIndex" class="external-link" rel="nofollow noreferrer">http://fedoraserver/fedora/get/pidns:134/fedora-system:3/viewItemIndex</a></li>
+	<li><a href="http://fedoraserver/fedora/get/pidns:134/DS" class="external-link" rel="nofollow noreferrer">http://fedoraserver/fedora/get/pidns:134/DS</a></li>
+	<li><a href="http://fedoraserver/fedora/get/pidns:134/fedora-system:3/viewMethodIndex" class="external-link" rel="nofollow noreferrer">http://fedoraserver/fedora/get/pidns:134/fedora-system:3/viewMethodIndex</a></li>
+</ul>
+
+
+<p>In order to solve the problem we suggest to remove the method 'getReposBaseURL' from classes 'DefaultAccess.java' and 'DynamicAccessImpl.java'. We don't know if these changes can cause a undesired behaviour. Use at your own risk.</p>
+
+<p>Regards, Gerard</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10897"><div class="by">Chris Wilper, 2009-04-14 19:17 UTC</div><div class="text"><p>The solution for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-406" >
+                <a href="FCREPO-406.html" class="jira-issue-macro-key issue-link"  title="Remove assumption of /fedora as webapp path" >
+            
+            FCREPO-406
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ may already be helping with the viewItem/MethodIndex pages, but this needs to be verified.</p>
+
+<p>Gerard, can you clarify where in the body of ../pidns:134/DS your Fedora URL is being hardcoded?</p></div></div>
+<div class="comment" id="comment-10898"><div class="by">Gerard Torrent, 2009-04-15 08:05 UTC</div><div class="text"><p>In any of the html pages responded by:</p>
+<ul class="alternate" type="square">
+	<li><a href="http://fedoraserver/fedora/get/pid/fedora-system:3/viewItemIndex" class="external-link" rel="nofollow noreferrer">http://fedoraserver/fedora/get/pid/fedora-system:3/viewItemIndex</a></li>
+	<li><a href="http://fedoraserver/fedora/get/pid/DS" class="external-link" rel="nofollow noreferrer">http://fedoraserver/fedora/get/pid/DS</a></li>
+	<li><a href="http://fedoraserver/fedora/get/pid/fedora-system:3/viewMethodIndex" class="external-link" rel="nofollow noreferrer">http://fedoraserver/fedora/get/pid/fedora-system:3/viewMethodIndex</a></li>
+</ul>
+
+
+<p>we found tags like this:<br/>
+&lt;a href='http://FEDORASERVER:8015/fedora/xxx'&gt;blablabla&lt;/a&gt;</p>
+
+<p>This href is an absolute reference with the port of the last hop (<a href="http://FEDORASERVER:8015" class="external-link" rel="nofollow noreferrer">http://FEDORASERVER:8015</a>). We can't access to this port from outside, we only can access to port 80. We propose to change these references in a relative form, like this:<br/>
+&lt;a href='/fedora/xxx'&gt;blablabla&lt;/a&gt;</p></div></div>
+<div class="comment" id="comment-14615"><div class="by">Andrew Woods, 2015-07-01 21:05 UTC</div><div class="text"><p>3.x</p></div></div>
+<p><a href="data/FCREPO-470.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

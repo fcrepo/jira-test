@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3337 Refactor storage configuration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3337</span> Refactor storage configuration</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-06-03 20:28 UTC</td></tr><tr><th>Updated</th><td>2020-06-19 01:07 UTC</td></tr><tr><th>Resolved</th><td>2020-06-19 01:07 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3308.html">FCREPO-3308</a> Consolidate Fedora configuration in one place.</td></tr></table>
+<h2>Description</h2>
+<p>Currently, F6 is using the following properties to define where it places OCFL related files on disk:</p>
+
+<p>private static final String OCFL_STAGING_DIR_KEY = "fcrepo.ocfl.staging.dir<br/>
+public static final String OCFL_STORAGE_ROOT_DIR_KEY = "fcrepo.ocfl.storage.root.dir";<br/>
+public static final String OCFL_WORK_DIR_KEY = "fcrepo.ocfl.work.dir";</p>
+
+<p>Additionally, the OCFL work directory is being incorrectly used to store files that are unrelated to the directory's purpose as a temp space that's used by the OCFL client.</p>
+
+<p>Ideally, this would be refactored to look something like the following:</p>
+
+<p>fcrepo/                       &lt;-- fcrepo.home: contains all F6 on disk data and config<br/>
+└── data/<br/>
+    ├── ocfl-root/      &lt;-- fcrepo.ocfl.storage: contains OCFL storage root<br/>
+    ├── staging/        &lt;-- fcrepo.ocfl.staging: contains files waiting to be moved into OCFL<br/>
+    └── temp/           &lt;-- fcrepo.temp: contains ocfl-java temp files and potentially other random files</p>
+
+<p>I can see a use case for having the OCFL storage root outside of fcrepo.home, but we may not even need the staging and temp locations to be configurable.</p>
+
+<p>It would be nice to just be able to do -Dfcrepo.home=target/fcrepo and have all of the various files written within the target directory rather than either having to deal with the default location in temp space or set a laundry list of properties.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-21265"><div class="by">Andrew Woods, 2020-06-11 13:07 UTC</div><div class="text"><p>Partial resolution: <a href="https://github.com/fcrepo4/fcrepo4/commit/363ccc2178b14a8b532b652668c8018ca3f4d453" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/363ccc2178b14a8b532b652668c8018ca3f4d453</a></p></div></div>
+<div class="comment" id="comment-21266"><div class="by">Peter Winckles, 2020-06-11 13:33 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1698" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1698</a></p></div></div>
+<div class="comment" id="comment-21267"><div class="by">Andrew Woods, 2020-06-11 15:22 UTC</div><div class="text"><p>As a follow-on, we should have a documentation ticket:<br/>
+<a href="https://wiki.lyrasis.org/display/FEDORA6x/Application+Configuration" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FEDORA6x/Application+Configuration</a></p></div></div>
+<div class="comment" id="comment-21280"><div class="by">Andrew Woods, 2020-06-19 01:07 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/5806d1c44368b57d26fb61152a59d01c114ed1b2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/5806d1c44368b57d26fb61152a59d01c114ed1b2</a></p></div></div>
+<p><a href="data/FCREPO-3337.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

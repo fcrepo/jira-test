@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2706 Create container mementos from body</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2706</span> Create container mementos from body</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-03-08 20:09 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-03-13 18:49 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>2018-spring-api-alignment-sprint, versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Required by</th><td><a href="FCREPO-2710.html">FCREPO-2710</a> Ignore referential integrity of memento properties</td></tr><tr><th>Required by</th><td><a href="FCREPO-2709.html">FCREPO-2709</a> Create binary description mementos</td></tr></table>
+<h2>Description</h2>
+<p>Allow creation of historical mementos of containers using the body and datetime in the request.  Server must honor most server managed triples provided in the request body.</p>
+
+<p>If the body of the request does not contain necessary server managed triples, request should return with 4xx status.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-19713"><div class="by">Ben Pennell, 2018-03-12 13:50 UTC</div><div class="text"><p>Danny Bernstein Andrew Woods A few implementation questions that have come up so far:</p>
+
+<p>1) When importing a historical memento, should the client be required to provide ALL of the server managed triples (fedora:created, fedora:createdBy, fedora:lastModified, fedora:lastModifiedBy, server managed rdf:type &lt;fed:Container/fed:Resource/ldp:RDFSource/etc&gt;).  As opposed to allowing fedora to fill in any missing ones.  While requiring all of them would ensure that the created memento will be exactly what was submitted, that could cause issues if Fedora implementations required different server managed triples.</p>
+
+<p> </p>
+
+<p>2) Should fedora:writable be set to false for mementos on creation/import, regardless of what it was before?</p>
+
+<p> </p>
+
+<p>3) Currently I am storing fedora:mementoDatetime and the memento mixin as properties on the memento resource.  This results in them being returned in GET response, which seems counter to the requirement of mementos being unchanged.  My intention is currently to suppress them from the body of responses, but wanted to get confirmation on this.</p></div></div>
+<div class="comment" id="comment-19714"><div class="by">Andrew Woods, 2018-03-12 13:56 UTC</div><div class="text"><p>1) I would suggest we provide an exact list of "minimal" SMTs that must be provided by the client. I would not suggest Fedora create any additional SMTs</p>
+
+<p>2) Yes, fedora:writable should be false</p>
+
+<p>3) Suppressing fedora:mementoDatetime and the memento mixin seems like a good idea.</p></div></div>
+<div class="comment" id="comment-19715"><div class="by">Jared Whiklo, 2018-03-12 14:01 UTC</div><div class="text"><p>1) I'm guessing it should be all triples, especially as we want to remove any dynamically generated triples. As which triples (if any) are server managed is an implementation decision I don't feel that should detract from this path.</p>
+
+<p> </p>
+
+<p>2) Is fedora:writeable used for anything?</p>
+
+<p> </p>
+
+<p>3) I would agree that these properties should not be returned as part of the body. The mementoDatetime is returned in the header and (but I could be wrong) there is a Link: &lt;&gt;; rel='type' for Mementos</p></div></div>
+<div class="comment" id="comment-19716"><div class="by">Ben Pennell, 2018-03-12 14:45 UTC</div><div class="text"><p>Jared Whiklo which dynamically generated triples would you expect to be removed?  I am mainly thinking of generated membership, which I had been thinking we would want to represent in the memento since that was part of the objects state when it was captured.</p></div></div>
+<div class="comment" id="comment-19717"><div class="by">Jared Whiklo, 2018-03-12 16:14 UTC</div><div class="text"><p>In this context I was thinking about things like created and last modified dates. I guess dynamically generated is not correct terminology. More server managed, sorry about that.</p></div></div>
+<div class="comment" id="comment-19734"><div class="by">Ben Pennell, 2018-03-13 18:49 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1300" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1300</a></p></div></div>
+<div class="comment" id="comment-19745"><div class="by">Danny Bernstein, 2018-03-14 16:47 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/ec9c57c7bc3b0c0dbfd0a44bef99fb72dd135c65" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ec9c57c7bc3b0c0dbfd0a44bef99fb72dd135c65</a></p></div></div>
+<p><a href="data/FCREPO-2706.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

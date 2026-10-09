@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2709 Create binary description mementos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2709</span> Create binary description mementos</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-03-08 20:11 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-05-01 01:00 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>hard, versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2707.html">FCREPO-2707</a> Provide separate timemap for binary and description</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2706.html">FCREPO-2706</a> Create container mementos from body</td></tr><tr><th>Required by</th><td><a href="FCREPO-2614.html">FCREPO-2614</a> Add versioning headers for LDPRm HEAD/GET responses</td></tr><tr><th>Required by</th><td><a href="FCREPO-2620.html">FCREPO-2620</a> Allow deletion of binary and binary description mementos (LDPRm) </td></tr></table>
+<h2>Description</h2>
+<p>Allow for creation of historical mementos of binary descriptions using the body and datetime in the request.  Server must honor most server managed triples provided in the request body.</p>
+
+<p>If the body of the request does not contain necessary server managed triples, request should return with 4xx status.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-19795"><div class="by">Ben Pennell, 2018-03-20 15:34 UTC</div><div class="text"><p>Andrew Woods Danny Bernstein Jared Whiklo</p>
+
+<p>I’m still trying to work through the implications and options for how a binary description memento should behave given the design of versioning binaries and descriptions separately. I had some questions/observations that I was hoping to get thoughts on regarding how description binary memento should differ from the original:</p>
+<ul>
+	<li>binary is versioned separately, implying that the description does not need to contain a binary<br/>
+  * Options:<br/>
+    1) store an empty binary,<br/>
+    2) only store the NonRdfSourceDescription memento, using a different node type which doesn't require jcr:content,<br/>
+    3) create memento of binary at same time as description</li>
+	<li>should not return etag or last modified header, as these values refer to the binary for descriptions</li>
+	<li>should it include a "describes" link?  Would it reference the original?</li>
+	<li>In a GET response, should the subject of triples be the NonRdfSource or a binary, as with a non-memento description?<br/>
+  * binaryid/fcr:metadata/fcr:versions/mementoid<br/>
+  * vs binaryid/fcr:versions/mementoid<br/>
+  * vs binaryid</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19797"><div class="by">Danny Bernstein, 2018-03-20 17:41 UTC</div><div class="text"><p>Ben Pennell:  Regarding the describes link,  I think that it can't reference the original,  because once the original changes, the description would no longer would describe the original resource, but a historical version of that resource.  Therefore it seems a memento of the binary should be created at the same time and linked via the describes header.  If this is the case then the etag of the newly versioned binary comes from the associated versioned description.  I think the subject of the triples in the description memento should be the newly created binary memento. </p>
+
+<p>However doesn't creating the memento of the binary at the same time as the description pose a problem for the import use case?</p></div></div>
+<div class="comment" id="comment-19799"><div class="by">Ben Pennell, 2018-03-20 18:35 UTC</div><div class="text"><p>Danny Bernstein Mainly creating the description and binary mementos at the same time runs into problems with only being able to provide the content for one at a time. Updating the RDF of the LDP-RS describing the binary requires the body of the request, as does updating the binary itself.  Then after updating the description, you can no longer update the binary for the same memento since memento's are considered immutable by the specification.  We could create a multi-part request that updated both at once, but its not in the specification currently.</p>
+
+<p>The tickets I created were based on creating binary and description in two requests, but that results in two disassociated LDPR's. Fedora could attempt to guess which description describes a binary memento (check for a memento with a matching memento-datetime), but there's always the possibility that it won't find anything. Judging by 5.2.3.12 from the LDP specification, it sounds like it is okay to have an LDP-NR without a LDP-RS, but we should attempt to link the two if they both exist.</p>
+
+<p>So I agree it would be best to have the describes link go to a memento, but it gets messy in either direction.  Ahh, such fun.</p></div></div>
+<div class="comment" id="comment-19803"><div class="by">Ben Pennell, 2018-03-22 14:13 UTC</div><div class="text"><p>I put together an attempt to determine how many parts of the code base would be impacted by following the two request approach if we were to not require creation of an empty jcr:content.  It may not touch everywhere that would need to be updated, but gets all tests passing.  It is definitely a WIP, since I simply disabled a number of components for description mementos and it may not be using the expected URI in GET responses in some places:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/62d001a460552fd7fb3f6a31a0b485bfba8bbec1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/62d001a460552fd7fb3f6a31a0b485bfba8bbec1</a></p></div></div>
+<div class="comment" id="comment-19943"><div class="by">Ben Pennell, 2018-04-26 20:24 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1344" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1344</a></p></div></div>
+<div class="comment" id="comment-19960"><div class="by">Jared Whiklo, 2018-04-27 20:49 UTC</div><div class="text"><p>Problems re-using datetimes</p></div></div>
+<div class="comment" id="comment-19968"><div class="by">Andrew Woods, 2018-04-30 19:18 UTC</div><div class="text"><p>Pending response to code review.</p></div></div>
+<div class="comment" id="comment-19974"><div class="by">Andrew Woods, 2018-05-01 22:02 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/c3ebfdb3c49a295646ceb1d7d7c082efd138057f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/c3ebfdb3c49a295646ceb1d7d7c082efd138057f</a></p></div></div>
+<p><a href="data/FCREPO-2709.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

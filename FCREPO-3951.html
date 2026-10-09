@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3951 Transactions not rolled back after timeout if there are existing requests</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3951</span> Transactions not rolled back after timeout if there are existing requests</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>David Novák</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2024-07-26 22:58 UTC</td></tr><tr><th>Updated</th><td>2024-09-27 19:47 UTC</td></tr><tr><th>Resolved</th><td>2024-09-27 19:47 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.4.0</td></tr></table>
+<h2>Description</h2>
+<p>During testing, we encounter the problem that the automatic transaction rollback (<a href="https://wiki.lyrasis.org/display/FEDORA6x/Transactions" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FEDORA6x/Transactions</a>) is not applied if at least one reuqest has been sent to the transaction. In this case, the transaction remains uncommitted until the manual rollback is performed. If transaction is empty it is correctly rolled back after the period set in the config file.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-23219"><div class="by">Ben Pennell, 2024-09-06 19:22 UTC</div><div class="text"><p>I was very easily able to replicate the transaction database entries persisting through restarts (and never going away), but I’m having a hard to replicating the transactions not rolling back after timing out.</p>
+
+<p>I have been testing with <tt>mvn jetty:run</tt> and postgres running in docker using the instructions from:</p>
+
+<p><a href="https://wiki.lyrasis.org/display/FEDORA6x/Database+Cache#DatabaseCache-PostgreSQL.2" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FEDORA6x/Database+Cache#DatabaseCache-PostgreSQL.2</a> </p>
+
+<p>Its possible I replicated this at some point, but I think it might be getting confounded by weirdness with the expiration times. The <tt>Atomic-Expires</tt> header when doing a GET against a TX is returning values that don’t seem to match my config. Like I configured it to expire in 60 seconds, and it seemed to take about 3 minutes, and then i configured 2 minutes and the <tt>Atomic-Expires</tt> was about 5-6 minutes in the future, and the database entries finally cleared about 7-8 minutes after the last request made to the tx. I also removed the config so that it’d default to 3 minutes, and it took about 7 minutes to expire.</p>
+
+<p>I wanted to note that I also don’t see any entries in the <tt>containment_transactions</tt>, <tt>search_resource_rdf_type_transactions</tt>, or <tt>simple_search_transactions</tt> tables if I just create a transaction and don’t make any changes. As far as I can tell there isn’t a representation of the transaction on its own. So it would make sense that we only see stuff left over after making changes in the TX. Unless there is some sort of postgres internal transactions table you were referring to?</p>
+
+<p>Just recording my steps here:</p>
+
+<p>Started fcrepo with:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MAVEN_OPTS='-Dfcrepo.config.file=/path/to/test-config.properties' mvn jetty:run -pl fcrepo-webapp </pre>
+</div></div>
+
+<p>where the properties file configures fedora to use postgres based the instructions on that page. I also tried various transaction timeout values.</p>
+
+<p>I then started a transaction and used it to create a container and check the expiration time.</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -i -X POST "http://localhost:8080/rest/fcr:tx" -ufedoraAdmin:fedoraAdmin
+curl -H"Atomic-ID: http://localhost:8080/rest/fcr:tx/9e0bfafc-94a1-4178-976c-27998f279937" -X POST "http://localhost:8080/rest/test_container" -H"Slug: newone" -ufedoraAdmin:fedoraAdmin
+curl -i -X GET "http://localhost:8080/rest/fcr:tx/9e0bfafc-94a1-4178-976c-27998f279937" -ufedoraAdmin:fedoraAdmin</pre>
+</div></div>
+
+<p>Connected to the database and queried the transaction tables:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>fcrepo=# select * from containment_transactions;
+             fedora_id             |           parent           |     start_time      | end_time |            transa
+ction_id            | operation 
+-----------------------------------+----------------------------+---------------------+----------+------------------
+--------------------+-----------
+ info:fedora/test_container/newone | info:fedora/test_container | 2024-09-06 11:34:34 |          | 2ea259e5-c743-487
+3-b1aa-dfb1a80d5105 | add
+(1 row)
+
+fcrepo=# select * from simple_search_transactions;
+ id |             fedora_id             |         created         |        modified         | content_size | mime_ty
+pe |            transaction_id            | operation 
+----+-----------------------------------+-------------------------+-------------------------+--------------+--------
+---+--------------------------------------+-----------
+  3 | info:fedora/test_container/newone | 2024-09-06 11:34:33.991 | 2024-09-06 11:34:33.991 |            0 |        
+   | 2ea259e5-c743-4873-b1aa-dfb1a80d5105 | add
+(1 row)</pre>
+</div></div>
+
+<p>I then waited for the transaction to timeout. </p>
+
+<p>As described above, the entries seem to get cleared if I wait until after the Atomic Expires value returned in a GET request to the TX URI. But the amount of time before it expires seems a lot longer than the time i configured.</p>
+
+<p>I tried methodically trying various conditions, but never ended up with transaction entries that stuck around forever except when I restarted fedora with transactions still live. Recording the approaches tried:</p>
+
+<blockquote><ol>
+	<li>Starting TX, creating a new container, then waiting 3 minutes (have it configured to 60s but it seems to be taking 3 minutes)
+	<ul>
+		<li>rolls back and clears DB</li>
+	</ul>
+	</li>
+	<li>After letting a tx roll back without restarting anything, start tx, create new container with same name, wait 3 minutes
+	<ul>
+		<li>rolls back and clears DB</li>
+	</ul>
+	</li>
+	<li>Without restarting, start tx, make GET requests against TX to check exp, create container, make GET requests against TX
+	<ul>
+		<li>rolls back after the updated tx exp time</li>
+	</ul>
+	</li>
+	<li>Create a container outside tx, make a tx, create a container in the tx (not in the outside container)
+	<ul>
+		<li>rolls back after the tx exp time</li>
+	</ul>
+	</li>
+	<li>Make a tx, create a container in a basic container that existed before the tx
+	<ul>
+		<li>rolls back after the tx exp time</li>
+	</ul>
+	</li>
+	<li>Make a tx, create a container in an existing basic container, manually roll back, make another tx, create container again
+	<ul>
+		<li>rolls back after about 2 minutes</li>
+	</ul>
+	</li>
+	<li>Make a tx, create a container in an existing basic container, shut down fedora, start fedora back up
+	<ul>
+		<li>tx entries still in db</li>
+		<li>GET for the tx returns 404, DELETE to tx returns 404</li>
+		<li>7b. With tx table containing stale entry from before restart, make a tx, create a container
+		<ul>
+			<li>rolls back, and cleans up the new tx entries (the old ones stay)</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+	<li>Restart postgres and fcrepo, make a tx, create a container
+	<ul>
+		<li>rolls back, cleans up the new tx entries</li>
+	</ul>
+	</li>
+	<li>Restart fcrepo (but not postgres), make a tx, create a container
+	<ul>
+		<li>rolls back, cleans up the new tx entries</li>
+	</ul>
+	</li>
+	<li>Change fcrepo timeout to 2 minutes, make a tx, create a container, GET request to check exp time
+	<ul>
+		<li>rolls back, cleans up tx entries after about 7-8 minutes</li>
+	</ul>
+	</li>
+	<li>2 min timeout, Make tx, create container, use GET to check Atomic Expires and compare to DB
+	<ul>
+		<li>Atomic-Expires 19:01:01 GMT, start time in DB 14:55:16, so almost 6 minutes</li>
+		<li>after 2 minutes, GET to tx still says its active</li>
+		<li>at :01:01 mark, GET returns 410 and the db entries are gone</li>
+	</ul>
+	</li>
+	<li>Remove timeout config, make tx, create container
+	<ul>
+		<li>Atomic expires 19:13:04 GMT, start time in DB 15:04:25, so close to 7 minutes</li>
+		<li>GET still active after 3mins</li>
+		<li>Reports 410 and db entries removed after the atomic expires value</li>
+	</ul>
+	</li>
+</ol>
+</blockquote></div></div>
+<div class="comment" id="comment-23251"><div class="by">David Novák, 2024-09-09 07:59 UTC</div><div class="text"><p>The problem with transactions after reboot is in another issue: <a href="FCREPO-3952.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3952?atlOrigin=eyJpIjoiM2YxYTUxZjczZTRlNDA5Mjk1NTJjNDU4ZmY5NGEwZDIiLCJwIjoiaiJ9</a> </p>
+
+<p>As for remaining transactions without restart, in our case the transaction gets stuck permanently and no rollback occurs at all. We have left the default value in the configuration. Also, I'll just explicitly point out that we're working with version 6.4 - if you were testing on 6.5, it might be different.<br/>
+As for opening the transaction without further changes, I honestly don't know how it is represented. But I have tested its closure by checking that if I waited more than 3 min (approximately) after opening a transaction to send additional content, Fedora returned the information that the transaction did not exist.</p>
+
+<p>If it would help, I can send some more information about our instance or the procedure, but there is nothing particularly special about them. Transactions remain stuck sometimes for a single action, sometimes for a series of actions - it doesn't seem to matter.</p></div></div>
+<div class="comment" id="comment-23482"><div class="by">Ben Pennell, 2024-09-23 19:05 UTC</div><div class="text"><p>Hopefully this PR should either help with or resolve the issue:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/pull/2093" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2093</a> </p>
+
+<p>The expiration times of transactions were having the timeout period added to them every request rather than being set to the now+timeout. The result was that if you made a lot of requests in a transaction, each one would add 3 minutes to the expiration time. For example, making 100 requests (read or write) gives you an expiration time 300min after the transaction was started. So it could effectively produce transactions that never seem to timeout.</p></div></div>
+<div class="comment" id="comment-23548"><div class="by">Jared Whiklo, 2024-09-27 19:47 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/dc4040691a3540ba8d997cf66a798b6ad3ac96bf" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/dc4040691a3540ba8d997cf66a798b6ad3ac96bf</a></p></div></div>
+<p><a href="data/FCREPO-3951.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

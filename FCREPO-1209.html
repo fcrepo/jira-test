@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1209 OutOfMemoryError uploading big files to fedora using mediashelf fedora-client v0.7</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1209</span> OutOfMemoryError uploading big files to fedora using mediashelf fedora-client v0.7</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Pavel Petrov</td></tr><tr><th>Created</th><td>2014-05-21 15:39 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Components</th><td>legacy - java-client</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Environment</h2>Sun java 1.7.0_51, Windows 8<br/>
+and<br/>
+OpenJDK 1.7.0_55, CentOS 6.5<br/>
+
+<h2>Description</h2>
+<p>Where are problems uploading big files to fedora using  fedora-client v0.7</p>
+
+<p>Test to reproduce bug:</p>
+
+<p>    @Test<br/>
+    public void addLargeStreamToFedora() throws IOException, FedoraClientException </p>
+{
+
+        FedoraCredentials fedoraCredentials =
+            new FedoraCredentials("http://localhost:8085/fedora", "fedoraAdmin",
+            "&lt;password&gt;");
+        FedoraClient fedoraClient = new FedoraClient(fedoraCredentials);
+
+        AddDatastream addStream =
+            new AddDatastream("test:atest1", "MAIN");
+        addStream.mimeType("application/pdf");
+        addStream.controlGroup("M");
+        addStream.dsLabel("ds_label_1");
+
+        Path filePath = Paths.get("&lt;path to large file&gt;");
+
+        InputStream is = Files.newInputStream(filePath);
+        addStream.content(is);
+        new Ingest("test:atest1").ownerId("test").execute(fedoraClient);
+        addStream.execute(fedoraClient); //java.lang.OutOfMemoryError: Java heap space
+    }
+
+<p>stack trace:<br/>
+addLargeStream(...FedoraRepositoryIT)  Time elapsed: 1.802 sec  &lt;&lt;&lt; ERROR!<br/>
+java.lang.OutOfMemoryError: Java heap space<br/>
+    at java.util.Arrays.copyOf(Arrays.java:2271)<br/>
+    at java.io.ByteArrayOutputStream.grow(ByteArrayOutputStream.java:113)<br/>
+    at java.io.ByteArrayOutputStream.ensureCapacity(ByteArrayOutputStream.java:93)<br/>
+    at java.io.ByteArrayOutputStream.write(ByteArrayOutputStream.java:140)<br/>
+    at sun.net.www.http.PosterOutputStream.write(PosterOutputStream.java:78)<br/>
+    at com.sun.jersey.api.client.CommittingOutputStream.write(CommittingOutputStream.java:90)<br/>
+    at com.sun.jersey.core.util.ReaderWriter.writeTo(ReaderWriter.java:115)<br/>
+    at com.sun.jersey.core.provider.AbstractMessageReaderWriterProvider.writeTo(AbstractMessageReaderWriterProvider.java:76)<br/>
+    at com.sun.jersey.core.impl.provider.entity.InputStreamProvider.writeTo(InputStreamProvider.java:98)<br/>
+    at com.sun.jersey.core.impl.provider.entity.InputStreamProvider.writeTo(InputStreamProvider.java:59)<br/>
+    at com.sun.jersey.api.client.RequestWriter.writeRequestEntity(RequestWriter.java:300)<br/>
+    at com.sun.jersey.client.urlconnection.URLConnectionClientHandler._invoke(URLConnectionClientHandler.java:213)<br/>
+    at com.sun.jersey.client.urlconnection.URLConnectionClientHandler.handle(URLConnectionClientHandler.java:149)<br/>
+    at com.sun.jersey.api.client.filter.HTTPBasicAuthFilter.handle(HTTPBasicAuthFilter.java:104)<br/>
+    at com.sun.jersey.api.client.Client.handle(Client.java:648)<br/>
+    at com.sun.jersey.api.client.WebResource.handle(WebResource.java:680)<br/>
+    at com.sun.jersey.api.client.WebResource.access$200(WebResource.java:74)<br/>
+    at com.sun.jersey.api.client.WebResource$Builder.post(WebResource.java:568)<br/>
+    at com.yourmediashelf.fedora.client.request.AddDatastream.execute(AddDatastream.java:232)<br/>
+    at....addLargeStream(FedoraRepositoryIT.java:115)</p>
+
+
+<p>I think, this problem is related to <a href="http://stackoverflow.com/questions/11176824/preventing-the-jersey-client-from-causing-an-outofmemory-error-when-posting-larg" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/11176824/preventing-the-jersey-client-from-causing-an-outofmemory-error-when-posting-larg</a></p>
+
+<p>And work around would be use ApacheHttpClient instead of HttpURLConection in com.yourmediashelf.fedora.client.FedoraClent constructor.<br/>
+Something like:</p>
+
+<p>    /**</p>
+<ul>
+	<li>Constructor for FedoraClient.<br/>
+     *</li>
+	<li>@param fc credentials for a Fedora repository<br/>
+     */<br/>
+    public FedoraClient(FedoraCredentials fc) {<br/>
+        this.fc = fc;</li>
+</ul>
+
+
+<p>        // TODO validate fc<br/>
+        // null check for username &amp; password<br/>
+        // null check for baseUrl</p>
+
+
+<p>        ClientConfig config = new DefaultClientConfig(); //added<br/>
+        config.getProperties().put(DefaultApacheHttpClientConfig.PROPERTY_CHUNKED_ENCODING_SIZE, 0); //added</p>
+
+<p>        // FIXME this isn't very security-minded<br/>
+        if (fc.getBaseUrl().toString().startsWith("https")) {<br/>
+            SSLContext ctx = null;<br/>
+            try </p>
+{
+                ctx = SSLContext.getInstance("SSL");
+                ctx.init(null, null, null);
+            }
+<p> catch (NoSuchAlgorithmException e) </p>
+{
+                logger.error(e.getMessage(), e);
+            } catch (KeyManagementException e) {                logger.error(e.getMessage(), e);            }
+
+<p>            // FIXME Consider using not-yet-commons-ssl hostnameverifier<br/>
+            // config by property: strict, none, etc.<br/>
+            config.getProperties().put(<br/>
+                HTTPSProperties.PROPERTY_HTTPS_PROPERTIES,<br/>
+                new HTTPSProperties(null, ctx));<br/>
+            client = ApacheHttpClient.create(config);<br/>
+        } else </p>
+{
+            client = ApacheHttpClient.create(config); //changed
+        }
+<p>        client.setFollowRedirects(true);<br/>
+        client.addFilter(new HTTPBasicAuthFilter(fc.getUsername(), fc<br/>
+            .getPassword()));<br/>
+    }</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12822"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1209.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

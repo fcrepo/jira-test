@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2579 Fcrepo: OSGI Deployment?</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2579</span> Fcrepo: OSGI Deployment?</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Christopher Johnson</td></tr><tr><th>Created</th><td>2017-09-06 17:19 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:42 UTC</td></tr><tr><th>Labels</th><td>OSGI, dependencies, deployment</td></tr></table>
+<h2>Description</h2>
+<p>I would like to deploy fcrepo as OSGI in Karaf.   I have made some noteworthy progress.</p>
+
+<p>Here is a summary of some issues:<br/>
+1.  org.apache.activemq:activemq-spring:5.14.1 depends on org.apache.xbean:xbean-spring:3.18<br/>
+Problem: In the MANIFEST.MF for xbean-spring, the Import-Packages: <br/>
+org.springframework.beans;version="[ 2.5,4)!<br/>
+fcrepo-webapp depends on activemq-spring.  This means that to deploy it, only spring releases &lt; 4 will work.  It is not possible to have multiple spring release dependencies, and many of the tests are using spring 4+ methods.  I found the source code here: <a href="http://svn.apache.org/repos/asf/geronimo/xbean/trunk/xbean-spring/" class="external-link" rel="nofollow noreferrer">http://svn.apache.org/repos/asf/geronimo/xbean/trunk/xbean-spring/</a><br/>
+I have repackaged this with revised headers.  It also needs to import several activemq packages.</p>
+
+<p>2.  ModeShape Schematic API uses a TCCL.<br/>
+I filed an issue here: <a href="https://issues.jboss.org/browse/MODE-2711" class="external-link" rel="nofollow noreferrer">https://issues.jboss.org/browse/MODE-2711</a><br/>
+I have made this work by removing the CL from the getDb() method and using a "ServiceLoader Mediator" provided with Aries.  I also ran into an issue <a href="https://groups.google.com/forum/#!topic/ops4j/lLEP1RMrk3M" class="external-link" rel="nofollow noreferrer">https://groups.google.com/forum/#!topic/ops4j/lLEP1RMrk3M</a> with an old version of mvn:org.apache.aries.spifly/org.apache.aries.spifly.dynamic.bundle<br/>
+being provided by Pax Web, but have been able to override their provided feature with a newer version using Karaf's override.properties.<br/>
+3. Non-OSGI provided dependencies.  Many of these are now provided by Apache ServiceMix.  Here is an almost complete list of required bundles to get everything to resolve:<br/>
+<a href="https://github.com/pan-dora/fcrepo4/blob/gradle/src/main/resources/docker/cfg/bundles.yml" class="external-link" rel="nofollow noreferrer">https://github.com/pan-dora/fcrepo4/blob/gradle/src/main/resources/docker/cfg/bundles.yml</a></p>
+
+<p>I might be worthwhile to change the &lt;dependencies&gt; to point to ServiceMix instead of the original source.</p>
+
+<p>Other small issues: velocity tools (used in http-api) uses an old version of javax.servlet-api (2.3), but metrics uses a newer version.  Solution is to exclude the old version.<br/>
+org.apache.http.annotation.NotThreadSafe (used in FedoreNodeIT); is removed in httpcore 4.4.6.  this can be replaced with org.modeshape.schematic.annotation.NotThreadSafe;  </p>
+
+<p>4. @Inject fails for cross-bundle implementations.  <br/>
+Here is an example exception:<br/>
+Caused by: org.glassfish.hk2.api.MultiException: A MultiException has 4 exceptions.  They are:<br/>
+1. org.glassfish.hk2.api.UnsatisfiedDependencyException: There was no object available for injection at SystemInjecteeImpl(requiredType=ExternalContentService,parent=ContentLocationMessageBodyReader,qualifiers={},position=-1,optional=false,self=false,unqualified=null,155428528)<br/>
+2. java.lang.IllegalArgumentException: While attempting to resolve the dependencies of org.fcrepo.http.commons.domain.ContentLocationMessageBodyReader errors were found<br/>
+I think that this occurs because a class in http-commons is trying to inject an implementation in kernel-modeshape via an interface in kernel-api and it cannot resolve it.</p>
+
+<p>AFAIK, using "traditional DI" across bundles is bad in OSGI because this breaks encapsulation.  I guess that this is probably known already.  IDK what the solution is (maybe Blueprint), but this may require some reengineering of the fcrepo service architecture to make it work. </p>
+
+<p>5. Velocity needs to be embedded in fcrepo-http-api because it needs to see the class path to load resources.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-19290"><div class="by">Esmé Cowles, 2017-09-07 13:41 UTC</div><div class="text"><p>Christopher Johnson, can you please stop editing the description of this issue?  JIRA sends an email to me (and presumably tons of other people) with a giant, poorly-formatted, unreadable diff every time you do.</p>
+
+<p>If you want to edit a document, please create a page in the wiki.  If you have new info, post a comment.</p></div></div>
+<div class="comment" id="comment-19291"><div class="by">Christopher Johnson, 2017-09-07 15:21 UTC</div><div class="text"><p>Esmé Cowles Oh, sorry.  I was not aware that JIRA sent story edit spam.  This is a story, not an issue and tagged as such.  I will add further details as comments as suggested.</p></div></div>
+<div class="comment" id="comment-19297"><div class="by">Unknown, 2017-09-08 15:41 UTC</div><div class="text"><p>Christopher Johnson I applaud your effort here. I worked on this issue in the past and ultimately gave up on it. The two biggest issues for me related to how Fedora does dependency injection and the sheer complexity of managing all of the transitive dependencies. At one point, I did have the modeshape layer start up correctly in Karaf, but as you point out, the injection errors in the HTTP layer lead to much consternation.</p>
+
+<p>I think it would be considerably easier to support OSGi-based DI, if the Fedora code used Constructor polymorphism, but that is not how the code is structured; instead, Fedora uses field-based injection, and because these are cross-package injection targets, one has to rely on the ability of the DI framework to access these private fields. Whether this will even be possible in Java 9 is an open question to me.</p>
+
+<p>IMO, the biggest reason this is so difficult with the Fedora codebase has to do with the fact that OSGi applications are fundamentally modular and the Fedora codebase is fundamentally monolithic. So getting Fedora to run in an OSGi environment with a split class loader will likely be an incredibly arduous process.</p></div></div>
+<div class="comment" id="comment-19298"><div class="by">Christopher Johnson, 2017-09-08 17:28 UTC</div><div class="text"><p>Unknown thank you for the input.  I believe that making OSGI work is an important task for fcrepo, esp. looking towards a future governed by the modularity and encapsulation requirements of JDK 9.  I have mostly figured out the dependency issues and am now at the point of experimenting with Aries blueprint (that you know very well).  I definitely get the sense that Spring style DI is "a thing of the past"  that needs to be migrated, in any case.  From what I understand, the OSGI service registry is the answer to cross-package injection targets.</p>
+
+<p>At the moment, I am trying to figure out how to write a blueprint for <a href="https://github.com/pan-dora/fcrepo4/blob/gradle/fcrepo-kernel-modeshape/src/main/resources/OSGI-INF/blueprint/blueprint.xml" class="external-link" rel="nofollow noreferrer">fcrepo-kernel-modeshape</a> .  As you accurately describe, constructors are an issue.  I do not know how to define a bean with an interface (e.g. javax.jcr.Repository) as a constructor argument.  Any suggestions? </p></div></div>
+<div class="comment" id="comment-19300"><div class="by">Unknown, 2017-09-08 22:00 UTC</div><div class="text"><p>Christopher Johnson I agree that making Fedora work in an OSGi environment is an excellent way to verify that the Fedora code base is well-designed and modular. I actually used to have a blueprint.xml file that successfully instantiated a Fedora-on-Modeshape repository within Karaf, though that file has long since been deleted (along with the github repo it was part of). As I recall, though, I had a custom branch of the fcrepo4 code (I don't recall what, specifically needed to be changed – this was from over two years ago) along with a fairly extensive set of feature.xml files for the various components and a bunch of configuration.</p>
+
+<p>The upshot was that the fcrepo-kernel-modeshape component did start up in Karaf and it recognized an existing repository datastore, so I know that that much is possible.</p>
+
+<p>As you may know, I am working on my own Fedora implementation, and I have built it from the outset with an eye toward modularity and OSGi. Whether it would be easier to modify the current Fedora4 so that it runs within OSGi or whether it would be better to work on a separate, greenfield implementation is an open question, but I obviously chose the latter.</p></div></div>
+<div class="comment" id="comment-19301"><div class="by">Christopher Johnson, 2017-09-09 06:27 UTC</div><div class="text"><p>Unknown I did not know about your project until now.  A greenfield implementation provides a clear path ahead where the alternative of reengineering presents obstacles and a lot of frustration.  This OSGI build exercise with Fedora has been illuminating, though definitely arduous.  Your designs are masterful, so I study them, and change course in that direction.  </p>
+
+</div></div>
+<p><a href="data/FCREPO-2579.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

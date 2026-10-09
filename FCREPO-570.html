@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-570 Add methods to SOAP API for manipulating RELS-INT relationships</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-570</span> Add methods to SOAP API for manipulating RELS-INT relationships</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-11-03 17:23 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-11-17 11:49 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Description</h2>
+<p>The SOAP API contains methods for manipulating relationships in RELS EXT.</p>
+
+<p>These could either be extended, or new methods created, for relationships in RELS-INT.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11065"><div class="by">Chris Wilper, 2009-11-11 10:14 UTC</div><div class="text"><p>Looking at the signatures for the relationship methods today, they take PIDs as the first parameter, but the datatype is String.  For example:</p>
+
+<p><a href="https://fedora-commons.org/confluence/display/FCR30/API-M#API-M-addRelationship" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/confluence/display/FCR30/API-M#API-M-addRelationship</a></p>
+
+<p>So it strikes me that it would be possible to extend the existing methods to do this, and still have it be backward compatible.  The first parameter could be defined to accept a PID <b>or</b> subjectURI (object or datastream info: URI).</p></div></div>
+<div class="comment" id="comment-11066"><div class="by">Stephen Bayliss, 2009-11-11 11:17 UTC</div><div class="text"><p>Good spot Chris.</p>
+
+<p>We should (1) maintain consistency with other API method parameters and (2) be mindful of a future where these methods may possibly be used to operate on arbitrary relationships.</p>
+
+<p>So for subject parameter, currently the PID, we could have the following syntax options<br/>
+(1) pid (eg changeme:1234) - keep for backwards compatibility<br/>
+(2) pid/dsID (eg change:1234/DC) - however I note that all other API calls have separate parameters for pid and dsID, so this seems inconsistent, my preference would be not to allow this<br/>
+(3) Subject URI, eg info:fedora/changeme:1234 , a PID URI for RELS-EXT operations and info:fedora/changeme:1234/DC, a datastream URI for RELS-INT operations</p>
+
+<p>Option (3) is then flexible-enough for an arbitrary URI subject in case operations on arbitrary relationships are introduced in the future.  So for asserting RELS-EXT relationships we would allow both the forms changeme:1234 and info:fedora/changeme:1234; and for RELS-INT only the URI form info:fedora/changeme:1234/DC would be acceptable.</p>
+
+<p>On the face of it, it seems distinguishing between a pid (1) and a URI (3) should be fairly simple, however looking at the specification for URI syntax, a Fedora PID of eg changeme:1234 does in fact conform to generic URI syntax.</p>
+
+<p>This means that in a future "arbitrary relationships" scenario, subject URIs which conform to PID syntax would be incorrectly interpreted as PIDs rather than URIs, and result in incorrect triples being created.  (Although it seems to me that in practice this form of URI occurring is unlikely).</p>
+
+<p>I'd be happy to take on implementing (1) + (3) for the moment if there is consensus.</p>
+
+<p>This could mean that at some point in the future we might need to first deprecate the (1) syntax, and then remove it altogether.  Which begs the question as to whether we should deprecate syntax (1) now.</p>
+</div></div>
+<div class="comment" id="comment-11070"><div class="by">Chris Wilper, 2009-11-12 14:22 UTC</div><div class="text"><p>Good point on distinguishing between PID and URI.  I think it would be best to mark as deprecated the ability to accept a PID as the first arg (that is, allow it to still work for at least one release, then fully get rid of it in a future release).</p>
+
+<p>Since for now, the first arg is either going to be a PID for an object URI, there shouldn't be trouble syntactically distinguishing:</p>
+<ul class="alternate" type="square">
+	<li>if it doesn't start with "info:/fedora/", it's a PID</li>
+	<li>if it does, and has 2 slashes total, it's an objectURI</li>
+	<li>if it does, and has 3 slashes total, it's a datastreamURI</li>
+</ul>
+
+</div></div>
+<div class="comment" id="comment-11071"><div class="by">Stephen Bayliss, 2009-11-15 09:04 UTC</div><div class="text"><p>This could potentially introduce a breaking change:</p>
+
+<p>As part of this we should change the "pid" parameter on these methods to (suggested) "subject" (of the relationship).</p>
+
+<p>And the SOAP methods should also have these parameters renamed.</p>
+
+<p>This would be a breaking change.</p>
+
+<p>Could we get around this by the hand-cranked WSDL (and associated schemas) so that the "type" of the message specifies either/or for pid and subject, ie</p>
+
+<p>&lt;xs:choice&gt;<br/>
+  &lt;xs:element name="pid" ... /&gt;<br/>
+  &lt;xs:element name="subject ... /&gt;<br/>
+&lt;/xs:choice&gt;</p>
+
+<p>But is this likely to cause problems with the auto-generated code?</p>
+
+<p><b>update</b>:  yes.</p>
+
+<p>results in fedora.server.management.FedoraAPIM methods including both parameters, so any client written against this then breaks...</p>
+</div></div>
+<div class="comment" id="comment-11072"><div class="by">Stephen Bayliss, 2009-11-17 11:49 UTC</div><div class="text"><p>Currently implemented with the SOAP messages changed from "pid" to "subject" - this will be a breaking change for anyone that uses SOAP; however anyone that goes through fedora-client.jar will be ok.</p>
+
+<p>If necessary the SOAP message definitions in fedora-types.xsd can be reverted back to pid and we can go for this breaking change in a future release.</p></div></div>
+<div class="comment" id="comment-11074"><div class="by">Stephen Bayliss, 2009-11-17 17:49 UTC</div><div class="text"><p>committer's meeting 2009-11-27: leave as pid in WSDL for now; cover in documentation</p></div></div>
+<p><a href="data/FCREPO-570.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

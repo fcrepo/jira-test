@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-181 Problem with utf-8 characters in datastream</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-181</span> Problem with utf-8 characters in datastream</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2008-01-24 12:57 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr></table>
+<h2>Description</h2>
+<p>Hello all</p>
+
+<p>My name is John and at my company we are using Fedora 2.2.1 <br/>
+I have found a problem with utf-8 xml datastreams, only when the size is larger than 4K. Some times every 4K block, a utf-8 character is destroyed and shows as 2 other characters.<br/>
+I searched the source code and I found a wrong implementation for converting InputStream to StringBuffer.<br/>
+The class fedora.server.storage.translation.FOXMLDOSerializer has the method appendXMLStream. This method first reads 4096 bytes from the InputStream and then encodes them to utf-8. This is wrong, because some times the first byte of a utf-8 character is the last byte of the buffer and the second byte is the first byte of the next buffer.<br/>
+The right method to read the InputStream, is first to use a InputStreamReader (that encodes the InputSream to utf-8) and then to fill the buffer.<br/>
+I have modify that method like this:</p>
+
+<p>    private void appendXMLStream(InputStream in, StringBuffer buf, String encoding)<br/>
+            throws ObjectIntegrityException, UnsupportedEncodingException,<br/>
+            StreamIOException {<br/>
+        if (in==null) </p>
+{
+            throw new ObjectIntegrityException("Object's inline xml "
+                    + "stream cannot be null.");
+        }
+<p>        try {<br/>
+            InputStreamReader inReader = new InputStreamReader(in, Charset.forName(encoding));<br/>
+            int bufSize = 4096;<br/>
+            char charBuf[] = new char<span class="error">&#91;bufSize&#93;</span>;<br/>
+            int len;<br/>
+            while ( ( len = inReader.read(charBuf, 0, bufSize) ) != -1 ) </p>
+{
+                buf.append(charBuf, 0, len);
+            }
+<p>        } catch (UnsupportedEncodingException uee) </p>
+{
+            throw uee;
+        }
+<p> catch (IOException ioe) </p>
+{
+            throw new StreamIOException("Error reading from inline xml datastream.");
+        }
+<p> finally {<br/>
+            try </p>
+{
+                in.close();
+            }
+<p> catch (IOException closeProb) </p>
+{
+                throw new StreamIOException("Error closing read stream.");
+            }
+<p>        }<br/>
+    }</p>
+
+<p>I hope this fix to be useful to non-latin users of fedora.</p>
+
+<p>Cheers<br/>
+John</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10382"><div class="by">Chris Wilper, 2008-02-19 14:14 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>Thanks for the detailed bug report, John!<br/>
+Aaron fixed this in maintenance-2.2 r6618 and trunk r6619.<br/>
+Fixed by appending XML in a uniform way (using char encoding)<br/>
+in DOTranslationUtility.   This fixes the expected SIZEs <br/>
+in the trunk/maintenance TestAPIM system test class and adds <br/>
+a regression test to the trunk junits.</p></div></div>
+<div class="comment" id="comment-10383"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: jtatsis<br/>
+Item #: 1878847<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1878847" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1878847</a><br/>
+Closed On: 2008-03-04 11:10:30<br/>
+Closed By: fcswa</p></div></div>
+<p><a href="data/FCREPO-181.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

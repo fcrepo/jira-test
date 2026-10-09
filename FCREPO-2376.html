@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2376 User-supplied namespace prefixes are ignored</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2376</span> User-supplied namespace prefixes are ignored</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-12-22 20:29 UTC</td></tr><tr><th>Updated</th><td>2018-02-16 14:49 UTC</td></tr><tr><th>Resolved</th><td>2017-09-01 14:30 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1, Fedora 4.6.0, Fedora 4.6.1, Fedora 4.7.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0, Fedora 4.7.5</td></tr><tr><th>Labels</th><td>breaking-change</td></tr><tr><th>Required by</th><td><a href="FCREPO-2252.html">FCREPO-2252</a> Import of dataset, lost namespace prefixes - plantpatents</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2573.html">FCREPO-2573</a> Namespaces not created correctly via PUT and POST</td></tr></table>
+<h2>Description</h2>
+<p>In Fedora 4.5.0 and before, when a new namespace was observed in RDF with namespace prefixes (e.g., turtle), the user-supplied namespace prefix was registered and used in subsequent uses of that namespace.  If the user did not supply a prefix, or was using an RDF serialization without prefixes (e.g., ntriples), then Fedora generated a prefix like ns001.</p>
+
+<p>Since Fedora 4.5.1, Fedora ignores any user-supplied prefix and always generates a prefix like ns001.</p>
+
+<p>See discussion in <a href="https://jira.duraspace.org/browse/FCREPO-2252" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2252</a></p>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-18307"><div class="by">Andrew Woods, 2016-12-22 20:53 UTC</div><div class="text"><p>Potential source of this change:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1312" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1312</a></p>
+<ul>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/523953db47ff09c0311de1dd51e98ae384cc0836#diff-7aee50d5030524028026aa94cd75f350L554" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/523953db47ff09c0311de1dd51e98ae384cc0836#diff-7aee50d5030524028026aa94cd75f350L554</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/523953db47ff09c0311de1dd51e98ae384cc0836#diff-f5973302ab00a1fb20d9fe8cace27e3bR59" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/523953db47ff09c0311de1dd51e98ae384cc0836#diff-f5973302ab00a1fb20d9fe8cace27e3bR59</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-18756"><div class="by">Esmé Cowles, 2017-05-18 13:30 UTC</div><div class="text"><p>Those changes to RdfAdder and FedoraResourceImpl are part of the problem — and the other part is removing the call to model.getNsPrefixMap().  It looks easy to get the prefix mapping from the input model and pass it into RdfAdder (which is currently get namespaces from the JCR session and not looking for any input namespaces).</p></div></div>
+<div class="comment" id="comment-18758"><div class="by">Bethany Seeger, 2017-05-18 13:52 UTC</div><div class="text"><p>Thinking about design here - in terms of prefix definitions, would the cnd file take precedence, in case there's an overlap of prefixes with different definitions (ie, ones from the existing model in the system vs ones in the file)?  Seems like what's <em>in</em> the system should take precedence over the file.  Really, just thinking about how to do this in a clear way so users aren't then confused in a different way.    </p></div></div>
+<div class="comment" id="comment-18759"><div class="by">Esmé Cowles, 2017-05-18 13:57 UTC</div><div class="text"><p>Bethany Seeger, yes, I think the CND file would take precedence.  Though given the issues that have surfaced in the 4.7.0/4.7.2 upgrades, I think that defining custom namespaces in the CND file might not be a good idea.  If users can post RDF with their own namespaces, then they would not need to update the CND file in order to have control over their namespaces.</p></div></div>
+<div class="comment" id="comment-18814"><div class="by">Esmé Cowles, 2017-05-22 13:28 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1195)" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1195</a></p>
+
+<p>This PR works fine for me with parallelism turned off, but fails on Travis with parallelism on.  See <a href="https://jira.duraspace.org/browse/FCREPO-2466" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2466</a></p></div></div>
+<div class="comment" id="comment-19091"><div class="by">Andrew Woods, 2017-06-07 17:19 UTC</div><div class="text"><p>Esmé Cowles: any updates here? is this PR ready for review?</p></div></div>
+<div class="comment" id="comment-19092"><div class="by">Esmé Cowles, 2017-06-07 17:28 UTC</div><div class="text"><p>Yes, I've rebased <a href="https://github.com/fcrepo4/fcrepo4/pull/1195" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1195</a> and it passes with parallel builds enabled now that the underlying parallelism issue has been resolved.</p></div></div>
+<div class="comment" id="comment-19103"><div class="by">Andrew Woods, 2017-06-12 02:13 UTC</div><div class="text"><p>Thanks, Esmé Cowles, looks good... pending response to one minor comment.</p></div></div>
+<div class="comment" id="comment-19104"><div class="by">Esmé Cowles, 2017-06-12 13:49 UTC</div><div class="text"><p>I've updated <a href="https://github.com/fcrepo4/fcrepo4/pull/1195" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1195</a> in response to code review comments.</p></div></div>
+<div class="comment" id="comment-19105"><div class="by">Andrew Woods, 2017-06-12 13:52 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/81be86f4809be5620a0f74a5c5c6de6819169fea" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/81be86f4809be5620a0f74a5c5c6de6819169fea</a></p></div></div>
+<div class="comment" id="comment-19271"><div class="by">Esmé Cowles, 2017-08-31 16:57 UTC</div><div class="text"><p>Backport to 4.7-maintenance: <a href="https://github.com/fcrepo4/fcrepo4/pull/1221" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1221</a></p></div></div>
+<div class="comment" id="comment-19272"><div class="by">Esmé Cowles, 2017-08-31 16:59 UTC</div><div class="text"><p>I created an object in 4.7-maintenance using Turtle with namespaces defined, and saw the old behavior as expected (ns001 etc. namespaces were used instead).</p>
+
+<p>I then cherry-picked <a href="https://github.com/fcrepo4/fcrepo4/commit/81be86f4809be5620a0f74a5c5c6de6819169fea" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/81be86f4809be5620a0f74a5c5c6de6819169fea</a> over to my branch, rebuilt, and did an update to the object I created, using my namespace definitions from before, without problems (the ns001 prefixes were still used in the output, my update was applied).  I then made further updates with new namespaces and their prefixes were used as expected. </p></div></div>
+<div class="comment" id="comment-19273"><div class="by">Andrew Woods, 2017-08-31 17:50 UTC</div><div class="text"><p>Perfect! Esmé Cowles</p></div></div>
+<div class="comment" id="comment-19275"><div class="by">Andrew Woods, 2017-09-01 14:29 UTC</div><div class="text"><p>Resolved in 4.7-maintenance with: <a href="https://github.com/fcrepo4/fcrepo4/commit/971b5c7d6675af40a552d4338418494305ec657a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/971b5c7d6675af40a552d4338418494305ec657a</a></p>
+
+<p>Resolved in master with: <a href="https://github.com/fcrepo4/fcrepo4/commit/81be86f4809be5620a0f74a5c5c6de6819169fea" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/81be86f4809be5620a0f74a5c5c6de6819169fea</a></p></div></div>
+<p><a href="data/FCREPO-2376.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

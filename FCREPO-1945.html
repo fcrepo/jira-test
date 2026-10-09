@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1945 Node Properties should not be included in JMS events</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1945</span> Node Properties should not be included in JMS events</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-03-10 17:23 UTC</td></tr><tr><th>Updated</th><td>2016-07-05 13:23 UTC</td></tr><tr><th>Resolved</th><td>2016-07-05 13:22 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1937.html">FCREPO-1937</a> MOVE not emitting complete events</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1960.html">FCREPO-1960</a> RDF expression for events</td></tr></table>
+<h2>Description</h2>
+<p>The JMS events emitted by Fedora should not contain the list of changed properties. These are not used by any of the camel machinery and they are particularly troublesome in the context of ldp membership and containment (which are not currently included in JMS events anyway). Removing them will save a lot of work.</p>
+<h2>Comments (30)</h2>
+<div class="comment" id="comment-16302"><div class="by">Unknown, 2016-03-11 02:48 UTC</div><div class="text"><p>Former user, Jared Whiklo, Diego Pino Navarro, Nick Ruest are you folks making use of the <tt>org.fcrepo.jms.properties</tt> header with any of your camel code? This ticket is about making that header go away (a good idea IMO, especially since the data it carries is not accurate). Will the Islandora CLAW code have any issues with that?</p></div></div>
+<div class="comment" id="comment-16303"><div class="by">Diego Pino Navarro, 2016-03-11 03:11 UTC</div><div class="text"><p>Unknown, i think we don't (but will check tomorrow AM to be sure) : the only part where we interact with org.fcrepo.jms is here <a href="https://github.com/Islandora-CLAW/CLAW/blob/252fc35433aef32fef0ac7966182fb3ad491cea6/camel/sync/src/main/resources/OSGI-INF/blueprint/eventGateway.xml" class="external-link" rel="nofollow noreferrer">https://github.com/Islandora-CLAW/CLAW/blob/252fc35433aef32fef0ac7966182fb3ad491cea6/camel/sync/src/main/resources/OSGI-INF/blueprint/eventGateway.xml</a><br/>
+and if i remember well we fetch data from fedora directly, first hand, instead of depending on that header, we just use the event type, not the properties. <br/>
+Thanks!</p></div></div>
+<div class="comment" id="comment-16305"><div class="by">Unknown, 2016-03-11 11:48 UTC</div><div class="text"><p>It looks like the <tt>fcrepo-audit-triplestore</tt> camel code uses the <tt>org.fcrepo.jms.properties</tt> header value: <a href="https://git.io/vasaR" class="external-link" rel="nofollow noreferrer">https://git.io/vasaR</a></p>
+
+<p>Andrew Woods does that imply that the JMS module should continue to publish these events? And if so, is there an expectation that the listed properties are only those that directly <em>operated on</em> (the current behavior) or those that <em>changed</em> in the internal representation (much harder)?</p></div></div>
+<div class="comment" id="comment-16306"><div class="by">Diego Pino Navarro, 2016-03-11 13:12 UTC</div><div class="text"><p>Unknown at <tt>fcrepo-audit-triplestore</tt> <tt>org.fcrepo.jms.properties</tt> is used basically only for getting the <tt>premisType</tt> right? <a href="https://github.com/fcrepo4-exts/fcrepo-audit/blob/master/src/main/java/org/fcrepo/audit/AuditUtils.java#L64-L91" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/blob/master/src/main/java/org/fcrepo/audit/AuditUtils.java#L64-L91</a></p>
+
+<p>Maybe we can refactor that utility function by getting needed info from fedora directly? too much overhead?</p></div></div>
+<div class="comment" id="comment-16307"><div class="by">A. Soroka, 2016-03-11 13:18 UTC</div><div class="text"><p>+1 to going back to the repo for that info.</p></div></div>
+<div class="comment" id="comment-16308"><div class="by">Unknown, 2016-03-11 13:23 UTC</div><div class="text"><p>It would not be possible to go back to the repo for DELETE events, since the information will no longer be there. </p>
+
+<p>My understanding, though, is that if the JMS event simply announced whether the affected resource was a Container or a Binary, that would be enough for the audit system &#8211; it would also make things easier for some of the other camel routes.</p></div></div>
+<div class="comment" id="comment-16310"><div class="by">A. Soroka, 2016-03-11 13:29 UTC</div><div class="text"><p>What about indexing? Is it possible to do deindexing of deleted things without the props?</p></div></div>
+<div class="comment" id="comment-16311"><div class="by">Unknown, 2016-03-11 13:35 UTC</div><div class="text"><p>Indexing (and deindexing) works just fine now without the props.</p></div></div>
+<div class="comment" id="comment-16312"><div class="by">A. Soroka, 2016-03-11 13:38 UTC</div><div class="text"><p>SO why would we need to go back to the repo for DELETEs for audit?</p></div></div>
+<div class="comment" id="comment-16313"><div class="by">Unknown, 2016-03-11 13:57 UTC</div><div class="text"><p>The difference is that in the indexing context, a DELETE event simply removes all trace of that resource in the external index, which doesn't require any interaction with the repository. For audit, however, the camel route is recording that a DELETE event happened, and if the <tt>fedora:hasContent</tt> property exists in the properties header (as it does for any fedora:Binary resource &#8211; whether the binary itself changes or the metadata describing that binary). If the <tt>fedora:hasContent</tt> property is present, then the <tt>premis:hasEventType</tt> is set as <tt><a href="http://fedora.info/definitions/v4/audit#contentRemoval" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/audit#contentRemoval</a></tt>; otherwise, the <tt>premis:hasEventType</tt> is <tt><a href="http://id.loc.gov/vocabulary/preservation/eventType/del" class="external-link" rel="nofollow noreferrer">http://id.loc.gov/vocabulary/preservation/eventType/del</a></tt>.</p>
+
+<p>In some ways, though, this is orthogonal to the discussion of properties, since the only value in question is <tt>fedora:hasContent</tt>, which is specially added to any <tt>fedora:Binary</tt>, regardless of the properties that may or may not be changed. In fact, I would assert that <tt>fedora:hasContent</tt> is <em>not</em> a property like any of the other values packed into that header. It is certainly not one that has been changed.</p>
+
+<p>If we need to retain this sort of functionality for the audit stream, I think a better solution would be to <em>not</em> publish properties at all but rather publish whether the object is a Container or a Binary, along the lines of the HTTP Link headers that are currently published for every resource.</p></div></div>
+<div class="comment" id="comment-16314"><div class="by">Diego Pino Navarro, 2016-03-11 13:58 UTC</div><div class="text"><p>We don't need any further info for DELETEs. I wonder about MOVES in this context. Are they handled as delete + create?</p></div></div>
+<div class="comment" id="comment-16315"><div class="by">A. Soroka, 2016-03-11 14:03 UTC</div><div class="text"><p>Yes, I would think that publishing the types of a resource should be enough.</p></div></div>
+<div class="comment" id="comment-16316"><div class="by">Unknown, 2016-03-11 14:05 UTC</div><div class="text"><p>See this for background on MOVE events: <a href="https://jira.duraspace.org/browse/FCREPO-1937" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1937</a></p>
+
+<p>The behavior in master now is that a MOVE operation emits a MOVE event for the resource in question (and all of its children) and a DELETE event for the resource's previous location (and the previous location of all children).</p></div></div>
+<div class="comment" id="comment-16357"><div class="by">A. Soroka, 2016-03-16 15:23 UTC</div><div class="text"><p>Do we have a conclusion for this that types are enough in the events?</p></div></div>
+<div class="comment" id="comment-16358"><div class="by">Diego Pino Navarro, 2016-03-16 19:32 UTC</div><div class="text"><p>Unknown I can confirm, i did not find any use at islandora for  <tt>org.fcrepo.jms.properties</tt>, so we are good to go at our side. Thanks and sorry for the delayed response.</p></div></div>
+<div class="comment" id="comment-16361"><div class="by">A. Soroka, 2016-03-17 19:29 UTC</div><div class="text"><p>The types thing doesn't work: you can't get the types of a deleted node. Thoughts?</p></div></div>
+<div class="comment" id="comment-16362"><div class="by">Unknown, 2016-03-17 19:44 UTC</div><div class="text"><p>Not necessarily an ideal solution, but look here: <a href="https://git.io/varCm" class="external-link" rel="nofollow noreferrer">https://git.io/varCm</a></p>
+
+<p>If, e.g. Event::getPath contains JCR_CONTENT, we know it is (was) a fedora:Binary; otherwise, it was a fedora:Container. Would that work?</p>
+</div></div>
+<div class="comment" id="comment-16363"><div class="by">A. Soroka, 2016-03-17 19:47 UTC</div><div class="text"><p>What about other types? I don't think that is nearly complete enough.</p></div></div>
+<div class="comment" id="comment-16364"><div class="by">Unknown, 2016-03-17 21:17 UTC</div><div class="text"><p>I agree. If we are going to list RDF:type values, it should be complete.</p>
+
+<p>What about optionally <tt>Inject}}ing an eventBus to {{FedoraResourceImpl</tt> and if it's nonnull, adding a <tt>FedoraEvent</tt> directly to it here: <a href="https://git.io/var2N" class="external-link" rel="nofollow noreferrer">https://git.io/var2N</a></p>
+
+<p>That would allow us to call <tt>FedoraResource::getTypes</tt> before the object is removed. That may also mean filtering out any JCR-based <tt>REMOVE</tt> events in the <tt>DefaultFilter</tt>.</p></div></div>
+<div class="comment" id="comment-16365"><div class="by">Unknown, 2016-03-18 01:00 UTC</div><div class="text"><p>OK, I have a <em>much better</em> approach: take a look at this function: <a href="https://git.io/vaocq" class="external-link" rel="nofollow noreferrer">https://git.io/vaocq</a></p>
+
+<p>By casting to a <tt>org.modeshape.jcr.api.observation.Event</tt>, you can call <tt>getMixinTypes()</tt> on the Event, which will include any RDF type added to the resource (I have confirmed this via logging statements). This will <em>not</em> include the LDP types, but those are dynamically added based on the Fedora types anyway and aren't part of the FedoraResource::getTypes response (a bug?). See: <a href="https://git.io/vaocw" class="external-link" rel="nofollow noreferrer">https://git.io/vaocw</a></p>
+
+<p>Specifically, with this addition to the <tt>DefaultFilter</tt>:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+         <span class="code-keyword">try</span> {
+             <span class="code-keyword">final</span> org.modeshape.jcr.api.observation.Event modeEvent =
+                     (org.modeshape.jcr.api.observation.Event) event;
++            <span class="code-comment">// ----------------------------------------------
+</span>+            LOGGER.info(<span class="code-quote">"Event Type: {}"</span>, modeEvent.getType());
++            LOGGER.info(<span class="code-quote">"Event Path: {}"</span>, modeEvent.getPath());
++            LOGGER.info(<span class="code-quote">"Primary Type: {}"</span>, modeEvent.getPrimaryNodeType().toString());
++            stream(modeEvent.getMixinNodeTypes()).map(NodeType::toString).forEach(type -&gt;
++                    LOGGER.info(<span class="code-quote">"Mixin Type: {}"</span>, type));
++            <span class="code-comment">// ----------------------------------------------
+</span>+
+             <span class="code-keyword">return</span> concat(of(modeEvent.getPrimaryNodeType()), stream(modeEvent.getMixinNodeTypes()))
+                 .map(NodeType::toString);
+         } <span class="code-keyword">catch</span> (<span class="code-keyword">final</span> ClassCastException e) {
+</pre>
+</div></div>
+
+<p>I produced this output when deleting an object:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+INFO 20:53:43.079 (DefaultFilter) Event Type: 2
+INFO 20:53:43.080 (DefaultFilter) Event Path: /events/test1
+INFO 20:53:43.080 (DefaultFilter) Primary Type: nt:folder
+INFO 20:53:43.080 (DefaultFilter) Mixin Type: fedora:Resource
+INFO 20:53:43.080 (DefaultFilter) Mixin Type: fedora:Container
+INFO 20:53:43.080 (DefaultFilter) Mixin Type: ex:<span class="code-object">Object</span>
+</pre>
+</div></div>
+
+<p>Note the presence of <tt>ex:Object</tt> in the output.</p></div></div>
+<div class="comment" id="comment-16366"><div class="by">A. Soroka, 2016-03-18 13:57 UTC</div><div class="text"><p>Very cute. One question: if the action that triggers the event is "a type is removed", is it included in the list of types, or not?</p></div></div>
+<div class="comment" id="comment-16367"><div class="by">Unknown, 2016-03-18 14:17 UTC</div><div class="text"><p>I would think that the removed type would <em>not</em> be included in that list. What do you think?</p></div></div>
+<div class="comment" id="comment-16368"><div class="by">A. Soroka, 2016-03-18 14:35 UTC</div><div class="text"><p>I don't know-- that's why I raised the question. </p>
+{grin}
+<p> I guess I'm wondering how it plays into the audit use case. There's no way within the API that one could switch a container to anything else or anything else into a container. Is that the only edge case? I think it might be.</p></div></div>
+<div class="comment" id="comment-16369"><div class="by">Unknown, 2016-03-18 14:39 UTC</div><div class="text"><p>It wouldn't affect the audit case, since for the audit system, the only relevant types are fedora:Container and fedora:Binary. And it is not possible to change those types through the public HTTP APIs.</p></div></div>
+<div class="comment" id="comment-16370"><div class="by">A. Soroka, 2016-03-18 14:45 UTC</div><div class="text"><p>Specta-cool-ar. I'll try this out with some tests.</p></div></div>
+<div class="comment" id="comment-16371"><div class="by">A. Soroka, 2016-03-18 19:10 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1008" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1008</a></p></div></div>
+<div class="comment" id="comment-16551"><div class="by">Andrew Woods, 2016-04-19 22:05 UTC</div><div class="text"><p>On hold pending resolution of: <a href="https://jira.duraspace.org/browse/FCREPO-1960" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1960</a></p></div></div>
+<div class="comment" id="comment-16886"><div class="by">Unknown, 2016-06-15 16:03 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1053" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1053</a></p></div></div>
+<div class="comment" id="comment-16941"><div class="by">Andrew Woods, 2016-07-01 20:25 UTC</div><div class="text"><p>Reopened per: <a href="https://jira.duraspace.org/browse/FCREPO-1960" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1960</a></p></div></div>
+<div class="comment" id="comment-16962"><div class="by">Andrew Woods, 2016-07-05 13:22 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/ddee309f31c63daac5a42de4da6bdabfc2d45c92" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ddee309f31c63daac5a42de4da6bdabfc2d45c92</a></p></div></div>
+<p><a href="data/FCREPO-1945.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

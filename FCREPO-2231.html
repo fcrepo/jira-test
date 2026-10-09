@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2231 ERROR on import of plantpatents dataset</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2231</span> ERROR on import of plantpatents dataset</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Nick Ruest</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-09-20 15:17 UTC</td></tr><tr><th>Updated</th><td>2016-09-23 14:37 UTC</td></tr><tr><th>Resolved</th><td>2016-09-23 14:37 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2235.html">FCREPO-2235</a> Ensure Link Headers not too long</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2234.html">FCREPO-2234</a> Importer needs to create repository resources that are referenced</td></tr></table>
+<h2>Description</h2>
+<p>On HEAD as of 317db67dae692d0709b4f9e3a7de2a56930d059c</p>
+
+<p>Imported plantplatents dataset, successfully exported dataset with:</p>
+
+<p><span class="error">&#91;nruest@simian:fcrepo-import-export&#93;</span> (git)<del><span class="error">&#91;master&#93;</span></del>$ java -jar target/fcrepo-import-export-0.0.1-SNAPSHOT.jar --mode export --resource <a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a> --descDir /tmp/awead --binDir /tmp/awead --rdfExt .jsonld --rdfLang application/ld+json</p>
+
+<p>Shutdown fcrepo, clear fcrepo-data.</p>
+
+<p>On import:</p>
+
+<p>$ java -jar target/fcrepo-import-export-0.0.1-SNAPSHOT.jar --mode import --resource <a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a> --descDir /tmp/awead --binDir /tmp/awead --rdfExt .jsonld --rdfLang application/ld+json<br/>
+INFO 11:10:07.746 (ArgParser) Configuration file exists, new file will NOT be created: /tmp/importexport.config<br/>
+INFO 11:10:07.750 (Importer) Running importer...<br/>
+INFO 11:10:08.292 (Importer) Importing container /tmp/awead/rest/plantpatents.jsonld to <a href="http://localhost:8080/rest/plantpatents" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/plantpatents</a><br/>
+ERROR 11:10:08.894 (ImportExportDriver) Error performing import/export: Error while importing /tmp/awead/rest/plantpatents.jsonld (500):</p>
+
+<p>Fedora stacktrace:</p>
+
+<p>INFO 11:07:19.933 (FedoraLdp) GET resource ''<br/>
+INFO 11:10:08.557 (FedoraLdp) PUT resource 'plantpatents'<br/>
+WARN 11:10:08.685 (PropertyConverter) The namespace of predicate: <a href="http://pcdm.org/models#hasMember" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#hasMember</a> was possibly misinterpreted as: <a href="http://pcdm.org/models#" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#</a>.<br/>
+<span class="error">&#91;qtp210100675-21&#93;</span> WARN org.eclipse.jetty.server.HttpChannel - Commit failed<br/>
+java.io.IOException: Response header too large<br/>
+	at org.eclipse.jetty.http.HttpGenerator.generateResponse(HttpGenerator.java:394)<br/>
+	at org.eclipse.jetty.server.HttpConnection$SendCallback.process(HttpConnection.java:599)<br/>
+	at org.eclipse.jetty.util.IteratingCallback.processIterations(IteratingCallback.java:233)<br/>
+	at org.eclipse.jetty.util.IteratingCallback.iterate(IteratingCallback.java:193)<br/>
+	at org.eclipse.jetty.server.HttpConnection.send(HttpConnection.java:448)<br/>
+	at org.eclipse.jetty.server.HttpChannel.sendResponse(HttpChannel.java:764)<br/>
+	at org.eclipse.jetty.server.HttpChannel.write(HttpChannel.java:802)<br/>
+	at org.eclipse.jetty.server.HttpOutput.write(HttpOutput.java:139)<br/>
+	at org.eclipse.jetty.server.HttpOutput.write(HttpOutput.java:132)<br/>
+	at org.eclipse.jetty.server.HttpOutput.flush(HttpOutput.java:234)<br/>
+	at org.glassfish.jersey.servlet.internal.ResponseWriter$NonCloseableOutputStreamWrapper.flush(ResponseWriter.java:330)<br/>
+	at org.glassfish.jersey.message.internal.CommittingOutputStream.flush(CommittingOutputStream.java:292)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$UnCloseableOutputStream.flush(WriterInterceptorExecutor.java:304)<br/>
+	at sun.nio.cs.StreamEncoder.implFlush(StreamEncoder.java:297)<br/>
+	at sun.nio.cs.StreamEncoder.flush(StreamEncoder.java:141)<br/>
+	at java.io.OutputStreamWriter.flush(OutputStreamWriter.java:229)<br/>
+	at org.glassfish.jersey.message.internal.ReaderWriter.writeToAsString(ReaderWriter.java:193)<br/>
+	at org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider.writeToAsString(AbstractMessageReaderWriterProvider.java:130)<br/>
+	at org.glassfish.jersey.message.internal.StringMessageProvider.writeTo(StringMessageProvider.java:99)<br/>
+	at org.glassfish.jersey.message.internal.StringMessageProvider.writeTo(StringMessageProvider.java:59)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$TerminalWriterInterceptor.invokeWriteTo(WriterInterceptorExecutor.java:265)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$TerminalWriterInterceptor.aroundWriteTo(WriterInterceptorExecutor.java:250)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:162)<br/>
+	at org.glassfish.jersey.server.internal.JsonWithPaddingInterceptor.aroundWriteTo(JsonWithPaddingInterceptor.java:106)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:162)<br/>
+	at org.glassfish.jersey.server.internal.MappableExceptionWrapperInterceptor.aroundWriteTo(MappableExceptionWrapperInterceptor.java:86)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:162)<br/>
+	at org.glassfish.jersey.message.internal.MessageBodyFactory.writeTo(MessageBodyFactory.java:1130)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$Responder.writeResponse(ServerRuntime.java:711)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$Responder.processResponse(ServerRuntime.java:444)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$Responder.process(ServerRuntime.java:490)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:334)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)<br/>
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)<br/>
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)<br/>
+	at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:769)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:585)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+	at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:577)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:223)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1125)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:515)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1059)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:215)<br/>
+	at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:110)<br/>
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:97)<br/>
+	at org.eclipse.jetty.server.Server.handle(Server.java:497)<br/>
+	at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:311)<br/>
+	at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:248)<br/>
+	at org.eclipse.jetty.io.AbstractConnection$2.run(AbstractConnection.java:540)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:610)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:539)<br/>
+	at java.lang.Thread.run(Thread.java:745)<br/>
+Caused by: java.nio.BufferOverflowException<br/>
+	at java.nio.Buffer.nextPutIndex(Buffer.java:521)<br/>
+	at java.nio.HeapByteBuffer.put(HeapByteBuffer.java:169)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.putSanitisedValue(HttpGenerator.java:1051)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.putTo(HttpGenerator.java:1073)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.generateHeaders(HttpGenerator.java:697)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.generateResponse(HttpGenerator.java:379)<br/>
+	... 64 more<br/>
+Sep 20, 2016 11:10:08 AM org.glassfish.jersey.server.ServerRuntime$Responder writeResponse<br/>
+SEVERE: An I/O error has occurred while writing a response message entity to the container output stream.<br/>
+org.glassfish.jersey.server.internal.process.MappableException: java.io.IOException: Response header too large<br/>
+	at org.glassfish.jersey.server.internal.MappableExceptionWrapperInterceptor.aroundWriteTo(MappableExceptionWrapperInterceptor.java:92)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:162)<br/>
+	at org.glassfish.jersey.message.internal.MessageBodyFactory.writeTo(MessageBodyFactory.java:1130)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$Responder.writeResponse(ServerRuntime.java:711)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$Responder.processResponse(ServerRuntime.java:444)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$Responder.process(ServerRuntime.java:490)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:334)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)<br/>
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)<br/>
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)<br/>
+	at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:769)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:585)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+	at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:577)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:223)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1125)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:515)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1059)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:215)<br/>
+	at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:110)<br/>
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:97)<br/>
+	at org.eclipse.jetty.server.Server.handle(Server.java:497)<br/>
+	at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:311)<br/>
+	at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:248)<br/>
+	at org.eclipse.jetty.io.AbstractConnection$2.run(AbstractConnection.java:540)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:610)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:539)<br/>
+	at java.lang.Thread.run(Thread.java:745)<br/>
+Caused by: java.io.IOException: Response header too large<br/>
+	at org.eclipse.jetty.http.HttpGenerator.generateResponse(HttpGenerator.java:394)<br/>
+	at org.eclipse.jetty.server.HttpConnection$SendCallback.process(HttpConnection.java:599)<br/>
+	at org.eclipse.jetty.util.IteratingCallback.processIterations(IteratingCallback.java:233)<br/>
+	at org.eclipse.jetty.util.IteratingCallback.iterate(IteratingCallback.java:193)<br/>
+	at org.eclipse.jetty.server.HttpConnection.send(HttpConnection.java:448)<br/>
+	at org.eclipse.jetty.server.HttpChannel.sendResponse(HttpChannel.java:764)<br/>
+	at org.eclipse.jetty.server.HttpChannel.write(HttpChannel.java:802)<br/>
+	at org.eclipse.jetty.server.HttpOutput.write(HttpOutput.java:139)<br/>
+	at org.eclipse.jetty.server.HttpOutput.write(HttpOutput.java:132)<br/>
+	at org.eclipse.jetty.server.HttpOutput.flush(HttpOutput.java:234)<br/>
+	at org.glassfish.jersey.servlet.internal.ResponseWriter$NonCloseableOutputStreamWrapper.flush(ResponseWriter.java:330)<br/>
+	at org.glassfish.jersey.message.internal.CommittingOutputStream.flush(CommittingOutputStream.java:292)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$UnCloseableOutputStream.flush(WriterInterceptorExecutor.java:304)<br/>
+	at sun.nio.cs.StreamEncoder.implFlush(StreamEncoder.java:297)<br/>
+	at sun.nio.cs.StreamEncoder.flush(StreamEncoder.java:141)<br/>
+	at java.io.OutputStreamWriter.flush(OutputStreamWriter.java:229)<br/>
+	at org.glassfish.jersey.message.internal.ReaderWriter.writeToAsString(ReaderWriter.java:193)<br/>
+	at org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider.writeToAsString(AbstractMessageReaderWriterProvider.java:130)<br/>
+	at org.glassfish.jersey.message.internal.StringMessageProvider.writeTo(StringMessageProvider.java:99)<br/>
+	at org.glassfish.jersey.message.internal.StringMessageProvider.writeTo(StringMessageProvider.java:59)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$TerminalWriterInterceptor.invokeWriteTo(WriterInterceptorExecutor.java:265)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor$TerminalWriterInterceptor.aroundWriteTo(WriterInterceptorExecutor.java:250)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:162)<br/>
+	at org.glassfish.jersey.server.internal.JsonWithPaddingInterceptor.aroundWriteTo(JsonWithPaddingInterceptor.java:106)<br/>
+	at org.glassfish.jersey.message.internal.WriterInterceptorExecutor.proceed(WriterInterceptorExecutor.java:162)<br/>
+	at org.glassfish.jersey.server.internal.MappableExceptionWrapperInterceptor.aroundWriteTo(MappableExceptionWrapperInterceptor.java:86)<br/>
+	... 39 more<br/>
+Caused by: java.nio.BufferOverflowException<br/>
+	at java.nio.Buffer.nextPutIndex(Buffer.java:521)<br/>
+	at java.nio.HeapByteBuffer.put(HeapByteBuffer.java:169)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.putSanitisedValue(HttpGenerator.java:1051)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.putTo(HttpGenerator.java:1073)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.generateHeaders(HttpGenerator.java:697)<br/>
+	at org.eclipse.jetty.http.HttpGenerator.generateResponse(HttpGenerator.java:379)<br/>
+	... 64 more</p>
+
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-17567"><div class="by">Nick Ruest, 2016-09-20 15:29 UTC</div><div class="text"><p>I'm getting the same error on the 10kIndirectContainers dataset.</p></div></div>
+<div class="comment" id="comment-17577"><div class="by">Andrew Woods, 2016-09-20 20:18 UTC</div><div class="text"><p>Resolved by: <a href="https://jira.duraspace.org/browse/FCREPO-2235" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2235</a></p></div></div>
+<div class="comment" id="comment-17580"><div class="by">Nick Ruest, 2016-09-20 21:53 UTC</div><div class="text"><p>Running fcrepo off of the most recent commit, we've resolved the error. But now we have a new one. See below.</p>
+
+<p>Should we close this ticket, and create a new ticket Andrew Woods?</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+[nruest@simian:fcrepo-webapp] (git)-[master]-$ MAVEN_OPTS=<span class="code-quote">"-Xmx1024m"</span> mvn jetty:run
+</pre>
+</div></div>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+[nruest@simian:fcrepo-<span class="code-keyword">import</span>-export] (git)-[master]-$ java -jar target/fcrepo-<span class="code-keyword">import</span>-export-0.0.1-SNAPSHOT.jar --mode <span class="code-keyword">import</span> --resource http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span> --descDir /home/nruest/tmp/10k --binDir /home/nruest/tmp/10k
+</span>INFO 17:46:00.510 (ArgParser) Configuration file exists, <span class="code-keyword">new</span> file will NOT be created: /tmp/importexport.config
+INFO 17:46:00.514 (Importer) Running importer...
+INFO 17:46:01.559 (Importer) Importing container /home/nruest/tmp/10k/<span class="code-keyword">rest</span>/11360/objects.ttl to http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/11360/objects
+</span>INFO 17:46:02.030 (Importer) Imported /home/nruest/tmp/10k/<span class="code-keyword">rest</span>/11360/objects.ttl: http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/11360/objects
+</span>INFO 17:46:02.495 (Importer) Importing container /home/nruest/tmp/10k/<span class="code-keyword">rest</span>/11360/memberCollection.ttl to http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/11360/memberCollection
+</span>ERROR 17:46:07.503 (ImportExportDriver) Error performing <span class="code-keyword">import</span>/export: Error <span class="code-keyword">while</span> importing /home/nruest/tmp/10k/<span class="code-keyword">rest</span>/11360/memberCollection.ttl (400): javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/11360/objects/66/bd/4c/7d/66bd4c7d-b615-4faa-b4a6-abe1cfce51d3'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/11360/objects/4f/19/af/58/4f19af58-4fd1-4106-b810-6ce0f886d4bb'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/11360/objects/48/ac/cd/71/48accd71-46c8-4bcf-94a1-656d1948d5ff'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/11360/objects/27/da/1f/7a/27da1f7a-855e-4d39-84d0-61c058ea63e9'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/11360/objects/14/94/4b/1c/14944b1c-64ba-4544-b83a-8a80e19aef95'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+...
+javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/11360/objects/75/88/37/54/75883754-27df-4371-ba31-78d419856021'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17589"><div class="by">Andrew Woods, 2016-09-21 16:06 UTC</div><div class="text"><p>Nick Ruest, Let's keep this ticket open until the plantpatents dataset loads.<br/>
+I believe the error you noted above is resolved with: <a href="https://jira.duraspace.org/browse/FCREPO-2234" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2234</a><br/>
+...however, there will likely be another error next.</p></div></div>
+<div class="comment" id="comment-17612"><div class="by">Esmé Cowles, 2016-09-23 11:38 UTC</div><div class="text"><p>This is resolved and the plantpatents dataset loads with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/41" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/41</a></p></div></div>
+<div class="comment" id="comment-17620"><div class="by">Nick Ruest, 2016-09-23 14:37 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5e9cf1c4ed962c7727ebf3a899b01654efe1c1d0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5e9cf1c4ed962c7727ebf3a899b01654efe1c1d0</a></p></div></div>
+<p><a href="data/FCREPO-2231.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2115 Updates to Containers with If-Match headers should fail</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2115</span> Updates to Containers with If-Match headers should fail</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-08-09 21:04 UTC</td></tr><tr><th>Updated</th><td>2016-08-18 15:20 UTC</td></tr><tr><th>Resolved</th><td>2016-08-11 15:40 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2098.html">FCREPO-2098</a> If-Match headers not properly evaluated for LDP-RSs</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2122.html">FCREPO-2122</a> LDP If-Match guidance is incompatible with the HTTP spec</td></tr></table>
+<h2>Description</h2>
+<p>Because we never emit strong ETags for Containers, and strong ETags are required for updates with an If-Match header, we should never accept updates to containers with an If-Match header.</p>
+
+<p>Related to 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2098" >
+                <a href="FCREPO-2098.html" class="jira-issue-macro-key issue-link"  title="If-Match headers not properly evaluated for LDP-RSs" >
+            
+            FCREPO-2098
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-17199"><div class="by">Esmé Cowles, 2016-08-09 21:05 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1088" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1088</a></p></div></div>
+<div class="comment" id="comment-17200"><div class="by">Andrew Woods, 2016-08-09 21:09 UTC</div><div class="text"><p>Should this PR instead be targeting the 4.6.0 branch? <br/>
+<a href="https://github.com/fcrepo4/fcrepo4/tree/4.6.0-RC" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/tree/4.6.0-RC</a></p></div></div>
+<div class="comment" id="comment-17201"><div class="by">Esmé Cowles, 2016-08-09 21:16 UTC</div><div class="text"><p>Andrew Woods: Yes, it should be — I'll make a new PR.</p></div></div>
+<div class="comment" id="comment-17202"><div class="by">Esmé Cowles, 2016-08-09 21:21 UTC</div><div class="text"><p>New PR targeting 4.6.0-RC: <a href="https://github.com/fcrepo4/fcrepo4/pull/1089" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1089</a></p></div></div>
+<div class="comment" id="comment-17208"><div class="by">Unknown, 2016-08-10 13:14 UTC</div><div class="text"><p>I disagree strongly with this PR. It appears to conflict directly with the LDP and HTTP specifications.</p></div></div>
+<div class="comment" id="comment-17209"><div class="by">Esmé Cowles, 2016-08-10 13:26 UTC</div><div class="text"><p>Unknown: the current HTTP spec says (<a href="https://tools.ietf.org/html/rfc7232#section-3.1):" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7232#section-3.1):</a></p>
+
+<blockquote><p>An origin server MUST use the strong comparison function when comparing entity-tags for If-Match (Section 2.3.2), since the client intends this precondition to prevent the method from being applied if there have been any changes to the representation data.</p></blockquote>
+
+<p>Since we cannot emit strong ETags, my reading of the chart in <a href="https://tools.ietf.org/html/rfc7232#section-2.3.2" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7232#section-2.3.2</a> is that any strong comparison involving a weak ETag must fail.  So I believe this PR faithfully implements that.</p>
+
+<p>The LDP spec says we SHOULD support If-Match.  But if the above is true, then I think we cannot.  Complying with the MUST of the HTTP spec would trump a SHOULD from the LDP spec.</p></div></div>
+<div class="comment" id="comment-17210"><div class="by">Unknown, 2016-08-10 13:28 UTC</div><div class="text"><p>I read that <em>entirely</em> differently. Perhaps we should discuss this on a Tech call. I am willing to be convinced, but as it is, I would veto the current PR.</p></div></div>
+<div class="comment" id="comment-17211"><div class="by">Esmé Cowles, 2016-08-10 13:45 UTC</div><div class="text"><p>I completely agree that some discussion would help here.  There seemed to be a good consensus on the Hydra #dev slack channel yesterday, but the specs are very slippery, and there are subtle differences between the old, current and draft specs that could use some teasing out.</p>
+
+<p>I've added this ticket to tomorrow's Tech call agenda: <a href="https://wiki.duraspace.org/display/FF/2016-08-11+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2016-08-11+-+Fedora+Tech+Meeting</a></p></div></div>
+<p><a href="data/FCREPO-2115.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

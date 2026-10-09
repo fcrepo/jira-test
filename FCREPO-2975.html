@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2975 NullPointerException during transaction commit</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2975</span> NullPointerException during transaction commit</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2019-01-07 16:48 UTC</td></tr><tr><th>Updated</th><td>2019-02-07 17:12 UTC</td></tr><tr><th>Resolved</th><td>2019-01-08 16:34 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.2</td></tr></table>
+<h2>Description</h2>
+<p>Ran into this when updating our local clients. It appears that if you start a transaction, make a head request against an object, delete the object, then commit the transaction, the commit will throw a NullPointerException and fail to commit. Both the head and the delete request are necessary to trigger the issue and the HEAD request must be within the transaction.</p>
+
+<p>I am able to replicate it with the following commands:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+# Create object
+curl -ufedoraAdmin:fedoraAdmin -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/txtest4
+</span>
+# Start tx
+curl -ufedoraAdmin:fedoraAdmin -v -XPOST http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/fcr:tx
+</span># Grab the tx id <span class="code-keyword">for</span> the <span class="code-keyword">rest</span> of the requests
+
+# Head request on binary in tx
+curl -ufedoraAdmin:fedoraAdmin -I http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/tx:37520593-01dd-4115-a4ee-8be1c7c5061f/txtest4
+</span>
+# Delete the binary
+curl -ufedoraAdmin:fedoraAdmin -XDELETE http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/tx:37520593-01dd-4115-a4ee-8be1c7c5061f/txtest4
+</span>
+# Commit the tx
+curl -ufedoraAdmin:fedoraAdmin -v -XPOST http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/tx:37520593-01dd-4115-a4ee-8be1c7c5061f/fcr:tx/fcr:commit</span>
+</pre>
+</div></div>
+<p> </p>
+
+<p>The full error is:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>javax.jcr.RepositoryException: java.lang.NullPointerException
+	at org.modeshape.jcr.JcrSession.save(JcrSession.java:1196)
+	at org.fcrepo.kernel.modeshape.FedoraSessionImpl.commit(FedoraSessionImpl.java:92)
+	at org.fcrepo.kernel.modeshape.services.BatchServiceImpl.commit(BatchServiceImpl.java:112)
+	at org.fcrepo.http.api.FedoraTransactions.finalizeTransaction(FedoraTransactions.java:133)
+	at org.fcrepo.http.api.FedoraTransactions.commit(FedoraTransactions.java:101)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:161)
+	at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:160)
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:99)
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:389)
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:347)
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:102)
+	at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:326)
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:315)
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:297)
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:267)
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)
+	at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)
+	at org.glassfish.grizzly.servlet.FilterChainImpl.doFilter(FilterChainImpl.java:147)
+	at org.glassfish.grizzly.servlet.FilterChainImpl.invokeFilterChain(FilterChainImpl.java:106)
+	at org.glassfish.grizzly.servlet.ServletHandler.doServletService(ServletHandler.java:224)
+	at org.glassfish.grizzly.servlet.ServletHandler.service(ServletHandler.java:173)
+	at org.glassfish.grizzly.http.server.HttpHandler$1.run(HttpHandler.java:224)
+	at org.glassfish.grizzly.threadpool.AbstractThreadPool$Worker.doWork(AbstractThreadPool.java:593)
+	at org.glassfish.grizzly.threadpool.AbstractThreadPool$Worker.run(AbstractThreadPool.java:573)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.NullPointerException
+	at org.modeshape.jcr.cache.PathCache.getPath(PathCache.java:38)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.persistChanges(WritableSessionCache.java:1423)
+	at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:690)
+	at org.modeshape.jcr.JcrSession.save(JcrSession.java:1179)
+	... 38 more</pre>
+</div></div>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-20611"><div class="by">Ben Pennell, 2019-01-07 16:50 UTC</div><div class="text"><p>This branch contains a failing integration test for the same issue</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/compare/master...bbpennel:fcrepo-2975" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/compare/master...bbpennel:fcrepo-2975</a></p></div></div>
+<div class="comment" id="comment-20612"><div class="by">Ben Pennell, 2019-01-07 17:00 UTC</div><div class="text"><p>I have confirmed that the bug does not occur in 4.7.5</p></div></div>
+<div class="comment" id="comment-20613"><div class="by">Ben Pennell, 2019-01-07 20:02 UTC</div><div class="text"><p>Initially I thought this just applied to trees containing binaries, but it applies to just containers as well.</p>
+
+<p>Making a HEAD request against an object and then deleting its parent has the same effect.</p>
+
+<p>Also, a GET request instead of HEAD causes the same problem.</p></div></div>
+<div class="comment" id="comment-20615"><div class="by">Ben Pennell, 2019-01-08 16:34 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1504" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1504</a></p></div></div>
+<div class="comment" id="comment-20622"><div class="by">Danny Bernstein, 2019-01-16 21:18 UTC</div><div class="text"><p>Resolved on master by <a href="https://github.com/fcrepo4/fcrepo4/commit/0e3092e86c1a70714a1ba4cef537ca480512f224" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/0e3092e86c1a70714a1ba4cef537ca480512f224</a></p>
+
+<p>Resolved on 5.x by <a href="https://github.com/fcrepo4/fcrepo4/commit/63c9b02619d6e24a68cbbe33c030690e63f06978" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/63c9b02619d6e24a68cbbe33c030690e63f06978</a></p></div></div>
+<p><a href="data/FCREPO-2975.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

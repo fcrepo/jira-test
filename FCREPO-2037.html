@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2037 Add support for API-related HTTP headers to client</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2037</span> Add support for API-related HTTP headers to client</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2016-05-23 20:42 UTC</td></tr><tr><th>Updated</th><td>2016-07-05 20:33 UTC</td></tr><tr><th>Resolved</th><td>2016-07-05 20:33 UTC</td></tr><tr><th>Components</th><td>f4-java-client</td></tr><tr><th>Affects versions</th><td>fcrepo-java-client 0.1.2</td></tr><tr><th>Fix versions</th><td>fcrepo-java-client 0.2.0</td></tr><tr><th>Labels</th><td>client</td></tr></table>
+<h2>Description</h2>
+<p>See: <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/issues/11" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/issues/11</a></p>
+
+<p>Currently the client doesn't provide a way to add the following allowed headers:</p>
+
+<p>    Content-Disposition<br/>
+    Content-Type<br/>
+    digest<br/>
+    slug<br/>
+    if-match<br/>
+    if-none-match<br/>
+    if-unmodified-since<br/>
+    if-modified-since<br/>
+    Range</p>
+
+<p>I would like to add support for all of the headers expected for basic object creation or retrieval.</p>
+
+<p>In terms of implementation, the approach so far has been additional parameters to the post/put/get/patch methods, which may get unwieldy with the full set of options. I would favor a method override of the form:</p>
+
+<p>public FcrepoResponse post(final URI url, final InputStream body, final Map headers)</p>
+
+<p>Possibly with restrictions in each method so that it can only set allowed headers, but that may be iffy since some methods cover multiple endpoints with different headers allowed.</p>
+
+<p>I'm not all that informed about camel, but I believe this would work there too?</p>
+<h2>Comments (27)</h2>
+<div class="comment" id="comment-16735"><div class="by">Former user, 2016-05-24 15:35 UTC</div><div class="text"><p>I am willing to work on this ticket, it fits into my current work pretty well.  Taking a fluent approach is also okay with me if that is what is preferred, although I would definitely want to input on the design.  I could start putting together a proposed design soon</p>
+
+<blockquote><p>The header map is simple, extensible, and will work, but it doesn't offer much help to the person who wants to accomplish something, but doesn't know how to encode it in HTTP headers. The fluent builder is harder to do and has to be done carefully to be extensible (i.e. Builder&lt;SelfType extends Builder&lt;SelfType&gt;&gt;, but is really helpful for the user. IDE autocomplete will explain what the client can do and how to do it.</p></blockquote>
+<blockquote><p>What's worth the time and how much? That depends on who is working on this project. Incidentally, @bbpennel , let's take this to the Jira ticket, okay?</p></blockquote></div></div>
+<div class="comment" id="comment-16736"><div class="by">Former user, 2016-05-25 14:08 UTC</div><div class="text"><p>Unknown  Here is a suggested fluent outline for the client (plus what is already in the project)</p>
+
+<blockquote><p>class FcrepoClient</p>
+<ul>
+	<li>public FcrepoClient authentication(user, pass, host)</li>
+	<li>public FcrepoClient failOnException()</li>
+	<li>public GetBuilder get(url)</li>
+	<li>public PostBuilder post(url)</li>
+	<li>public PutBuilder put(url)</li>
+	<li>public PatchBuilder patch(url)</li>
+	<li>public DeleteBuilder delete(url)</li>
+	<li>public MoveBuilder move(source, destination)</li>
+	<li>public CopyBuilder copy(source, destination)</li>
+	<li>public HeadBuilder head(url)</li>
+	<li>public OptionsBuilder options(url)</li>
+</ul>
+
+
+<p>interface RequestBuilder</p>
+<ul>
+	<li>public FcrepoResponse perform</li>
+</ul>
+
+
+<p>abstract class BodyRequestBuilder =&gt; RequestBuilder</p>
+<ul>
+	<li>body(stream, contentType)</li>
+</ul>
+
+
+<p>class GetBuilder =&gt; RequestBuilder</p>
+<ul>
+	<li>accept(rdfMediaType)</li>
+	<li>range(startLong, endLong)</li>
+	<li>preferMinimal</li>
+	<li>preferRepresentation</li>
+	<li>preferRepresentation(omitUriList)</li>
+	<li>preferRepresentation(includeUriList)</li>
+	<li>preferRepresentation(includeUriList, omitUriList)</li>
+	<li>ifNoneMatch</li>
+	<li>ifModifiedSince</li>
+</ul>
+
+
+<p>class PostBuilder =&gt; BodyRequestBuilder</p>
+<ul>
+	<li>contentDisposition(value)</li>
+	<li>slug(value)</li>
+	<li>digest(value)</li>
+</ul>
+
+
+<p>class PutBuilder =&gt; BodyRequestBuilder</p>
+<ul>
+	<li>digest(value)</li>
+	<li>ifMatch(value)</li>
+	<li>ifUnmodifiedSince(timestamp)</li>
+</ul>
+
+
+<p>class PatchBuilder =&gt; BodyRequestBuilder</p>
+<ul>
+	<li>ifMatch(value)</li>
+	<li>ifUnmodifiedSince(timestamp)</li>
+</ul>
+
+
+<p>class DeleteBuilder =&gt; RequestBuilder</p>
+
+<p>class MoveBuilder =&gt; RequestBuilder</p>
+
+<p>class CopyBuilder =&gt; RequestBuilder</p>
+
+<p>class HeadBuilder =&gt; RequestBuilder</p>
+
+<p>class OptionsBuilder =&gt; RequestBuilder</p></blockquote></div></div>
+<div class="comment" id="comment-16737"><div class="by">Former user, 2016-05-25 14:11 UTC</div><div class="text"><p>In terms of implementation, I'm not sure yet if it would go the Builder&lt;SelfType extends Builder&lt;SelfType&gt;&gt; route or follow the structure outlined in the first answer here, which is verbose in its own way:<br/>
+<a href="http://stackoverflow.com/questions/23731270/fluent-api-with-inheritance-and-generics" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/23731270/fluent-api-with-inheritance-and-generics</a></p></div></div>
+<div class="comment" id="comment-16738"><div class="by">A. Soroka, 2016-05-25 14:12 UTC</div><div class="text"><p>Ideally, <tt>RequestBuilder</tt> would offer both <tt>FcrepoResponse perform()</tt> and <tt>Future&lt;FcrepoResponse&gt; perform()</tt>.</p></div></div>
+<div class="comment" id="comment-16739"><div class="by">A. Soroka, 2016-05-25 14:15 UTC</div><div class="text"><p>I think the first answer method there is ugly and leads to an enormous amount of duplication. But others may feel otherwise.</p></div></div>
+<div class="comment" id="comment-16740"><div class="by">A. Soroka, 2016-05-25 14:27 UTC</div><div class="text"><p>How do <tt>MOVE</tt> and <tt>COPY</tt> pick up their <tt>Destination</tt> headers?</p></div></div>
+<div class="comment" id="comment-16741"><div class="by">Former user, 2016-05-25 14:29 UTC</div><div class="text"><p>Since the destination header is required, it is in the definition of FcrepoClient.move(source, destination)</p></div></div>
+<div class="comment" id="comment-16742"><div class="by">A. Soroka, 2016-05-25 14:33 UTC</div><div class="text"><p>Ah, cool. Missed that somehow.</p></div></div>
+<div class="comment" id="comment-16743"><div class="by">A. Soroka, 2016-05-25 14:36 UTC</div><div class="text"><p>How is the HTTP client config wrapped up into this? Is an HTTP client of some kind passed into the constructor for <tt>FcrepoClient</tt>?</p></div></div>
+<div class="comment" id="comment-16744"><div class="by">A. Soroka, 2016-05-25 14:36 UTC</div><div class="text"><p>Is <tt>FcrepoResponse</tt> basically just an HTTP response, or are there additional functionalities?</p></div></div>
+<div class="comment" id="comment-16745"><div class="by">A. Soroka, 2016-05-25 14:41 UTC</div><div class="text"><p>As long as <tt>perform</tt> is the only method on <tt>RequestBuilder</tt>, I think you can avoid the whole question of how to use or not use generics. But then I would suggest that you could usefully factor in a mutating <tt>SomethingRequestBuilder</tt> type over <tt>PutBuilder</tt> and <tt>PatchBuidler</tt> to handle <tt>ifMatch(value)</tt> and <tt>ifUnmodifiedSince(timestamp)</tt>, which seems to raise the whole question again.</p></div></div>
+<div class="comment" id="comment-16746"><div class="by">Former user, 2016-05-25 14:43 UTC</div><div class="text"><p>So far, the definition of FcrepoResponse is the same as in the existing project:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/blob/master/src/main/java/org/fcrepo/client/FcrepoResponse.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/blob/master/src/main/java/org/fcrepo/client/FcrepoResponse.java</a><br/>
+So it is a wrapper which pulls out some headers and portions of the response.</p>
+
+<p>The HttpClient is also still working in the way the current client works, which appears to be to that a builder constructs the httpclient when the fcrepoClient is constructed.  Unknown may be able to speak to this aspect better than me though.</p></div></div>
+<div class="comment" id="comment-16747"><div class="by">A. Soroka, 2016-05-25 14:45 UTC</div><div class="text"><p>And now looking more carefully, I see <tt>BodyRequestBuilder</tt>, which opens the question for sure. Speaking of which, I think you might want to offer some more flavors there. E.g. <tt>body(file, contentType)</tt>, <tt>body(stream), body(uri), etc.</tt>. Which ones would be a matter of taste, I suppose.</p></div></div>
+<div class="comment" id="comment-16748"><div class="by">Former user, 2016-05-25 15:26 UTC</div><div class="text"><p>Yes, body(file, contentType) could be useful.  I only included body(stream, contentType) since I got back a 415 response when I tried to post a file via the current client with a null contentType, and a "application/x-www-form-urlencoded" mimetype when done via curl (not sure why the response was different).  There isn't currently a way to post from a uri in the client, would that be a uri for a local file or would that be expected to work with other uris?</p>
+
+<p>And it may make sense to have another parent class for Put and Patch.  I probably need to play with the two approaches to get a better understanding of how to handle the generics and inheritance.</p></div></div>
+<div class="comment" id="comment-16749"><div class="by">A. Soroka, 2016-05-25 15:37 UTC</div><div class="text"><p>Yeah, this may just be one of those things where we can sketch as much as we want, but you'll have to just pick up some parts and play around with them a bit to get a real sense of what works.  <tt>PostBuilder</tt> and <tt>PutBuilder</tt> share <tt>digest(value)</tt>, which is another place to factor. It's not obvious that you can deal with all the factorings using class inheritance. You could play with <tt>default</tt> methods, but you'd have to abstract the state somehow.</p>
+
+<p>As to the URI, I was thinking you just pass in an URI and leave it to <tt>toURL().openStream()</tt>. Or maybe you restrict to <tt>file:</tt> and <tt>http:</tt> URIs and for the first, you drop through to the <tt>body(file, contentType)</tt> form and for the second you use the same client as you use for the repo. Dunno.</p></div></div>
+<div class="comment" id="comment-16751"><div class="by">Former user, 2016-05-25 21:19 UTC</div><div class="text"><p>My choices seem to be generics extending generics with a self helper to avoid type safety warnings or duplicating every parent method (via inheritance or delegation).  Not much of a choice...</p>
+
+<p>Generics:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">public</span> <span class="code-keyword">abstract</span> <span class="code-keyword">class </span>BodyRequestBuilder&lt;T <span class="code-keyword">extends</span> BodyRequestBuilder&lt;T&gt;&gt; <span class="code-keyword">implements</span> RequestBuilder {
+    <span class="code-keyword">protected</span> <span class="code-keyword">abstract</span> T self();
+
+    <span class="code-keyword">public</span> T body(InputStream stream, <span class="code-object">String</span> contentType) {
+        <span class="code-keyword">return</span> self();
+    }
+}
+
+<span class="code-keyword">public</span> <span class="code-keyword">class </span>PostBuilder&lt;T <span class="code-keyword">extends</span> PostBuilder&lt;T&gt;&gt; <span class="code-keyword">extends</span> BodyRequestBuilder&lt;PostBuilder&lt;T&gt;&gt; {
+    @Override
+    <span class="code-keyword">protected</span> PostBuilder&lt;T&gt; self() {
+        <span class="code-keyword">return</span> <span class="code-keyword">this</span>;
+    }
+
+    <span class="code-keyword">public</span> PostBuilder&lt;T&gt; digest(<span class="code-object">String</span> value) {
+        <span class="code-keyword">return</span> self();
+    }
+}
+</pre>
+</div></div>
+
+<p>Duplication:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">public</span> <span class="code-keyword">abstract</span> <span class="code-keyword">class </span>BodyRequestBuilder <span class="code-keyword">implements</span> RequestBuilder {
+    <span class="code-keyword">public</span> BodyRequestBuilder body(InputStream stream, <span class="code-object">String</span> contentType) {
+        <span class="code-keyword">return</span> <span class="code-keyword">this</span>;
+    }
+}
+
+<span class="code-keyword">public</span> <span class="code-keyword">class </span>PostBuilder <span class="code-keyword">extends</span> BodyRequestBuilder {
+    @Override
+    <span class="code-keyword">public</span> PostBuilder body(InputStream stream, <span class="code-object">String</span> contentType) {
+        <span class="code-keyword">super</span>.body(stream, contentType);
+        <span class="code-keyword">return</span> <span class="code-keyword">this</span>;
+    }
+
+    <span class="code-keyword">public</span> PostBuilder digest(<span class="code-object">String</span> value) {
+        <span class="code-keyword">return</span> <span class="code-keyword">this</span>;
+    }
+}
+</pre>
+</div></div>
+<p>(The delegation approach requires pretty much the same duplication).</p>
+
+<p>Both would work, I guess the generic approach is more extensible since there is less boilerplate to re-add, but it is a bit hard to read.  I'm not finding other options aside from simply avoiding inheritance.</p></div></div>
+<div class="comment" id="comment-16770"><div class="by">Former user, 2016-05-27 01:29 UTC</div><div class="text"><p>Example of the post request before continuing:</p>
+
+<p><a href="https://github.com/bbpennel/fcrepo-java-client/compare/master...bbpennel:fluent-wip" class="external-link" rel="nofollow noreferrer">https://github.com/bbpennel/fcrepo-java-client/compare/master...bbpennel:fluent-wip</a></p></div></div>
+<div class="comment" id="comment-16807"><div class="by">Unknown, 2016-06-01 18:00 UTC</div><div class="text"><p>Former user this looks like a good start and certainly warrants continuing in this direction.</p></div></div>
+<div class="comment" id="comment-16858"><div class="by">Former user, 2016-06-06 15:17 UTC</div><div class="text"><p>Sorry for the slow progress, last week was short and rich in meetings.  I am cleaning up existing methods and tests now, hopefully close to finishing that.  I have a few questions:</p>
+
+<ul>
+	<li>Is the only acceptable content-type for PATCH requests "application/sparql-update"?  And body seems to be required.  So I am thinking usage should be client.patch(url, body).perform() rather than mimicking POST and PUT with client.post(url).body(stream, type).</li>
+	<li>What behavior do we want for null URIs in request methods?  Throw an IllegalArgumentException when making the client.get (post, etc) call before making the request?  Throw an NPE when the HTTP client tries to make the request (which appears to be what happens without any intervention?).  Wondering this while looking at FcrepoClientTest.testPostErrorNullUrl, which expects a FcrepoOperationFailedException because of the mocked 401 response, but seems like when run against a live client I get:
+<blockquote><p>java.lang.NullPointerException<br/>
+	at org.apache.http.impl.client.CloseableHttpClient.determineTarget(CloseableHttpClient.java:91)<br/>
+	at org.apache.http.impl.client.CloseableHttpClient.execute(CloseableHttpClient.java:82)<br/>
+        ...<br/>
+	at org.fcrepo.client.FcrepoClient.executeRequest(FcrepoClient.java:206)<br/>
+        ...</p></blockquote></li>
+	<li>HEAD requests appear to timeout on binaries, but return headers first (using curl).  Is this expected?</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-16862"><div class="by">Former user, 2016-06-06 19:34 UTC</div><div class="text"><p>Pull request for the proposed design:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/12" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/12</a></p>
+
+<p>All methods should be updated or added, with all headers, and tests are updated.  Please take a look and let me know any suggestions</p></div></div>
+<div class="comment" id="comment-16870"><div class="by">Andrew Woods, 2016-06-08 15:25 UTC</div><div class="text"><p>See PR against this PR that removes unnecessary web of templating.<br/>
+<a href="https://github.com/bbpennel/fcrepo-java-client/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/bbpennel/fcrepo-java-client/pull/1</a></p></div></div>
+<div class="comment" id="comment-16877"><div class="by">Former user, 2016-06-09 21:46 UTC</div><div class="text"><p>Implemented usage in PR <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/12" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/12</a> is now:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+FcrepoResponse response = FcrepoClient.client()
+                .credentials(user, password)
+                .authScope(host)
+                .build()
+                .post(uri)
+                .body(bodyStream, mediaType)
+                .digest(checksum)
+                .perform();
+</pre>
+</div></div>
+
+<p>The main outstanding issue in my mind is whether to rename the post/get/patch/etc methods to something related to functionality instead of HTTP method, but it may be challenging to do so in a clear and succinct way.  Is there any other feedback or suggestions?</p></div></div>
+<div class="comment" id="comment-16879"><div class="by">A. Soroka, 2016-06-09 21:56 UTC</div><div class="text"><p>I raised the issue of refactoring the HTTP-method methods into functional methods, but I certainly do not ask that such work be included into the current ticket and associated PR. Let's leave that for a future parcel of work.</p></div></div>
+<div class="comment" id="comment-16880"><div class="by">Andrew Woods, 2016-06-09 22:22 UTC</div><div class="text"><p>I think this looks great. <br/>
+One missing element is a set of integration tests that both demonstrate and verify the behavior of the new methods. Unit tests are helpful when writing the code. Integration tests are essential towards ensuring that the code does not break with API changes on the Fedora server side.</p>
+
+<p>Please move this JIRA ticket into "Start Review" when you are ready.<br/>
+Thanks!</p></div></div>
+<div class="comment" id="comment-16884"><div class="by">Former user, 2016-06-13 14:49 UTC</div><div class="text"><p>I have added an integration test that touches all of the client methods and a lot of their parameters.  In the process I also added another helper method to responses <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/12/commits/5df640e7df4542e65dbc01123fb42d6eed9fc271" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/12/commits/5df640e7df4542e65dbc01123fb42d6eed9fc271</a></p>
+
+<p>Andrew Woods Sorry, I don't appear to have the ability to move this ticket into "In Review" or otherwise change its state.  I'm not sure if that is the same thing as "Start Review", but it is ready to be reviewed.</p></div></div>
+<div class="comment" id="comment-16888"><div class="by">Former user, 2016-06-17 19:19 UTC</div><div class="text"><p>Just want to mention I will be out of town for the next two weeks, so may not be able to respond if there is additional feedback immediately.  Thanks!</p></div></div>
+<div class="comment" id="comment-16966"><div class="by">Andrew Woods, 2016-07-05 20:33 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/commit/4abdd78fc03144dc66d6949d62fbf573a6f4d70e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/commit/4abdd78fc03144dc66d6949d62fbf573a6f4d70e</a></p></div></div>
+<p><a href="data/FCREPO-2037.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

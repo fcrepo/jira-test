@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1526 NonRDFSources (or their description) should be able to have child containers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1526</span> NonRDFSources (or their description) should be able to have child containers</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Trey Pendragon</td></tr><tr><th>Created</th><td>2015-05-07 19:51 UTC</td></tr><tr><th>Updated</th><td>2015-05-29 19:07 UTC</td></tr><tr><th>Resolved</th><td>2015-05-15 14:13 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr></table>
+<h2>Description</h2>
+<p>NonRDFSources should be allowed to have children, either directly underneath the NonRDFSource, or under its description (fcr:metadata).  This would allow for the associating files with other files that are not directly linked to the parent container (e.g., a FITS XML description of a file is related to the file, not to the parent container directly).</p>
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-14254"><div class="by">Andrew Woods, 2015-05-14 13:27 UTC</div><div class="text"><p>This seems to be in direct conflict with both the existing PCDM spec and the existing F4 model. Instead of introducing a structural change in the repository, could this issue be addressed via a relationship?</p></div></div>
+<div class="comment" id="comment-14256"><div class="by">A. Soroka, 2015-05-14 13:54 UTC</div><div class="text"><p>I think it is also in conflict with basic LDP specs, but Robert Sanderson would know better.</p></div></div>
+<div class="comment" id="comment-14275"><div class="by">Andrew Woods, 2015-05-15 14:13 UTC</div><div class="text"><p>Instead of breaking the various models mentioned in this ticket, a relevant property should be defined for relating "associated-files" with Binary resources.</p></div></div>
+<div class="comment" id="comment-14395"><div class="by">Michael Durbin, 2015-05-28 20:32 UTC</div><div class="text"><p>To be clear, is it the expected implication of this decision that a) you can create and link to blank nodes while updating the pseudo-resource fcr:metadata, but you b) cannot create and link to hash URI resources?</p></div></div>
+<div class="comment" id="comment-14396"><div class="by">Andrew Woods, 2015-05-28 20:45 UTC</div><div class="text"><p>I am not sure I understand how blank nodes (or hash resources) are coming into the NonRdfSources discussion. The statements in this ticket are simply noting that relationships between two NonRdfSources should be managed with predicates, and not nesting.<br/>
+Can you elaborate on what you have in mind, Michael Durbin?</p></div></div>
+<div class="comment" id="comment-14398"><div class="by">Michael Durbin, 2015-05-28 20:52 UTC</div><div class="text"><p>I come at this because a) I want to add properties to describe a nonRDFResource.  Most of these properties fit nicely in fcr:metadata (ie, mime type, size, etc.) but other information doesn't fit nicely (ie, a premis event that isn't a simple property) and won't work.  </p>
+
+<p>It seems wierd that I can add a dc title to the RDF metadata about a nonRDFResource (binary in the UI lingo) but other types of description are disallowed. </p></div></div>
+<div class="comment" id="comment-14399"><div class="by">Andrew Woods, 2015-05-28 20:57 UTC</div><div class="text"><p>If the "description" of the binary (subject) can be captured as a name (predicate) / value (object) relationship, then you are golden.<br/>
+If you want to relate a "description" of a resource that is itself a binary and not a simple name/value, then this "other type of description" should probably become a first-class binary and related to the initial binary with an iana:describes relationship.</p></div></div>
+<div class="comment" id="comment-14402"><div class="by">Former user, 2015-05-29 15:17 UTC</div><div class="text"><p>I think it would be great if we could use hash URIs to describe child resources of a NonRDFSource.  This wouldn't handle child files, but it would at least allow creating premis events or other nested descriptions.</p></div></div>
+<div class="comment" id="comment-14403"><div class="by">A. Soroka, 2015-05-29 15:22 UTC</div><div class="text"><p>I'm not sure we understand at all what we even mean by "child resources of a NonRDFSource". I'm not saying that I'm sure such a notion can't be defined and shared, I'm saying that I don't think we've done the work to do that and that we may be talking about disparate things, or that we may even be using a phrase that cannot be defined or has no meaning. I'm also unsure that we should <em>ever</em> claim that we understand the common semantics between "children" of disparate <em>types</em> of NonRDFSources. I'd like to get some sense from Robert Sanderson or Benjamin Armintor about what guidance we can get from LDP here.</p></div></div>
+<div class="comment" id="comment-14405"><div class="by">Andrew Woods, 2015-05-29 15:27 UTC</div><div class="text"><p>Former user, if not files, what form would these nested descriptions take? Properties on a hash resource? If so, why not have those properties on the NonRdfSourceDescription?</p></div></div>
+<div class="comment" id="comment-14406"><div class="by">Michael Durbin, 2015-05-29 15:28 UTC</div><div class="text"><p>I think the main problem here is that there's a convention in fedora where there's a URI at /nonRDFResource/fcr:metadata that behaves like an RDF resource describing the nonRDFResource in some ways, but not in others.  It's confusing and annoying that certain things (namely some  RDF assertions) can be applied to it but other things (contained resources, hashURIs cannot).  </p></div></div>
+<div class="comment" id="comment-14407"><div class="by">A. Soroka, 2015-05-29 15:32 UTC</div><div class="text"><p>I'm increasingly convinced that we need to revisit the choice we made so long ago to distinguish description from bitstream via URL and not, as has done every other LDP impl, media type.</p></div></div>
+<div class="comment" id="comment-14408"><div class="by">Benjamin Armintor, 2015-05-29 15:36 UTC</div><div class="text"><p>There's no child/parent nomenclature in the LDP spec, and we should avoid falling back on it so as to clarify our design intentions. There are Containers and contained Resources. NonRDFSources and RDFSource are distinct subclasses of Resource, and RDFSource is the superclass of LDPContainer. Suggesting that NonRDFSources could be containers is a Liskov problem.</p>
+
+<p>I think what this ticket intends is that the RDFSource describing a NonRDFSource be able to be a container. Robert Sanderson discussed this as a possibility when we started talking about the fixity redesign, but I agree that it's something that should be considered carefully.</p></div></div>
+<div class="comment" id="comment-14409"><div class="by">Michael Durbin, 2015-05-29 15:36 UTC</div><div class="text"><p>Andrew Woods, Former user the premis use case I have is this: I want to assert a modification date on an imported nonRDFResource (ie, when it was stored to the legacy repository).  It has been suggested that the premis ontology has something with that meaning, but to express it in premis, I need to create an "Event" (<a href="http://id.loc.gov/ontologies/premis.html#Event" class="external-link" rel="nofollow noreferrer">http://id.loc.gov/ontologies/premis.html#Event</a>) that has the type and date.  There's no single propery that says "wasModifiedOn", instead there's "hasEvent" and that event has a type "modification" and a "date" indicating the date.  We did this with the "Event" being a blank node, but hash URI's seem nicer and may sidestep a bug in fcrepo4.  They (hash URIs) work on resources (ie, the resource modification date) but not on nonRDFResources (binaries).  It seems odd that I'd have to express the same semantic information in two different ways.</p></div></div>
+<div class="comment" id="comment-14410"><div class="by">A. Soroka, 2015-05-29 15:47 UTC</div><div class="text"><p>Benjamin Armintor I think there are two semi-linked problems here: the one to which you refer (the typing problem), and a problem about the subjects used in RDF. Michael Durbin wants to make triples about the NonRDFSource, and we want to publish, at a given URI, triples about that URI. This is why the 'fcr:metadata' URL elbow is less and less attractive to me, unless someone can tell me about the use case for opaque-but-unencoded RDF.</p></div></div>
+<div class="comment" id="comment-14412"><div class="by">Andrew Woods, 2015-05-29 18:42 UTC</div><div class="text"><p>Michael Durbin, in the meantime, you could create a container of "relatedObjects" under the primary "object" where the premis RdfSource would reside. That premis resource could then have an iana:describes relationship to the NonRdfSource.</p></div></div>
+<div class="comment" id="comment-14413"><div class="by">Robert Sanderson, 2015-05-29 18:59 UTC</div><div class="text"><p>Sorry, I got half way through typing a response and was called away.</p>
+
+<ul>
+	<li>The LDP specification simply says that if there is a description of a non RDF Source (LDP-NR), then it must be referenced from the LDP-NR using a describedBy link header, and servers may create them when the LDP-NR is created, and that description is in RDF.</li>
+</ul>
+
+
+<p>The LDP spec does not say that all of the subjects of triples in the describing RDF have to be the LDP-NR, and it doesn't say where the resource gets created relative to the LDP-NR.   Fedora's implementation then adds these. </p>
+
+<ul>
+	<li>LDP doesn't say anything about URI patterns other than for Containers / Contained resources. It seems orthogonal to the description requirement as to where the resources are maintained that do the describing. The current fcr:metadata pattern is thus compatible, but as Benjamin Armintor says, NonRDFSources cannot also be ldp Containers and we should certainly not think of them in that way.</li>
+</ul>
+
+
+<p>An alternative pattern might be to reserve a _fcr:metadataContainer suffix (or similar) and create an initial metadata RDF Source in it.</p>
+
+<p>I think the use case for LDP-NR that happens to be in RDF is when there's arbitrary datasets that are being managed as if they were files.  Imagine someone submitting their ontology along with their dissertation. We would need a very different platform to sustain that resource as intended.</p></div></div>
+<div class="comment" id="comment-14414"><div class="by">A. Soroka, 2015-05-29 19:05 UTC</div><div class="text"><p>I certainly didn't mean to suggest that having the constraint on the subjects of triples comes from LDP. It comes from the fact that Fedora is an object repository, which is just as important a guide to behavior as LDP.</p></div></div>
+<div class="comment" id="comment-14415"><div class="by">A. Soroka, 2015-05-29 19:05 UTC</div><div class="text"><p>"An alternative pattern might be to reserve a _fcr:metadataContainer suffix (or similar) and create an initial metadata RDF Source in it."</p>
+
+<p>This seems, if anything, <em>worse</em> than what we have now! It has the weaknesses of "fcr:metadata" plus unclear semantics as a container (what goes inside a metadata container?).</p></div></div>
+<div class="comment" id="comment-14416"><div class="by">A. Soroka, 2015-05-29 19:06 UTC</div><div class="text"><p>"I think the use case for LDP-NR that happens to be in RDF is when there's arbitrary datasets that are being managed as if they were files. Imagine someone submitting their ontology along with their dissertation. We would need a very different platform to sustain that resource as intended."</p>
+
+<p>Right, exactly. No one has asked for that use case. No participating institution has even come close to it.</p></div></div>
+<p><a href="data/FCREPO-1526.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

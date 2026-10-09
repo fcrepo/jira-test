@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1561 Can&#x27;t delete large literals</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1561</span> Can&#x27;t delete large literals</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2015-06-01 15:00 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:50 UTC</td></tr><tr><th>Resolved</th><td>2015-10-27 18:51 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>Large literals (4096 characters or greater) can be created, but cannot be deleted.</p>
+<ul class="alternate" type="square">
+	<li>In addition to not deleting the large literal, no error is raised.<br/>
+See <a href="https://github.com/fcrepo4/fcrepo4/issues/787" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/787</a></li>
+</ul>
+
+
+<p>If there is a bug that prevents deleting large literals, it would be great to fix it. However, it is quite likely that there is a hard limit, in which case determining and documenting that limit would be adequate for this ticket.</p>
+
+<p>Finding the limit of both the size of literals that can be created, and the size of literals that can be deleted would be helpful.<br/>
+A note added here could be useful:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/RESTful+HTTP+API+-+Containers#RESTfulHTTPAPI-Containers-GreenPATCHModifythetriplesassociatedwitharesourcewithSPARQL-Update" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/RESTful+HTTP+API+-+Containers#RESTfulHTTPAPI-Containers-GreenPATCHModifythetriplesassociatedwitharesourcewithSPARQL-Update</a></p>
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-15234"><div class="by">Bethany Seeger, 2015-09-14 20:33 UTC</div><div class="text"><p>Just a quick update.  I've been able to reproduce this bug.  Unknown suggested I see if it's related to the config item "minimumBinarySizeInBytes" under "storage"=&gt;"binaryStorage" in repository.json, thereby causing these literals to be stored as binaries in the system. </p>
+
+<p>I was able to confirm that it is related to that config item. I observed that literals over the default 4096 bytes are stored as binaries in the system. Literals under 4096 are not.   I upped the limit and observed the same behavior at the higher limit.  </p>
+
+<p>Unknown's thoughts:  "so the question is whether modeshape is marking those properties as special, causing fedora to think they're binaries, and hence no longer accessible through the "PropertiesRDFContext".  </p>
+
+<p>I'll do more research tomorrow.  Andrew Woods, do you have any thoughts in the mean time? </p></div></div>
+<div class="comment" id="comment-15236"><div class="by">Andrew Woods, 2015-09-14 21:42 UTC</div><div class="text"><p>Thanks for the update, Bethany Seeger.<br/>
+Based on your notes, it sounds like any "Fedora RDF resource" that exceeds the repository.json:minimumBinarySizeInBytes setting results in an error. As mentioned in the ticket description, understanding and documenting the situation may be adequate for now. For example, have you been able to demonstrate the ability to resolve the issue with an updated configuration? In other words, have you been able to demonstrate the following scenario:</p>
+<ol>
+	<li>Use default 4096 setting</li>
+	<li>Create property that exceeds that size</li>
+	<li>Try to delete that resource and hit an error</li>
+	<li>Increase the setting to 8192</li>
+	<li>Try to delete that resource with success</li>
+</ol>
+
+
+<p>If yes, than simply documenting that is probably sufficient. <br/>
+However, if you are eager to dig deeper, you are of course welcome. Otherwise, moving on to other tickets may be a higher value use of your time.</p></div></div>
+<div class="comment" id="comment-15240"><div class="by">Bethany Seeger, 2015-09-15 14:05 UTC</div><div class="text"><p>Hi Andrew Woods, <br/>
+I just tried what you suggested above - seeing if increasing the value of repository.json:minimumBinarySizeInBytes allows a user to delete a previously created property that was larger then the previous limit. Unfortunately it doesn't allow you to.   My guess is the now binary property is treated differently and unavailable for delete via a sparql request (in the webapp).</p>
+
+<p>Here's what I did: <br/>
+1. Had a limit of 4096<br/>
+2. Created a property that exceeded that size  (was 5000 bytes); noted it was stored as a binary and verified that I was unable to delete it.<br/>
+3. Increased the limit to 8192 bytes  (&amp; restarted web server)<br/>
+4. Tried to delete the property with no success. </p>
+
+<p>Sadly, simply raising the limit won't do as a work around. </p></div></div>
+<div class="comment" id="comment-15241"><div class="by">Andrew Woods, 2015-09-15 14:16 UTC</div><div class="text"><p>Thanks. The basic question is, "Once a property is stored as a binary, what can the user do with it, and how can the user manage that resource/property"?</p></div></div>
+<div class="comment" id="comment-15258"><div class="by">Andrew Woods, 2015-09-18 14:19 UTC</div><div class="text"><p>Bethany Seeger, the other obvious direction of inquiry is to track down the underlying flawed assumption(s) within the Fedora code and update the logic to handle the scenario of properties being pushed into the binary store. Could you share the exception you are seeing?</p></div></div>
+<div class="comment" id="comment-15265"><div class="by">Bethany Seeger, 2015-09-18 18:48 UTC</div><div class="text"><p>Andrew Woods, </p>
+
+<p>I wasn't seeing an exception, so I dug deeper. </p>
+
+<p>ModeShape is storing the string in the binaryStore and now calling it a binary and the fedora code is not prepared for that switch.  This is expected ModeShape behavior, from what I've read - strings larger then the minimumBinarySizeInBytes will be stored that way.  The (one?) flaw in the fedora code is around line 207 in NodePropertiesTools.java - in the removeNodeProperty.  </p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+                <span class="code-keyword">final</span> Value[] newValues = stream(node.getProperty(propertyName).getValues()).filter(v -&gt; {
+                    LOGGER.debug(<span class="code-quote">"v is {}"</span>, v);
+                    <span class="code-keyword">if</span> (v.equals(valueToRemove)) {
+                        LOGGER.debug(<span class="code-quote">"Found value, removing!"</span>);
+                        remove.set(<span class="code-keyword">true</span>);
+                        <span class="code-keyword">return</span> <span class="code-keyword">false</span>;
+                    }
+                    LOGGER.debug(<span class="code-quote">"Didn't find value, not removing"</span>);
+                    <span class="code-keyword">return</span> <span class="code-keyword">true</span>;
+                }).toArray(Value[]::<span class="code-keyword">new</span>);
+</pre>
+</div></div>
+
+<p>It's not prepared to receive a binary reference back, so it fails to match the string (v, in this scenario, is a binary type and valueToRemove is a string).  It's a silent fail - though I can see it clearly with my debug statements added in.  </p>
+
+<p>ModeShape has another config var we can put in repository.json (under "binaryStorage") called:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+
+<span class="code-quote">"minimumStringSize"</span> : {
+                                    <span class="code-quote">"type"</span> : <span class="code-quote">"integer"</span>,
+                                    <span class="code-quote">"description"</span> : <span class="code-quote">"The size threshold that dictates whether string values should be stored in the binary store. <span class="code-object">String</span> values shorter than <span class="code-keyword">this</span> length are stored with the node, whereas strings with a length equal to or greater than <span class="code-keyword">this</span> limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The <span class="code-keyword">default</span> value is to match the <span class="code-quote">'minimumBinarySizeInBytes'</span> value."</span>
+                                },
+</pre>
+</div></div> 
+
+<p>If we want to allow for larger string literals that do not automatically get put in binaryStorage, we can.  But that really doesn't solve the problem. </p>
+
+<p>So, long winded answer, but it's around that code in NodePropertiesTools.java that the flawed assumption is. </p>
+
+<p>Fix or document is the question...?  Guess it's always been the question. </p>
+
+<p>-Bethany</p>
+</div></div>
+<div class="comment" id="comment-15266"><div class="by">Andrew Woods, 2015-09-18 19:57 UTC</div><div class="text"><p>Great digging, Bethany Seeger. If you can come up with a fix, that would be ideal... and failing silently is not ideal.<br/>
+Thanks!</p></div></div>
+<div class="comment" id="comment-15276"><div class="by">Bethany Seeger, 2015-09-23 17:02 UTC</div><div class="text"><p>I've just issued a pull request for the changes I've made.  </p>
+
+<p>Upon remove, the literal is no longer associated with the container, however it's still in the datastore. I read somewhere that it will be cleaned up later, via some garbage collection type system.  Is this true?  If not, that I haven't fully addressed the bug, as the file still exists in the binary store. </p>
+
+<p>Thanks!<br/>
+Bethany</p></div></div>
+<div class="comment" id="comment-15277"><div class="by">Bethany Seeger, 2015-09-23 17:31 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/911" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/911</a></p></div></div>
+<div class="comment" id="comment-15415"><div class="by">Andrew Woods, 2015-10-02 17:33 UTC</div><div class="text"><p>This looks good... pending response to code review comments.<br/>
+p.s. Indeed these properties will eventually get removed by ModeShape. See:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://docs.jboss.org/author/display/MODE40/Binary+values#Binaryvalues-Garbagecollection" class="external-link" rel="nofollow noreferrer">https://docs.jboss.org/author/display/MODE40/Binary+values#Binaryvalues-Garbagecollection</a> and</li>
+	<li><a href="https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/resources/org/modeshape/jcr/repository-config-schema.json#L47" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/resources/org/modeshape/jcr/repository-config-schema.json#L47</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15441"><div class="by">Bethany Seeger, 2015-10-09 13:54 UTC</div><div class="text"><p>I <b>think</b> it's done. Let me know what you think.   </p></div></div>
+<div class="comment" id="comment-15499"><div class="by">Andrew Woods, 2015-10-19 00:03 UTC</div><div class="text"><p>Sorry for the delay on this, Bethany Seeger. I really want to get this PR in the codebase... however, when I run your new integration test on the current codebase (i.e. without your updates to NodePropertiesTools.java), the test passes. That means that your integration test is not proving what it is intended to prove. Please update your test such that it fails before your NodePropertiesTools.java updates and passes after your updates.</p></div></div>
+<div class="comment" id="comment-15504"><div class="by">Andrew Woods, 2015-10-19 12:40 UTC</div><div class="text"><p>The reason that your test is not demonstrating the issue is almost certainly due to the fact that the test repository.json is creating a "transient" binary store... vs. type "file". A transient store is in-memory and therefore does not exhibit the same characteristics as a filestore, that your PR addresses. The reason the tests use a transient store is because it is faster... and the tests run faster. Once you have verified that your test demonstrates the issue (by changing the repository.json config), it would be helpful if you could time the difference between a test transient and file store. If the file store takes significantly longer to run:<br/>
+mvn clean install -pl fcrepo-kernel-modeshape/</p>
+
+<p>...then you should probably create a new repository.json that is referenced just by the FedoraResourceImplIT.java test. see:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/test/java/org/fcrepo/integration/kernel/modeshape/FedoraResourceImplIT.java#L116" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/test/java/org/fcrepo/integration/kernel/modeshape/FedoraResourceImplIT.java#L116</a></p></div></div>
+<div class="comment" id="comment-15523"><div class="by">Bethany Seeger, 2015-10-19 21:29 UTC</div><div class="text"><p>Hi Andrew Woods<br/>
+Even with changing the setting in repository.json file from 'transient' to 'file', I'm still not seeing the literal go into the binary datastore via the test.  Running the SPARQL command via the webapp works and the literal goes into binary storage, I just can't seem to emulate that via the test I wrote.  It's almost like there's a slightly different path being taken there... </p>
+
+<p>More tomorrow... </p></div></div>
+<div class="comment" id="comment-15531"><div class="by">Andrew Woods, 2015-10-20 00:04 UTC</div><div class="text"><p>If it becomes an exercise in frustration, feel free to transition your integration test over the `FedoraLdpIT.java`.</p></div></div>
+<div class="comment" id="comment-15548"><div class="by">Bethany Seeger, 2015-10-20 19:24 UTC</div><div class="text"><p>Okay, I'm going to try that, as I'm not able to get the literal into binary storage via my original test. I'll let you know how it goes. </p></div></div>
+<div class="comment" id="comment-15577"><div class="by">Bethany Seeger, 2015-10-27 16:25 UTC</div><div class="text"><p>Hi Andrew Woods, <br/>
+I (finally) have a working test located in FedoraLdpIT.java. I've been able to test it before applying my fix to NodePropertiesTools.java and the test will fail. After applying my fix, the test passes.</p>
+
+<p>I've timed the execution of mvn install with two variations (three actually, but one is the failure case):</p>
+
+<p>With binaryStore: type: "file"<br/>
+    <span class="error">&#91;INFO&#93;</span> Fedora Repository HTTP API Module .................. SUCCESS [ 47.209 s]</p>
+
+<p>With binaryStore type: "cache" <br/>
+    <span class="error">&#91;INFO&#93;</span> Fedora Repository HTTP API Module .................. SUCCESS [ 46.042 s]</p>
+
+<p>Changing the value in test_repository.json to 'file' doesn't appear to affect the test running time too much.  Any objection to my changing it to 'file'?  Perhaps there are other considerations for it being cache that I don't know about. </p>
+
+<p>-Bethany</p></div></div>
+<div class="comment" id="comment-15578"><div class="by">Andrew Woods, 2015-10-27 16:39 UTC</div><div class="text"><p>Thanks. Feel free to change the store type to "file".</p></div></div>
+<div class="comment" id="comment-15580"><div class="by">Bethany Seeger, 2015-10-27 18:51 UTC</div><div class="text"><p>The tests are moved around now. </p></div></div>
+<div class="comment" id="comment-15583"><div class="by">Andrew Woods, 2015-10-27 20:39 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/8cceaebd0121c34e6b9c156f4d119398d58a1ad4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8cceaebd0121c34e6b9c156f4d119398d58a1ad4</a></p></div></div>
+<p><a href="data/FCREPO-1561.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

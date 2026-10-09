@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4078 rebuild fails in Fedora 7 RC 1 because of duplicate key constraints for certain OCFL repositories</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4078</span> rebuild fails in Fedora 7 RC 1 because of duplicate key constraints for certain OCFL repositories</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Thomas Bernhart</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2026-04-02 09:31 UTC</td></tr><tr><th>Updated</th><td>2026-04-09 15:48 UTC</td></tr><tr><th>Resolved</th><td>2026-04-09 15:48 UTC</td></tr><tr><th>Affects versions</th><td>fcrepo-7.0.0</td></tr><tr><th>Fix versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Environment</h2>Operating System: Fedora Linux 43<br/>
+Docker Engine Community: version 29.3.1<br/>
+Docker Compose Plugin: version v5.1.1<br/>
+Fedora Docker image: fcrepo:7.0.0-RC1-tomcat10<br/>
+PostgreSQL Docker image: postgres:17-alpine<br/>
+MariaDB Docker image: mariadb:10.11-jammy<br/>
+MySQL Docker image: mysql:8-oracle
+<h2>Description</h2>
+<p>Rebuilding from the OCFL root in <span class="nobr"><a href="attachments/FCREPO-4078/10518_test-data.tar.gz" title="test-data.tar.gz attached to FCREPO-4078" data-attachment-type="file" data-attachment-name="test-data.tar.gz" data-media-services-type="file" data-media-services-id="eea041cf-a54d-4c95-87e8-133040b9982c" rel="noreferrer">test-data.tar.gz</a></span> fails with H2, MariaDB, MySQL and PostreSQL because of failed constraints.</p>
+
+<p>Rebuilding the database with the same OCFL dataset in Fedora 6.5.1 succeeds without any errors.</p>
+
+
+
+<p>Excerpt of Fedora log output with log level <tt>TRACE</tt> for PostgreSQL:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ERROR 09:25:01.104 [ReindexWorker-6] (ReindexWorker) Reindexing of OCFL id info:fedora/it-01/rr_20170824105144199 failed
+org.fcrepo.kernel.api.exception.RepositoryRuntimeException: Failed add/updated the search index for : info:fedora/it-01/rr_20170824105144199/i_20170821144936173
+	at org.fcrepo.search.impl.DbSearchIndexImpl.doDirectUpsert(DbSearchIndexImpl.java:671)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.lambda$addUpdateIndex$3(DbSearchIndexImpl.java:645)
+	at org.fcrepo.kernel.impl.TransactionImpl.doInTx(TransactionImpl.java:181)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:641)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:216)
+	at jdk.proxy3/jdk.proxy3.$Proxy48.addUpdateIndex(Unknown Source)
+	at org.fcrepo.search.impl.SearchIndexMetrics.lambda$addUpdateIndex$1(SearchIndexMetrics.java:73)
+	at io.micrometer.core.instrument.composite.CompositeTimer.record(CompositeTimer.java:141)
+	at org.fcrepo.search.impl.SearchIndexMetrics.addUpdateIndex(SearchIndexMetrics.java:72)
+	at org.fcrepo.persistence.ocfl.impl.ReindexService.lambda$indexOcflObject$4(ReindexService.java:218)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.fcrepo.persistence.ocfl.impl.ReindexService.indexOcflObject(ReindexService.java:213)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.lambda$run$0(ReindexWorker.java:109)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTx$3(DbTransactionExecutor.java:83)
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTx(DbTransactionExecutor.java:82)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTxWithRetry$2(DbTransactionExecutor.java:66)
+	at dev.failsafe.Functions.lambda$toCtxSupplier$9(Functions.java:228)
+	at dev.failsafe.Functions.lambda$get$0(Functions.java:46)
+	at dev.failsafe.internal.RetryPolicyExecutor.lambda$apply$0(RetryPolicyExecutor.java:74)
+	at dev.failsafe.SyncExecutionImpl.executeSync(SyncExecutionImpl.java:187)
+	at dev.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:376)
+	at dev.failsafe.FailsafeExecutor.run(FailsafeExecutor.java:220)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTxWithRetry(DbTransactionExecutor.java:65)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:108)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.dao.DataIntegrityViolationException: PreparedStatementCallback; SQL [INSERT INTO search_resource_rdf_type (resource_id, rdf_type_id) VALUES (?, ?)]; ERROR: insert or update on table "search_resource_rdf_type" violates foreign key constraint "search_resource_rdf_type_rdf_type_id_fkey"
+  Detail: Key (rdf_type_id)=(1) is not present in table "search_rdf_type".
+	at org.springframework.jdbc.support.SQLStateSQLExceptionTranslator.doTranslate(SQLStateSQLExceptionTranslator.java:140)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:116)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1556)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:701)
+	at org.springframework.jdbc.core.JdbcTemplate.batchUpdate(JdbcTemplate.java:1049)
+	at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.batchUpdate(NamedParameterJdbcTemplate.java:377)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.insertRdfTypeAssociations(DbSearchIndexImpl.java:830)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.doDirectUpsert(DbSearchIndexImpl.java:669)
+	... 30 common frames omitted
+Caused by: java.sql.BatchUpdateException: Batch entry 0 INSERT INTO search_resource_rdf_type (resource_id, rdf_type_id) VALUES (('1'::int8), ('1'::int8)) was aborted: ERROR: insert or update on table "search_resource_rdf_type" violates foreign key constraint "search_resource_rdf_type_rdf_type_id_fkey"
+  Detail: Key (rdf_type_id)=(1) is not present in table "search_rdf_type".  Call getNextException to see other errors in the batch.
+	at org.postgresql.jdbc.BatchResultHandler.handleError(BatchResultHandler.java:165)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2561)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:672)
+	at org.postgresql.jdbc.PgStatement.internalExecuteBatch(PgStatement.java:892)
+	at org.postgresql.jdbc.PgStatement.executeBatch(PgStatement.java:916)
+	at org.postgresql.jdbc.PgPreparedStatement.executeBatch(PgPreparedStatement.java:1778)
+	at com.zaxxer.hikari.pool.ProxyStatement.executeBatch(ProxyStatement.java:128)
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeBatch(HikariProxyPreparedStatement.java)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$getPreparedStatementCallback$7(JdbcTemplate.java:1617)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 35 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: insert or update on table "search_resource_rdf_type" violates foreign key constraint "search_resource_rdf_type_rdf_type_id_fkey"
+  Detail: Key (rdf_type_id)=(1) is not present in table "search_rdf_type".
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2875)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2560)
+	... 43 common frames omitted
+ERROR 09:25:01.104 [ReindexWorker-0] (ReindexWorker) Reindexing of OCFL id info:fedora/it-02/rr_20170824105242406 failed
+org.fcrepo.kernel.api.exception.RepositoryRuntimeException: Failed add/updated the search index for : info:fedora/it-02/rr_20170824105242406/i_20170821144936173
+	at org.fcrepo.search.impl.DbSearchIndexImpl.doDirectUpsert(DbSearchIndexImpl.java:671)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.lambda$addUpdateIndex$3(DbSearchIndexImpl.java:645)
+	at org.fcrepo.kernel.impl.TransactionImpl.doInTx(TransactionImpl.java:181)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:641)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:216)
+	at jdk.proxy3/jdk.proxy3.$Proxy48.addUpdateIndex(Unknown Source)
+	at org.fcrepo.search.impl.SearchIndexMetrics.lambda$addUpdateIndex$1(SearchIndexMetrics.java:73)
+	at io.micrometer.core.instrument.composite.CompositeTimer.record(CompositeTimer.java:141)
+	at org.fcrepo.search.impl.SearchIndexMetrics.addUpdateIndex(SearchIndexMetrics.java:72)
+	at org.fcrepo.persistence.ocfl.impl.ReindexService.lambda$indexOcflObject$4(ReindexService.java:218)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.fcrepo.persistence.ocfl.impl.ReindexService.indexOcflObject(ReindexService.java:213)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.lambda$run$0(ReindexWorker.java:109)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTx$3(DbTransactionExecutor.java:83)
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTx(DbTransactionExecutor.java:82)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTxWithRetry$2(DbTransactionExecutor.java:66)
+	at dev.failsafe.Functions.lambda$toCtxSupplier$9(Functions.java:228)
+	at dev.failsafe.Functions.lambda$get$0(Functions.java:46)
+	at dev.failsafe.internal.RetryPolicyExecutor.lambda$apply$0(RetryPolicyExecutor.java:74)
+	at dev.failsafe.SyncExecutionImpl.executeSync(SyncExecutionImpl.java:187)
+	at dev.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:376)
+	at dev.failsafe.FailsafeExecutor.run(FailsafeExecutor.java:220)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTxWithRetry(DbTransactionExecutor.java:65)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:108)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.springframework.dao.DuplicateKeyException: PreparedStatementCallback; SQL [INSERT INTO search_resource_rdf_type (resource_id, rdf_type_id) VALUES (?, ?)]; ERROR: duplicate key value violates unique constraint "search_resource_rdf_type_pkey"
+  Detail: Key (resource_id, rdf_type_id)=(2, 1) already exists.
+	at org.springframework.jdbc.support.SQLStateSQLExceptionTranslator.doTranslate(SQLStateSQLExceptionTranslator.java:138)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:107)
+	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:116)
+	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1556)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:677)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:701)
+	at org.springframework.jdbc.core.JdbcTemplate.batchUpdate(JdbcTemplate.java:1049)
+	at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.batchUpdate(NamedParameterJdbcTemplate.java:377)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.insertRdfTypeAssociations(DbSearchIndexImpl.java:830)
+	at org.fcrepo.search.impl.DbSearchIndexImpl.doDirectUpsert(DbSearchIndexImpl.java:669)
+	... 30 common frames omitted
+Caused by: java.sql.BatchUpdateException: Batch entry 4 INSERT INTO search_resource_rdf_type (resource_id, rdf_type_id) VALUES (('2'::int8), ('1'::int8)) was aborted: ERROR: duplicate key value violates unique constraint "search_resource_rdf_type_pkey"
+  Detail: Key (resource_id, rdf_type_id)=(2, 1) already exists.  Call getNextException to see other errors in the batch.
+	at org.postgresql.jdbc.BatchResultHandler.handleError(BatchResultHandler.java:165)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2561)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:672)
+	at org.postgresql.jdbc.PgStatement.internalExecuteBatch(PgStatement.java:892)
+	at org.postgresql.jdbc.PgStatement.executeBatch(PgStatement.java:916)
+	at org.postgresql.jdbc.PgPreparedStatement.executeBatch(PgPreparedStatement.java:1778)
+	at com.zaxxer.hikari.pool.ProxyStatement.executeBatch(ProxyStatement.java:128)
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeBatch(HikariProxyPreparedStatement.java)
+	at org.springframework.jdbc.core.JdbcTemplate.lambda$getPreparedStatementCallback$7(JdbcTemplate.java:1617)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:658)
+	... 35 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: duplicate key value violates unique constraint "search_resource_rdf_type_pkey"
+  Detail: Key (resource_id, rdf_type_id)=(2, 1) already exists.
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2875)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2560)
+	... 43 common frames omitted</pre>
+</div></div>
+
+<p>Full trace logs for Fedora</p>
+
+<ol>
+	<li>PostgreSQL: <span class="nobr"><a href="attachments/FCREPO-4078/10519_fcrepo.postgres.log" title="fcrepo.postgres.log attached to FCREPO-4078" data-attachment-type="file" data-attachment-name="fcrepo.postgres.log" data-media-services-type="file" data-media-services-id="29aa421b-1f49-456f-909f-40028772f4ca" rel="noreferrer">fcrepo.postgres.log</a></span></li>
+	<li>MariaDB: <span class="nobr"><a href="attachments/FCREPO-4078/10521_fcrepo.mariadb.log" title="fcrepo.mariadb.log attached to FCREPO-4078" data-attachment-type="file" data-attachment-name="fcrepo.mariadb.log" data-media-services-type="file" data-media-services-id="d90932da-8892-4887-b45a-ac26dc45a2d3" rel="noreferrer">fcrepo.mariadb.log</a></span></li>
+	<li>MySQL: <span class="nobr"><a href="attachments/FCREPO-4078/10522_fcrepo.mysql.log" title="fcrepo.mysql.log attached to FCREPO-4078" data-attachment-type="file" data-attachment-name="fcrepo.mysql.log" data-media-services-type="file" data-media-services-id="94c390b1-7ea3-4354-b2e4-af1f76256a12" rel="noreferrer">fcrepo.mysql.log</a></span></li>
+	<li>H2: <span class="nobr"><a href="attachments/FCREPO-4078/10520_fcrepo.h2.log" title="fcrepo.h2.log attached to FCREPO-4078" data-attachment-type="file" data-attachment-name="fcrepo.h2.log" data-media-services-type="file" data-media-services-id="443489cc-133d-44ef-81b8-b4850a096966" rel="noreferrer">fcrepo.h2.log</a></span></li>
+</ol>
+
+
+
+
+
+
+<p>Steps to reproduce:</p>
+
+<ol>
+	<li>Download <span class="nobr"><a href="attachments/FCREPO-4078/10518_test-data.tar.gz" title="test-data.tar.gz attached to FCREPO-4078" data-attachment-type="file" data-attachment-name="test-data.tar.gz" data-media-services-type="file" data-media-services-id="eea041cf-a54d-4c95-87e8-133040b9982c" rel="noreferrer">test-data.tar.gz</a></span>.</li>
+	<li>Unpack the test-data.tar.gz with <tt>tar xvf ./test-data.tar.gz</tt> (this will unpack all files in the tar archive to the current directory).</li>
+	<li>Use one of the Docker Compose files in test-data.tar.gz to replicate the error:
+	<ol>
+		<li>For H2: Run <tt>docker compose -f docker-compose.h2.yml up</tt></li>
+		<li>For MariaDB, MySQL and PostgreSQL:
+		<ol>
+			<li>Run <tt>docker compose -f docker-compose.postgres.yml up db</tt> in a terminal and wait till database has been fully initialized.</li>
+			<li>Run <tt>docker compose -f docker-compose.postgres.yml up fcrepo</tt> to start Fedora in a separate terminal session.</li>
+		</ol>
+		</li>
+	</ol>
+	</li>
+</ol>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-4078/10555_Duplicates-in-search_resource_rdf_type-after-rebuild.txt">Duplicates-in-search_resource_rdf_type-after-rebuild.txt</a>, 2268 bytes, added by Thomas Bernhart on 2026-04-07</li>
+<li><a href="attachments/FCREPO-4078/10520_fcrepo.h2.log">fcrepo.h2.log</a>, 52036 bytes, added by Thomas Bernhart on 2026-04-07</li>
+<li><a href="attachments/FCREPO-4078/10521_fcrepo.mariadb.log">fcrepo.mariadb.log</a>, 58790 bytes, added by Thomas Bernhart on 2026-04-07</li>
+<li><a href="attachments/FCREPO-4078/10522_fcrepo.mysql.log">fcrepo.mysql.log</a>, 55591 bytes, added by Thomas Bernhart on 2026-04-07</li>
+<li><a href="attachments/FCREPO-4078/10519_fcrepo.postgres.log">fcrepo.postgres.log</a>, 56007 bytes, added by Thomas Bernhart on 2026-04-07</li>
+<li><a href="attachments/FCREPO-4078/10518_test-data.tar.gz">test-data.tar.gz</a>, 15012116 bytes, added by Thomas Bernhart on 2026-04-07</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-28549"><div class="by">Thomas Bernhart, 2026-04-02 09:38 UTC</div><div class="text"><p>I will provide more information on how to reproduce this bug and the logs for MariaDB and MySQL later today, but I wanted to get the information out there.</p></div></div>
+<div class="comment" id="comment-28616"><div class="by">Thomas Bernhart, 2026-04-07 14:41 UTC</div><div class="text"><p>After looking into this more closely, I can now narrow the issue down.</p>
+
+<p>When I remove the constraint in <tt>search_resource_rdf_type_pkey</tt> on the table <tt>search_resource_rdf_type</tt>, the index rebuild succeeds.</p>
+
+<p>I did this with PostgreSQL and anlysed which entries apear more than once in the table <tt>search_resource_rdf_type</tt> with the following SQL query after the succesfull rebuild:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql"><span class="code-keyword">select</span> search_resource_rdf_type.*,
+       string_agg(search_rdf_type.rdf_type_uri, <span class="code-quote">', '</span>),
+       string_agg(simple_search.fedora_id, <span class="code-quote">', '</span>)
+<span class="code-keyword">from</span> search_resource_rdf_type
+     <span class="code-keyword">inner</span> <span class="code-keyword">join</span> search_rdf_type <span class="code-keyword">on</span> search_resource_rdf_type.rdf_type_id = search_rdf_type.id
+     <span class="code-keyword">inner</span> <span class="code-keyword">join</span> simple_search <span class="code-keyword">on</span> search_resource_rdf_type.resource_id = simple_search.id
+<span class="code-keyword">group</span> <span class="code-keyword">by</span> search_resource_rdf_type.resource_id, search_resource_rdf_type.rdf_type_id
+<span class="code-keyword">having</span> <span class="code-keyword">count</span>(*) &gt; 1
+<span class="code-keyword">order</span> <span class="code-keyword">by</span> search_resource_rdf_type.resource_id, search_resource_rdf_type.rdf_type_id;</pre>
+</div></div>
+
+<p>Here are the results from a smaller test dataset: <span class="nobr"><a href="attachments/FCREPO-4078/10555_Duplicates-in-search_resource_rdf_type-after-rebuild.txt" title="Duplicates-in-search_resource_rdf_type-after-rebuild.txt attached to FCREPO-4078" data-attachment-type="file" data-attachment-name="Duplicates-in-search_resource_rdf_type-after-rebuild.txt" data-media-services-type="file" data-media-services-id="a7950265-63cf-4f08-883d-889bef6d38b6" rel="noreferrer">Duplicates-in-search_resource_rdf_type-after-rebuild.txt</a></span> </p></div></div>
+<div class="comment" id="comment-28649"><div class="by">Jared Whiklo, 2026-04-07 18:36 UTC</div><div class="text"><p>I was able to reproduce this with your sample data, Thomas Bernhart. I did a git bisect and it looks like the speed improvements is causing the issue. <br/>
+<a href="https://github.com/fcrepo/fcrepo/commit/1e16e2b67f501fa26f820a02a427a460e3c51b26#diff-392c86d15f3faa8d7723a10f406af3455e3d78458cde6561879c1e9749f08fee" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/1e16e2b67f501fa26f820a02a427a460e3c51b26#diff-392c86d15f3faa8d7723a10f406af3455e3d78458cde6561879c1e9749f08fee</a> </p>
+
+<p>Currently I think the not using of the cache is the issue.<br/>
+<a href="https://github.com/fcrepo/fcrepo/blob/059451eedb1da0eb9d2cd8624bc40c22650c5413/fcrepo-search-impl/src/main/java/org/fcrepo/search/impl/DbSearchIndexImpl.java#L800-L806" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/059451eedb1da0eb9d2cd8624bc40c22650c5413/fcrepo-search-impl/src/main/java/org/fcrepo/search/impl/DbSearchIndexImpl.java#L800-L806</a> </p>
+
+<p>I added some debugging and the rdf types it is failing on are not in the search_rdf_types table. I’m not exactly sure how they end up in the cache and not in the table.</p></div></div>
+<div class="comment" id="comment-28682"><div class="by">Jared Whiklo, 2026-04-08 14:33 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo/fcrepo/pull/2302" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2302</a> </p></div></div>
+<p><a href="data/FCREPO-4078.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

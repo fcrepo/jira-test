@@ -1,0 +1,40 @@
+Index: src/java/fedora/utilities/install/InstallOptions.java
+===================================================================
+--- src/java/fedora/utilities/install/InstallOptions.java	(revision 759)
++++ src/java/fedora/utilities/install/InstallOptions.java	(revision 760)
+@@ -199,8 +199,14 @@
+         	}
+         }
+ 
++        // If using an "other" servlet container, we can't automatically deploy
++        // the local services, so don't even bother to ask.
++        if (getValue(SERVLET_ENGINE).equals(OTHER)) {
++        	_map.put(DEPLOY_LOCAL_SERVICES, "false");
++        } else {
+         inputOption(DEPLOY_LOCAL_SERVICES);
+     }
++    }
+ 
+     private String dashes(int len) {
+         StringBuffer out = new StringBuffer();
+Index: src/java/fedora/utilities/install/Installer.java
+===================================================================
+--- src/java/fedora/utilities/install/Installer.java	(revision 759)
++++ src/java/fedora/utilities/install/Installer.java	(revision 760)
+@@ -90,6 +90,14 @@
+ 			throw new InstallationFailedException(e.getMessage(), e);
+ 		}
+ 		System.out.println("Installation complete.");
++		if (_opts.getValue(InstallOptions.SERVLET_ENGINE).equals(InstallOptions.OTHER)) {
++			System.out.println("\n" +
++					"----------------------------------------------------------------------\n" +
++					"The Web ARchives were not automatically deployed for you.  You can find\n" +
++					"fedora.war plus several sample back-end services and a demonstration\n" +
++					"object package in $FEDORA_HOME/install.  Deploy the .war files in this\n"+
++					"directory to your servlet container.");
++		}
+ 		System.out.println("\n" +
+ "----------------------------------------------------------------------\n" +
+ "Before starting Fedora, please ensure that any required environment\n" +
+
+ 	  	 

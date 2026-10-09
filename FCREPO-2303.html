@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2303 Verify same triples for containers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2303</span> Verify same triples for containers</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Joshua Allan Westgard</td></tr><tr><th>Created</th><td>2016-11-14 17:01 UTC</td></tr><tr><th>Updated</th><td>2017-06-14 18:25 UTC</td></tr><tr><th>Resolved</th><td>2017-06-14 18:25 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-verify-0.1.0</td></tr><tr><th>Labels</th><td>import-export-phase-2, verification</td></tr></table>
+<h2>Description</h2>
+<p>Triples are defined as being the "same" when the predicates and objects match, and the subjects are "relatively equivalent" (i.e. they match in the path portion of the URI, but not necessarily in the domain, subdomain, or port).</p>
+
+<p>For export operations, it is straigtforward to compare the RDF on disk to all triples returned by fcrepo for the corresponding resource path.  For import operations, the comparision is more complex.  Because certain triples are 'server-managed' and the current import/export tool cannot modify these triples, there can be no guarantee that server-managed triples will have the same values as the resource in its on-disk representation after import.</p>
+
+<p>The algorithm to verify RDF resources created during an import operation, therefore, should look something like this:</p>
+
+<p>  1. For each resource on disk, request both all triples and minimal triples for the version of the resource on fcrepo;<br/>
+  2. Create a graph for each set of triples, and compare the two graphs; the server-managed triples are the triples in the full set that are not also in the minimal set;<br/>
+  3. Create a graph from the pre-import representation of the resource on disk;<br/>
+  4. Iterate over the triples in this pre-import resource, removing the triples that match the predicates of triples in the server-managed set calculated previously;<br/>
+  5. Compare the set of triples that remain to the minimal triples returned for the corresponding resource in the post-import fcrepo instance; the sets should match exactly.</p>
+
+<p>Implementation of this algorithm is complicated by the fact that in the current implementation of the verification tooling, objects of the "Resource" class are not natively 'aware' of their counterparts in the second location (either fcrepo or on-disk, depending on the operation being verified).  Re-conceptualizing the 'resource' object as an abstract entity with two related instantiations would simplify the implementation here, but is probably not required in order to make this work.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-18254"><div class="by">Joshua Allan Westgard, 2016-12-16 15:08 UTC</div><div class="text"><p>This requirement is met fully for export.  For import the checks will still fail on the differences in server-managed triples.</p></div></div>
+<div class="comment" id="comment-19117"><div class="by">Danny Bernstein, 2017-06-14 18:25 UTC</div><div class="text"><p>This  requirement is now supported.</p></div></div>
+<p><a href="data/FCREPO-2303.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

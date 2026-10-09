@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1987 Cannot create HASH URIs on Binary descriptions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1987</span> Cannot create HASH URIs on Binary descriptions</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-04-12 13:56 UTC</td></tr><tr><th>Updated</th><td>2021-09-23 06:05 UTC</td></tr><tr><th>Resolved</th><td>2021-09-23 06:05 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.1.2</td></tr></table>
+<h2>Description</h2>
+<p>It does not seem possible to create hash URIs on non-rdf source descriptions.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-17623"><div class="by">Danny Bernstein, 2016-09-23 21:34 UTC</div><div class="text"><p>Hi Aaron:  would you mind adding some more description to this issue?  Namely the steps (ideally in curl commands) to reproduce the issue.  That would be a big help to me.</p></div></div>
+<div class="comment" id="comment-17624"><div class="by">Unknown, 2016-09-24 00:09 UTC</div><div class="text"><p>Danny Bernstein Here are the steps I used (using the HTML UI, but it should be easily adaptable for curl):</p>
+
+<p>Create a binary resource via PUT, e.g. at <tt>/rest/resource1</tt><br/>
+Use a PATCH command to update the metadata at <tt>/rest/resource1/fcr:metadata</tt></p>
+
+<p>------------------------------<br/>
+PREFIX foaf: &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt;<br/>
+PREFIX dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt;</p>
+
+<p>INSERT </p>
+{ 
+&lt;&gt; dc:creator &lt;#creator&gt; .
+&lt;#creator&gt; foaf:name "Me" .
+}
+<p>WHERE { }<br/>
+------------------------------</p>
+
+<p>I then see this error:</p>
+
+<p>Unable to add child '#' with primary type 'nt:folder' to parent at /test2 with primary type 'nt:file' and mixins '</p>
+{fedora:NonRdfSourceDescription,fedora:Resource}
+<p>' in workspace 'default' of repository 'repo' because: - child's name '#' does not satisfy parent's child definition: nt:file/jcr:content (required primary types = <span class="error">&#91;nt:base&#93;</span>) Unable to add child '#' with primary type 'nt:folder' to parent at /test2 with primary type 'nt:file' and mixins '</p>
+{fedora:NonRdfSourceDescription,fedora:Resource}
+<p>' in workspace 'default' of repository 'repo' because: - child's name '#' does not satisfy parent's child definition: nt:file/jcr:content (required primary types = <span class="error">&#91;nt:base&#93;</span>)</p></div></div>
+<div class="comment" id="comment-18567"><div class="by">Unknown, 2017-02-14 15:59 UTC</div><div class="text"><p>Just a note on this &#8211; the real problem here has to do with the way IdentifierConverters work and the way they are mapped to Modeshape resources. That's not to say that resolving this issue will necessarily involve rewriting the entire ID converter mechanism, but I suspect that it will not be trivial to fix.</p></div></div>
+<div class="comment" id="comment-20297"><div class="by">Danny Bernstein, 2018-09-27 04:00 UTC</div><div class="text"><p>This has not been resolved with api alignment.  Just a note.</p></div></div>
+<div class="comment" id="comment-20349"><div class="by">Peter Matthew Eichman, 2018-10-05 17:29 UTC</div><div class="text"><p>I have a working implementation that allows hash resources to be added to binary resources. It creates a "#" node as an additional child of the nt:versionedFile that represents the binary. That is, it is a sibling to the "fedora:description" and "jcr:content" nodes.</p>
+
+<p>Currently, I don't have any working integration tests. I've tried adding them to the FedoraBinaryImplIT class in the fcrepo-kernel-modeshape project, but it seems that creating the resource via the BinaryServiceImpl doesn't allow for the "#" node to be created. However, running HTTP requests to create and update a binary (as in the ticket description) do work.</p>
+
+<p>Branch: <a href="https://github.com/peichman-umd/fcrepo4/tree/FCREPO-1987" class="external-link" rel="nofollow noreferrer">https://github.com/peichman-umd/fcrepo4/tree/FCREPO-1987</a></p></div></div>
+<div class="comment" id="comment-20364"><div class="by">Peter Matthew Eichman, 2018-10-08 16:55 UTC</div><div class="text"><p>There has been additional discussion of this issue on Slack, and we haven't come to a resolution yet. Here are some of the issues:</p>
+<ol>
+	<li>The approach in this branch (<a href="https://github.com/peichman-umd/fcrepo4/tree/FCREPO-1987" class="external-link" rel="nofollow noreferrer">https://github.com/peichman-umd/fcrepo4/tree/FCREPO-1987</a>) makes the hash resources children of "#" node under the resource node that represents the binary. They are therefore not children of the "fedora:description" node. There was some concern expressed that this decouples these bits of the binary's metadata (those expressed using hash URI subjects) from the rest of the binary's metadata, especially with regard to metadata lifecycle and memento creation.</li>
+	<li>Changing the storage layout to make the hash URI tree a child of the "fedora:description" would require the HttpResourceConverter to be able to distinguish between the cases where "resource#hash" should become "resource/#/hash" (LDP-RS) and "resource/fedora:description/#/hash" (LDP-NR).</li>
+	<li>This could be addressed by making the hash URIs hang off of the "fcr:metadata" URI (resulting in URIs that look like <a href="http://localhost:8080/rest/resource/fcr:metadata#hash" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/resource/fcr:metadata#hash</a>). This is currently not possible, as the repository rejects triples whose path does not match the path of the topic resource (a.k.a., the single subject restriction). Since /rest/resource/fcr:metadata is different from /rest/resource, this kind of update is currently not possible. If that restriction were loosened to allow triples with the same path but with an appended "/fcr:metadata", this should then be possible.</li>
+	<li>There may still be some issues in resolving the Modeshape nodes. Currently, when FedoraResourceImpl.updateProperties() calss getDescribedResource() to get the subject resource, if the request URI is a NonRdfSourceDescriptionImpl (as it is in the case of a PUT or PATCH to "resource/fcr:metadata", then it returns the binary resource itself (which will then resolve to the Modeshape path of "resource" and not "resource/fedora:description".</li>
+	<li>There is an additional tangential concern about allowing (or requiring) hash URIs hanging directly off of the binary URI, in that those hashes could interfere with the use of the hash portion of a URI to identify a document fragment. On the other hand, it is possible that we would want to allow such URIs as subjects, so you could provide metadata about specific portions of a binary.</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-20674"><div class="by">Jared Whiklo, 2019-05-02 17:12 UTC</div><div class="text"><p>Just a note that this is still an issue with commit <a href="https://github.com/fcrepo4/fcrepo4/commit/7489ad5bc8fb44e2442c93eceb7d97ac54553ab6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/7489ad5bc8fb44e2442c93eceb7d97ac54553ab6</a></p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&gt; curl -i -ufedoraAdmin:fedoraAdmin -XPATCH -H<span class="code-quote">"Content-type: application/sparql-update"</span> -d <span class="code-quote">"INSERT { &lt;#part1&gt; &lt;http:<span class="code-comment">//www.purl.org/dc/elements/1.1/title&gt; \"</span>Some hash uri\<span class="code-quote">" } WHERE {} "</span> http://localhost:8080/<span class="code-keyword">rest</span>/binary/fcr:metadata
+</span>HTTP/1.1 400 Bad Request
+Date: Thu, 02 May 2019 16:23:30 GMT
+Set-Cookie: JSESSIONID=1x0g02l7awrql4w6jb46tn573;Path=/
+Expires: Thu, 01 Jan 1970 00:00:00 GMT
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 01-May-2019 16:23:30 GMT
+Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/constraints/MalformedRdfException.rdf&gt;; rel=<span class="code-quote">"http://www.w3.org/ns/ldp#constrainedBy"</span>
+</span>Content-Type: text/plain;charset=utf-8
+Content-Length: 225
+Server: Jetty(9.3.25.v20180904)Unable to add child <span class="code-quote">'#'</span> with primary type <span class="code-quote">'nt:folder'</span> to parent at /binary with primary type <span class="code-quote">'nt:versionFile'</span> and mixins <span class="code-quote">'{ldp:NonRDFSource,fedora:Resource,fedora:Binary}'</span> in workspace <span class="code-quote">'<span class="code-keyword">default</span>'</span> of repository <span class="code-quote">'repo'</span> because: 
+</pre>
+</div></div>
+<p> </p></div></div>
+<div class="comment" id="comment-22493"><div class="by">Danny Bernstein, 2021-09-23 06:05 UTC</div><div class="text"><p>Closing due to general staleness, lack of relevance, or being no longer applicable.</p></div></div>
+<p><a href="data/FCREPO-1987.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

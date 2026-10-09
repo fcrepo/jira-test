@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2195 ERROR on import of dataset, top-level resources - lubm</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2195</span> ERROR on import of dataset, top-level resources - lubm</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2016-09-09 17:05 UTC</td></tr><tr><th>Updated</th><td>2016-09-16 14:35 UTC</td></tr><tr><th>Resolved</th><td>2016-09-16 14:16 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2215.html">FCREPO-2215</a> Importer fails for non-flat imports.</td></tr></table>
+<h2>Description</h2>
+<p>Setup per: <a href="https://jira.duraspace.org/browse/FCREPO-2194" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2194</a></p>
+
+<p>After successful export, start an empty F4. <br/>
+Perform the same operation as on export but changing the mode: <br/>
+&#8212; <br/>
+&gt; java -jar fcrepo-import-export-driver-0.0.1-SNAPSHOT.jar -b /tmp/bin -m import -d /tmp/rdf -r <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a> <br/>
+&#8212; </p>
+
+<p>The import does not log any errors; <br/>
+! however, the resources in the original repository had 16 top-level resources, the imported repository has ~4260 resources.<br/>
+! Notice immediately: <br/>
+&#8212; </p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-17471"><div class="by">Michael Durbin, 2016-09-09 17:31 UTC</div><div class="text"><p>This is due to import ordering.  </p>
+
+<p>If you PUT a URI with slashes, it makes the intermediary nodes as peartree nodes once and for all.</p>
+
+<p>I remember a ticket to allow this to be fixed in the repository, but I don't think it got fixed.</p></div></div>
+<div class="comment" id="comment-17474"><div class="by">Andrew Woods, 2016-09-09 17:40 UTC</div><div class="text"><p>Maybe the importer should make sure the paths are built up, versus doing a PUT on the full path?<br/>
+We would need to account for pairtrees, however.</p></div></div>
+<div class="comment" id="comment-17476"><div class="by">Esmé Cowles, 2016-09-09 17:45 UTC</div><div class="text"><p>I believe we can just sort the files with files before directories to fix this:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">class </span>FilesFirstComparator <span class="code-keyword">implements</span> Comparator&lt;File&gt; {
+    <span class="code-keyword">public</span> <span class="code-object">int</span> compare(<span class="code-keyword">final</span> File f1, <span class="code-keyword">final</span> File f2) {
+        <span class="code-keyword">if</span> (f1.isFile() &amp;&amp; f2.isDirectory()) {
+            <span class="code-keyword">return</span> -1;
+        } <span class="code-keyword">else</span> <span class="code-keyword">if</span> (f2.isFile() &amp;&amp; f1.isDirectory()) {
+            <span class="code-keyword">return</span> 1;
+        }
+        <span class="code-keyword">return</span> f1.compareTo(f2);
+    }
+}
+</pre>
+</div></div>
+
+<p>If the files are processed first, then the directories are created before their contents, avoiding accidental PairTree creation.</p></div></div>
+<div class="comment" id="comment-17477"><div class="by">Andrew Woods, 2016-09-09 17:48 UTC</div><div class="text"><p>Sounds like a plan.</p></div></div>
+<div class="comment" id="comment-17478"><div class="by">Esmé Cowles, 2016-09-09 17:48 UTC</div><div class="text"><p>That resolves the issue seen in <a href="https://jira.duraspace.org/browse/FCREPO-2194" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2194</a> — though I'm not sure what the best way to test this would be.</p></div></div>
+<div class="comment" id="comment-17479"><div class="by">Andrew Woods, 2016-09-09 17:49 UTC</div><div class="text"><p>Integration test? ...pending: <a href="https://jira.duraspace.org/browse/FCREPO-2185" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2185</a> ?</p></div></div>
+<div class="comment" id="comment-17482"><div class="by">Michael Durbin, 2016-09-09 18:08 UTC</div><div class="text"><p>As I noted on the other ticket, we also need to update the exporter to export all ancestral metadata so we can tell our peartrees from our real nodes.</p></div></div>
+<div class="comment" id="comment-17533"><div class="by">Michael Durbin, 2016-09-15 20:03 UTC</div><div class="text"><p>There's a lot going on here, I'm going to break it up into smaller tickets as I identify individual problems.</p></div></div>
+<div class="comment" id="comment-17535"><div class="by">Michael Durbin, 2016-09-15 20:53 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/34" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/34</a></p></div></div>
+<div class="comment" id="comment-17537"><div class="by">Andrew Woods, 2016-09-16 01:33 UTC</div><div class="text"><p>Looks good, pending response to minor code review comments.<br/>
+I assume this ticket is also completed: <a href="https://jira.duraspace.org/browse/FCREPO-2215" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2215</a> ?</p></div></div>
+<div class="comment" id="comment-17538"><div class="by">Michael Durbin, 2016-09-16 02:41 UTC</div><div class="text"><p>Yeah, I only made that ticket to cover the things I've fixed that don't directly relate to this ticket... and because I wasn't sure I'd fixed this ticket yet.</p></div></div>
+<div class="comment" id="comment-17539"><div class="by">Andrew Woods, 2016-09-16 13:42 UTC</div><div class="text"><p>Michael Durbin, I created a PR against your feature branch. Please merge it into your branch if it is ok with you... then I will push this ticket through.<br/>
+<a href="https://github.com/mikedurbin/fcrepo-import-export/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/mikedurbin/fcrepo-import-export/pull/1</a></p></div></div>
+<div class="comment" id="comment-17540"><div class="by">Nick Ruest, 2016-09-16 14:35 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/0111580f9b4fb1714abe01d01accf674c92bba35" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/0111580f9b4fb1714abe01d01accf674c92bba35</a></p></div></div>
+<p><a href="data/FCREPO-2195.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

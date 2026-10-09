@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-762 Implement more tightly-defined (ie semantically precise) specification/identification of resources in policies</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-762</span> Implement more tightly-defined (ie semantically precise) specification/identification of resources in policies</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-08-10 16:19 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Addresses</th><td><a href="FCREPO-636.html">FCREPO-636</a> Enable policy enforcement by declaration in RELS-EXT and RELS-INT</td></tr><tr><th>Addresses</th><td><a href="FCREPO-740.html">FCREPO-740</a> Allow policies from multiple parents (multiple collection membership)</td></tr><tr><th>Addresses</th><td><a href="FCREPO-760.html">FCREPO-760</a> Policy managers can create policies pertaining to any resources (no ability to restrict policy management)</td></tr><tr><th>Addresses</th><td><a href="FCREPO-761.html">FCREPO-761</a> It is possible to specify apparently valid XACML policies that will never be effective</td></tr></table>
+<h2>Description</h2>
+<p>Noting 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-761" >
+                <a href="FCREPO-761.html" class="jira-issue-macro-key issue-link"  title="It is possible to specify apparently valid XACML policies that will never be effective" >
+            
+            FCREPO-761
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, it is currently possible to specify resources in a policy to using regular expressions.</p>
+
+<p>Indexing/locating policies based on regular expression syntax will be difficult (if not impossible) given the potential range of regular expressions that could be used to specify resources.  Currently only a small subset of regular expressions are searched for.</p>
+
+<p>Instead of using the anyURI-regexp-match in conjunction with hierarchical URIs, it would be better to specify a set of ResourceAttributeDesignators that do not use regular expressions and are therefore (a) more semtically precise and (b) much easier to index and search for.</p>
+
+<p>A full set of use-cases would need defining, but the following could be candidates</p>
+<ul class="alternate" type="square">
+	<li>all children of resource xyz (ie immediate collection members)</li>
+	<li>all descendants of resource xyz (ie resources that are members of collections that are also members of xyz)</li>
+</ul>
+
+
+<p>As part of this we should also consider the requirements of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-636" >
+                <a href="FCREPO-636.html" class="jira-issue-macro-key issue-link"  title="Enable policy enforcement by declaration in RELS-EXT and RELS-INT" >
+            
+            FCREPO-636
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, ie a policy object applies to a collection xyz through an "appliesTo"; a policy object applies to collection members through "appliesToChildrenOf"</p>
+
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11888"><div class="by">Stephen Bayliss, 2011-03-25 23:07 UTC</div><div class="text"><p>The XACML hierarchical resource profile is used to specify resources within collections.</p>
+
+<p>The path resource-id part of this is currently used, ie <br/>
+/collectionTop/collectionNext/.*  specifies all descendents of collectionNext (when collectionNext is a child of collectionTop).</p>
+
+<p>The hierarchical resource profile also supports ancestor and parent attributes, ie the above would be written<br/>
+ancestor(collectionNext)</p>
+
+<p>We should allow the second form so that we can specify collection policies without having to specify the full path (or without having to deal with the indexing complexities that would result from the "path" form).</p></div></div>
+<div class="comment" id="comment-12846"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-762.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

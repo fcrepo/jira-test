@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2998 Potential issue with namespace registry</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2998</span> Potential issue with namespace registry</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>ajd</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2019-05-22 20:30 UTC</td></tr><tr><th>Updated</th><td>2019-06-22 02:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.5, Fedora 5.0.2</td></tr></table>
+<h2>Description</h2>
+<p>Related to: RDF namespaces</p>
+
+<p>There appears to be a potential issue with "xs: <a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a>" as a predefined namespace binding. It may be missing "#" at the end? </p>
+
+<p>When defining a data type for objects of a triple, using the Fedora UI's SPARQL update feature, with the following insert: `&lt;&gt; dc:date "2019-05-22"^^xs:dateTime .`</p>
+
+<p> </p>
+
+<p>The resulting triple (n-triples) is: </p>
+
+<p>&lt;<a href="http://annadora.tacc.utexas.edu:8080/fcrepo/rest/2019-03-15-sparql-test" class="external-link" rel="nofollow noreferrer">http://annadora.tacc.utexas.edu:8080/fcrepo/rest/2019-03-15-sparql-test</a>&gt; &lt;<a href="http://purl.org/dc/elements/1.1/date" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/date</a>&gt; "2019-05-22"^^&lt;*<a href="http://www.w3.org/2001/XMLSchemadateTime*" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchemadateTime*</a>&gt; .</p>
+
+<p> </p>
+
+<p>However, all fedora-generated triples with dateTime data types are serialized as:</p>
+
+<p>&lt;<a href="http://annadora.tacc.utexas.edu:8080/fcrepo/rest/2019-03-15-sparql-test" class="external-link" rel="nofollow noreferrer">http://annadora.tacc.utexas.edu:8080/fcrepo/rest/2019-03-15-sparql-test</a>&gt; &lt;<a href="http://fedora.info/definitions/v4/repository#lastModified" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModified</a>&gt; "2019-05-22T20:07:16.187Z"^^&lt;*<a href="http://www.w3.org/2001/XMLSchema#dateTime*" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime*</a>&gt; .</p>
+
+<p> </p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20689"><div class="by">Andrew Woods, 2019-05-24 17:45 UTC</div><div class="text"><p>The issue is related to:</p>
+<ul class="alternate" type="square">
+	<li>ModeShape introduces some namespaces that do not terminate in either a '/' or '#' delimiter<br/>
+Such as:<br/>
+xs: <a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a><br/>
+xsi: <a href="http://www.w3.org/2001/XMLSchema-instance" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema-instance</a></li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>Fedora includes the set of namespaces when updating/adding a property:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java#L845" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java#L845</a></li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>The resultant concatenated full-qualified terms are incorrect.</li>
+</ul>
+
+
+<p>One possibility is to "fix" the namespaces by adding the '#' delimiter prior to having Jena execute the update request.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java#L845" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java#L845</a></p>
+
+<p>From a user perspective, an immediate option is to use the fully qualified term(s):<br/>
+"2019-05-22"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt;</p>
+
+<p>..instead of the prefixed term(s):<br/>
+"2019-05-22"^^xs:dateTime </p></div></div>
+<div class="comment" id="comment-20694"><div class="by">Bethany Seeger, 2019-05-31 21:45 UTC</div><div class="text"><p>From some testing I've done, it appears that the namespace is pulled from the SPARQL command, not the nicely handed in Model.  Meaning if I change the namespace in the model before the execute() call, it does nothing to fix the issue.  Unless the Model does something when the prefixes are set.   I'll do more research next week. </p></div></div>
+<div class="comment" id="comment-20714"><div class="by">Jared Whiklo, 2019-06-22 02:01 UTC</div><div class="text"><p>So I also did some digging.</p>
+
+<p>According to the XML Schema : Datatypes specification. Section <a href="https://www.w3.org/TR/xmlschema-2/#namespaces" class="external-link" rel="nofollow noreferrer">3.1 Namespace Considerations</a> defines the namespace URI as <a href="https://www.w3.org/TR/xmlschema-2/#built-in-datatypes" class="external-link" rel="nofollow noreferrer">"http://www.w3.org/2001/XMLSchema",</a> but in Section <a href="https://www.w3.org/TR/xmlschema-2/#built-in-datatypes" class="external-link" rel="nofollow noreferrer">3 Built-in Datatypes</a> they specify that when using the prefix for (in their example) an "int" it would appear as "http://www.w3.org/2001/XMLSchema#int"</p>
+
+<p>In Fedora this is coming from Jena. Because we set the created and lastModified datetimes we set them using the Calendar type. This makes Jena see them as <a href="https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/datatypes/xsd/XSDDateTime.html" class="external-link" rel="nofollow noreferrer">XSDDateTime</a> datatypes. So they get the internally defined namespace.</p>
+
+<p>We could go to Jena and ask, but I imagine they would point to the XML Schema documents (linked above). So we could go to the W3C and ask...or just add # to the end.</p>
+
+<p>For reference:</p>
+
+<p>In the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/impl/mappings/PropertyToTriple.java#L81" class="external-link" rel="nofollow noreferrer">PropertyToTriple</a> converter we call the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/converters/ValueConverter.java#L84-L109" class="external-link" rel="nofollow noreferrer">ValueConverter</a>. Because we pass in strings they are considered default datatypes and fall through to the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/converters/ValueConverter.java#L148-L160" class="external-link" rel="nofollow noreferrer">stringliteral2node</a> which is able to pull the datatype off but only recognizes "http://www.w3.org/2001/XMLSchema#datetime" as specifying a datetime. So you can't do range comparisons unless you use the #.</p></div></div>
+<p><a href="data/FCREPO-2998.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

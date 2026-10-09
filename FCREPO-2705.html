@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2705 Validate ACL Link Header on Create and return 409 with clear error message.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2705</span> Validate ACL Link Header on Create and return 409 with clear error message.</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Joe Harrington</td></tr><tr><th>Created</th><td>2018-03-08 15:16 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-03-14 19:37 UTC</td></tr><tr><th>Components</th><td>f4-auth, f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>2018-spring-api-alignment-sprint</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2688.html">FCREPO-2688</a> Implement ACL linking on resource creation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2723.html">FCREPO-2723</a> If acl URI exists but does not contain the correct triple, return 409</td></tr></table>
+<h2>Description</h2>
+<p>With the completion of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2688" >
+                <a href="FCREPO-2688.html" class="jira-issue-macro-key issue-link"  title="Implement ACL linking on resource creation" >
+            
+            FCREPO-2688
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+,  an ACL can be assigned to a resource based on resource creation (via a PUT or a POST).   The spec indicates that a 400 or 500 series message should returned if the resource does not exist.  If the acl specified in the link does not exist a 400 is returned without a clear explanation in a rel="http://www.w3.org/ns/ldp#constrainedBy" link.   See <a href="https://fcrepo.github.io/fcrepo-specification/#link-acl-on-create" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#link-acl-on-create</a></p>
+
+<p>There are two tasks to be completed with this jira: <br/>
+1.  in the case that the acl URI in the link header does not exist,  return a 409 with a constrainedBy  link that indicates the non existence of the URI.<br/>
+2. if the acl URI exists but does not contain a triple indicating rdf:type of <a href="http://fedora.info/definitions/v4/webac#Acl" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#Acl</a>  (ie  &lt;&gt; a webac:Acl  ) return a 409 with a constrainedBy that indicates the fact that the resource is not correctly typed.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-19719"><div class="by">Joe Harrington, 2018-03-12 16:45 UTC</div><div class="text"><p>Hey, Danny Bernstein and/or Andrew Woods –</p>
+
+<p>Does "in the case that the acl URI in the link header does not exist" mean simply that resourceAcl in this line of FedorLdp.createObject() is null, or does it mean that the URI might have a value but that value points to no resource?</p>
+
+<p>In either case, do we want the method to return immediately with a 409 response code?</p>
+
+<p>What is a "constrainedBy link that indicates the non existence of the URI"? I don't understand what a link that indicates the non-existence of something would be </p>
+
+<p>Thanks!</p></div></div>
+<div class="comment" id="comment-19720"><div class="by">Danny Bernstein, 2018-03-12 17:07 UTC</div><div class="text"><p>So I would add the following logic the method that extracts the acl from the link header:</p>
+<ol>
+	<li>if the resourceAcl points to a non-existent resource return  a 409 indicating problem.</li>
+	<li>if the resourceAcl points to a resource, but that resource does not contain an  "&lt;&gt; rdf:type &lt; <a href="http://fedora.info/definitions/v4/webac#Acl" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#Acl</a>&gt;" triple, then return a 409 with an appropriate message that would enable an API user to address the issue.</li>
+</ol>
+
+
+<p> So yes:  failures should return immediately..</p>
+
+<p> </p>
+
+<p>regarding the constrainBy convention: see section 4.2.1.6 of <a href="https://www.w3.org/TR/ldp/" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/</a><br/>
+Also for sample constrainedBy examples: you can look at <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-webapp/src/main/webapp/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-webapp/src/main/webapp/static/constraints/NonRDFSourceConstraints.rdf</a></p>
+
+<p>Also <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java#L493" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java#L493</a></p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19725"><div class="by">Andrew Woods, 2018-03-12 19:37 UTC</div><div class="text"><p>Unrelated note: Since this ticket involves two tasks, I would recommend splitting it into two tickets/PRs.</p></div></div>
+<div class="comment" id="comment-19751"><div class="by">Joe Harrington, 2018-03-14 19:39 UTC</div><div class="text"><p>I opened a PR for the first part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2705" >
+                <a href="FCREPO-2705.html" class="jira-issue-macro-key issue-link"  title="Validate ACL Link Header on Create and return 409 with clear error message." >
+            
+            FCREPO-2705
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, namely, "if the resourceAcl points to a non-existent resource return  a 409 indicating problem"</p></div></div>
+<div class="comment" id="comment-19754"><div class="by">Danny Bernstein, 2018-03-14 21:42 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/069db9f399e2b97c588943af5d417c587ddbbf55" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/069db9f399e2b97c588943af5d417c587ddbbf55</a></p></div></div>
+<div class="comment" id="comment-19756"><div class="by">Joe Harrington, 2018-03-15 14:24 UTC</div><div class="text"><p>Opened 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2723" >
+                <a href="FCREPO-2723.html" class="jira-issue-macro-key issue-link"  title="If acl URI exists but does not contain the correct triple, return 409" >
+            
+            FCREPO-2723
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for second part of this ticket's work.</p></div></div>
+<p><a href="data/FCREPO-2705.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

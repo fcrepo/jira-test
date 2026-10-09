@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1853 Remove &quot;accessroles&quot;</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1853</span> Remove &quot;accessroles&quot;</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2015-12-06 15:46 UTC</td></tr><tr><th>Updated</th><td>2016-07-15 17:18 UTC</td></tr><tr><th>Resolved</th><td>2016-07-14 14:45 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>webac</td></tr></table>
+<h2>Description</h2>
+<p>When any of the following Authorization modules are configured, </p>
+<ul>
+	<li>RBACL</li>
+	<li>XACML</li>
+	<li>WebAC</li>
+</ul>
+
+
+<p>..a "fedora:hasAccessRoles" property <span class="error">&#91;1&#93;</span> is created on new resources and a number of RBACL node-types <span class="error">&#91;2&#93;</span> are registered. The "hasAccessRoles" service makes sense for RBACL and XACML, but not for WebAC. Since WebAC is the authorization module which we are encouraging the community to move towards, having the "hasAccessRoles" service exposed is incorrect and confusing.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L65" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L65</a><br/>
+<span class="error">&#91;2&#93;</span> <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesTypes.java#L69" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesTypes.java#L69</a></p>
+
+<p>This task is to ensure that the "hasAccessRoles" property and the RBACL node-types are not included with WebAC is configured.</p>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-17035"><div class="by">Andrew Woods, 2016-07-13 17:08 UTC</div><div class="text"><p>This issue may potentially be resolved by changing the "auto-registration" of the beans/classes via @Component mentioned in this ticket's description with explicit bean definitions in the repo.xml.</p></div></div>
+<div class="comment" id="comment-17037"><div class="by">Peter Matthew Eichman, 2016-07-13 19:43 UTC</div><div class="text"><p>Since the AccessRoles.accessRoleProvider is only null when using WebAC, I was thinking if there is a way to check it before injecting the fedora:hasAccessRoles property into the model for a node, that should keep it from appearing.</p></div></div>
+<div class="comment" id="comment-17038"><div class="by">Andrew Woods, 2016-07-13 19:46 UTC</div><div class="text"><p>Can you please add a link or two to lines in source code?</p></div></div>
+<div class="comment" id="comment-17039"><div class="by">Peter Matthew Eichman, 2016-07-13 19:49 UTC</div><div class="text"><p>I'm thinking a check here to make sure there is an access roles provider: <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L57" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L57</a></p></div></div>
+<div class="comment" id="comment-17040"><div class="by">Unknown, 2016-07-13 19:52 UTC</div><div class="text"><p>Why wouldn't you simply remove this line: <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L42" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L42</a></p>
+
+<p>and then add the component to the relevant Spring configuration in rbacl and xacml?</p></div></div>
+<div class="comment" id="comment-17041"><div class="by">Andrew Woods, 2016-07-13 19:58 UTC</div><div class="text"><p>Do you have access to <tt>AccessRoles.accessRolesProvider</tt> from <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L43" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRolesResources.java#L43</a> ?</p></div></div>
+<div class="comment" id="comment-17042"><div class="by">Peter Matthew Eichman, 2016-07-13 19:59 UTC</div><div class="text"><p>Unknown Your approach sounds more transparent. I'm still trying to figure out my bearings in Spring. Is this correct? Removing the @Component annotation would keep the system from automatically instantiating a AccessRolesResources bean, so I would add something like <tt>&lt;bean name="accessRolesResources" class="org.fcrepo.auth.roles.common.AccessRolesResources"/&gt;</tt> to the auth-repo.xml for RBACL and XACML in fcrepo-webapp-plus. Does the name of the bean matter?</p></div></div>
+<div class="comment" id="comment-17043"><div class="by">Andrew Woods, 2016-07-13 19:59 UTC</div><div class="text"><p>Unknown, that is what I had in mind as well.</p></div></div>
+<div class="comment" id="comment-17044"><div class="by">Unknown, 2016-07-13 20:13 UTC</div><div class="text"><p>Peter Matthew Eichman That is correct. You'd want to add that <tt>bean</tt> in the following places (I might be missing a few spots &#8211; but this will get you started):</p>
+
+<p>For RBACL:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-basic/src/test/resources/spring-test/repo.xml" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/master/fcrepo-auth-roles-basic/src/test/resources/spring-test/repo.xml</a></p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/blob/master/src/rbacl/webapp/WEB-INF/classes/spring/auth-repo.xml" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/blob/master/src/rbacl/webapp/WEB-INF/classes/spring/auth-repo.xml</a></p>
+
+<p>For XACML:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/blob/master/src/webac/webapp/WEB-INF/classes/spring/auth-repo.xml" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/blob/master/src/webac/webapp/WEB-INF/classes/spring/auth-repo.xml</a></p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/blob/master/src/test/resources/spring-test/repo.xml" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/blob/master/src/test/resources/spring-test/repo.xml</a></p></div></div>
+<div class="comment" id="comment-17045"><div class="by">Peter Matthew Eichman, 2016-07-13 20:41 UTC</div><div class="text"><p>Unknown That is working so far. I've also added a null check around the code at <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/2039ac82bcff5d419dcc91f12cf2f49af268a58f/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRoles.java#L140" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/blob/2039ac82bcff5d419dcc91f12cf2f49af268a58f/fcrepo-auth-roles-common/src/main/java/org/fcrepo/auth/roles/common/AccessRoles.java#L140</a> that will respond with a 404 if someone requests fcr:accessroles but the accessRolesProvider is null, instead of the current behavior of throwing a null pointer exception. Hopefully users would not be blindly appending "/fcr:accessroles" to repository URLs, but in case it happens I figure it is better to check and return a sensible response than just letting an exception through.</p>
+
+<p>Next up, I will take a look at adding some integration tests to check for the existence (or not) of the "fcr:accessroles" resource.</p></div></div>
+<div class="comment" id="comment-17050"><div class="by">Peter Matthew Eichman, 2016-07-14 14:44 UTC</div><div class="text"><p>PRs:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/33" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/33</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/52" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/52</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/69" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/69</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17053"><div class="by">Andrew Woods, 2016-07-15 03:14 UTC</div><div class="text"><p>The above PRs look good.<br/>
+Here is another that belongs to the set: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/39" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/39</a></p></div></div>
+<div class="comment" id="comment-17055"><div class="by">Unknown, 2016-07-15 17:16 UTC</div><div class="text"><p>webapp-plus PR merged into master via <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/ae83c35c419ab8c3668e22ba95da1fa901b1392f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/ae83c35c419ab8c3668e22ba95da1fa901b1392f</a></p></div></div>
+<div class="comment" id="comment-17056"><div class="by">Andrew Woods, 2016-07-15 17:18 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/80a59895e128db479f423c683f72da70c845c90a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/80a59895e128db479f423c683f72da70c845c90a</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/257e6b209a846bd10dc366bc1ab6620aad1b1a60" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/257e6b209a846bd10dc366bc1ab6620aad1b1a60</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/d4f327fd90d45bfd26ffbde8422362dbc43c514b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/d4f327fd90d45bfd26ffbde8422362dbc43c514b</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/ae83c35c419ab8c3668e22ba95da1fa901b1392f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/ae83c35c419ab8c3668e22ba95da1fa901b1392f</a></p></div></div>
+<p><a href="data/FCREPO-1853.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

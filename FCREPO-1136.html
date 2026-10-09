@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1136 NPE when user does not have write-access to server/management/uploads</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1136</span> NPE when user does not have write-access to server/management/uploads</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>cb</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2012-08-14 08:56 UTC</td></tr><tr><th>Updated</th><td>2012-08-24 11:24 UTC</td></tr><tr><th>Resolved</th><td>2012-08-16 07:45 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.5, Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.6.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1025.html">FCREPO-1025</a> Let the test-framework create and delete temporary directories (update JUnit from 4.5 to 4.10)</td></tr></table>
+<h2>Description</h2>
+<p>When the tomcat user (etc) does not have permission to create the server/management/uploads directory, you get a NPE with an obscure error message (stacktrace below).</p>
+
+<p>I tracked the error to <a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/management/ManagementModule.java#L107" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/management/ManagementModule.java#L107</a>. The `mkdirs` command may return false when it is unable to create the directory tree (note, it also returns false if the directory already exists). I assume it should throw an exception if the upload directory doesn't exist and can't be created?</p>
+
+
+<p>Here's the full stacktrace:</p>
+
+<p>Caused by: java.lang.RuntimeException: Fatal error while starting server<br/>
+	at org.fcrepo.server.Server.init(Server.java:695) ~<span class="error">&#91;fcrepo-server-3.6.jar:na&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at java.lang.reflect.Method.invoke(Method.java:597) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeCustomInitMethod(AbstractAutowireCapableBeanFactory.java:1546) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1487) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1419) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	... 36 common frames omitted<br/>
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'org.fcrepo.server.management.Management': Invocation of init method failed; nested exception is org.fcrepo.server.errors.ModuleInitializationException: Error while initializing temporary storage area: java.lang.NullPointerException: null<br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1422) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:518) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:455) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject(AbstractBeanFactory.java:293) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:222) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:290) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:192) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:585) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:895) ~<span class="error">&#91;spring-context-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:425) ~<span class="error">&#91;spring-context-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.fcrepo.server.Server.init(Server.java:630) ~<span class="error">&#91;fcrepo-server-3.6.jar:na&#93;</span><br/>
+	... 43 common frames omitted<br/>
+Caused by: org.fcrepo.server.errors.ModuleInitializationException: Error while initializing temporary storage area: java.lang.NullPointerException: null<br/>
+	at org.fcrepo.server.management.ManagementModule.initModule(ManagementModule.java:126) ~<span class="error">&#91;fcrepo-server-3.6.jar:na&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at java.lang.reflect.Method.invoke(Method.java:597) ~<span class="error">&#91;na:1.6.0_29&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeCustomInitMethod(AbstractAutowireCapableBeanFactory.java:1546) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1487) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1419) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	... 53 common frames omitted<br/>
+Caused by: java.lang.NullPointerException: null<br/>
+	at org.fcrepo.server.management.ManagementModule.initModule(ManagementModule.java:114) ~<span class="error">&#91;fcrepo-server-3.6.jar:na&#93;</span><br/>
+	... 60 common frames omitted</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-12374"><div class="by">cb, 2012-08-14 09:34 UTC</div><div class="text"><p>See <a href="https://github.com/fcrepo/fcrepo/pull/8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/8</a></p></div></div>
+<div class="comment" id="comment-12375"><div class="by">eddie, 2012-08-14 12:33 UTC</div><div class="text"><p>I assume this is an issue w/ earlier versions of Fedora as well, since this method hasn't really changed (although the stacktrace might have as a result of springification).</p>
+
+<p>Every time we have to fix Server related code I despair at the difficulty of adding unit test coverage. Anyway, I have a test case almost ready, so I'll get this committed in the next day or so.</p></div></div>
+<div class="comment" id="comment-12376"><div class="by">Chris Wilper, 2012-08-14 15:53 UTC</div><div class="text"><p>Whoops, I should've read the comments first. I didn't realize you had a test case in the works Eddie. I just merged it without one, but of course, having a test case even for simple stuff like this is preferable.</p></div></div>
+<div class="comment" id="comment-12377"><div class="by">cb, 2012-08-14 22:50 UTC</div><div class="text"><p>Thanks Eddie &#8211; I couldn't figure out how to test the initModule() method, I'm glad you're on it.</p></div></div>
+<div class="comment" id="comment-12378"><div class="by">eddie, 2012-08-16 07:45 UTC</div><div class="text"><p>Fixed in 7ff30e945dfa4f7438daea7d38668a48e7d68f39</p></div></div>
+<div class="comment" id="comment-12423"><div class="by">eddie, 2012-08-24 11:24 UTC</div><div class="text"><p>Not sure how many versions back this issue affects, but tagging 3.5 and 3.6 for the moment</p></div></div>
+<p><a href="data/FCREPO-1136.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

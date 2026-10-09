@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2489 Verification tool fail to verify import with AttributeError </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2489</span> Verification tool fail to verify import with AttributeError </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Situ, Longshou</td></tr><tr><th>Assignee</th><td>Joshua Allan Westgard</td></tr><tr><th>Created</th><td>2017-05-25 14:32 UTC</td></tr><tr><th>Updated</th><td>2017-05-30 20:38 UTC</td></tr><tr><th>Resolved</th><td>2017-05-26 21:54 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-verify-0.1.0</td></tr><tr><th>Labels</th><td>verification</td></tr></table>
+<h2>Description</h2>
+<p>After imported resources to <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a> that are exported from different context <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>, the verification tool (from master branch as of 05/24/2017) throws error “AttributeError: 'FedoraResource' object has no attribute 'ldp_type’”.</p>
+
+<p>Here is the command and configuration used for import verify:<br/>
+$ fcrepo-verify -l 1b-import-log.txt -g DEBUG -v ./importexport.yml</p>
+
+<p>./importexport.yml:<br/>
+mode: import<br/>
+predicates: <a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a><br/>
+resource: <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a><br/>
+source: <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a><br/>
+dir: /Users/lsitu/Documents/Fedora_Import_Export/data_1b<br/>
+binaries: true<br/>
+rdfLang: text/turtle</p>
+
+<p>Error messages:<br/>
+Traceback (most recent call last):<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/bin/fcrepo-verify", line 11, in &lt;module&gt;<br/>
+    load_entry_point('fcrepo-verify===0.2.0-SNAPSHOT', 'console_scripts', 'fcrepo-verify')()<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 722, in _<em>call</em>_<br/>
+    return self.main(*args, **kwargs)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 697, in main<br/>
+    rv = self.invoke(ctx)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 895, in invoke<br/>
+    return ctx.invoke(self.callback, **ctx.params)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 535, in invoke<br/>
+    return callback(*args, **kwargs)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/cli.py", line 58, in main<br/>
+    verifier.execute()<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/verifier.py", line 110, in execute<br/>
+    loggers.file_only)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/resources.py", line 48, in _<em>init</em>_<br/>
+    if self.is_binary():<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/resources.py", line 75, in is_binary<br/>
+    return self.ldp_type == LDP_NON_RDF_SOURCE<br/>
+AttributeError: 'FedoraResource' object has no attribute 'ldp_type'</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-18943"><div class="by">Joshua Allan Westgard, 2017-05-25 15:23 UTC</div><div class="text"><p>I suspect this relates to the changes in <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/bfd6fa1d809002236850c402be6ac7317ea2397f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/bfd6fa1d809002236850c402be6ac7317ea2397f</a></p>
+
+<p>The refactored fedoraResource class in this commit assigns a 'type' property, but not 'ldp_type'.</p></div></div>
+<div class="comment" id="comment-19000"><div class="by">Joshua Allan Westgard, 2017-05-26 16:09 UTC</div><div class="text"><p>This commit partially fixes this issue, but not completely: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/38/commits/8d84e61fc9253b6c71532da54f52c00186b9ba48" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/38/commits/8d84e61fc9253b6c71532da54f52c00186b9ba48</a></p>
+
+<p>To fix this properly I think we need two things: </p>
+<ol>
+	<li>we need to document the contract of import-export and precisely what its config options represent for the various scenarios</li>
+	<li>we probably need to refactor the two main resource classes (fedoraResource and localResource) so that all possible errors are handled appropriately</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-19022"><div class="by">Joshua Allan Westgard, 2017-05-26 21:26 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/40" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/40</a></p></div></div>
+<div class="comment" id="comment-19029"><div class="by">Situ, Longshou, 2017-05-26 23:49 UTC</div><div class="text"><p>Joshua Allan Westgard I tested it and I got "Verification complete" message. The "AttributeError" error is gone. Here is the log:<br/>
+$ fcrepo-verify importexport.yml<br/>
+2017-05-26 16:42:52,556 INFO     Loading configuration options from importexport.yml<br/>
+2017-05-26 16:42:52,556 INFO     Loaded the following configuration options:<br/>
+2017-05-26 16:42:52,557 INFO       --&gt;       mode : import<br/>
+2017-05-26 16:42:52,557 INFO       --&gt; predicates : <a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a><br/>
+2017-05-26 16:42:52,557 INFO       --&gt;   resource : <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a><br/>
+2017-05-26 16:42:52,557 INFO       --&gt;     source : <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a><br/>
+2017-05-26 16:42:52,557 INFO       --&gt;        map : <a href="http://localhost:8080/fcrepo/rest,http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest,http://localhost:8686/f4/rest</a><br/>
+2017-05-26 16:42:52,557 INFO       --&gt;        dir : /Users/lsitu/Documents/Fedora_Import_Export/data_1bbb_v48<br/>
+2017-05-26 16:42:52,557 INFO       --&gt;   binaries : True<br/>
+2017-05-26 16:42:52,557 INFO       --&gt;    inbound : False<br/>
+2017-05-26 16:42:52,557 INFO       --&gt;    rdfLang : text/turtle<br/>
+2017-05-26 16:42:52,557 INFO     Testing connection to <a href="http://localhost:8686" class="external-link" rel="nofollow noreferrer">http://localhost:8686</a>...<br/>
+2017-05-26 16:42:52,575 INFO     Connection successful.<br/>
+2017-05-26 16:42:52,575 INFO     Starting verification...<br/>
+2017-05-26 16:42:52,575 INFO     Running verification on Fedora 4 import<br/>
+2017-05-26 16:42:52,576 INFO     Commencing resource verification...<br/>
+2017-05-26 16:43:00,149 INFO     Verified 1008 resources: successes = 0, failures = 1008<br/>
+2017-05-26 16:43:00,149 INFO     Verification complete</p></div></div>
+<div class="comment" id="comment-19038"><div class="by">Joshua Allan Westgard, 2017-05-27 11:40 UTC</div><div class="text"><p>Thanks, Situ, Longshou, based on the configuration options chosen, this is the expected result with the current version of the verification tool.  The tool does not deal with the "map" option correctly yet.  Thanks for testing!</p></div></div>
+<div class="comment" id="comment-19042"><div class="by">Andrew Woods, 2017-05-27 16:51 UTC</div><div class="text"><p>Joshua Allan Westgard: Should this ticket be closed with the following PR: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/40" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/40</a></p></div></div>
+<div class="comment" id="comment-19048"><div class="by">Joshua Allan Westgard, 2017-05-28 12:53 UTC</div><div class="text"><p>Andrew Woods, yes based on testing by Situ, Longshou, that PR appears to resolve this issue too.</p></div></div>
+<div class="comment" id="comment-19054"><div class="by">Andrew Woods, 2017-05-30 20:38 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/0473b6e8c759d8f33b04bc562798d018e93f87c5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/0473b6e8c759d8f33b04bc562798d018e93f87c5</a></p></div></div>
+<p><a href="data/FCREPO-2489.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

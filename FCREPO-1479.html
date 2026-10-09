@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1479 create karaf features.xml provisioning for fcrepo-camel-toolbox projects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1479</span> create karaf features.xml provisioning for fcrepo-camel-toolbox projects</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-04-21 14:16 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-05-14 20:54 UTC</td></tr><tr><th>Components</th><td>f4-audit, f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr></table>
+<h2>Description</h2>
+<p>When deploying camel-toolbox applications (such as the audit service) in OSGi, it would be nice to have a feature.xml file so that the bundle can be installed and managed directly from the karaf shell:</p>
+
+<p>$ feature:install audit-triplestore</p>
+
+<p>Rather than compiling and manually installing it.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-14139"><div class="by">Unknown, 2015-04-23 14:34 UTC</div><div class="text"><p>A PR is ready, but because it is just maven configuration, I would like to wait until after <a href="https://jira.duraspace.org/browse/FCREPO-1466" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1466</a> is resolved (since the associated PR in review has a lot of maven changes and will likely require a rebase)</p></div></div>
+<div class="comment" id="comment-14234"><div class="by">Unknown, 2015-05-07 18:44 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/pull/21" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/pull/21</a></p></div></div>
+<div class="comment" id="comment-14242"><div class="by">Unknown, 2015-05-08 13:47 UTC</div><div class="text"><p>I have tested this on both karaf 3.0.2 and 3.0.3</p>
+
+<p>Version 3.0.3 requires an additional step in order to install camel and activemq:</p>
+
+<p>In $KARAF_HOME/etc/jre.properties, change this line (for the appropriate jre version)</p>
+
+<p>    javax.annotation;version="1.0", \</p>
+
+<p>To at least (version 1.2 is also fine):</p>
+
+<p>    javax.annotation;version="1.1", \</p>
+
+<p>Then, in the karaf shell (for any 3.x version):</p>
+
+<p>$&gt; feature:repo-add mvn:org.fcrepo.camel/fcrepo-camel-toolbox/4.1.2-SNAPSHOT/xml/features<br/>
+$&gt; feature:install fcrepo-audit-triplestore<br/>
+$&gt; feature:install fcrepo-indexing-triplestore<br/>
+$&gt; feature:install fcrepo-indexing-solr</p></div></div>
+<div class="comment" id="comment-14249"><div class="by">Andrew Woods, 2015-05-09 21:35 UTC</div><div class="text"><p>Maybe we can troubleshoot this next week.<br/>
+===========================================</p>
+
+<p>awoods@black:/opt/karaf/apache-karaf-3.0.3$ ./bin/karaf <br/>
+        __ __                  ____      <br/>
+       / //<em>/</em>___ __________ _/ __/      <br/>
+      / ,&lt;  / __ `/ __<em>/ __ `/ /</em>        <br/>
+     / /| |/ /<em>/ / /  / /</em>/ / __/        <br/>
+    /<em>/ |</em>|&#95;<em>,</em>/<em>/   &#95;</em>,<em>/</em>/         </p>
+
+<p>  Apache Karaf (3.0.3)</p>
+
+<p>Hit '&lt;tab&gt;' for a list of available commands<br/>
+and '<span class="error">&#91;cmd&#93;</span> --help' for help on a specific command.<br/>
+Hit '&lt;ctrl-d&gt;' or type 'system:shutdown' or 'logout' to shutdown Karaf.</p>
+
+<p>karaf@root()&gt; feature:install fcrepo-indexing-triplestore<br/>
+Error executing command: No feature matching fcrepo-indexing-triplestore/0.0.0<br/>
+karaf@root()&gt; <br/>
+karaf@root()&gt; <br/>
+karaf@root()&gt; feature:repo-add mvn:org.fcrepo.camel/fcrepo-camel-toolbox/4.1.2-SNAPSHOT/xml/features<br/>
+Adding feature url mvn:org.fcrepo.camel/fcrepo-camel-toolbox/4.1.2-SNAPSHOT/xml/features<br/>
+karaf@root()&gt; feature:install fcrepo-indexing-triplestore<br/>
+Error executing command: Can't install feature fcrepo-indexing-triplestore/0.0.0: <br/>
+Could not start bundle mvn:org.apache.activemq/activemq-osgi/5.10.0 in feature(s) activemq-client-5.10.0: Unresolved constraint in bundle org.apache.activemq.activemq-osgi <span class="error">&#91;104&#93;</span>: Unable to resolve 104.0: missing requirement <span class="error">&#91;104.0&#93;</span> osgi.wiring.package; (&amp;(osgi.wiring.package=javax.annotation)(version&gt;=1.1.0)(!(version&gt;=2.0.0)))<br/>
+karaf@root()&gt; </p></div></div>
+<div class="comment" id="comment-14250"><div class="by">Unknown, 2015-05-09 23:51 UTC</div><div class="text"><p>Andrew Woods not sure why this didn't occur to me earlier, but by simply updating the activemq version to the current release, this error goes away. (5.10.0 -&gt; 5.11.1)</p></div></div>
+<div class="comment" id="comment-14260"><div class="by">Andrew Woods, 2015-05-14 20:54 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/commit/efcb7b70be6a6f0a5ad778e18f82ff5b71dd571b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-camel-toolbox/commit/efcb7b70be6a6f0a5ad778e18f82ff5b71dd571b</a></p></div></div>
+<p><a href="data/FCREPO-1479.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

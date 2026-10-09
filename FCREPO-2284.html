@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2284 Consolidate verification tools</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2284</span> Consolidate verification tools</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2016-11-01 15:00 UTC</td></tr><tr><th>Updated</th><td>2016-12-09 17:51 UTC</td></tr><tr><th>Resolved</th><td>2016-12-08 14:32 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Labels</th><td>import-export-phase-2, verification</td></tr><tr><th>Addresses</th><td><a href="FCREPO-2245.html">FCREPO-2245</a> Integrate fcrepo-walker code into import/export test tool</td></tr></table>
+<h2>Description</h2>
+<p>This task is to consolidate the following two (python) verification tools:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/bseeger/fcrepo-sample-dataset-tests" class="external-link" rel="nofollow noreferrer">https://github.com/bseeger/fcrepo-sample-dataset-tests</a> , and</li>
+	<li><a href="https://github.com/jwestgard/fcrepo-import-export-verify" class="external-link" rel="nofollow noreferrer">https://github.com/jwestgard/fcrepo-import-export-verify</a></li>
+</ul>
+
+
+<p>The combined tool is now <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify</a> , and the README has been expanded.</p>
+
+<p>The main task remaining is to migrate the logging feature from the fcrepo-sample-dataset-tests to the new combined tool.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-17961"><div class="by">Bethany Seeger, 2016-11-07 15:19 UTC</div><div class="text"><p>A new project has been created here, which will be the one going forward: </p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify</a></p></div></div>
+<div class="comment" id="comment-17962"><div class="by">Andrew Woods, 2016-11-07 16:10 UTC</div><div class="text"><p>What is the definition of "done" for this ticket? </p>
+<ul class="alternate" type="square">
+	<li>Are we there with the creation of this new repo?</li>
+	<li>Do we need to demonstrate completion of a specific set of requirements?
+	<ul>
+		<li>Possibly the Phase-2 requirements from this list: <a href="https://wiki.duraspace.org/display/FF/Design+-+Import+-+Export#Design-Import-Export-VerificationTool" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+Import+-+Export#Design-Import-Export-VerificationTool</a></li>
+	</ul>
+	</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17964"><div class="by">Joshua Allan Westgard, 2016-11-07 16:41 UTC</div><div class="text"><p>To say we've completed the initial integration of the two tools I think we would still need to do at least the following:</p>
+<ol>
+	<li> create a fuller README with instructions on use</li>
+	<li>bring over the more robust logging feature of the other tool and integrate that here</li>
+	<li> rename the current CSV summary feature as something other than "log"</li>
+	<li>migrate other advanced features from the other tool?</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-17965"><div class="by">Andrew Woods, 2016-11-07 16:43 UTC</div><div class="text"><p>Thanks, Joshua Allan Westgard.<br/>
+Numbers 1,2 and 3 are clear.<br/>
+Can you or Bethany Seeger elaborate on number 4?</p></div></div>
+<div class="comment" id="comment-17966"><div class="by">Joshua Allan Westgard, 2016-11-07 16:45 UTC</div><div class="text"><p>4 was really just an invitation to Bethany or you to say if there were other features that we ought to try to move over.</p></div></div>
+<div class="comment" id="comment-17969"><div class="by">Andrew Woods, 2016-11-07 16:58 UTC</div><div class="text"><p>Since I am less familiar with Bethany Seeger's tool's bells and whistles, I will defer to her to detail what must be migrated over... a specific list would be helpful.</p></div></div>
+<div class="comment" id="comment-17972"><div class="by">Joshua Allan Westgard, 2016-11-07 19:49 UTC</div><div class="text"><p>Following up on Esmé Cowles's question from the call earlier, I see now the implementation I described of using "prefer header = minimal" to skip server managed triples was in fact implemented only in my mind, so something along those lines will need to be done to make this work for import.  It is complicated, though, because the triples on disk will include the server-managed ones, and so we'll need to work around that (perhaps something like checking if the minimal triples coming from Fedora are a subset of what is on disk).</p>
+
+<p>There are also a couple typo bugs on the import side, so clearly that part hasn't been tested.</p>
+
+<p>I also think 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2240" >
+                <a href="FCREPO-2240.html" class="jira-issue-macro-key issue-link"  title="Pair-trees should be pair-trees" >
+            
+            FCREPO-2240
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is a blocker for proper functioning of the verification tooling on import operations.</p></div></div>
+<div class="comment" id="comment-17973"><div class="by">Esmé Cowles, 2016-11-07 20:03 UTC</div><div class="text"><p>Josh-</p>
+
+<p>We do that kind of filtering in the import utility now:</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/importer/Importer.java#L270-L278" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/importer/Importer.java#L270-L278</a></p>
+
+<p>But I'm not thrilled with that approach of filtering out a laundry-list of predicates and types.  Checking whether the minimal triples are a subset of the standard triples sounds like a cleaner approach.</p></div></div>
+<div class="comment" id="comment-17975"><div class="by">Joshua Allan Westgard, 2016-11-07 22:22 UTC</div><div class="text"><p>The subset option is easy to implement, but there is some danger of false positive verification, if for example some number of non-server-managed triples didn't successfully import, then the graph of triples in Fedora could still be a subset of the graph on disk &#8211; though presumably the import-export tooling would have caught such an error because Fedora would (I'm guessing) complain that it could not accept all triples in the submitted graph.</p>
+
+<p>An alternative occurred to me that one could make two requests to Fedora, once for minimal triples and once for the full set, and then diff the two graphs to get the set of server-managed triples.  Those server managed triples could then be stripped out from a graph of the triples on disk one by one (with some logic for matching subject/predicate &#8211; the subject, however, being relative depending on whether the base repository or port has changed) to arrive at the non-server managed triples for the graph on disk.</p>
+
+<p>All of this will be unnecessary once the import tooling can set server managed triples.</p></div></div>
+<div class="comment" id="comment-18026"><div class="by">Bethany Seeger, 2016-11-21 14:50 UTC</div><div class="text"><p>I plan on working on adding in logging capabilities this week. </p></div></div>
+<div class="comment" id="comment-18049"><div class="by">Bethany Seeger, 2016-12-03 02:49 UTC</div><div class="text"><p>Just created this PR for adding logging to the verification tool.  </p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/7</a></p>
+
+<p>It might need to be tweaked, but I wanted to get it in so that it's available for the sprint starting next week. </p></div></div>
+<div class="comment" id="comment-18106"><div class="by">Nick Ruest, 2016-12-08 14:32 UTC</div><div class="text"><p>Fully resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/30ac7a88d0ba3ab8f1cedb38b9a909f1f1939d46" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/30ac7a88d0ba3ab8f1cedb38b9a909f1f1939d46</a></p></div></div>
+<p><a href="data/FCREPO-2284.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1418 POST/PATCH must advertise constraints if triples not persisted</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1418</span> POST/PATCH must advertise constraints if triples not persisted</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-03-29 22:13 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:42 UTC</td></tr><tr><th>Resolved</th><td>2015-06-29 17:09 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>ldp</td></tr><tr><th>Required by</th><td><a href="FCREPO-1411.html">FCREPO-1411</a> PUT/PATCH of resources that are not the target of the request</td></tr></table>
+<h2>Description</h2>
+<p>4.2.1.6 LDP servers must publish any constraints on LDP clients’ ability to create or update LDPRs, by adding a Link header with an appropriate context URI, a link relation of <a href="http://www.w3.org/ns/ldp#constrainedBy" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#constrainedBy</a>, and a target URI identifying a set of constraints <span class="error">&#91;RFC5988&#93;</span>, to all responses to requests that fail due to violation of those constraints. For example, a server that refuses resource creation requests via HTTP PUT, POST, or PATCH would return this Link header on its 4xx responses to such requests. The same Link header may be provided on other responses. LDP neither defines nor constrains the representation of the link's target resource. Natural language constraint documents are therefore permitted, although machine-readable ones facilitate better client interactions. The appropriate context URI can vary based on the request's semantics and method; unless the response is otherwise constrained, the default (the effective request URI) should be used.</p>
+<h2>Comments (60)</h2>
+<div class="comment" id="comment-14322"><div class="by">Jared Whiklo, 2015-05-23 23:11 UTC</div><div class="text"><p>Just looking into this and it appears that we are at the stage of replacing cb's encoding of the human readable message with some sort of machine readable data structure.</p>
+
+<p>But we could just change the structure of the message to something like this.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>HTTP/1.1 400 Bad Request
+Content-Length: 139
+Link: &lt;data:text/plain;base64,U3RhdGU6IEZhaWxlZApEYXRhOiBbaHR0cDovL2V4YW1wbGUub3JnL2JvYiwgaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS90aXRsZSwgIkJvYmJpZSJdCkNvbnN0cmFpbnQ6IFN1YmplY3Qgbm90IGluIHJlcG9zaXRvcnkgZG9tYWluCg==&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"
+Content-Type: text/plain
+Server: Jetty(8.1.16.v20140903)
+
+State: Failed
+Data: [http://example.org/bob, http://purl.org/dc/elements/1.1/title, "Bobbie"]
+Constraint: Subject not in repository domain
+</pre>
+</div></div>
+
+<p>The only other implementation I have seen is to create a webpage for each constraint and provide that link in the header. I like this way as the message is more closely tied to the actual data.</p>
+
+<p>But I am not as well versed in the LDP Spec as some so I'd love some feedback.</p></div></div>
+<div class="comment" id="comment-14323"><div class="by">Andrew Woods, 2015-05-24 01:26 UTC</div><div class="text"><p>Jared Whiklo, Are you suggesting to leave the "link" header as-is, but add a more descriptive error message in the response body at:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/exceptionhandlers/MalformedRdfExceptionMapper.java#L39" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/exceptionhandlers/MalformedRdfExceptionMapper.java#L39</a> ?</p>
+
+<p>Do you think the base64 encoded exception message is any more "machine-readable" than a link to a URL of a static web page detailing the constraint?</p>
+
+<p>Also, have you verified that all of the POST/PATCH scenarios that result in triples not being persisted are resulting in a thrown MalformedRdfException? I was under the impression that some cases are still failing silently.</p></div></div>
+<div class="comment" id="comment-14328"><div class="by">Jared Whiklo, 2015-05-25 03:46 UTC</div><div class="text"><p>Because the link encoded data is the same as the response body then what ever you see is what the client machine would decode. So I think that could be more usable than a static webpage that says "We don't accept POST/PATCH requests for subjects not in domain." The current way we can provide the actual data, which can then be dealt with or sent back to the end user.</p>
+
+<p>The alternative would require an additional field in the exception to specify which constraint has been violated. This would also require maintaining a list and associated webpages for each of these constraints.</p>
+
+<p>I'm not sure if there is a benefit of one way over the other. I just thought it might be nice and easy to send our exceptions in a machine parable format. I.e. one piece of data per line, with certain consistent headers for the exceptions.</p>
+
+<p>I have not verified all post and patch implementations. I'll do some more tests this week and see if any are silent.</p></div></div>
+<div class="comment" id="comment-14329"><div class="by">Jared Whiklo, 2015-05-25 20:55 UTC</div><div class="text"><p>Ok, some more review has found that PUT and POST operations that contain out of domain subjects in the RDF body have those silently removed and the rest is processed.</p>
+
+<p>This happens here:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/iterators/PersistingRdfStreamConsumer.java#L92" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/iterators/PersistingRdfStreamConsumer.java#L92</a></p>
+
+<p>So I'm removing A. Soroka's <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/iterators/PersistingRdfStreamConsumer.java#L80-L100" class="external-link" rel="nofollow noreferrer">entire predicate filter</a>. </p>
+
+<p>Instead I just throw a MalformedRdfException in the operateOnTriples function right between these <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/iterators/PersistingRdfStreamConsumer.java#L128-L129" class="external-link" rel="nofollow noreferrer">two statements</a>.</p>
+
+<p>This will probably be slightly slower than before, but there doesn't seem to be a way to <a href="https://code.google.com/p/guava-libraries/issues/detail?id=1753" class="external-link" rel="nofollow noreferrer">throw an exception from inside the Guava predicate filter</a>. So we have to check each statement to see if we fail.</p>
+
+<p>I'll have a pull request to present shortly and if there is a better suggestion I am more than happy to hear it.</p></div></div>
+<div class="comment" id="comment-14333"><div class="by">A. Soroka, 2015-05-26 13:43 UTC</div><div class="text"><p>No, Jared Whiklo, there is no way to throw a <em>checked</em> exception from within a Guava Predicate, or for that matter, a Java 8 Predicate. You can and should throw an appropriate unchecked exception from within that Predicate.</p></div></div>
+<div class="comment" id="comment-14338"><div class="by">Andrew Woods, 2015-05-26 13:57 UTC</div><div class="text"><p>Maybe MalformedRdfException should extend RepositoryRuntimeException?<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel/src/main/java/org/fcrepo/kernel/exception/MalformedRdfException.java#L27" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel/src/main/java/org/fcrepo/kernel/exception/MalformedRdfException.java#L27</a></p></div></div>
+<div class="comment" id="comment-14340"><div class="by">A. Soroka, 2015-05-26 13:59 UTC</div><div class="text"><p>Hell, yes.</p></div></div>
+<div class="comment" id="comment-14347"><div class="by">Jared Whiklo, 2015-05-26 16:33 UTC</div><div class="text"><p>Ok, so is the consensus that you want to make MalformedRdfException a RepositoryRuntimeException, keep the Predicate filter have it throw the MalformedRdfException exception? I'll start working on this until I hear a dissenting voice.</p></div></div>
+<div class="comment" id="comment-14348"><div class="by">A. Soroka, 2015-05-26 16:36 UTC</div><div class="text"><p>That sounds good to me. The only thing I'll add is a desire to see the HTTP layer translate MalformedRdfException into something that a client will find useful for recovery (i.e. a message with some specific information of the malformation).</p></div></div>
+<div class="comment" id="comment-14350"><div class="by">Jared Whiklo, 2015-05-26 18:31 UTC</div><div class="text"><p>I agree A. Soroka, the question is what would be the most usable "machine-readable" constraints we can provide. Do you have any thoughts on my first post above?</p></div></div>
+<div class="comment" id="comment-14351"><div class="by">A. Soroka, 2015-05-26 19:08 UTC</div><div class="text"><p>I'm not familiar with the constraints on Constraint, but perhaps we could be more specific? For example, <br/>
+&lt;code&gt;<br/>
+Constraint: Subject &lt;http:foo/bar&gt; not in repository domain<br/>
+&lt;/code&gt;<br/>
+Or is that not possible?</p></div></div>
+<div class="comment" id="comment-14352"><div class="by">Andrew Woods, 2015-05-26 19:12 UTC</div><div class="text"><p>A. Soroka, you may find this helpful: <a href="http://www.w3.org/TR/ldp/#ldpr-gen-pubclireqs" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/ldp/#ldpr-gen-pubclireqs</a></p></div></div>
+<div class="comment" id="comment-14353"><div class="by">A. Soroka, 2015-05-26 19:17 UTC</div><div class="text"><p>Then not only is my suggestion no good, but Jared Whiklo's suggestion of <tt>Constraint: Subject not in repository domain</tt> is no good either. There's got to be an URI.</p></div></div>
+<div class="comment" id="comment-14355"><div class="by">Jared Whiklo, 2015-05-26 20:34 UTC</div><div class="text"><p>The best we could possibly do would be to pass some contextual information with the URI and have a semi-dynamic page. </p>
+
+<p>Make the MalformedRdfMessage body just be the specific constraint that has been violated and whatever contextual information (ie. the bad triple in this case).</p>
+
+<p>Use cb's base64 encoding to encode the contextual information and pass it to our "constraint page" which can display general constraint information and context specific information (decoded from the URI parameter).</p>
+
+<p>But I guess we will have to start publishing all the "constraints" on some sort of webpages. </p>
+
+<p>Should that be packaged with the server or central under the fedora.info domain?</p>
+</div></div>
+<div class="comment" id="comment-14356"><div class="by">A. Soroka, 2015-05-26 20:37 UTC</div><div class="text"><p>What about packing the important info into the URI, i.e. as a query param? Is that what you meant by "pass some contextual information with the URI", Jared Whiklo?</p></div></div>
+<div class="comment" id="comment-14358"><div class="by">Jared Whiklo, 2015-05-26 20:56 UTC</div><div class="text"><p>Sorry yes A. Soroka. That is exactly what I mean.</p>
+
+<p>I can think of three ways to do this.</p>
+
+<p>1) We just strip the existing MalformedRdfException down to hold the URI parameters. Then the ExceptionMapper sticks them on the end of our constraint URI. <br/>
+ie.<br/>
+Link: <a href="http://fedora.info/fcrepo4/constraints?constraintID=" class="external-link" rel="nofollow noreferrer">http://fedora.info/fcrepo4/constraints?constraintID=</a>&lt;blah&gt;&amp;context=&lt;base64 encoded value&gt;</p>
+
+<p>The problem with this implementation is that the response body will only contain this information. This may not be a concern as we will have logging in Fedora and the link will provide the normal information.</p>
+
+<p>2) Generate a JSON exception message body. For example:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>{ 'status' : 'failed', 'constraint_violated' : 'true', 'constraint_uri' : '&lt;foo&gt;', 
+'contextual_info' : '&lt;bar&gt;', 
+'message' : 'The subject of the triple (&lt;bar&gt;) is not in the domain of this repository' }
+</pre>
+</div></div>
+
+<p>then in the ExceptionMapper we can split it apart and generate a nice response body and a good Link. </p>
+
+<p>3) We start using different Exceptions for different constraint violations. Then the link is a known commodity and the contextual information is passed in the Exception body. But this could result in a lot of new exception types.</p>
+
+<p>thoughts?</p></div></div>
+<div class="comment" id="comment-14359"><div class="by">Andrew Woods, 2015-05-26 21:13 UTC</div><div class="text"><p>For the record, the current approach of having a "data" URI is a valid, non-webpage strategy:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/exceptionhandlers/MalformedRdfExceptionMapper.java#L49" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/exceptionhandlers/MalformedRdfExceptionMapper.java#L49</a></p>
+
+<p><a href="http://en.wikipedia.org/wiki/Data_URI_scheme" class="external-link" rel="nofollow noreferrer">http://en.wikipedia.org/wiki/Data_URI_scheme</a></p></div></div>
+<div class="comment" id="comment-14364"><div class="by">A. Soroka, 2015-05-27 16:09 UTC</div><div class="text"><p>I guess. I wouldn't want to deal with "data URIs" as any significant component of an architecture. I think Jared Whiklo's #3 is clearly the right thing to do, even if it requires more work.</p></div></div>
+<div class="comment" id="comment-14365"><div class="by">Jared Whiklo, 2015-05-27 16:23 UTC</div><div class="text"><p>Should this be discussed at a committer's call or are we good to go ahead and implement this?</p>
+
+<p>I did notice that we do some weird things, for instance <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-connector-file/src/test/java/org/fcrepo/integration/connector/file/BasicReadWriteFedoraFileSystemConnectorIT.java#L59-L83" class="external-link" rel="nofollow noreferrer">this test</a> and the one below it were failing when I made my change.</p>
+
+<p>It appears that the ServerManagedPropertyException gets captured in the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/JcrPropertyStatementListener.java#L169-L181" class="external-link" rel="nofollow noreferrer">JcrPropertyStatementListener</a> and turned into a MalformedRdfException.</p>
+
+<p>These would be (IMHO) two different constraints and therefore would need to be two separate Exceptions. I'm not sure if there was a good reason to only throw 2 types of exceptions, but this would definitely have to change.</p>
+
+<p>*<b>edit</b>*<br/>
+Sorry, I should add my preference is not for number 3. It is probably the cleanest, but it does seem that we end up creating a lot of work to generate a URI that expresses what we already express in the error message. I like #2, it is probably the nicest end result, but I will concede adding JSON to the mix is probably asking for maintenance trouble in future. </p>
+
+<p>*<b>edit 2</b>*<br/>
+I know A. Soroka does not like the Data URI idea....but it is always the option to just change the formatting of our exceptions to be multi-lined with headers (like in my <a href="#comment-42598" rel="noreferrer">first comment above</a>), we would just need to express the constraint better.</p>
+
+<p>for example</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>HTTP/1.1 400 Bad Request
+Content-Length: 139
+Link: &lt;data:text/plain;base64,U3RhdGU6IEZhaWxlZApEYXRhOiBbaHR0cDovL2V4YW1wbGUub3JnL2JvYiwgaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS90aXRsZSwgIkJvYmJpZSJdCkNvbnN0cmFpbnQ6IFN1YmplY3Qgbm90IGluIHJlcG9zaXRvcnkgZG9tYWluCg==&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"
+Content-Type: text/plain
+Server: Jetty(8.1.16.v20140903)
+
+Data: [http://example.org/bob, http://purl.org/dc/elements/1.1/title, "Bobbie"]
+Constraint: This repository does not allow RDF statements whose subject is not contained locally.
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-14366"><div class="by">A. Soroka, 2015-05-27 17:12 UTC</div><div class="text"><p>This should come to a call. The question seems to be to me whether we want to make the effort to actually put something in the headers that allows machine-driven recovery from the fault, or whether we are going to require human intervention.</p></div></div>
+<div class="comment" id="comment-14367"><div class="by">Andrew Woods, 2015-05-27 18:00 UTC</div><div class="text"><p>Do we actually expect any F4/LDP clients to react meaningfully to the response from a bad request, based on the "constrainedby" link header?<br/>
+I would like to see the machinery put in place to:</p>
+<ul class="alternate" type="square">
+	<li>create the link header for the scenarios specified in the LDP recommendation (so that we minimally pass the failed tests, see below++),</li>
+	<li>provide meaningful response bodies,</li>
+	<li>leave the door open for a more advanced machine-readable solution.</li>
+</ul>
+
+
+
+<p>++ In your local builds:<br/>
+fcrepo-integration-ldp/report-basic/report/ldp-testsuite-execution-report.html<br/>
+fcrepo-integration-ldp/report-direct/report/ldp-testsuite-execution-report.html<br/>
+fcrepo-integration-ldp/report-indirect/report/ldp-testsuite-execution-report.html</p></div></div>
+<div class="comment" id="comment-14373"><div class="by">A. Soroka, 2015-05-27 18:40 UTC</div><div class="text"><p>Yes, by dropping the offending triple.</p></div></div>
+<div class="comment" id="comment-14375"><div class="by">Andrew Woods, 2015-05-27 18:49 UTC</div><div class="text"><p>And you think a client will drop the offending triple without some human-in-the-loop quality control?</p></div></div>
+<div class="comment" id="comment-14376"><div class="by">A. Soroka, 2015-05-27 18:52 UTC</div><div class="text"><p>That depends on the client and the workflow. Look, if you don't want to provide a specific report, fine. That means you want a human-readable message, right? Which <em>we don't have now</em>. We have a Base64-encoded "data URI". At least let's have something that <em>only one agent</em>, either a machine or a human, can read without having to have both involved.</p></div></div>
+<div class="comment" id="comment-14381"><div class="by">Jared Whiklo, 2015-05-27 21:30 UTC</div><div class="text"><p>Wow, that is cool I never knew there were reports there. How do I read these reports? Are the requests sent that generated the error defined in a LDP spec?</p></div></div>
+<div class="comment" id="comment-14383"><div class="by">Andrew Woods, 2015-05-27 23:04 UTC</div><div class="text"><p>You can troll through the ldp-testsuite code to find the exact HTTP requests:<br/>
+<a href="https://github.com/w3c/ldp-testsuite" class="external-link" rel="nofollow noreferrer">https://github.com/w3c/ldp-testsuite</a></p>
+
+<p>But if you also look in the three reports, the error cases have links into the specification that provide a fairly clear description of the scenario, such as these:<br/>
+<a href="http://www.w3.org/TR/ldp/#ldpr-gen-pubclireqs" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/ldp/#ldpr-gen-pubclireqs</a><br/>
+<a href="http://www.w3.org/TR/ldp/#ldpr-gen-defbaseuri" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/ldp/#ldpr-gen-defbaseuri</a></p>
+
+<p>After the completion of this ticket, minimally, the following test should no longer fail:<br/>
+fcrepo-integration-ldp/report-direct/report/ldp-testsuite-execution-report.html#org.w3.ldp.testsuite.test.DirectContainerTest_testPublishConstraintsReadOnlyProp</p>
+
+
+</div></div>
+<div class="comment" id="comment-14391"><div class="by">Jared Whiklo, 2015-05-28 19:10 UTC</div><div class="text"><p>Consensus from <a href="https://wiki.duraspace.org/display/FF/2015-05-28+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">Committer's call</a> was to provide RDF files (one per constraint) hanging off of the repository. Then direct the Link header to the appropriate constraint.</p>
+
+<p>Not being a JAX-RS guy, would this be sort of like a (forgive my ignorance) </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>@Scope("Singleton")
+</pre>
+</div></div>
+<p>resource with a </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>@Path("/constraints/{path: .*}")
+</pre>
+</div></div>
+<p>Or does anyone have a good example I can build off of?</p></div></div>
+<div class="comment" id="comment-14392"><div class="by">A. Soroka, 2015-05-28 19:15 UTC</div><div class="text"><p>Related question, and perhaps partly an answer: how do we currently serve out the JavaScript that is used for the HTML presentation of the API (that is, the UI)?</p></div></div>
+<div class="comment" id="comment-14393"><div class="by">Andrew Woods, 2015-05-28 19:39 UTC</div><div class="text"><p>Naturally, we have three approaches in the codebase:<br/>
+1) JAX-RS resource<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ViewAssets.java#L35" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ViewAssets.java#L35</a><br/>
+called here:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common-head.vsl#L5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common-head.vsl#L5</a></p>
+
+<p>2) URI Builder:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common-head.vsl#L1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common-head.vsl#L1</a></p>
+
+<p>3) Relative path:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-webapp/src/main/webapp/index.html#L5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-webapp/src/main/webapp/index.html#L5</a></p>
+
+<p>Your choice!</p></div></div>
+<div class="comment" id="comment-14394"><div class="by">A. Soroka, 2015-05-28 19:43 UTC</div><div class="text"><p>Seems like #3 is much the cheapest. In fact, maybe there's a new ticket here to switch the others to that mode?</p></div></div>
+<div class="comment" id="comment-14397"><div class="by">Andrew Woods, 2015-05-28 20:49 UTC</div><div class="text"><p>I would agree, A. Soroka. What gives me pause, however, is this unverified issue:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/issues/756" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/756</a></p>
+
+<p>This issue seems to indicate that the JAX-RS approach does not show failure, whereas the Relative path approach does fail.</p></div></div>
+<div class="comment" id="comment-14400"><div class="by">Jared Whiklo, 2015-05-29 14:35 UTC</div><div class="text"><p>I generated a simple proof of concept and added a constraints folder to the "webapp/static" folder and put a malformedRdfException.rdf inside. I had the MalformedRdfExceptionMapper return this link. </p>
+
+<p>Seems to be fine, except that when I build it and then check the LDP test reports it still shows a failure. However this time with a 404 status code. </p>
+
+<p>If I start the jetty server (same code, actually right after the above build completes) and run the test-suite outside (I cloned it from GitHub and am using TestNG in Eclipse) then the same test works perfectly. This seems like it is a matter of how or when the tests are run, but I don't fully understand the fcrepo-ldp-integration part of the codebase.</p>
+
+<p>I am going to move ahead with the relative setup above and try to track down the different exceptions, but if this test error is of larger concern let me know</p></div></div>
+<div class="comment" id="comment-14401"><div class="by">A. Soroka, 2015-05-29 14:37 UTC</div><div class="text"><p>Sounds like the right move to me.</p></div></div>
+<div class="comment" id="comment-14420"><div class="by">Jared Whiklo, 2015-06-01 20:54 UTC</div><div class="text"><p>Came across this "Found repository-managed mixin on which we will not operate." in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/iterators/PersistingRdfStreamConsumer.java#L142" class="external-link" rel="nofollow noreferrer">PersistingRdfStreamConsumer</a>.</p>
+
+<p>Should this be a constraint?</p></div></div>
+<div class="comment" id="comment-14425"><div class="by">Jared Whiklo, 2015-06-02 14:00 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/808" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/808</a><br/>
+I tried to push this as a branch to Fcrepo4, but I don't seem to have permission. So I gave A. Soroka and Andrew Woods collaborator on my repo.</p>
+
+<p>I am also not confident on putting the static function in the ConstraintViolationException, but I was unsure where else would be better.</p></div></div>
+<div class="comment" id="comment-14426"><div class="by">A. Soroka, 2015-06-02 14:19 UTC</div><div class="text"><p>"Came across this "Found repository-managed mixin on which we will not operate." in PersistingRdfStreamConsumer. Should this be a constraint?"</p>
+
+<p>I think it probably should be. Some of the "managed" types might be LDP stuff, though, and so there might be a more specific response we want to make. I think at this stage, you're fine to just consider it all under one constraint, a la `ManagedTypeException` or the like.</p></div></div>
+<div class="comment" id="comment-14433"><div class="by">Jared Whiklo, 2015-06-02 20:16 UTC</div><div class="text"><p>Before I add this to the PR, I don't really understand when this might get called. I do see that it is now the response from the LdpIT <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L1593-L1601" class="external-link" rel="nofollow noreferrer">testRepeatedPut</a></p>
+
+<p>ala</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[/sw/var/www/fcrepo4/fcrepo4-test] 
+&gt; curl -i -X PUT http://localhost:8080/rest/barbie
+HTTP/1.1 201 Created
+ETag: "71a96788a7ff20845e3c53e36d261867043523c7"
+Last-Modified: Tue, 02 Jun 2015 20:11:30 GMT
+Content-Length: 33
+Location: http://localhost:8080/rest/barbie
+Content-Type: text/plain
+Server: Jetty(8.1.16.v20140903)
+
+http://localhost:8080/rest/barbie%                                                                                                                      
+[/sw/var/www/fcrepo4/fcrepo4-test] 
+&gt; curl -i -X PUT -H "Content-type: text/turtle" http://localhost:8080/rest/barbie
+HTTP/1.1 409 Conflict
+Content-Length: 93
+Link: &lt;http://localhost:8080/static/constraints/ManagedTypeException.rdf&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"
+Content-Type: text/plain
+Server: Jetty(8.1.16.v20140903)
+
+The repository type (http://www.jcp.org/jcr/nt/1.0folder) of this resource is system managed.
+</pre>
+</div></div>
+
+<p>Is that correct? Previously it threw a SystemManagedPropertyException.</p></div></div>
+<div class="comment" id="comment-14437"><div class="by">Andrew Woods, 2015-06-03 13:38 UTC</div><div class="text"><p>Jared Whiklo, The integration test you have linked above should still return a 4xx response. It is trying to create a new RDF source where one already exists. I feel like I am missing something from your question, however.</p></div></div>
+<div class="comment" id="comment-14438"><div class="by">Jared Whiklo, 2015-06-03 16:08 UTC</div><div class="text"><p>Andrew Woods, it is the location (and therefore the type) of error that is thrown. Previously the above IT test threw a SystemManagedPropertyException (which I changed from the original MalformedRdfException).</p>
+
+<p>My concern was in throwing an Exception from a condition that previously swallowed the error and skipped over it.</p>
+
+<p>I don't know that it is a big issue (or an issue at all). I just wanted to mention it before I added it to the pull request and possibly affect the workflow of people using Fedora4.</p>
+
+<p>*<b>edit</b>*<br/>
+Perhaps I'll just add it to the PR and you can see exactly what would change, that might make my concern clearer or clearly unwarranted.</p></div></div>
+<div class="comment" id="comment-14439"><div class="by">Andrew Woods, 2015-06-03 16:20 UTC</div><div class="text"><p>+1</p></div></div>
+<div class="comment" id="comment-14440"><div class="by">Andrew Woods, 2015-06-03 17:28 UTC</div><div class="text"><p>This ticket is currently "In Review", but it sounds like you are still working on it. Please move it to "In Progress" if it is not complete.</p></div></div>
+<div class="comment" id="comment-14441"><div class="by">Jared Whiklo, 2015-06-03 19:26 UTC</div><div class="text"><p>In Review is correct, sorry about that.</p></div></div>
+<div class="comment" id="comment-14523"><div class="by">Andrew Woods, 2015-06-17 20:40 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-14525"><div class="by">Jared Whiklo, 2015-06-18 16:04 UTC</div><div class="text"><p>I wanted to mention that of the <a href="https://jira.duraspace.org/browse/FCREPO-1418?focusedCommentId=42715&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-42715" class="external-link" rel="nofollow noreferrer">3 options for presenting static content</a> above. <br/>
+Only #1 seems to work with Grizzly when building and this is why the LDP test suite still reports as failing. </p>
+
+<p>If this is a concern with being able to easily ensure our LDP compliance using the test reports, we may want to use the fcr:asset method for these constraint header links.</p>
+
+<p>I have attached a screenshot of Fedora when paused in the LDPTestSuite to see what is being loaded and what is not. Normally the CSS and JS is not required as it is just to keep things looking good, but the constraint RDF files are needed (at least for the test).</p>
+
+<p>*<b>edit</b>*<br/>
+Just realized I can't add a screenshot, but you can try it yourself. </p></div></div>
+<div class="comment" id="comment-14526"><div class="by">A. Soroka, 2015-06-18 16:18 UTC</div><div class="text"><p>Is there a bug in Grizzly or some other known reason it doesn't work?</p></div></div>
+<div class="comment" id="comment-14527"><div class="by">Andrew Woods, 2015-06-18 16:32 UTC</div><div class="text"><p>I have no objections to using the fcr:assets approach... if solving the underlying test framework issue is not of interest.<br/>
+It is important that F4 demonstrates compatibility via the LDPTestSuite.</p></div></div>
+<div class="comment" id="comment-14531"><div class="by">Jared Whiklo, 2015-06-19 03:36 UTC</div><div class="text"><p>I have no idea if it is a bug or not. Much of the discussion I found online surrounds serving static content from a jar file and uses ```StaticHttpHandler``` (<a href="http://grizzly-nio.net/2013/08/grizzly-2-3-3-serving-static-http-resources-from-jar-files/" class="external-link" rel="nofollow noreferrer">like here</a>).</p>
+
+<p>I ran the ldp-testsuite against a running jetty server and got only 2 failures now, so I know it works. </p>
+
+<p>I feel like you should be able to serve the static content without starting engaging JAX-RS. But I don't truly understand the build machinery enough to say what is going on.</p>
+
+<p>So options are just use a fcr:asset method to serve the constraint RDF or open a ticket to see why no static content is served from Grizzly during the build. Perhaps there is some easy way to rectify this.</p></div></div>
+<div class="comment" id="comment-14532"><div class="by">Andrew Woods, 2015-06-19 14:45 UTC</div><div class="text"><p>Related issue to be verified when this ticket is complete:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/issues/815" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/815</a></p></div></div>
+<div class="comment" id="comment-14537"><div class="by">A. Soroka, 2015-06-19 17:49 UTC</div><div class="text"><p>Definitely do what needs be done to get this ticket closed (<tt>fcr:assets</tt> or what have ye), but let's also open a new ticket simply for "Be able to use truly static content in test." That could also be useful for drawing in test data for certain tests.</p></div></div>
+<div class="comment" id="comment-14545"><div class="by">Jared Whiklo, 2015-06-20 03:19 UTC</div><div class="text"><p>Got a slight problem, the new URL for an exception is </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>http://localhost:8080/rest/fcr:assets/constraint/ServerManagedPropertyException</pre>
+</div></div>
+<p>it works fine.</p>
+
+<p>Except that it appears the test suite is URL Encoding the path and performing a GET on </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>http://localhost:8080/rest/fcr%3Aassets/constraint/ServerManagedPropertyException</pre>
+</div></div>
+
+<p>The second URL gives you a <b>400 Bad Request</b> with the message <b>The namespace prefix (fcr) has not been registered</b>, which is now what the LDP test suite is failing with.</p>
+
+<p>I could build a new class just to present the constraints without a colon in the URL, other than that I'm not sure how to proceed. </p>
+
+<p>Personally this seems like a lot of messing around just to support the LDP test suite.</p></div></div>
+<div class="comment" id="comment-14546"><div class="by">Andrew Woods, 2015-06-20 16:02 UTC</div><div class="text"><p>Under the circumstances, and given the fact that running the LDP Test Suite against a standalone F4 shows slightly different results from the integration test setup, I think it is reasonable to take your initial static pages approach.<br/>
+As a follow-on ticket we can then figure out how to host static pages in the integration tests, but that is a less important issue.</p></div></div>
+<div class="comment" id="comment-14549"><div class="by">Jared Whiklo, 2015-06-22 15:57 UTC</div><div class="text"><p>Based on the above issues (<a href="https://jira.duraspace.org/browse/FCREPO-1418?focusedCommentId=43077&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-43077" class="external-link" rel="nofollow noreferrer">comment</a>), we are going to proceed with the current static webpage implementation and look to solve serving those pages inside the Grizzly integration test infrastructure later.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/808" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/808</a></p></div></div>
+<div class="comment" id="comment-14554"><div class="by">Andrew Woods, 2015-06-22 20:34 UTC</div><div class="text"><p>PR-808 looks good. Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-14568"><div class="by">Jared Whiklo, 2015-06-25 13:22 UTC</div><div class="text"><p>Some changes and comments in PR-808. Setting to "In Review".</p></div></div>
+<div class="comment" id="comment-14569"><div class="by">Andrew Woods, 2015-06-25 14:36 UTC</div><div class="text"><p>See: <a href="https://github.com/whikloj/fcrepo4/pull/2" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/pull/2</a><br/>
+I will look at the SanityIT later.</p>
+
+<p>...See: <a href="https://github.com/whikloj/fcrepo4/pull/3" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/pull/3</a></p></div></div>
+<div class="comment" id="comment-14588"><div class="by">Andrew Woods, 2015-06-28 22:43 UTC</div><div class="text"><p>We are very close on this one. Please address the two code-review comments... then we can ship it!</p></div></div>
+<div class="comment" id="comment-14589"><div class="by">A. Soroka, 2015-06-28 22:46 UTC</div><div class="text"><p>So much good work from Jared Whiklo. ++!</p></div></div>
+<div class="comment" id="comment-14592"><div class="by">Jared Whiklo, 2015-06-29 15:45 UTC</div><div class="text"><p>Changes as requested in code review comments.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/808" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/808</a></p></div></div>
+<div class="comment" id="comment-14593"><div class="by">Andrew Woods, 2015-06-29 16:34 UTC</div><div class="text"><p>So close!<br/>
+I am getting an XML parsing error when hitting this URL:<br/>
+<a href="http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf</a></p></div></div>
+<div class="comment" id="comment-14595"><div class="by">Andrew Woods, 2015-06-29 17:09 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/447e56a9546900f62a2f1ad7a75077280072e773" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/447e56a9546900f62a2f1ad7a75077280072e773</a></p></div></div>
+<p><a href="data/FCREPO-1418.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

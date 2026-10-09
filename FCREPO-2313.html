@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2313 Fedora violates RFC 7232 with 304 responses </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2313</span> Fedora violates RFC 7232 with 304 responses </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Elliot Metsger</td></tr><tr><th>Created</th><td>2016-11-17 15:34 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 20:47 UTC</td></tr><tr><th>Resolved</th><td>2016-11-18 20:47 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0, Fedora 4.7.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.2, Fedora 4.7.1</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>RFC 7232 explicitly states that 304 "Not Modified" responses to conditional requests MUST not contain an entity body:</p>
+
+<p>  "A 304 response cannot contain a message-body; it is always terminated<br/>
+   by the first empty line after the header fields."</p>
+
+<p>Responses from Fedora <b>do</b> have an entity body.  When Fedora accessed via clients such as Apache Httpclient, this can cause apparent corruption of responses from Fedora.  HttpClient does not consume entity bodies from requests that return a 304.  The bytes from the errant entity body returned from Fedora can remain in internal HttpClient buffers, corrupting reads from subsequent responses.</p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2313/10286_FCREPO-2313.sh">FCREPO-2313.sh</a>, 514 bytes, added by Elliot Metsger on 2016-11-18</li>
+<li><a href="attachments/FCREPO-2313/10283_fedora-4.6.0-jetty-9.2.3.v20140905">fedora-4.6.0-jetty-9.2.3.v20140905</a>, 205 bytes, added by Elliot Metsger on 2016-11-18</li>
+<li><a href="attachments/FCREPO-2313/10285_fedora-4.7.0-jetty-9.2.3.v20140905">fedora-4.7.0-jetty-9.2.3.v20140905</a>, 205 bytes, added by Elliot Metsger on 2016-11-18</li>
+<li><a href="attachments/FCREPO-2313/10284_fedora-4.7.0-jetty-9.3.9.v20160517">fedora-4.7.0-jetty-9.3.9.v20160517</a>, 175 bytes, added by Elliot Metsger on 2016-11-18</li>
+<li><a href="attachments/FCREPO-2313/10282_fedora-4.7.0-tomcat-8.5.6">fedora-4.7.0-tomcat-8.5.6</a>, 121 bytes, added by Elliot Metsger on 2016-11-18</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-18016"><div class="by">Elliot Metsger, 2016-11-18 04:39 UTC</div><div class="text"><p>HTTP 304 responses must not have an entity body, and there is no behavior required by the specification when a 304 response with an entity body is encountered.  Therefore, servlet containers are free to respond in whatever way they wish when processing these errant responses.</p>
+
+<p>Attached is a script which elicits this behavior from Fedora, and example output from a variety of servlet containers and versions Fedora.  Tomcat 8.5.6 exhibits the best behavior (strips out the entity body; responses appear as if the entity body was never added), Tomcat 9 exhibits the most bizarre behavior (multiple responses!), and Jetty sits somewhere in the middle.  Fedora 4.6.0 and 4.7.0 were tested.  The master branch has the bug, but was not directly tested.</p>
+
+<p>PRs for all three major branches of Fedora have been produced:</p>
+<ul>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/pull/1141" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1141</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/pull/1142" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1142</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/pull/1143" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1143</a></li>
+</ul>
+
+
+<p>To view this behavior, launch Fedora and execute the attached script, 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2313" >
+                <a href="FCREPO-2313.html" class="jira-issue-macro-key issue-link"  title="Fedora violates RFC 7232 with 304 responses " >
+            
+            FCREPO-2313
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.sh.  It requires netcat, and by default will connect to Fedora running on localhost, port 8080.  The script accepts a hostname and port as command-line arguments.</p>
+
+<p>Example usage ("apix" is a Docker container running Fedora under Jetty):</p>
+<blockquote>
+<p>$ ./FCREPO-2313.sh apix <br/>
+HTTP/1.1 304 Not Modified<br/>
+Cache-Control: no-transform, must-revalidate, max-age=0<br/>
+ETag: ""<br/>
+Content-Type: text/turtle<br/>
+Content-Length: 13<br/>
+Server: Jetty(9.3.9.v20160517)</p>
+
+<p>$ </p></blockquote>
+
+<p>What you are looking for is some kind of indication of a malformed response, which will manifest itself differently depending on your servlet container.  In the above example, you can see that there is no entity body, however there is a Content-Length header of 13 bytes, which indicates an entity body once existed on the response, but was stripped out.</p>
+
+<p>Other example output:</p>
+<blockquote>
+<p>HTTP/1.1 304 Not Modified<br/>
+Date: Fri, 18 Nov 2016 03:00:43 GMT<br/>
+Cache-Control: no-transform, must-revalidate, max-age=0<br/>
+ETag: ""<br/>
+Content-Type: text/turtle<br/>
+Server: Jetty(9.2.3.v20140905)</p>
+
+<p>Date mismatch</p></blockquote>
+
+<p>A different version of Jetty, which doesn't attempt to do anything with the entity body; it just passes it along.</p></div></div>
+<div class="comment" id="comment-18017"><div class="by">Elliot Metsger, 2016-11-18 04:47 UTC</div><div class="text"><p>It would be re-assuring if this behavior could be confirmed by someone other than JHU folks!</p></div></div>
+<div class="comment" id="comment-18021"><div class="by">Andrew Woods, 2016-11-18 20:33 UTC</div><div class="text"><p>Resolved with:<br/>
+fcrepo master: <a href="https://github.com/fcrepo4/fcrepo4/commit/5173f6aa5b188dec0d5cb80a7b98ce299045c51f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/5173f6aa5b188dec0d5cb80a7b98ce299045c51f</a><br/>
+fcrepo 4.6-maintenance: <a href="https://github.com/fcrepo4/fcrepo4/commit/65c806d10e6d52cd65ab32beacd549bbf1a69271" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/65c806d10e6d52cd65ab32beacd549bbf1a69271</a></p></div></div>
+<p><a href="data/FCREPO-2313.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

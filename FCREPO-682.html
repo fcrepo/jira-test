@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-682 MySQL: Alter column type in doFields to LONGTEXT</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-682</span> MySQL: Alter column type in doFields to LONGTEXT</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Trivial</td></tr><tr><th>Reporter</th><td>Caleb Derven</td></tr><tr><th>Created</th><td>2010-04-23 14:04 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Is related to</th><td><a href="FCREPO-694.html">FCREPO-694</a> Option to truncate or reject doFields updates based on length</td></tr><tr><th>Is related to</th><td><a href="FCREPO-691.html">FCREPO-691</a> Too-long DC, other values can cause triplestore to reach inconsistent state</td></tr></table>
+<h2>Description</h2>
+<p>Batch ingests of large "archival" base-64 encoded objects were failing with a StorageDeviceException error. The following was also appearing in fedora.log: com.mysql.jdbc.MysqlDataTruncation: Data truncation: Data too long for column 'dcRelation' at row 1</p>
+
+<p>In the table doFields, the column type for dcRelation was altered from TEXT to LONGTEXT and ingests were successful. Could Fedora automatically create the table with this column type?</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11328"><div class="by">Stephen Bayliss, 2010-04-23 14:30 UTC</div><div class="text"><p>MySQL has a 65,535 character limit for TEXT fields (LONGTEXT is 4,294,967,295) - other databases impose no such limit (PostgreSQL) or have a much larger limit (MS SQL Server 2GB, Oracle CLOB - used for "text" - 4GB) so it would seem sensible for the MySQL interpertation of the "text" field specification in DefaultDOManager.dbspec to be LONGTEXT (org.fcrepo.server.utilities.MySQLDDLConverter).  </p>
+
+<p>Similarly we might consider using LONGBLOG instead of BLOB for binary fields (though currently all of the binary fields are specified as varchar, so won't cause an issue.).</p></div></div>
+<div class="comment" id="comment-11334"><div class="by">Stephen Bayliss, 2010-04-27 16:13 UTC</div><div class="text"><p>This would require (should) a rebuild on upgrade to 3.4 to ensure everyone's databases are consistent - we may want to consider whether or not we include it in 3.4 on that basis</p></div></div>
+<div class="comment" id="comment-11335"><div class="by">eddie, 2010-04-27 16:16 UTC</div><div class="text"><p>This is minor, but just so it's documented: additional storage requirement for LONGTEXT vs TEXT in MySQL is 2 bytes: <a href="http://dev.mysql.com/doc/refman/5.0/en/storage-requirements.html" class="external-link" rel="nofollow noreferrer">http://dev.mysql.com/doc/refman/5.0/en/storage-requirements.html</a></p></div></div>
+<div class="comment" id="comment-13106"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-682.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

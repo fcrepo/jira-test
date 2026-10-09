@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1371 very slow GET requests to fs federated resources and Broken Pipe errors</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1371</span> very slow GET requests to fs federated resources and Broken Pipe errors</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Created</th><td>2015-02-19 17:50 UTC</td></tr><tr><th>Updated</th><td>2016-11-04 14:53 UTC</td></tr><tr><th>Resolved</th><td>2016-11-04 14:53 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Environment</h2>RHEL 6, Java 7, Tomcat 7, fcrepo 4.1.0
+<h2>Description</h2>
+<p>When I access certain resources in a federated filesystem, the response is very slow or causes an error (see attached log). </p>
+
+<p>One specific case is accessing a container / federated folder which has only 23 subfolders, each of which has several thousands of nested files. Nesting does not go over 1-2 levels deep. </p>
+
+<p>With curl, request times for the same resource vary from 0.06 to 47s. </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1371/10207_catalina_brokenPipe.log">catalina_brokenPipe.log</a>, 8262 bytes, added by scossu on 2015-02-19</li>
+</ul>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-13505"><div class="by">scossu, 2015-02-19 21:53 UTC</div><div class="text"><p>I cannot replicate the exception using curl. It only appears when using the web UI. </p>
+
+<p>20-30s peaks can be observed every 10-20 requests. <br/>
+All requests around #970 and after are consistently above 30s. </p></div></div>
+<div class="comment" id="comment-13584"><div class="by">Andrew Woods, 2015-03-01 00:39 UTC</div><div class="text"><p>Nianli Ma, it would be great if you could take the first two days of the sprint to investigate where this issue resides.</p></div></div>
+<div class="comment" id="comment-13597"><div class="by">Nianli Ma, 2015-03-03 16:46 UTC</div><div class="text"><p>I deployed a new built war file on RHEL6, Java 7, Tomcat 7. Under federated folder, there are 1001 sub folders. Each sub folder has 1000 small files. The size of each sub folder is around 200MB. So, each file is small.</p>
+
+<p>In the repository.json file, I configure the external file system as readonly, contentBaseSha1 as false.</p>
+
+<p>Started the tomcat, there are two errors in catalina.out as below. I didn't have performance issue. From my test, the usually time latency is from 2s to 16s at the sub folder level. At file level, it is around 2s to 3s. </p>
+
+<p>The interesting thing is, after I changed logger level for fcrepo.log.http.api from INFO to DEBUG or TRACE in logback.xml, there is no error in catalina.out. Even more, when I set the logger level back to INFO, restarted the tomcat. There is no error either. </p>
+
+<p>I will continue working on this today to see if I have further discovery on the errors, and will federate with large files and see if there is performance issue. </p>
+
+<p>-----------------------------<br/>
+1.  Exception rendering #parse(views/common-metadata.vsl) at /views/node.vsl<span class="error">&#91;line 37, column 13&#93;</span><br/>
+org.apache.catalina.connector.ClientAbortException: null<br/>
+at org.fcrepo.http.api.responses.StreamingBaseHtmlProvider.writeTo(StreamingBaseHtmlProvider.java:237)<br/>
+2. ERROR 21:12:38.059 (ServerRuntime$Responder) An I/O error has occurred while writing a response message entity to the container output stream.<br/>
+org.glassfish.jersey.server.internal.process.MappableException: org.apache.velocity.exception.VelocityException: Exceptio<br/>
+n rendering #parse(views/common-metadata.vsl) at /views/node.vsl<span class="error">&#91;line 37, column 13&#93;</span><br/>
+Caused by: org.apache.velocity.exception.VelocityException: Exception rendering #parse(views/common-metadata.vsl) at /vie<br/>
+ws/node.vsl<span class="error">&#91;line 37, column 13&#93;</span></p></div></div>
+<div class="comment" id="comment-13598"><div class="by">A. Soroka, 2015-03-03 19:16 UTC</div><div class="text"><p>I've discussed this with Nianli Ma and advised that the Velocity log output is likely to be unrelated to the issue in hand.</p></div></div>
+<div class="comment" id="comment-13600"><div class="by">A. Soroka, 2015-03-03 21:31 UTC</div><div class="text"><p>On further discussion, it's not so clear. Nianli Ma was testing retrieval of datastream content and not HTML. She corrected that problem but still did not find evidence of delays in retrieval. This may have some connection with Javascript, which might explain why the browser has to be involved…</p></div></div>
+<div class="comment" id="comment-13601"><div class="by">scossu, 2015-03-03 21:52 UTC</div><div class="text"><p>I have currently put testing on hold because our staging server is being used by other developers and we need it stable. But I observed a few things:</p>
+
+<ul class="alternate" type="square">
+	<li>I have experienced delays and 502 errors both on the web UI and curl-based batch scripts</li>
+	<li>I haven't seen the BrokenPipe exception in a while, but the client gets a 502 error while the server does not log any error - could it be a timeout?</li>
+	<li>I can replicate the error by retrieving a folder with hundreds of files (50~200Mb each), or a folder with a few subfolders which have hundreds of files inside</li>
+	<li>I can replicate the error on the first request after restarting the server</li>
+	<li>If I request a high-level folder I can see Fedora debug messages retrieving the single subfolders and adding a lastModified value. Each subfolder takes a few seconds</li>
+	<li>The filesystem I am testing on is an OS X filesystem mounted over CIFS. Possibly related to <a href="https://jira.duraspace.org/browse/FCREPO-1251" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1251</a> ? I haven't seen the same error though.</li>
+	<li>This seems to occur more often in a repository with about a million non-federated resources than a nearly-empty one. I haven't tested this thoroughly yet.</li>
+</ul>
+
+
+<p>I will keep testing as soon as I have another safe environment to work on. I hope this helps.</p></div></div>
+<div class="comment" id="comment-13602"><div class="by">scossu, 2015-03-03 21:54 UTC</div><div class="text"><p>One more note: my curl calls are requesting the default RDF, not HTML.</p></div></div>
+<div class="comment" id="comment-13603"><div class="by">A. Soroka, 2015-03-03 21:55 UTC</div><div class="text"><p>So the remark above "I cannot replicate the exception using curl. It only appears when using the web UI." is no longer valid? </p></div></div>
+<div class="comment" id="comment-13604"><div class="by">A. Soroka, 2015-03-03 21:56 UTC</div><div class="text"><p>Thanks, scossu, this is really very helpful!</p></div></div>
+<div class="comment" id="comment-13605"><div class="by">scossu, 2015-03-03 22:02 UTC</div><div class="text"><p>I have never been able to replicate the BrokenPipe exception with curl. However, I can replicate a 502 error with curl. </p></div></div>
+<div class="comment" id="comment-13607"><div class="by">scossu, 2015-03-03 22:21 UTC</div><div class="text"><p>Trace messages when requesting &lt;top fed folder&gt;/PH:<br/>
+DEBUG 15:43:15.341 (FedoraFileSystemConnector) Getting Federated document: /RIP<br/>
+DEBUG 15:43:15.486 (FedoraFileSystemConnector) Adding lastModified=1424351696000<br/>
+DEBUG 15:43:15.502 (FedoraFileSystemConnector) Getting Federated document: /RIP/PH<br/>
+DEBUG 15:43:15.562 (FedoraFileSystemConnector) Adding lastModified=1371230041000<br/>
+INFO 15:43:15.596 (FedoraLdp) GET resource 'resources/ext/imagingserver/RIP/PH'<br/>
+DEBUG 15:43:15.722 (FedoraFileSystemConnector) Getting Federated document: /RIP/PH/.DS_Store<br/>
+DEBUG 15:43:15.723 (FedoraFileSystemConnector) Adding lastModified=1419616091000<br/>
+DEBUG 15:43:15.725 (FedoraFileSystemConnector) Getting Federated document: /RIP/PH/.DS_Store/jcr:content<br/>
+DEBUG 15:43:15.727 (FedoraFileSystemConnector) Adding lastModified=1419616091000<br/>
+DEBUG 15:43:15.728 (FedoraFileSystemConnector) Decorated data property at path: /RIP/PH/.DS_Store/jcr:content<br/>
+DEBUG 15:43:15.731 (FedoraFileSystemConnector) Getting Federated document: /RIP/PH/PH_00000-01000<br/>
+DEBUG 15:43:17.533 (FedoraFileSystemConnector) Adding lastModified=1425329008000<br/>
+DEBUG 15:43:17.538 (FedoraFileSystemConnector) Getting Federated document: /RIP/PH/PH_01001-02000<br/>
+DEBUG 15:43:19.314 (FedoraFileSystemConnector) Adding lastModified=1377622364000<br/>
+<span class="error">&#91;...&#93;</span></p>
+
+<p>Note time taken to get /RIP/PH/PH_00000-01000</p>
+
+<p>From same host: <br/>
+$ time ls -la /mnt/remote-server/RIP/PH/PH_00000-01000/<br/>
+<span class="error">&#91;...&#93;</span><br/>
+real	0m1.369s<br/>
+user	0m0.014s<br/>
+sys	0m0.120s</p>
+
+<p>Timing is mostly related to the CIFS connection. So that may well just be an Apache timeout. Although it seems like Fedora is going into each subfolder in the list, and I wonder what the reason for that would be. </p>
+
+<p>I will focus on retrieving binaries and try to reproduce the BrokenPipe error again. </p></div></div>
+<div class="comment" id="comment-13624"><div class="by">Nianli Ma, 2015-03-05 18:13 UTC</div><div class="text"><p>Following is what I did for the testing:</p>
+
+<p>My testing server is actually a virtual machine using NFS. Server configuration:<br/>
+4 core cpu<br/>
+16G RAM<br/>
+32G System disk<br/>
+2.5T data disk</p>
+
+<p>Federated file system structure: There are 24 top-level directories in my federation. Those are:<br/>
+1. big_files: has 42 big files (.mov or .mp4) and 3 sub-directories, each directory has 10 to 20 image files (total size of the big_files directory is about 900+G)<br/>
+2. groups_of_1000: has 1000 sub-directories, each directory has 1000 small files (total size of the groups_of_1000 directory is 198G)<br/>
+3. million_files: has 1 million files , no sub-directory, size is 198G<br/>
+4. temp: 2 big files and 1 sub-directory<br/>
+5. Smallfile-1 to smallfile_20: each has 10 to 100 sub-directories, each directory has 100 small files.</p>
+
+<p>Here is the test steps:<br/>
+1. Before I ingested anything into fedora reository, I tested ‘GET’ <a href="http://localhost:8080/fedora4f/rest/federated/groups_of_1000" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora4f/rest/federated/groups_of_1000</a>, it is around 11s to 16s. I don’t know if the performance is good or bad. But it is the baseline.<br/>
+2. Then I ingested some xml files and image files into the repository. I also ingested the whole directory of groups_of_1000 into the repository, named binary1, so in <a href="http://localhost:8080/fedora4/rest/binary1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora4/rest/binary1</a>, it has 1000 sub-folder, each folder has 1000 small files, just like groups_of_1000. Now the top level of the repository has 23 nodes (1 is the federated node, other 22 are internal nodes), and total has over 1 million files ingested into the repository.<br/>
+3. I tested the ‘GET’ time for groups_of_1000 after the ingest done, the ‘GET’ time is from 14s to 20s. I did see the some delay, but can’t replicate the error.  ‘GET’ the same structure internal node ‘binary1’ only take 0.12s to 3s.</p></div></div>
+<div class="comment" id="comment-17732"><div class="by">Unknown, 2016-10-07 03:05 UTC</div><div class="text"><p>What is the status of this issue? Given that federated filesystem support has been moved outside of Fedora core, is this still an issue?</p></div></div>
+<div class="comment" id="comment-17744"><div class="by">Andrew Woods, 2016-10-07 13:28 UTC</div><div class="text"><p>Close this ticket Nov 1, 2016 if no user feedback comes before then.</p></div></div>
+<p><a href="data/FCREPO-1371.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1777 Provide Quality Assurance for fcrepo4-vagrant</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1777</span> Provide Quality Assurance for fcrepo4-vagrant</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>James Griffin</td></tr><tr><th>Assignee</th><td>James Griffin</td></tr><tr><th>Created</th><td>2015-10-17 17:10 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>Implement quality assurance measures (specifically, acceptance testing) for the Vagrant Box built in response to 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1771" >
+                <a href="FCREPO-1771.html" class="jira-issue-macro-key issue-link"  title="Create base box for fcrepo4-vagrant" >
+            
+            FCREPO-1771
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, using the <a href="https://github.com/puppetlabs/beaker/wiki" class="external-link" rel="nofollow noreferrer">Beaker</a> framework.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-15491"><div class="by">James Griffin, 2015-10-17 17:14 UTC</div><div class="text"><p>Created in response to the following exchange within FCREPO-1771:</p>
+
+<blockquote>
+<p>Nick Ruest thank you very much for this release.  I have not found any faults with the build thus far.</p>
+
+<p>I have attempted to structure some acceptance tests for the build using <a href="https://github.com/puppetlabs/beaker/wiki" class="external-link" rel="nofollow noreferrer">Beaker</a>.  Please see the following:</p>
+
+<p><a href="https://github.com/jrgriffiniii/fcrepo4-vagrant-base-box/tree/FCREPO-1771-jrgriffiniii-beaker" class="external-link" rel="nofollow noreferrer">https://github.com/jrgriffiniii/fcrepo4-vagrant-base-box/tree/FCREPO-1771-jrgriffiniii-beaker</a></p>
+
+<p>Using an extension of RSpec, Beaker permits me to validate the state of the Box after it has been built.  For example:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+[...]
+  describe file(<span class="code-quote">'/opt/apache-karaf-4.0.1'</span>) <span class="code-keyword">do</span>
+    it { should be_directory }
+  end
+
+  describe file(<span class="code-quote">'/opt/karaf'</span>) <span class="code-keyword">do</span>
+    it { should be_symlink }
+  end
+[...]
+</pre>
+</div></div>
+
+<p>Should this approach to quality assurance seem appealing, I encourage you to clone the branch within the forked repository, and execute the following:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ bundle exec rspec spec/acceptance/
+</pre>
+</div></div>
+
+<p>By default, I am testing against the Atlas build (this is a proof of concept).  I can just as easily restructure this to build against the environment provisioned using the BASH scripts.</p>
+
+<p>Further (and, I would argue, ideally) this could be restructured for a CI environment.  Assuming that TravisCI builds do not timeout when downloading the base Box, I would speculate that this could be attempted using a .travis.yml file alone.</p>
+
+<p>Please let me know if this is useful.  Thank you again.</p></blockquote>
+<p>(Please see <a href="https://jira.duraspace.org/browse/FCREPO-1771?focusedCommentId=45929&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-45929" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1771?focusedCommentId=45929&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-45929</a>)</p></div></div>
+<div class="comment" id="comment-15651"><div class="by">James Griffin, 2015-10-30 23:30 UTC</div><div class="text"><p>I believe that I have made a successful attempt to resolve this issue (however, this may likely lead to a larger conversation rather than resolving this outright).  For all interested parties, I implore you to please inform me of your thoughts on my approach in response to my pull request:</p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/29" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/29</a></p></div></div>
+<div class="comment" id="comment-15704"><div class="by">James Griffin, 2015-11-02 14:02 UTC</div><div class="text"><p>In response to the comment made by Nick Ruest on GitHub:</p>
+
+<blockquote>
+<p>@jrgriffiniii for posterity, can you try and get TravisCI set-up with this on your account, so we know for sure whether or not it is possible?</p></blockquote>
+<p>(<a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/29#issuecomment-152843110" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/29#issuecomment-152843110</a>)</p>
+
+<p>Sorry for the delay.  Yes, I shall work to integrate this with TravisCI by tomorrow morning (at the latest).</p></div></div>
+<div class="comment" id="comment-15932"><div class="by">Andrew Woods, 2015-12-13 19:05 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-16114"><div class="by">Andrew Woods, 2016-02-10 22:35 UTC</div><div class="text"><p>I like the looks of this... but have not succeeded in making it work. Please see comments in GitHub.</p></div></div>
+<div class="comment" id="comment-16138"><div class="by">Andrew Woods, 2016-02-14 20:02 UTC</div><div class="text"><p>Pending response to code review comment.</p></div></div>
+<div class="comment" id="comment-16188"><div class="by">Andrew Woods, 2016-02-23 01:36 UTC</div><div class="text"><p>Pending response to:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/29#issuecomment-187466513" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/29#issuecomment-187466513</a></p></div></div>
+<div class="comment" id="comment-22336"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-1777.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

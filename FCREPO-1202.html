@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1202 pidRegistry corruption</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1202</span> pidRegistry corruption</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2013-10-14 19:09 UTC</td></tr><tr><th>Updated</th><td>2013-10-30 01:29 UTC</td></tr><tr><th>Resolved</th><td>2013-10-30 01:13 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6, Fedora 3.6.1, Fedora 3.6.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.7.1</td></tr></table>
+<h2>Description</h2>
+<p>Legacy storage:<br/>
+INGEST: foo:1 201310091500000<br/>
+1) DOManager checks the pidRegistry Db for foo:1<br/>
+2) if no, creates </p>
+{OBJECTS}/2013/10/09/1500/000/foo_1<br/>
+Akubra storage:<br/>
+INGEST: foo:1 201310091500000<br/>
+1) ditto<br/>
+2) if no, MD5 “info:fedora/foo:1”<br/>
+3) build directory structure from hash advantage: you don’t have to look up path in Db<br/>
+Scenario: As of 20131010, Db is corrupt, or not up to date, or incomplete, or maybe the last val for PIDs in namespace just reset<br/>
+Legacy:<br/>
+INGEST: foo:1 201310101500000<br/>
+1) DOManager checks the pidRegistry Db for foo:1<br/>
+2) if no, creates {OBJECTS}
+<p>/2013/10/10/1500/000/foo_1<br/>
+Where are you now? Original foo:1 is orphaned, but exists, as do datastreams<br/>
+Akubra:<br/>
+Everything that has the same id gets overwritten irreperably<br/>
+Circumstances that this happens in:<br/>
+1) pidRegistry is jacked<br/>
+AND 2) you use sequential pids (as opposed to random, or UUIDs) AND 3) you use Akubra (Legacy you just have orphan objects)<br/>
+What can we do?<br/>
+1) Legacy, we can build a report of duplicates, and possibly provide a FCSU command to move them to a unique PID<br/>
+2) Akubra, we can really just tell you that an objectCreation date is out­of­sequence with it’s PID (this is crappy)<br/>
+Is this behavior on ingest in the context of a bad Db fixable?<br/>
+1) Legacy: not really. To do this without the Db, you would have trawl the corpus of FOXML, which would not only be slow, but the would be maximally slow<br/>
+on the non­error requests (ie, a new PID). Non­starter.<br/>
+2) Akubra: Yes, because the DOManager could be required to ping an Akubra objectstore as part of the objectExists() call. Raise an exception.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-12571"><div class="by">Michael Durbin, 2013-10-17 01:41 UTC</div><div class="text"><p>I did some initial testing regarding the impact and have determined the following:</p>
+
+<p>For Fedora 3.6.2 using a mySQL database and the akubra-fs store:</p>
+
+<p>1.  To "corrupt" the database in a way that might result in problem described above one can simply interrupt a database rebuild operation.<br/>
+2.  Corruption in this manner is already detected in cases where the process is interrupted <b>before</b> all four fedora system objects are ingested and no data corruption/overwriting would occur.</p>
+
+<p>Detailed analysis:</p>
+
+<p>That an interrupted or partially complete database rebuild (at least with mysql in the default configuration) can leave the database in a state where fedora starts up without an error is a pretty significant problem.  I would think we could do something with transactions to ensure that either the database rebuild completed or didn't so that errors would be more easily identified.  (ie, fedora started and has zero objects)</p>
+
+<p>That said, the cases where you'd end up with a database state that would allow startup but would have a value in the pidGen table that could result in reuse of pids is unlikely to occur.  For that to happen the pids for all four service objects (who, when missing from the digital object registry but presence on disk result in a failure of fedora to start) would have to have hash values lower than the hash value for the object with the highest pid.  Unfortunately in my initial testing, this wasn't the case and I have yet to demonstrate an organically produced case that would actually result in the ability to overwrite data in the akubra file store.</p>
+
+<p>Methodology:<br/>
+1.  Installed fedora 3.6.2<br/>
+2.  started server and verified that it worked<br/>
+3.  stopped the server<br/>
+4.  replaced its data directory with one that had &gt; 10k objects<br/>
+5.  performed a fedora database rebuild (fedora-rebuild.sh<br/>
+7.  hit CTRL-C to abort the database rebuild<br/>
+8.  attempted to start fedora </p>
+
+<p>In this case, the server failed to start up with the exception:</p>
+
+<p>ERROR 2013-10-16 15:47:14.486 <span class="error">&#91;main&#93;</span> (ContextLoader) Context initialization failed<br/>
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'org.fcrepo.server.Server' defined in ServletContext resource <span class="error">&#91;/WEB-INF/applicationContext.xml&#93;</span>: Invocation of init method failed; nested exception is org.fcrepo.server.errors.ServerInitializationException: Failed to ingest system object(s)<br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1422) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	..omitted...<br/>
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1419) ~<span class="error">&#91;spring-beans-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	... 36 common frames omitted<br/>
+Caused by: org.fcrepo.server.errors.ObjectAlreadyInLowlevelStorageException: fedora-system:FedoraObject-3.0	(Duplicate blob with id = 'file:e5/info%3Afedora%2Ffedora-system%3AFedoraObject-3.0')<br/>
+	at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorage.add(AkubraLowlevelStorage.java:228) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorage.addObject(AkubraLowlevelStorage.java:114) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorageModule.addObject(AkubraLowlevelStorageModule.java:71) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	at org.fcrepo.server.storage.DefaultDOManager.doCommit(DefaultDOManager.java:1313) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	at org.fcrepo.server.storage.SimpleDOWriter.commit(SimpleDOWriter.java:509) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	at org.fcrepo.server.BasicServer.preIngestIfNeeded(BasicServer.java:175) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	at org.fcrepo.server.BasicServer.postInitServer(BasicServer.java:113) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	... 44 common frames omitted<br/>
+Caused by: org.akubraproject.DuplicateBlobException: (Duplicate blob with id = 'file:e5/info%3Afedora%2Ffedora-system%3AFedoraObject-3.0')<br/>
+	at org.akubraproject.fs.FSBlob.openOutputStream(FSBlob.java:110) ~<span class="error">&#91;akubra-fs-0.4.0.jar:na&#93;</span><br/>
+	at org.akubraproject.impl.BlobWrapper.openOutputStream(BlobWrapper.java:99) ~<span class="error">&#91;akubra-core-0.4.0.jar:na&#93;</span><br/>
+	at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorage.openOutputStream(AkubraLowlevelStorage.java:492) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorage.add(AkubraLowlevelStorage.java:218) ~<span class="error">&#91;fcrepo-server-3.6.2.jar:na&#93;</span><br/>
+	... 50 common frames omitted</p>
+
+<p>Remaining steps for akubra-fs investigation and mitigation:</p>
+
+<p>1.  Produce a case where the hash values result in a repository that is incompletely rebuilt but starts up and see if normal API calls will actually overwrite data in the akubra-fs<br/>
+2.  Alternately or additionally, search the code for cases where Blob.openOutputStream() is called with overwrite set to true, or Blob.delete() is called and trace to see if this poses a vulnerability with possible invocation sequences<br/>
+3.  Fix the fedora database rebuilding utility to prevent this from occurring<br/>
+4.  Create a way to verify a database reflects all files for an akubra store</p>
+</div></div>
+<div class="comment" id="comment-12572"><div class="by">Benjamin Armintor, 2013-10-23 19:46 UTC</div><div class="text"><p>Scott Prater has reviewed the branch at <a href="https://github.com/duraspace/fcrepo/compare/af4d1f6...3.7.x-checkStore" class="external-link" rel="nofollow noreferrer">https://github.com/duraspace/fcrepo/compare/af4d1f6...3.7.x-checkStore</a></p></div></div>
+<div class="comment" id="comment-12573"><div class="by">Benjamin Armintor, 2013-10-25 01:13 UTC</div><div class="text"><p>Michael Durbin's requested changes implemented and tested at <a href="https://github.com/duraspace/fcrepo/compare/af4d1f62b2103cc6207bc21d7d5785d7904f5ad5...3.7.x-checkStore" class="external-link" rel="nofollow noreferrer">https://github.com/duraspace/fcrepo/compare/af4d1f62b2103cc6207bc21d7d5785d7904f5ad5...3.7.x-checkStore</a></p></div></div>
+<div class="comment" id="comment-12574"><div class="by">Benjamin Armintor, 2013-10-30 01:11 UTC</div><div class="text"><p>Michael Durbin's observation adds an additional criterion for Akubra risk: A failed rebuild job must have indexed all the system objects, which (assuming MD5 hashes) is about 1/2 of any given repository (system objects will be in buckets 08, 2e, 74, and 9c by default). Also (perhaps obviously), custom configs that introduce date-driven paths to Akubra will behave like the Legacy store.</p></div></div>
+<div class="comment" id="comment-12575"><div class="by">Benjamin Armintor, 2013-10-30 01:13 UTC</div><div class="text"><p>Fixed in <a href="https://github.com/fcrepo/fcrepo/tree/v3.7.1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/tree/v3.7.1</a></p></div></div>
+<p><a href="data/FCREPO-1202.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

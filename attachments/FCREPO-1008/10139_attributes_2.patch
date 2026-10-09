@@ -1,0 +1,251 @@
+diff -r ./FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/Config.java ../../gsearch/FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/Config.java
+74c74,76
+<     
+---
+>    
+> 	 private Properties filterProps = null;
+> 	 
+242a245,277
+> 
+> 			 // Get search result filter properties
+>         try 
+> 				 {
+> 						do 
+> 							{
+> 								 InputStream propStream = Config.class.getResourceAsStream("/" + configName + "/filter.properties");
+> 								 // properties not necessary
+> 								 if (propStream == null) 
+> 									 {
+> 											if (logger.isDebugEnabled()) 
+> 												{
+> 													 logger.debug(configName + "/filter.properties not found in classpath");
+> 												}
+> 											break;
+> 									 }
+> 								 
+> 								 filterProps = new Properties();
+> 								 filterProps.load(propStream);
+> 								 propStream.close();
+> 
+> 								 if (logger.isInfoEnabled()) 
+> 									 {
+> 											logger.info("filter.properties=" + filterProps.toString());
+> 									 }
+> 							}
+> 						while (false);
+> 				 } 
+> 			 catch (IOException e) 
+> 				 {
+>             throw new ConfigException("*** Error loading " + configName + "/filter.properties:\n" + e.toString());
+> 				 }
+> 			 
+780a816,853
+> 	 /** getFilterProperty
+> 		* return a string that can be used to filter a query
+> 		* using the supplied project and resource type codes
+> 		* @param project String holding project code
+> 		* @param projectRole String holding project role
+> 		* @return String containing matched property value, or empty if not found
+> 		*/
+> 	 public String getFilterProperty(String project, String projectRole)
+> 		 {
+> 				String filter = "";
+> 				
+> 				do 
+> 					{
+> 						 // prefix of properties
+> 						 String filterPrefix = "fedoragsearch.filter.";
+> 						 
+> 						 // look for project specific filter
+> 						 filter = filterProps.getProperty(filterPrefix + project + "." + projectRole);
+> 						 if (null != filter) 
+> 							 {
+> 									break;
+> 							 }
+> 						 
+> 						 // look for fallback filter
+> 						 filter = filterProps.getProperty(filterPrefix + "fallback." + projectRole);
+> 						 if (null != filter) 
+> 							 {
+> 									break;
+> 							 }
+> 						 
+> 						 // nothing found, so make filter empty string
+> 						 filter = "";
+> 					}
+> 				while (false);
+> 
+> 				return filter;
+> 		 }
+> 
+1152a1226,1230
+> 
+> 	 public GenericOperationsImpl getOperationsImpl(String fgsUserNameParam, String indexNameParam)
+>     throws ConfigException {
+>         return getOperationsImpl(fgsUserNameParam, indexNameParam, null);
+>     }
+1154c1232
+<     public GenericOperationsImpl getOperationsImpl(String fgsUserNameParam, String indexNameParam)
+---
+>     public GenericOperationsImpl getOperationsImpl(String fgsUserNameParam, String indexNameParam, String[] fedoraRoles)
+1194c1272
+<         ops.init(fgsUserNameParam, indexName, this);
+---
+>         ops.init(fgsUserNameParam, indexName, this, fedoraRoles);
+diff -r ./FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/GenericOperationsImpl.java ../../gsearch/FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/GenericOperationsImpl.java
+55a56
+> 	 protected String[] fedoraRoles;
+152a154,157
+> 
+> 	 public void init(String fgsUserName, String indexName, Config currentConfig) {
+> 			init(fgsUserName, indexName, currentConfig, null);
+> 	 }
+154c159
+<     public void init(String fgsUserName, String indexName, Config currentConfig) {
+---
+>     public void init(String fgsUserName, String indexName, Config currentConfig, String[] fedoraRoles) {
+156a162
+> 			 this.fedoraRoles = fedoraRoles;
+diff -r ./FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/RESTImpl.java ../../gsearch/FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/RESTImpl.java
+15a16,18
+> import java.util.HashMap;
+> import java.util.Map;
+> import java.util.Set;
+213c216,219
+<         Operations ops = config.getOperationsImpl(request.getRemoteUser(), indexName);
+---
+> 			 
+> 			 String[] fedoraRoles = getFedoraRoles(request);
+> 			 
+>         Operations ops = config.getOperationsImpl(request.getRemoteUser(), indexName, fedoraRoles);
+319a326,357
+> 	 /** getFedoraRoles
+> 		* get array of Strings containing fedoraRole values from request attribute
+> 		* @param request HttpServletRequest containing the attribute to look for
+> 		* @return String[] containing the fedoraRole values, or null on error
+> 		*/
+> 	 private String[] getFedoraRoles(HttpServletRequest request) 
+> 		 {
+> 				String fedoraRoles[] = null;
+> 				
+> 				do 
+> 					{
+> 						 Map<String, Set<String>> attributes = (Map) request.getAttribute("FEDORA_AUX_SUBJECT_ATTRIBUTES");
+> 						 // no FEDORA_AUX_SUBJECT_ATTRIBUTES attribute in request object
+> 						 if (null == attributes) 
+> 							 {
+> 									break;
+> 							 }
+> 						 
+> 						 Set<String> roles = attributes.get("fedoraRole");
+> 						 // no fedoraRole given
+> 						 if (null == roles || 0 == roles.size()) 
+> 							 {
+> 									break;
+> 							 }
+> 						 
+> 						 fedoraRoles = roles.toArray(new String[roles.size()]);
+> 					}
+> 				while (false);
+> 				
+> 				return fedoraRoles;
+> 		 }
+> 	 
+331c369
+< }
+\ No newline at end of file
+---
+> }
+diff -r ./FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/SearchResultFiltering.java ../../gsearch/FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/SearchResultFiltering.java
+19a20
+> 	    public String rewriteQueryForInsearch(String fgsUserName, String indexName, String query, String[] fedoraRoles, Config config) throws java.rmi.RemoteException;
+diff -r ./FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/SearchResultFilteringDemoImpl.java ../../gsearch/FedoraGenericSearch/src/java/dk/defxws/fedoragsearch/server/SearchResultFilteringDemoImpl.java
+46c46
+<     
+---
+> 	 
+59a60,131
+> 			 return rewriteQueryForInsearch(fgsUserName, indexName, query, null, null);
+> 		}
+> 	 
+> 	 public String rewriteQueryForInsearch(String fgsUserName, String indexName, String query, String[] fedoraRoles, Config config) throws java.rmi.RemoteException {
+> 			String rewrittenQuery = null;
+> 			
+> 			do 
+> 				{
+> 					 boolean isAdmin = false;
+> 					 String clause = "";
+> 					 
+> 					 // use roles to create disjointed clause for filter
+> 					 for (String role : fedoraRoles) 
+> 						 {
+> 								// admin role trumps everything else
+> 								if (role.equals("administrator")) 
+> 									{
+> 										 isAdmin = true;
+> 										 break;
+> 									}
+> 								
+> 								// need to split on first _ and need config to be not null
+> 								if (-1 == role.indexOf('_') || null == config) 
+> 									{
+> 										 continue;
+> 									}
+> 								
+> 								String[] parts = role.split("_", 2);
+> 								
+> 								// look for specific/fallback filter
+> 								String filter = config.getFilterProperty(parts[0], parts[1]);
+> 								
+> 								// no filter, so go to next role
+> 								if (filter.equals("")) 
+> 									{
+> 										 continue;
+> 									}
+> 
+> 								// not first role, so need OR before this disjunct
+> 								if (!clause.equals("")) 
+> 									{
+> 										 clause += " OR ";
+> 									}
+> 								
+> 								// use filter to add to clause
+> 								clause += String.format(filter, parts[0]);
+> 						 }
+> 					 
+> 					 // if admin, then no need to rewrite query
+> 					 if (isAdmin) 
+> 						 {
+> 								rewrittenQuery = query;
+> 								break;
+> 						 }
+> 					 
+> 					 // no clause generated, so can't get anything
+> 					 if (clause.equals("")) 
+> 						 {
+> 								rewrittenQuery = " ( " + query + " ) AND NOT ( " + query + " )";
+> 								break;
+> 						 }
+> 					 
+> 					 // add clause to query
+> 					 rewrittenQuery = " ( " + query + " ) AND ( " + clause + " )";
+> 				}
+> 			while (false);
+> 			
+> 			return rewrittenQuery;
+> 	 }
+> 
+> 	 /*
+> 	 public String rewriteQueryForInsearch(String fgsUserName, String indexName, String query) throws java.rmi.RemoteException {
+68a141
+> 		*/
+diff -r ./FgsLucene/src/java/dk/defxws/fgslucene/OperationsImpl.java ../../gsearch/FgsLucene/src/java/dk/defxws/fgslucene/OperationsImpl.java
+82c82
+<         	usingQuery = srf.rewriteQueryForInsearch(fgsUserName, usingIndexName, query);
+---
+> 					 usingQuery = srf.rewriteQueryForInsearch(fgsUserName, usingIndexName, query, fedoraRoles, config);
+683c683
+< }
+\ No newline at end of file
+---
+> }

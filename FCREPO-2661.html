@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2661 HEAD response headers should match GET request non-payload response headers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2661</span> HEAD response headers should match GET request non-payload response headers</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Joe Harrington</td></tr><tr><th>Created</th><td>2017-12-08 22:17 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-03-07 19:11 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Per the 28 November 2017 version of the Fedora API spec, section 3.3 HTTP HEAD:</p>
+
+<p>"... the server SHOULD send the same headers in response to a HEAD request as it would have sent if the request had been a GET, except that the payload headers (defined in <span class="error">&#91;RFC7231&#93;</span> section 3.3) MAY be omitted."</p>
+
+<p>According to the HTTP 1.1 spec (RFC 7231), section 3.3, Payload semantics, the following response headers are considered payload headers:</p>
+
+<ul>
+	<li>Content-Length</li>
+	<li>Content-Range</li>
+	<li>Trailer</li>
+	<li>Transfer-Encoding</li>
+</ul>
+
+
+<p>..and so may be omitted from HEAD responses.</p>
+
+<p>The following test shows that a HEAD response to a resource omits the headers "Vary:" and "Preference-Applied:", which are returned by a GET request to the same resource.</p>
+
+<p>$ curl -i -X GET -u fedoraAdmin:secret3 <a href="http://localhost:9090/fcrepo5/rest" class="external-link" rel="nofollow noreferrer">http://localhost:9090/fcrepo5/rest</a><br/>
+HTTP/1.1 200 OK<br/>
+Server: Apache-Coyote/1.1<br/>
+Cache-Control: private<br/>
+Expires: Wed, 31 Dec 1969 18:00:00 CST<br/>
+ETag: W/"94af9943465b8fc32f09f62ee1a45ca44ef9ccec"<br/>
+Last-Modified: Tue, 28 Nov 2017 23:15:01 GMT<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:9090/fcrepo5/static/constraints/ContainerConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:9090/fcrepo5/static/constraints/ContainerConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Accept-Patch: application/sparql-update<br/>
+Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,application/ld+json,multipart/form-data,application/sparql-update,message/external-body; access-type=URL<br/>
+Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS<br/>
+Preference-Applied: return=representation<br/>
+Vary: Prefer<br/>
+Vary: Accept, Range, Accept-Encoding, Accept-Language<br/>
+Content-Type: text/turtle;charset=utf-8<br/>
+Content-Length: 1545<br/>
+Date: Fri, 08 Dec 2017 22:06:29 GMT</p>
+
+<p>@prefix premis:  &lt;<a href="http://www.loc.gov/premis/rdf/v1#" class="external-link" rel="nofollow noreferrer">http://www.loc.gov/premis/rdf/v1#</a>&gt; .<br/>
+@prefix test:  &lt;info:fedora/test/&gt; .<br/>
+@prefix rdfs:  &lt;<a href="http://www.w3.org/2000/01/rdf-schema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/01/rdf-schema#</a>&gt; .<br/>
+<span class="error">&#91;...&#93;</span></p>
+
+<p>$ curl -i -X HEAD -u fedoraAdmin:secret3 <a href="http://localhost:9090/fcrepo5/rest" class="external-link" rel="nofollow noreferrer">http://localhost:9090/fcrepo5/rest</a><br/>
+HTTP/1.1 200 OK<br/>
+Server: Apache-Coyote/1.1<br/>
+Cache-Control: private<br/>
+Expires: Wed, 31 Dec 1969 18:00:00 CST<br/>
+ETag: W/"94af9943465b8fc32f09f62ee1a45ca44ef9ccec"<br/>
+Last-Modified: Tue, 28 Nov 2017 23:15:01 GMT<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:9090/fcrepo5/static/constraints/ContainerConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:9090/fcrepo5/static/constraints/ContainerConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Accept-Patch: application/sparql-update<br/>
+Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,application/ld+json,multipart/form-data,application/sparql-update,message/external-body; access-type=URL<br/>
+Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS<br/>
+Content-Type: text/turtle;charset=utf-8<br/>
+Content-Length: 0<br/>
+Date: Fri, 08 Dec 2017 22:07:05 GMT</p>
+
+<p>According to the specification, the HEAD response should also return the Vary and Preference-Applied headers.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-19674"><div class="by">Joe Harrington, 2018-03-06 21:35 UTC</div><div class="text"><p>PR created: <a href="https://github.com/fcrepo4/fcrepo4/pull/1289" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1289</a></p></div></div>
+<div class="comment" id="comment-19675"><div class="by">Andrew Woods, 2018-03-06 22:15 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19686"><div class="by">Andrew Woods, 2018-03-07 19:20 UTC</div><div class="text"><p>Original PR-1289 has been closed, in favor of:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/1292" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1292</a></p></div></div>
+<div class="comment" id="comment-19690"><div class="by">Andrew Woods, 2018-03-07 21:26 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/eab93da59469b98c95a9277dc4f8b2e10a10b43c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/eab93da59469b98c95a9277dc4f8b2e10a10b43c</a></p></div></div>
+<p><a href="data/FCREPO-2661.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

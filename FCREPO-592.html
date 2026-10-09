@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-592 Storage: Use UTC creation-date for foxml/datastream paths</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-592</span> Storage: Use UTC creation-date for foxml/datastream paths</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Egbert Gramsbergen</td></tr><tr><th>Created</th><td>2009-12-07 14:15 UTC</td></tr><tr><th>Updated</th><td>2021-04-28 17:46 UTC</td></tr><tr><th>Resolved</th><td>2010-01-05 17:56 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>On Dec 7, 2009, Egbert Gramsbergen wrote to fedora-commons-users:</p>
+
+<p>I noticed something strange in the data storage of Fedora.</p>
+
+<p>Objects and datastreams are stored in a directory tree mirroring time down to the level of minutes, the time being creation time for objects and modifiction time for versionable datastreams. This should enable the repository to be reconstructed from the files in case of an emergency. So far so good.</p>
+
+<p>But in my case, the times as implied form the directory tree are exactly one hour ahead of the times in the metadata in foxml. So it seems that "directory tree" time is local time (CET in my case) and "metadata" time is UTC. So if I really have to reconstruct the repository from the files, Fedora has to know about the timezone in which the repository was made. It seems brittle to me, and unnecessary. Why not use the same time for both? Or do I miss something?</p>
+
+<p>btw, I use Fedora 3.0.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11139"><div class="by">Chris Wilper, 2009-12-07 14:36 UTC</div><div class="text"><p>It does seem a bit arbitrary that the date used in one case is in UTC, and in the other is in the local timezone.  However, rest assured that the directory structure employed for low level storage is not important to Fedora during a rebuild; it can really be anything &#8211; Fedora doesn't use the path segment names as metadata during a rebuild; the dates it really uses are those stored inside the FOXML. </p>
+
+<p>The main reason for date-based allocation of paths at that level is to keep the storage directories from having too many entries (some common filesystems behave poorly when there are a large number of files in one directory).  Notice that if you were using the new Akubra filesystem plugin for lowlevel storage, the default implementation uses a different strategy to avoid too many files per directory: it uses the first few characters of a hash on the object id to put the files into directories like: FF/D2/ns_MyObject; so the date inconsistency doesn't even occur there.</p>
+
+<p>Nonetheless, the inconsistency you noticed is unnecessary and can be confusing, so I've created an issue for this.</p></div></div>
+<div class="comment" id="comment-11202"><div class="by">Chris Wilper, 2010-01-05 17:56 UTC</div><div class="text"><p>Akubra will be the default storage option for next feature release of Fedora.  It doesn't have this issue.</p></div></div>
+<p><a href="data/FCREPO-592.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-215 Error validating checksum when adding/updating M datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-215</span> Error validating checksum when adding/updating M datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bill Branan</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2008-05-05 22:03 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-10-29 16:39 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.0b1</td></tr><tr><th>Fix versions</th><td>Fedora 3.1</td></tr></table>
+<h2>Description</h2>
+<p>This error was reported by Nishen Naidoo (nishen@melcoe.mq.edu.au). His original email and test code are included as attachments.</p>
+
+<p>When calling addDatastream() or modifyDatastreamByReference() for a managed datastream, if valid checksumType and checksum parameters are included with the call the following error results: <br/>
+"fedora.server.errors.ValidationException: Checksum Mismatch: ExceptionReadingStream"</p>
+
+<p>The reason for the exception is that the Datastream.computeChecksum() call attempts to get the content stream by reading it from LLStore (see DatastreamManagedContent.getContentStream()), but the datastream is not actually written to LLStore until the final commit.</p>
+
+<p>The question this raises is: Which comes first, the commit or the checksum check? If the checksum check needs to happen first the content stream needs to be read earlier so that the checksum computation can happen. If the commit comes first, then the commit may need to be backed out if the checksum check fails.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-215/10026_sf-1958259-error-report.txt">sf-1958259-error-report.txt</a>, 5990 bytes, added by Chris Wilper on 2008-05-05</li>
+<li><a href="attachments/FCREPO-215/10027_sf-1958259-test-code.txt">sf-1958259-test-code.txt</a>, 3777 bytes, added by Chris Wilper on 2008-05-05</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10450"><div class="by">Bill Branan, 2008-05-05 22:04 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: bbranan<br/>
+Logged In: YES <br/>
+user_id=1987639<br/>
+Originator: YES</p>
+
+<p>File Added: test-code.txt</p></div></div>
+<div class="comment" id="comment-10451"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: bbranan<br/>
+Item #: 1958259<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1958259" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1958259</a></p></div></div>
+<div class="comment" id="comment-10780"><div class="by">Bill Branan, 2008-10-29 16:39 UTC</div><div class="text"><p>This issue was fixed in branch dev-150796 and included in release 3.1.</p></div></div>
+<p><a href="data/FCREPO-215.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

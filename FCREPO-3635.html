@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3635 Fedora 6 does not start on Jetty 11 or Tomcat 10</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3635</span> Fedora 6 does not start on Jetty 11 or Tomcat 10</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2021-02-16 14:53 UTC</td></tr><tr><th>Updated</th><td>2025-09-04 09:00 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Description</h2>
+<p>Fedora 6 does not start on Jetty 11. It throws the following error on startup:</p>
+
+<p>2021-02-15 10:31:23.106:INFO :oejs.Server:main: jetty-11.0.0; built: 2020-12-02T21:37:29.286Z; git: 432f896d7a4555fcc81f38108757ea0aca8788e6; jvm 11.0.7+10<br/>
+2021-02-15 10:31:23.160:INFO :oejdp.ScanningAppProvider:main: Deployment monitor <a href="file:///var/tmp/base/webapps/" class="external-link" rel="nofollow noreferrer">file:///var/tmp/base/webapps/</a><br/>
+2021-02-15 10:31:24.008:INFO :oejw.StandardDescriptorProcessor:main: NO JSP Support for /fcrepo, did not find org.eclipse.jetty.jsp.JettyJspServlet<br/>
+2021-02-15 10:31:24.019:WARN :oejw.WebAppContext:main: Failed startup of context o.e.j.w.WebAppContext@7bf3a5d8</p>
+{Fedora Repository,/fcrepo,file:///tmp/jetty-0_0_0_0-8080-fcrepo_war-_fcrepo-any-14153574673882189116/webapp/,UNAVAILABLE}
+{/var/tmp/base/webapps/fcrepo.war}
+<p>java.lang.NoClassDefFoundError: javax/servlet/ServletContextListener<br/>
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)<br/>
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1017)<br/>
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:174)<br/>
+	at java.base/java.net.URLClassLoader.defineClass(URLClassLoader.java:550)<br/>
+	at java.base/java.net.URLClassLoader$1.run(URLClassLoader.java:458)<br/>
+	at java.base/java.net.URLClassLoader$1.run(URLClassLoader.java:452)<br/>
+	at java.base/java.security.AccessController.doPrivileged(Native Method)<br/>
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:451)<br/>
+	at org.eclipse.jetty.webapp.WebAppClassLoader.foundClass(WebAppClassLoader.java:607)<br/>
+	at org.eclipse.jetty.webapp.WebAppClassLoader.loadAsResource(WebAppClassLoader.java:580)<br/>
+	at org.eclipse.jetty.webapp.WebAppClassLoader.loadClass(WebAppClassLoader.java:513)<br/>
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:522)<br/>
+	at org.eclipse.jetty.util.Loader.loadClass(Loader.java:64)<br/>
+	at org.eclipse.jetty.servlet.BaseHolder.doStart(BaseHolder.java:102)<br/>
+	at org.eclipse.jetty.servlet.ListenerHolder.doStart(ListenerHolder.java:75)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.servlet.ServletContextHandler.startContext(ServletContextHandler.java:386)<br/>
+	at org.eclipse.jetty.webapp.WebAppContext.startContext(WebAppContext.java:1321)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doStart(ContextHandler.java:868)<br/>
+	at org.eclipse.jetty.servlet.ServletContextHandler.doStart(ServletContextHandler.java:310)<br/>
+	at org.eclipse.jetty.webapp.WebAppContext.doStart(WebAppContext.java:537)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.deploy.bindings.StandardStarter.processBinding(StandardStarter.java:45)<br/>
+	at org.eclipse.jetty.deploy.AppLifeCycle.runBindings(AppLifeCycle.java:188)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.requestAppGoal(DeploymentManager.java:521)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.addApp(DeploymentManager.java:156)<br/>
+	at org.eclipse.jetty.deploy.providers.ScanningAppProvider.fileAdded(ScanningAppProvider.java:173)<br/>
+	at org.eclipse.jetty.deploy.providers.WebAppProvider.fileAdded(WebAppProvider.java:449)<br/>
+	at org.eclipse.jetty.deploy.providers.ScanningAppProvider$1.fileAdded(ScanningAppProvider.java:61)<br/>
+	at org.eclipse.jetty.util.Scanner.reportAddition(Scanner.java:759)<br/>
+	at org.eclipse.jetty.util.Scanner.reportDifferences(Scanner.java:725)<br/>
+	at org.eclipse.jetty.util.Scanner.scan(Scanner.java:633)<br/>
+	at org.eclipse.jetty.util.Scanner.doStart(Scanner.java:514)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:174)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:124)<br/>
+	at org.eclipse.jetty.deploy.providers.ScanningAppProvider.doStart(ScanningAppProvider.java:145)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.startAppProvider(DeploymentManager.java:610)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.doStart(DeploymentManager.java:251)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:174)<br/>
+	at org.eclipse.jetty.server.Server.start(Server.java:474)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:124)<br/>
+	at org.eclipse.jetty.server.handler.AbstractHandler.doStart(AbstractHandler.java:94)<br/>
+	at org.eclipse.jetty.server.Server.doStart(Server.java:419)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.xml.XmlConfiguration.lambda$main$3(XmlConfiguration.java:1845)<br/>
+	at java.base/java.security.AccessController.doPrivileged(Native Method)<br/>
+	at org.eclipse.jetty.xml.XmlConfiguration.main(XmlConfiguration.java:1787)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+	at org.eclipse.jetty.start.Main.invokeMain(Main.java:231)<br/>
+	at org.eclipse.jetty.start.Main.start(Main.java:507)<br/>
+	at org.eclipse.jetty.start.Main.main(Main.java:78)<br/>
+Caused by: <br/>
+java.lang.ClassNotFoundException: javax.servlet.ServletContextListener<br/>
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:471)<br/>
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:589)<br/>
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:522)<br/>
+	at org.eclipse.jetty.webapp.WebAppClassLoader.loadClass(WebAppClassLoader.java:522)<br/>
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:522)<br/>
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)<br/>
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1017)<br/>
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:174)<br/>
+	at java.base/java.net.URLClassLoader.defineClass(URLClassLoader.java:550)<br/>
+	at java.base/java.net.URLClassLoader$1.run(URLClassLoader.java:458)<br/>
+	at java.base/java.net.URLClassLoader$1.run(URLClassLoader.java:452)<br/>
+	at java.base/java.security.AccessController.doPrivileged(Native Method)<br/>
+	at java.base/java.net.URLClassLoader.findClass(URLClassLoader.java:451)<br/>
+	at org.eclipse.jetty.webapp.WebAppClassLoader.foundClass(WebAppClassLoader.java:607)<br/>
+	at org.eclipse.jetty.webapp.WebAppClassLoader.loadAsResource(WebAppClassLoader.java:580)<br/>
+	at org.eclipse.jetty.webapp.WebAppClassLoader.loadClass(WebAppClassLoader.java:513)<br/>
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:522)<br/>
+	at org.eclipse.jetty.util.Loader.loadClass(Loader.java:64)<br/>
+	at org.eclipse.jetty.servlet.BaseHolder.doStart(BaseHolder.java:102)<br/>
+	at org.eclipse.jetty.servlet.ListenerHolder.doStart(ListenerHolder.java:75)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.servlet.ServletContextHandler.startContext(ServletContextHandler.java:386)<br/>
+	at org.eclipse.jetty.webapp.WebAppContext.startContext(WebAppContext.java:1321)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doStart(ContextHandler.java:868)<br/>
+	at org.eclipse.jetty.servlet.ServletContextHandler.doStart(ServletContextHandler.java:310)<br/>
+	at org.eclipse.jetty.webapp.WebAppContext.doStart(WebAppContext.java:537)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.deploy.bindings.StandardStarter.processBinding(StandardStarter.java:45)<br/>
+	at org.eclipse.jetty.deploy.AppLifeCycle.runBindings(AppLifeCycle.java:188)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.requestAppGoal(DeploymentManager.java:521)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.addApp(DeploymentManager.java:156)<br/>
+	at org.eclipse.jetty.deploy.providers.ScanningAppProvider.fileAdded(ScanningAppProvider.java:173)<br/>
+	at org.eclipse.jetty.deploy.providers.WebAppProvider.fileAdded(WebAppProvider.java:449)<br/>
+	at org.eclipse.jetty.deploy.providers.ScanningAppProvider$1.fileAdded(ScanningAppProvider.java:61)<br/>
+	at org.eclipse.jetty.util.Scanner.reportAddition(Scanner.java:759)<br/>
+	at org.eclipse.jetty.util.Scanner.reportDifferences(Scanner.java:725)<br/>
+	at org.eclipse.jetty.util.Scanner.scan(Scanner.java:633)<br/>
+	at org.eclipse.jetty.util.Scanner.doStart(Scanner.java:514)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:174)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:124)<br/>
+	at org.eclipse.jetty.deploy.providers.ScanningAppProvider.doStart(ScanningAppProvider.java:145)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.startAppProvider(DeploymentManager.java:610)<br/>
+	at org.eclipse.jetty.deploy.DeploymentManager.doStart(DeploymentManager.java:251)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:174)<br/>
+	at org.eclipse.jetty.server.Server.start(Server.java:474)<br/>
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:124)<br/>
+	at org.eclipse.jetty.server.handler.AbstractHandler.doStart(AbstractHandler.java:94)<br/>
+	at org.eclipse.jetty.server.Server.doStart(Server.java:419)<br/>
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:98)<br/>
+	at org.eclipse.jetty.xml.XmlConfiguration.lambda$main$3(XmlConfiguration.java:1845)<br/>
+	at java.base/java.security.AccessController.doPrivileged(Native Method)<br/>
+	at org.eclipse.jetty.xml.XmlConfiguration.main(XmlConfiguration.java:1787)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+	at org.eclipse.jetty.start.Main.invokeMain(Main.java:231)<br/>
+	at org.eclipse.jetty.start.Main.start(Main.java:507)<br/>
+	at org.eclipse.jetty.start.Main.main(Main.java:78)</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-22083"><div class="by">Peter Winckles, 2021-02-19 13:48 UTC</div><div class="text"><p>This also affects Tomcat 10</p></div></div>
+<div class="comment" id="comment-22555"><div class="by">Danny Bernstein, 2021-11-11 16:26 UTC</div><div class="text"><p>Initial task is to determine how this can be accomplished without having two branches to maintain.</p></div></div>
+<div class="comment" id="comment-22557"><div class="by">Michael Ritter, 2021-11-16 23:06 UTC</div><div class="text"><p>There’s a migration tool provided for Tomcat 10: <a href="https://tomcat.apache.org/download-migration.cgi" title="smart-link" class="external-link" rel="nofollow noreferrer">https://tomcat.apache.org/download-migration.cgi</a> </p>
+
+<p>I was able to run it and deploy on Tomcat 10 without issue, still need to test with Jetty but since it creates a new war it should be ok. Easiest way to support both versions would be to incorporate that tool in the CI pipeline but keep in mind it only goes from javax → jakarta so we would need to keep the fcrepo codebase on java ee 8.</p></div></div>
+<div class="comment" id="comment-22571"><div class="by">Ben Pennell, 2021-12-02 13:59 UTC</div><div class="text"><p>Will war files built this way still work with jetty 9/10 and tomcat 9? Is there a compelling reason to move towards jetty 11 support at this time, given that jetty 10 and jetty 11 are intended to be the same except for the servlet and accompanying api versions?</p>
+
+<p>The tomcat migration tool is still marked as a “work in progress” in their readme, so I’m not totally sure they intend for its use in production? On the other hand, some of our dependencies probably won’t work with servlet v5 for a while, such as spring which I believe isn’t going to support it until spring 6 releases at the end of 2022.</p></div></div>
+<div class="comment" id="comment-26189"><div class="by">Ralf Claussnitzer, 2025-08-12 11:08 UTC</div><div class="text"><p>Since Fedora makes heavy use of Spring Framework anyway, why not get rid of the Tomcat and Jetty integration/deployment and move over to SpringBoot? This way the SpringBoot folks handle most of the dependencies and HTTP runtime issues. It also makes native deployment as SystemD Unit a no-brainer. There is a maintained Maven Plugin to handle all that. This might actually help with reducing the amount of dependencies the project has and help with moving along with new Java versions.</p></div></div>
+<div class="comment" id="comment-26191"><div class="by">Ben Pennell, 2025-08-12 13:24 UTC</div><div class="text"><p>Thanks Ralf, it would make sense to do that, but it seems like it’d require some significant refactoring. For what it’s worth, the main branch for fcrepo should work in jetty 12 now. I don’t know if anyone has tried it with tomcat 10 yet or not.</p></div></div>
+<div class="comment" id="comment-26452"><div class="by">Dan Field, 2025-09-04 09:00 UTC</div><div class="text"><p>I’ve assigned this to myself for the moment while I look at tomcat 10 support</p></div></div>
+<p><a href="data/FCREPO-3635.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

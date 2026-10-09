@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-703 REST API calls to getDatastreamDissemination fails when XACML enabled, API-A auth disabled</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-703</span> REST API calls to getDatastreamDissemination fails when XACML enabled, API-A auth disabled</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-05-24 12:20 UTC</td></tr><tr><th>Updated</th><td>2010-06-15 15:50 UTC</td></tr><tr><th>Resolved</th><td>2010-06-15 15:50 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 3, Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-497.html">FCREPO-497</a> Content disposition header for filename.extension downloads of datastreams</td></tr><tr><th>Is related to</th><td><a href="FCREPO-521.html">FCREPO-521</a> Merge API-A and M across the board, simplifying AuthN</td></tr></table>
+<h2>Description</h2>
+<p>With API-A authorisation disabled and XACML enabled, REST API calls to getDatastreamDissemination fails (401).  This is because the REST API also calls GetRelationships and GetDatastreamProfile as part of determining a filename to include in the content-disposition header, and these underlying calls are API-M.</p>
+
+<p>This happens even without requesting a download of the file, as by default content-disposition headers are set for the case that the user wishes to do a "save-as" from their browser.</p>
+
+<p>Work around is to change the parameter (fedora.fcfg) datastreamContentDispositionInlineEnabled to false - this disables setting of the content-disposition header.</p>
+
+<p>This should have been caught by the Config A tests - but currently we do not test the REST API in Config A.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-11389"><div class="by">Stephen Bayliss, 2010-05-24 12:24 UTC</div><div class="text"><p>Is there some "trusted" mechanism we can use for underlying API-M calls when the overall REST call is API-A?  Also are we authorising twice - once in the REST API, and again in DefaultManagement?</p>
+</div></div>
+<div class="comment" id="comment-11390"><div class="by">Stephen Bayliss, 2010-05-24 14:18 UTC</div><div class="text"><p>Alternatively, implement getDatastreamFilename (getFilenameForDatastream?) in API-A, (suggest default security should be the same as getDatastreamDissemination).  (probably expose in REST API also)</p>
+
+<p>This would mean that applications that don't serve datastreams directly, but provide their own mechanism for delivering the content, can make use of these calls to generate filenames consistent with the definitions in fedora.fcfg and object/datastream properties etc.</p></div></div>
+<div class="comment" id="comment-11391"><div class="by">eddie, 2010-05-24 22:11 UTC</div><div class="text"><p>For history: the original mailing list thread on the subject: <a href="http://thread.gmane.org/gmane.comp.cms.fedora-commons.devel/1659" class="external-link" rel="nofollow noreferrer">http://thread.gmane.org/gmane.comp.cms.fedora-commons.devel/1659</a></p>
+
+<p>Regarding adding getDatastreamFilename to API-A: as workaround, I get it, but getDatastreamFilename seems like a peculiar method to add to the API. </p>
+
+<p>Also, AFAIK, authorization is not performed twice. The REST API calls delegate to the SOAP apia or apim services, and only then, from Access or Management are the authorization hooks called.</p>
+
+<p>If anything, what's odd/inconsistent is that we class getRelationships as an API-M method and therefore, out of the box, it requires authentication, when getDatastreamDissemination is an API-A method and therefore, by default, it does not require authentication. So, getDatastreamDissemination calls on RELS-EXT and RELS-INT provide access to the same information that getRelationships would provide. Or close enough, I don't remember off the top of my head all the information we assemble in response to a getRelationships call (but in any case, I'm 99% sure all that info is available by API-A calls for datastreams and object properties).</p>
+
+<p>That said, someone might want to restrict access to RELS-EXT or RELS-INT via policies and it would probably be contrary to expectations that adding such policies would have the side effect of breaking getDatastreamDissemination generally. I think we're generally violating the principle of behaving as the user intends if policies (default or otherwise) break an API method because of implementation details.</p>
+
+<p>For an immediate workaround, rather than disable content-disposition entirely, I believe if we default to filename resolution by dsLabel, we sidestep the problem as well.</p></div></div>
+<div class="comment" id="comment-11395"><div class="by">Stephen Bayliss, 2010-05-25 08:53 UTC</div><div class="text"><p>I'd agree that it seems a peculiar method to add to the API - it feels too granular/specific - maybe adding it as a "derived" property to getDatastream would make more sense.</p>
+
+<p>However getDatastream is API-M.  So we run into the API-A/API-M inconsistency (it seems odd that getObjectProfile, listDatastreams, listMethods are all API-A yet getDatastream (profile) is API-M, there doesn't seem to be anything returned by getDatastream that one would want to protect to a greater degree than these other methods).</p>
+
+<p>Regarding authn/authz, what seemed odd is that with XACML disabled and API-A set to no auth, then getDatastreamDissemination does not require authentication, even though the underlying methods should.  However I can see that XACML authz takes place only in Management and Access.</p>
+
+<p>Defaulting filename resolution to dsLabel I think won't work as-is - because getDatastream is API-M. </p>
+
+<p>However listDatastreams could be used instead of getDatastream to get the label - that is API-A.  Similarly getDatastreamDissemination (API-A)  could be used directly to get the relationships as noted above - with the potential side effects noted by Eddie of not behaving as the user intends if policies restrict acccess to RELS-INT.</p>
+
+<p>Defaulting it to the datastream ID should work, as would defaulting it to a fixed text string.</p>
+
+<p>Also setting the appropriate XACML policies for the underlying calls would work (though potentially with side-effects elsewhere).</p>
+
+<p>My feel for an "appropriate" fix at this stage is:</p>
+<ul class="alternate" type="square">
+	<li>modify the code to use API-A methods to get the necessary information</li>
+	<li>document the getDatastream REST API method noting the interaction with the other API-A methods and stating what access needs to be specified in XACML; and also note this in comments in fedora.fcfg</li>
+	<li>raise a JIRA issue to cover the dependency on policies applied these other API-A methods, and tackle in more detail when we come to look at refactoring API-A/API-M as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-521" >
+                <a href="FCREPO-521.html" class="jira-issue-macro-key issue-link"  title="Merge API-A and M across the board, simplifying AuthN" >
+            
+            FCREPO-521
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, linking to this issue</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11400"><div class="by">Stephen Bayliss, 2010-05-25 21:16 UTC</div><div class="text"><p>Discussed at Committer meeting 25 May 2010 - acceptable solution for now is to replace API-M calls with API-A calls and document dependencies on policies.  Also update Fedora 3.3 documentation to indicate dependency on policies for API-M calls and how to disable behaviour in fedora.fcfg.</p></div></div>
+<p><a href="data/FCREPO-703.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

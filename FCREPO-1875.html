@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1875 Connection management responsiblities of FcrepoClient are unclear</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1875</span> Connection management responsiblities of FcrepoClient are unclear</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Elliot Metsger</td></tr><tr><th>Assignee</th><td>Elliot Metsger</td></tr><tr><th>Created</th><td>2016-01-20 00:19 UTC</td></tr><tr><th>Updated</th><td>2016-04-29 23:25 UTC</td></tr><tr><th>Resolved</th><td>2016-02-11 14:52 UTC</td></tr><tr><th>Components</th><td>f4-java-client</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>fcrepo-java-client 0.1.2</td></tr><tr><th>Labels</th><td>client</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1902.html">FCREPO-1902</a> FcrepoResponse object should be immutable</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1901.html">FCREPO-1901</a> FcrepoResponse object should manage the CloseableHttpResponse, instead of the InputStream to the underlying HttpEntity</td></tr></table>
+<h2>Description</h2>
+<p>It is unclear whom is responsible for managing HTTP connections that are created by the FcrepoClient on behalf of the user.  Presumably the FcrepoClient is, but in my environment I'm running across the following issues:</p>
+
+<p>1. Connections are only released if the user of FcrepoClient reads the response body.  If the user of the FcRepo client does not read the response body, the FcrepoClient eventually blocks waiting for a free connection.<br/>
+2. If an FcrepoOperationFailedException is thrown, the user of FcrepoClient has no access to the response body, and cannot free the connection.  If enough exceptions are thrown, the FcrepoClient will eventually block waiting for free connections </p>
+
+<p>A PR demonstrating the issue follows.</p>
+
+<p>See: <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/issues/5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/issues/5</a></p>
+<h2>Comments (27)</h2>
+<div class="comment" id="comment-16013"><div class="by">Andrew Woods, 2016-01-20 00:20 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/6</a></p></div></div>
+<div class="comment" id="comment-16014"><div class="by">A. Soroka, 2016-01-20 16:55 UTC</div><div class="text"><p>Clearly, what's there now isn't good, but we will need to decide what the fix is, i.e. should the software using the client be able to directly control the HTTP config (and wire or pass it in) or should the client handle it internally?</p></div></div>
+<div class="comment" id="comment-16015"><div class="by">Elliot Metsger, 2016-01-20 17:12 UTC</div><div class="text"><p>A. Soroka is this something that can be fixed by configuration?  I'm not familiar with all of the bells-and-whistles that are in HttpClient 4.x.</p>
+</div></div>
+<div class="comment" id="comment-16016"><div class="by">A. Soroka, 2016-01-20 17:15 UTC</div><div class="text"><p>Elliot Metsger, sorry, no, what I meant was "Does the client take responsibility for this or does it demand that the user of the client provide it with some ready-assembled HTTP apparatus to use?" Neither alternative fixes your problem, but the fix for your problem should be written differently depending on which choice we make.</p>
+
+<p>I don't know if there is config in HttpClient for this kind of thing. Maybe some kind of timeout system?</p></div></div>
+<div class="comment" id="comment-16017"><div class="by">Elliot Metsger, 2016-01-20 17:34 UTC</div><div class="text"><blockquote><p>I don't know if there is config in HttpClient for this kind of thing. Maybe some kind of timeout system?</p></blockquote>
+<p>I don't know for sure either.  IIRC, there is a mechanism for evicting connections, but an aggressive eviction policy is probably not the optimal solution.</p>
+
+<p>As you say, agreeing on whom is responsible for connection management would be the appropriate first step.  If the FcrepoClient is responsible, it may be reasonable to:<br/>
+1. Upon FcrepoClient receiving an HttpResponse from Fedora, read the response body from HttpResponse, and keep it in memory.  This frees the connection to Fedora.<br/>
+2. Provide the copy of the response body on the FcrepoResponse.</p>
+
+<p>Updating FcrepoOperationFailedException to include the entire FcrepoResponse may not be a bad idea (so the user of FcrepoClient has full access to anything in the response that may clue you into the cause), but not necessary if the FcrepoClient is freeing connections by reading the HttpResponse body.</p></div></div>
+<div class="comment" id="comment-16018"><div class="by">A. Soroka, 2016-01-20 17:37 UTC</div><div class="text"><p>It could be dangerous to cache the response body in the case of large bitstreams.</p>
+
+<p>I agree that including a reference to the response object in any exceptions is just good practice no matter what.</p></div></div>
+<div class="comment" id="comment-16019"><div class="by">Elliot Metsger, 2016-01-20 17:51 UTC</div><div class="text"><p>I agree that caching could be dangerous, but that's exactly what is happening now, right?  I mean, right now, the large bitstream is attached to the HttpResponse, and I'm proposing that the large bitstream be attached to the FcrepoResponse.  Obviously, there's the impact copying bytes around. </p>
+
+<p>What about something akin to allowing the user of FcrepoClient to provide a function to read the response body off of the HttpResponse directly?  Maybe there are overloaded methods for each of get(...) post(...) etc.  If the user of FcrepoClient is concerned about the overhead of copying bytes, they can use the overloaded method to handle the HttpResponse body directly (and are responsible for closing connections by reading it)?  Otherwise FcrepoClient copies the response body (using the existing/non-overloaed get(...), post(...) etc methods).</p></div></div>
+<div class="comment" id="comment-16020"><div class="by">A. Soroka, 2016-01-20 17:57 UTC</div><div class="text"><blockquote><p>I agree that caching could be dangerous, but that's exactly what is happening now, right?</p></blockquote>
+
+<p>I sure as heck hope not! The response bodies should be passed through as <tt>InputStream</tt> s or something is radically wrong. I'm really not in favor of a default behavior that copies bits into the heap. To me, it would seem better to let <tt>FcrepoResponse</tt> implement <tt>AutoCloseable</tt> and expect it to be used with the <tt>try-with-resource</tt> idiom. Most IDEs will then offer advice or a warning if the client-using code fails to manage the response correctly.</p></div></div>
+<div class="comment" id="comment-16021"><div class="by">Elliot Metsger, 2016-01-20 17:59 UTC</div><div class="text"><p>Ah ok, yeah that would be slick, and would work as well!</p></div></div>
+<div class="comment" id="comment-16022"><div class="by">A. Soroka, 2016-01-20 18:03 UTC</div><div class="text"><blockquote><p>would work as well!</p></blockquote>
+
+<p>Always a bonus. </p>
+</div></div>
+<div class="comment" id="comment-16025"><div class="by">Elliot Metsger, 2016-01-21 17:29 UTC</div><div class="text"><blockquote>
+<p>To me, it would seem better to let FcrepoResponse implement AutoCloseable and expect it to be used with the try-with-resource idiom. Most IDEs will then offer advice or a warning if the client-using code fails to manage the response correctly.</p></blockquote>
+
+<p>Happy to work on this and submit a PR?  </p>
+
+<p>1. Should it implement <tt>Closeable</tt>?  It's more narrowly defined: idempotency guarantees, and throws IOException vs Exception.<br/>
+2. What happens if <tt>getBody()</tt> is called on a <tt>close()</tt> ed <tt>FcrepoResponse</tt>?</p></div></div>
+<div class="comment" id="comment-16026"><div class="by">A. Soroka, 2016-01-21 17:36 UTC</div><div class="text"><blockquote><p>Happy to work on this and submit a PR?</p></blockquote>
+
+<p>You are a king among ticket reporters.</p>
+
+<blockquote><p>1. Should it implement Closeable? It's more narrowly defined: idempotency guarantees, and throws IOException vs Exception.</p></blockquote>
+
+<p>I'd think carefully about <tt>FcrepoResponse</tt>. Other than the response release, are there other things in an <tt>FcrepoResponse</tt> that would need to be "closed"? (I really don't know enough about the client to know-- I try not to use Fedora.)</p>
+
+<blockquote><p>2. What happens if getBody() is called on a close() ed FcrepoResponse?</p></blockquote>
+
+<p>An exception, maybe an <tt>IOException</tt> or a subtype of <tt>IllegalStateException</tt> (a la <tt>java.nio.file.ClosedDirectoryStreamException</tt>?</p></div></div>
+<div class="comment" id="comment-16028"><div class="by">Elliot Metsger, 2016-01-21 17:59 UTC</div><div class="text"><blockquote><p>Other than the response release, are there other things in an FcrepoResponse that would need to be "closed"?</p></blockquote>
+<p>I don't think so.  The state maintained by FcrepoResponse is: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+URI url;
+URI location;
+<span class="code-object">String</span> contentType;
+<span class="code-object">int</span> statusCode;
+InputStream body; <span class="code-comment">// the subject of <span class="code-keyword">this</span> issue</span>
+</pre>
+</div></div>
+
+<blockquote><p>An exception, maybe an IOException or a subtype of IllegalStateException (a la java.nio.file.ClosedDirectoryStreamException?</p></blockquote>
+<p>Sounds reasonable.  A subclass of <tt>RuntimeException</tt> should preserve compatibility.</p></div></div>
+<div class="comment" id="comment-16029"><div class="by">A. Soroka, 2016-01-21 18:08 UTC</div><div class="text"><p>In that case, I think it is fair to use <tt>Closeable</tt> and not throw any <tt>IOException</tt>, unless there is some way that closing the underlying response class can throw it.</p></div></div>
+<div class="comment" id="comment-16032"><div class="by">Elliot Metsger, 2016-01-24 03:42 UTC</div><div class="text"><p>A PR for fixing this issue is at <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/7</a>.  Let me know if any changes need to be made, or if you prefer squashed PRs etc.</p>
+
+<p>This PR does not attempt to throw any form of <tt>RuntimeException</tt> when the body of a closed response is accessed by a client.  It got sticky because the response body is not immutable.  For example, what happens when someone calls setBody(InputStream) on a closed FcrepoResponse?  Does that throw an exception too?  Should these fields just be immutable?  So I just punted on that question and documented that the FcrepoResponse doesn't have any obligation to return previously freed resources.</p></div></div>
+<div class="comment" id="comment-16070"><div class="by">A. Soroka, 2016-02-05 03:46 UTC</div><div class="text"><p>Unknown, Former user, Michael Durbin, thoughts on making the response body immutable? I'm inclined to factor up the underlying HTTP request as an immutable field and swap out the current <tt>body</tt> field for a call into that request.</p></div></div>
+<div class="comment" id="comment-16071"><div class="by">Unknown, 2016-02-05 04:24 UTC</div><div class="text"><p>+1 on immutability.</p></div></div>
+<div class="comment" id="comment-16074"><div class="by">A. Soroka, 2016-02-05 18:22 UTC</div><div class="text"><p>Can we do immutability in this ticket? I'm inclined to say not.</p></div></div>
+<div class="comment" id="comment-16083"><div class="by">Andrew Woods, 2016-02-09 15:51 UTC</div><div class="text"><p>There are a couple of minor outstanding code review comments, along with the request to create one or more follow-on tickets for identified next-steps.<br/>
+Otherwise, this work appears to be ready.</p>
+
+<p>Elliot Metsger, do you have any preferences on how your multiple commits are squashed? If not, I will be happy to squash them all down to a single commit once all comments have been resolved.</p></div></div>
+<div class="comment" id="comment-16086"><div class="by">Elliot Metsger, 2016-02-09 21:38 UTC</div><div class="text"><p>Hi Andrew,  I just pushed an update which addressed your remaining comments, and I'm on my way to create follow-on Jira items.  I don't have any preferences about squashed commits- whatever your normal procedure is!</p>
+
+<p>(My own opinion about commit-squashing is that while it leads to more succinct history, the commit message for each individual commit may be lost - certainly the context of individual commit messages are lost - and I think that's unfortunate).</p></div></div>
+<div class="comment" id="comment-16087"><div class="by">A. Soroka, 2016-02-09 21:40 UTC</div><div class="text"><p>Elliot Metsger I think our practice has been "squash until you have a coherent and concise history", not "squash until you can squash no more". </p>
+{grin}
+<p> You can use a few commits-- just lose what is obvious only an artifact of conversation.</p></div></div>
+<div class="comment" id="comment-16088"><div class="by">Elliot Metsger, 2016-02-09 22:00 UTC</div><div class="text"><p>A. Soroka Ah, of course.  For some reason my mind only works on the extremes: all the commits or squashed to one </p>
+
+<p>I'll take a stab at squashing this one and if you all feel it should be "squashed more", feel free!</p></div></div>
+<div class="comment" id="comment-16089"><div class="by">Andrew Woods, 2016-02-09 22:02 UTC</div><div class="text"><p>Elliot Metsger, squash away!<br/>
+...and thanks for making all of your incremental updates separate commits during the review process.</p></div></div>
+<div class="comment" id="comment-16116"><div class="by">Andrew Woods, 2016-02-10 22:41 UTC</div><div class="text"><p>Elliot Metsger, please move this ticket back into "Start Review" when you are ready for it to move forward.</p></div></div>
+<div class="comment" id="comment-16120"><div class="by">Elliot Metsger, 2016-02-11 04:02 UTC</div><div class="text"><p>Squashed the PR, but didn't make any code changes, so this should be ready to go.</p></div></div>
+<div class="comment" id="comment-16122"><div class="by">Andrew Woods, 2016-02-11 14:47 UTC</div><div class="text"><p>Follow-on tickets linked to this issue.</p></div></div>
+<div class="comment" id="comment-16123"><div class="by">Andrew Woods, 2016-02-11 14:52 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/commit/d4197d12717e17cb41c807979b06719816655b26" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/commit/d4197d12717e17cb41c807979b06719816655b26</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/commit/b8ccaaaad06b976e110a2df7d3b851c9f7c9ae93" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/commit/b8ccaaaad06b976e110a2df7d3b851c9f7c9ae93</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/commit/603179141af6e955771a34f60fc7a2bef28a2515" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/commit/603179141af6e955771a34f60fc7a2bef28a2515</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/commit/de59b95e1de6924dd02bfb8e83762230dd8a66c5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/commit/de59b95e1de6924dd02bfb8e83762230dd8a66c5</a></p></div></div>
+<p><a href="data/FCREPO-1875.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3858 Allow both ldp:hasMemberRelation and ldp:isMemberOfRelation for DirectContainers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3858</span> Allow both ldp:hasMemberRelation and ldp:isMemberOfRelation for DirectContainers</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Quinn Hart</td></tr><tr><th>Created</th><td>2022-10-21 22:50 UTC</td></tr><tr><th>Updated</th><td>2024-09-02 12:20 UTC</td></tr><tr><th>Resolved</th><td>2024-06-20 15:19 UTC</td></tr></table>
+<h2>Description</h2>
+<p>Fedora4 allowed DirectContainers to include both <tt>ldp:hasMemberRelation</tt> and <tt>ldp:isMemberOfRelation</tt> predicates.  This allowed for convenient inverse properties: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>@prefix ldp:   &lt;http://www.w3.org/ns/ldp#&gt; .
+@prefix schema: &lt;http://schema.org/&gt; .
+&lt;&gt;
+    ldp:hasMemberRelation   schema:associatedMedia ;
+    ldp:isMemberOfRelation  schema:encodesCreativeWork ;
+    .</pre>
+</div></div>
+
+<p> F6 does not allow both failing with: <tt>Direct and Indirect containers must specify exactly one ldp:hasMemberRelation or ldp:isMemberOfRelation property, but multiple were present</tt> </p>
+
+<p>Not sure if there is a technical reason these can no longer exist together</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-22743"><div class="by">Jared Whiklo, 2022-10-27 20:26 UTC</div><div class="text"><p>I am guessing that Fedora 4 did not follow the specification and it was implemented in Fedora 6 we tried to follow the specification closer (which was also easier, I think). Section 5.4.1.4 says</p>
+
+<blockquote><p>5.4.1.4 Each LDP Direct Container representation <em>MUST</em> contain exactly one triple whose subject is the LDPC URI, and whose predicate is either <tt>ldp:hasMemberRelation</tt> or <tt>ldp:isMemberOfRelation</tt>. The object of the triple is constrained by other sections, such as <b>ldp:hasMemberRelation</b> or <b>ldp:isMemberOfRelation</b>, based on the membership triple pattern used by the container.</p></blockquote>
+
+<p>We’ll bring this up at the November 3rd, 2022 tech call as hopefully the person that wrote this code can confirm.</p></div></div>
+<div class="comment" id="comment-22752"><div class="by">Quinn Hart, 2022-11-03 21:13 UTC</div><div class="text"><p>Jared Whiklo I’m sorry I missed the meeting this morning.  FYI, I will write to the w3c and ask them what the motivation to limit this to only one direction was.</p></div></div>
+<div class="comment" id="comment-22758"><div class="by">Quinn Hart, 2022-11-09 21:35 UTC</div><div class="text"><p>So, it appears that all the commenting facility for the  LDP are all moribund, so I don’t expect to a response on my query there.  I’ll make a plea that if this isn’t hard technically, it’d be worth supporting.  The example we gave above is one good use case, but Fedora 6 is making us rethink containment, in ways that would make this maybe more important for indirect containers.  The basic idea for that is that archive groups are such a nice feature, we want to do a better job of dividing our archive into these groups.  As a result, indirect containers are important to link other archival objects which can’t be contained, like collections of archival group items.  </p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-none">@prefix ldp:   &lt;http://www.w3.org/ns/ldp#&gt; .
+@prefix schema: &lt;http://schema.org/&gt; .
+@prefix : &lt;http://example.org/&gt; .
+&lt;&gt;  ldp:membershipResource &lt;.&gt;;
+    ldp:isMemberOfRelation schema:partOf;
+    ldp:XhasMemberRelation schema:hasPart;
+    ldp:insertedContentRelation schema:hasPart;
+    .</pre>
+</div></div>
+
+<p>Here it’s really important that the collections know the items they <tt>havePart</tt> and equally, items know which collections they are <tt>partOf</tt></p>
+
+<p>And having to do that twice for both directions, kind of kills your bookkeeping on that.</p></div></div>
+<div class="comment" id="comment-22759"><div class="by">Jared Whiklo, 2022-11-09 22:27 UTC</div><div class="text"><p>Yes, LDP 1.0 is considered done so there is less communication forums for it. I would note that this a W3 Community Group that formed around the idea of the Next LDP standard. <a href="https://www.w3.org/community/ldpnext/" title="smart-link" class="external-link" rel="nofollow noreferrer">https://www.w3.org/community/ldpnext/</a></p>
+
+<p>But it also, seemed to have fizzled out without much to show for it.</p></div></div>
+<div class="comment" id="comment-23059"><div class="by">Jared Whiklo, 2024-06-20 15:19 UTC</div><div class="text"><p>Not part of the LDP specification</p></div></div>
+<p><a href="data/FCREPO-3858.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

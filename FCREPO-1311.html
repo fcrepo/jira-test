@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1311 change how https-based connections work with fcrepo-camel</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1311</span> change how https-based connections work with fcrepo-camel</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-01-28 14:24 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-01-29 14:46 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Description</h2>
+<p>The current implementation of fcrepo-camel allows a user to interact with a remote fedora repository over https by setting the secure=true URI parameter.</p>
+
+<p>I do not think this is a good implementation. It is error prone and departs from how this is handled in other camel components (such as http4).</p>
+
+<p>The better implementation would remove the 'secure' option and instead use the https:// protocol if the fedora port is set as 443 (otherwise using <a href="http://" class="external-link" rel="nofollow noreferrer">http://</a>). I am not convinced that there is a use case for using https:// with non-standard ports (e.g. 9443), and as it stands, this seems like an unnecessary option.</p>
+
+<p>If that use case emerges, we can revisit this decision.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-13250"><div class="by">Unknown, 2015-01-29 14:30 UTC</div><div class="text"><p>PR is here: <a href="https://github.com/fcrepo4/fcrepo-camel/pull/49" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/pull/49</a></p></div></div>
+<div class="comment" id="comment-13251"><div class="by">Unknown, 2015-01-29 14:41 UTC</div><div class="text"><p>Just a note, this change provides additional flexibility with the format of the "baseUrl" value. Up until now, the format had to be fcrepo://fedora.host.org:8080/rest (where the hostname, port and path are arbitrary).</p>
+
+<p>Now, it is possible to write:</p>
+
+<p>fcrepo://fedora.host.org:8080/rest (as before)<br/>
+fcrepo://<a href="http://fedora.host.org/rest" class="external-link" rel="nofollow noreferrer">http://fedora.host.org/rest</a> (for connections with explicit schemes)<br/>
+fcrepo://fedora.host.org:443/rest (for secure connections)<br/>
+fcrepo://<a href="https://fedora.host.org:9443/rest" class="external-link" rel="nofollow noreferrer">https://fedora.host.org:9443/rest</a> (for secure connections on non-standard ports)</p>
+
+<p>This brings the component more in line with how the camel-http4 component works in this regard.</p>
+
+<p>NB, as with all camel components, the initial forward slashes can be omitted without changing the meaning of the route. These two uris are equivalent:</p>
+
+<p>fcrepo://fedora.host.org:8080/rest<br/>
+fcrepo:fedora.host.org:8080/rest</p>
+
+<p>And that same variation applies to all of the examples above.</p>
+</div></div>
+<div class="comment" id="comment-13252"><div class="by">Andrew Woods, 2015-01-29 14:46 UTC</div><div class="text"><p>Thanks, Unknown.<br/>
+PR-49 has been merged with master.</p></div></div>
+<p><a href="data/FCREPO-1311.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

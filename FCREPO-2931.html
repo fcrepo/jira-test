@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2931 TimeMap (LDPCv) rel should advertise the application/link-format type</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2931</span> TimeMap (LDPCv) rel should advertise the application/link-format type</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2018-11-02 17:27 UTC</td></tr><tr><th>Updated</th><td>2018-11-28 18:17 UTC</td></tr><tr><th>Resolved</th><td>2018-11-28 18:11 UTC</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>The timemap is not returning any Accept headers.  In order to comply with the Memento specification it should at the very least return "Accept: application/link-format".  The server does respond correctly when the "Accept:application/link-format" is sent with the request.  </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-20513"><div class="by">Andrew Woods, 2018-11-02 19:26 UTC</div><div class="text"><p>Since `Accept` is a request header <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html" class="external-link" rel="nofollow noreferrer">https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html</a>, what does Memento expect in terms of advertising support for the Content-Type: application/link-format?</p></div></div>
+<div class="comment" id="comment-20515"><div class="by">Bethany Seeger, 2018-11-08 16:19 UTC</div><div class="text"><p>I'll take a look at this and see what's expected by the Memento spec. </p></div></div>
+<div class="comment" id="comment-20517"><div class="by">Bethany Seeger, 2018-11-08 17:16 UTC</div><div class="text"><p>I don't think it's necessary to have an Accept header in the response to a GET on a timemap.  And there's nothing to say we have to advertise 'application/link-format' -  it's just expected that we support it. </p>
+
+<p> </p>
+
+<p><a href="https://tools.ietf.org/html/rfc7089#section-5" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7089#section-5</a></p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>   GET /timemap/http://a.example.org/ HTTP/1.1
+   Host: arxiv.example.net
+   Accept: application/link-format;q=1.0
+   Connection: close
+
+                     Figure 27: Request for a TimeMap
+
+   If the TimeMap requested by the user agent exists, the server's
+   response has a "200 OK" HTTP status code and the list of Mementos is
+   provided in the entity-body of the response.  Such a response is
+   shown in Figure 28.
+
+   HTTP/1.1 200 OK
+   Date: Thu, 21 Jan 2010 00:06:50 GMT
+   Server: Apache
+   Content-Length: 4883
+   Content-Type: application/link-format
+   Connection: close
+</pre>
+</div></div>
+<p>We could include a Vary field to indicate that "Accept" will function on this resource.  That field exists when one requests a timemap w/o an Accept type.  But it doesn't get returned if you sent in an Accept header, like so:</p>
+
+<p> </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>
+curl localhost:8080/fcrepo5/rest/super-frog/fcr:versions -u fedoraAdmin:fedoraAdmin -vv -H "Accept: application/link-format"
+
+&lt; HTTP/1.1 200 
+&lt; Cache-Control: private
+&lt; Expires: Thu, 01 Jan 1970 00:00:00 GMT
+&lt; Set-Cookie: JSESSIONID=E28D3BEA8111021304AD69D52B6E8CD4; Path=/fcrepo5; HttpOnly
+&lt; Set-Cookie: rememberMe=deleteMe; Path=/fcrepo5; Max-Age=0; Expires=Wed, 07-Nov-2018 17:11:40 GMT
+&lt; Link: &lt;http://www.w3.org/ns/ldp#Resource&gt;;rel="type"
+&lt; Link: &lt;http://www.w3.org/ns/ldp#Container&gt;;rel="type"
+&lt; Link: &lt;http://www.w3.org/ns/ldp#RDFSource&gt;; rel="type"
+&lt; Link: &lt;http://www.w3.org/ns/ldp#BasicContainer&gt;;rel="type"
+&lt; Link: &lt;http://localhost:8080/fcrepo5/rest/super-frog&gt;; rel="timegate"
+&lt; Link: &lt;http://localhost:8080/fcrepo5/rest/super-frog&gt;; rel="original"
+&lt; Link: &lt;http://localhost:8080/fcrepo5/rest/super-frog/fcr:versions&gt;; rel="timemap"
+&lt; Link: &lt;http://mementoweb.org/ns#TimeMap&gt;; rel="type"
+&lt; Accept-External-Content-Handling: copy,redirect,proxy
+&lt; Vary-Post: Memento-Datetime
+&lt; Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,application/ld+json
+&lt; Allow: POST,HEAD,GET,OPTIONS
+&lt; Link: &lt;http://localhost:8080/fcrepo5/rest/super-frog/fcr:versions/fcr:acl&gt;; rel="acl"
+&lt; Content-Type: application/link-format
+&lt; Content-Length: 236
+&lt; Date: Thu, 08 Nov 2018 17:11:40 GMT
+&lt; 
+&lt;http://localhost:8080/fcrepo5/rest/super-frog&gt;; rel="original",
+&lt;http://localhost:8080/fcrepo5/rest/super-frog&gt;; rel="timegate",
+&lt;http://localhost:8080/fcrepo5/rest/super-frog/fcr:versions&gt;; rel="self"; type="application/link-format",
+
+</pre>
+</div></div>
+
+<p>I think we are compliant with the Memento spec as is. Danny Bernstein - thoughts?</p></div></div>
+<div class="comment" id="comment-20562"><div class="by">Danny Bernstein, 2018-11-28 18:09 UTC</div><div class="text"><p>I agree.  I'll close this one. </p></div></div>
+<div class="comment" id="comment-20563"><div class="by">Danny Bernstein, 2018-11-28 18:11 UTC</div><div class="text"><p>The memento verifier warning appears to be  incorrect.  There's nothing to fix.</p></div></div>
+<p><a href="data/FCREPO-2931.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

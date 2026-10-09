@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2043 Clean up dependency definitions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2043</span> Clean up dependency definitions</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-06-01 00:02 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 23:06 UTC</td></tr><tr><th>Resolved</th><td>2016-10-12 19:31 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr></table>
+<h2>Description</h2>
+<p>The maven dependency definitions should be cleaned up. Certain dependencies are not stated, and certain others are superfluous.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-16796"><div class="by">A. Soroka, 2016-06-01 13:27 UTC</div><div class="text"><p>How does anything build if "Certain dependencies are not stated"? Are you saying that some transitive dependencies should be made explicit? That can be problematic…</p></div></div>
+<div class="comment" id="comment-16797"><div class="by">Unknown, 2016-06-01 13:30 UTC</div><div class="text"><p>I'm saying that if the code uses some library (e.g. import static org.apache.http.HttpStatus.SC_BAD_REQUEST; ) it should explicitly declare that in the POM rather than relying on transitive dependencies to bring in that library. Do you disagree?</p></div></div>
+<div class="comment" id="comment-16798"><div class="by">A. Soroka, 2016-06-01 13:37 UTC</div><div class="text"><p>I'm saying it's not open and shut. Making those dependencies explicit puts extra burden on the devs to maintain version correctness, etc. Only those dependencies which can function by themselves should be made explicit. That is to say, if X is a dependency, and Y is a transitive dependency via X, then we should make Y explicit IFF we could take away X and still use Y. Otherwise, even if we use Y directly, we should leave it transitive/implicit.</p></div></div>
+<div class="comment" id="comment-16799"><div class="by">Unknown, 2016-06-01 13:47 UTC</div><div class="text"><p>OK, we should discuss this on the tech call. As it currently stands, the version definitions are a complete mess. Dependencies are declared in modules that don't use them: i.e. certain dropwizard-based metrics libraries are marked as dependencies in fcrepo-metrics even though they aren't used there at all, but they are used in the http layers &#8211; for example: metrics-jersey2; velocity dependencies are declared in http-commons but used in http-api; activemq-based stuff is declared in fcrepo-jms, even though it's only used in fcrepo-webapp; most modules don't declare a dependency on javax.jcr even though the code fundamentally depends on it being there &#8211; it's brought in via fcrepo-kernel-api; the transaction implementation is made explicit in fcrepo-kernel-modeshape, but it really should be optional and re-declared in fcrepo-webapp, etc, etc.</p>
+
+<p>In terms of dependency versions &#8211; that's already managed through the parent pom and its &lt;dependencyManagement&gt; block.</p>
+
+<p>My point is this: if we ever hope to have an alternate impl run in OSGi (forget about modeshape ever doing this), we need to be explicit about dependencies.</p></div></div>
+<div class="comment" id="comment-16800"><div class="by">A. Soroka, 2016-06-01 13:53 UTC</div><div class="text"><p>I'm not giving any opinion against getting rid of unused dependencies. That's clearly a good move, and I'd like to see us start with a PR that does that and nothing but. I'm also not against separating API and impl where that is possible (e.g. javax.jcr and MODE, or JMS and ActiveMQ). I'm suggesting that repeating transitive dependencies as direct dependencies not only won't help us clean up, it will make things much worse as the <tt>exclusions</tt> blocks of large frameworks grow and and grow and grow and grow.</p>
+
+<p>As for OSGi, while you know I'm broadly in favor, I'm less and less convinced that it's feasible to get there from here. IOW, I think we may want to talk about a fresh design, leaving the entire MODE impl as a monolith until it is simply replaced by a lighter-weight ref impl.</p></div></div>
+<div class="comment" id="comment-17803"><div class="by">Unknown, 2016-10-12 19:31 UTC</div><div class="text"><p>This is not necessary at the moment and will probably be folded into a larger effort separating the api and the implementation.</p></div></div>
+<p><a href="data/FCREPO-2043.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

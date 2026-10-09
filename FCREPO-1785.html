@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1785 Jersey session injection fails with invalid transaction ids</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1785</span> Jersey session injection fails with invalid transaction ids</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-10-20 17:21 UTC</td></tr><tr><th>Updated</th><td>2016-03-02 02:33 UTC</td></tr><tr><th>Resolved</th><td>2016-03-02 02:33 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>bug</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1776.html">FCREPO-1776</a> osgi-ify fcrepo-http-commons</td></tr></table>
+<h2>Description</h2>
+<p>Using jersey, the AbstractResource class expects to have a Session object injected into it. This injection fails, however, in the context of a transaction when that transaction ID does not exist. This is because the SessionFactory class throws a TransactionMissingException error, leaving the AbstractResource in an invalid state (at least as far as Jersey is concerned).</p>
+
+<p>That invalid state is circumvented by simply throwing a ClientErrorException and returning a 410 Gone response. This means that, from the perspective of a REST client, I see the correct behavior, but still the architecture is incorrect.</p>
+
+<p>This ticket should track the refactoring of how sessions are injected into the AbstractResource class so that TransactionMissingExceptions don't cause stacktraces like this: <a href="https://gist.github.com/acoburn/86d46e4d4322cfa08160" class="external-link" rel="nofollow noreferrer">https://gist.github.com/acoburn/86d46e4d4322cfa08160</a></p>
+
+<p>This was generated while tailing the tomcat logfile and running this command:</p>
+
+<p>curl -i localhost:8080/fcrepo/rest/tx:fake/some-existing-resource</p>
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-16206"><div class="by">Unknown, 2016-02-24 16:46 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/993" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/993</a></p></div></div>
+<div class="comment" id="comment-16207"><div class="by">A. Soroka, 2016-02-24 17:50 UTC</div><div class="text"><p>I have no argument with the thrust of this ticket-- I just want to raise a question about the 410 Gone. That seems appropriate only if the transaction ID was once legit. One that never existed should throw 404. Am I being too picky here?</p></div></div>
+<div class="comment" id="comment-16208"><div class="by">Unknown, 2016-02-25 13:52 UTC</div><div class="text"><p>The current Fedora behavior is to report a 410 Gone error with an invalid transaction ID, whether that session ever existed or not. This ticket doesn't change that behavior. I agree that a 410 error seems appropriate only if that session was once valid, and a 404 would be appropriate otherwise; however, it seems like overkill to keep a record of expired session ids just to be able to distinguish between these two cases. If I had to pick one (410 or 404), I would think a 404 would be more correct. I also think that changing that behavior should be a separate ticket.</p></div></div>
+<div class="comment" id="comment-16210"><div class="by">A. Soroka, 2016-02-25 14:56 UTC</div><div class="text"><p>Oh, yeah, a separate ticket. I'm trying to figure out whether we should even do that. You're saying you think that just going with the universal 404 is the best option?</p></div></div>
+<div class="comment" id="comment-16240"><div class="by">Andrew Woods, 2016-03-02 01:12 UTC</div><div class="text"><p>Pending response to: <a href="https://github.com/fcrepo4/fcrepo4/pull/993#issuecomment-190937424" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/993#issuecomment-190937424</a></p></div></div>
+<div class="comment" id="comment-16241"><div class="by">Andrew Woods, 2016-03-02 02:33 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/2f24542c07a0a9becbb1b99d4215081aac91bf04" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/2f24542c07a0a9becbb1b99d4215081aac91bf04</a></p></div></div>
+<p><a href="data/FCREPO-1785.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

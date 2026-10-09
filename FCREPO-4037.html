@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4037 Missing User-Agent header causes NullPointerException on PUTs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4037</span> Missing User-Agent header causes NullPointerException on PUTs</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Low</td></tr><tr><th>Reporter</th><td>David Cook</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2025-09-16 00:23 UTC</td></tr><tr><th>Updated</th><td>2026-03-26 15:32 UTC</td></tr><tr><th>Resolved</th><td>2026-03-26 15:32 UTC</td></tr><tr><th>Components</th><td>core</td></tr><tr><th>Affects versions</th><td>fcrepo 6.5.1, fcrepo-7.0.0</td></tr><tr><th>Fix versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Environment</h2>Ubuntu Linux
+<h2>Description</h2>
+<p>If you send a PUT to Fedora 6 and you don’t set the User-Agent header, it will generate a NullPointerException when trying to emit events (even if fcrepo.jms.enabled=false). </p>
+
+<p>The actual PUT succeeds which is good, but it fills your logs full of noise at the very least. </p>
+
+<p>Of course, you can fix this by just making sure your ingestion code is sending a User-Agent header, but I figure this is still a bug. </p>
+
+<p>(Note: If you’re using cURL via PHP, it defaults to not sending any User-Agent header. I think most libraries will usually set some kind of a default, which is why I hadn’t encountered this with ingestion via other languages like Java and Perl.)</p>
+
+<p>Stacktrace to follow with instance specific details replaced with placeholders like PATH, USERID, and BASEURL:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[2025-09-12 03:44:59] [info] INFO 03:44:59.038 [http-nio-8080-exec-8] (FedoraLdp) PUT to create resource with ID: PATH
+[2025-09-12 03:44:59] [info] ERROR 03:44:59.367 [http-nio-8080-exec-8] (EventAccumulatorImpl) Failed to emit events: [ResourceOperationEventBuilder{fedoraId=info:fedora/PATH, types=[RESOURCE_CREATION],
+ resourceTypes=[http://www.w3.org/ns/ldp#Resource, http://www.w3.org/ns/ldp#Container, http://fedora.info/definitions/v4/repository#Resource, http://fedora.info/definitions/v4/repository#Container, http://mementoweb.org/ns#TimeGate, http://www.w3.org/ns/ldp#RDFSource, http://mementoweb.org/ns#OriginalResource, http://www.w3.org/ns/ldp#BasicContainer], userID='USERID', userAgent='null', baseUrl='https://BASEURL/rest/', date=2025-09-12T03:44:59.191365052Z}]
+[2025-09-12 03:44:59] [info] java.lang.NullPointerException: Cannot invoke "String.contains(java.lang.CharSequence)" because "userAgent" is null
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.kernel.impl.observer.ResourceOperationEventBuilder.withUserAgent(ResourceOperationEventBuilder.java:131)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.lambda$emitEvents$1(EventAccumulatorImpl.java:89)
+[2025-09-12 03:44:59] [info] #011at com.google.common.collect.Maps$KeySet.lambda$forEach$0(Maps.java:4018)
+[2025-09-12 03:44:59] [info] #011at java.base/java.util.HashMap.forEach(HashMap.java:1421)
+[2025-09-12 03:44:59] [info] #011at com.google.common.collect.Maps$KeySet.forEach(Maps.java:4018)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.emitEvents(EventAccumulatorImpl.java:79)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.kernel.impl.TransactionImpl.commit(TransactionImpl.java:107)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.kernel.impl.TransactionImpl.commitIfShortLived(TransactionImpl.java:274)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.http.api.FedoraLdp.lambda$createOrReplaceObjectRdf$9(FedoraLdp.java:579)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTx$3(DbTransactionExecutor.java:79)
+[2025-09-12 03:44:59] [info] #011at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+[2025-09-12 03:44:59] [info] #011at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+[2025-09-12 03:44:59] [info] #011at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.common.db.DbTransactionExecutor.doInTx(DbTransactionExecutor.java:78)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTxWithRetry$2(DbTransactionExecutor.java:62)
+[2025-09-12 03:44:59] [info] #011at net.jodah.failsafe.Functions.lambda$toSupplier$10(Functions.java:262)
+[2025-09-12 03:44:59] [info] #011at net.jodah.failsafe.Functions.lambda$get$0(Functions.java:48)
+[2025-09-12 03:44:59] [info] #011at net.jodah.failsafe.RetryPolicyExecutor.lambda$supply$0(RetryPolicyExecutor.java:66)
+[2025-09-12 03:44:59] [info] #011at net.jodah.failsafe.Execution.executeSync(Execution.java:128)
+[2025-09-12 03:44:59] [info] #011at net.jodah.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:379)
+[2025-09-12 03:44:59] [info] #011at net.jodah.failsafe.FailsafeExecutor.run(FailsafeExecutor.java:212)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.common.db.DbTransactionExecutor.doInTxWithRetry(DbTransactionExecutor.java:61)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.http.api.FedoraBaseResource.doInDbTxWithRetry(FedoraBaseResource.java:126)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:571)
+[2025-09-12 03:44:59] [info] #011at jdk.internal.reflect.GeneratedMethodAccessor71.invoke(Unknown Source)
+[2025-09-12 03:44:59] [info] #011at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+[2025-09-12 03:44:59] [info] #011at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:124)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:167)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:79)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:475)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:397)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:255)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.internal.Errors.process(Errors.java:292)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.internal.Errors.process(Errors.java:274)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.internal.Errors.process(Errors.java:244)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:234)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:366)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:319)
+[2025-09-12 03:44:59] [info] #011at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:227)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+[2025-09-12 03:44:59] [info] #011at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:189)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.persistence.ocfl.RepositoryInitializationFilter.doFilter(RepositoryInitializationFilter.java:41)
+[2025-09-12 03:44:59] [info] #011at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:354)
+[2025-09-12 03:44:59] [info] #011at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:267)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:189)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+[2025-09-12 03:44:59] [info] #011at org.fcrepo.webapp.NoAuthConfig$1.doFilterInternal(NoAuthConfig.java:57)
+[2025-09-12 03:44:59] [info] #011at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117)
+[2025-09-12 03:44:59] [info] #011at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:354)
+[2025-09-12 03:44:59] [info] #011at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:267)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:189)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.filters.CorsFilter.handleNonCORS(CorsFilter.java:357)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.filters.CorsFilter.doFilter(CorsFilter.java:176)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:189)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:162)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:197)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:97)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:659)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:135)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:687)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:78)
+[2025-09-12 03:44:59] [info] #011at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:359)
+[2025-09-12 03:44:59] [info] #011at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:399)
+[2025-09-12 03:44:59] [info] #011at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:65)
+[2025-09-12 03:44:59] [info] #011at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:889)
+[2025-09-12 03:44:59] [info] #011at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1735)
+[2025-09-12 03:44:59] [info] #011at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
+[2025-09-12 03:44:59] [info] #011at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191)
+[2025-09-12 03:44:59] [info] #011at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+[2025-09-12 03:44:59] [info] #011at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+[2025-09-12 03:44:59] [info] #011at java.base/java.lang.Thread.run(Thread.java:840)</pre>
+</div></div>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-26518"><div class="by">David Cook, 2025-09-16 00:28 UTC</div><div class="text"><p>Note this actually affects Fedora 6.5.1, but I didn’t see that as an option for the “Affects version” when reporting the bug…</p></div></div>
+<div class="comment" id="comment-26551"><div class="by">Dan Field, 2025-09-16 13:45 UTC</div><div class="text"><p>Thanks David. I know the user agent is used in the JMS headers so I suspect we need to make that an optional field. I will investigate</p></div></div>
+<div class="comment" id="comment-28516"><div class="by">Jared Whiklo, 2026-03-26 15:32 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/pull/2281" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2281</a> </p></div></div>
+<p><a href="data/FCREPO-4037.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

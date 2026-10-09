@@ -1,0 +1,1979 @@
+Index: server/src/main/java/fedora/server/test/RepositoryReaderTest.java
+===================================================================
+--- server/src/main/java/fedora/server/test/RepositoryReaderTest.java	(revision 8167)
++++ server/src/main/java/fedora/server/test/RepositoryReaderTest.java	Thu Aug 06 17:30:34 CEST 2009
+@@ -4,26 +4,23 @@
+  */
+ package fedora.server.test;
+ 
+-import java.io.File;
+-
+-import java.util.HashMap;
+-
+-import junit.framework.TestCase;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
+-
+ import fedora.server.Server;
+-import fedora.server.storage.ServiceDefinitionReader;
+-import fedora.server.storage.ServiceDeploymentReader;
+ import fedora.server.storage.DOReader;
+ import fedora.server.storage.DirectoryBasedRepositoryReader;
++import fedora.server.storage.ServiceDefinitionReader;
++import fedora.server.storage.ServiceDeploymentReader;
+ import fedora.server.storage.translation.DODeserializer;
+ import fedora.server.storage.translation.DOSerializer;
+ import fedora.server.storage.translation.DOTranslatorImpl;
+ import fedora.server.storage.translation.METSFedoraExt1_1DODeserializer;
+ import fedora.server.storage.translation.METSFedoraExt1_1DOSerializer;
++import junit.framework.TestCase;
+ 
++import java.io.File;
++import java.util.HashMap;
++
+ /**
+  * Tests the implementation of the RepositoryReader interface,
+  * DirectoryBasedRepositoryReader.
+@@ -98,7 +95,7 @@
+                         m_repoReader.getReader(Server.USE_DEFINITIVE_STORE,
+                                                null,
+                                                element);
+-                if (r.hasRelationship(MODEL.HAS_MODEL,
++                if (r.hasContentModel(
+                                       Models.SERVICE_DEPLOYMENT_3_0)) {
+                     ServiceDefinitionReader dr =
+                             m_repoReader
+@@ -123,7 +120,7 @@
+                         m_repoReader.getReader(Server.USE_DEFINITIVE_STORE,
+                                                null,
+                                                element);
+-                if (r.hasRelationship(MODEL.HAS_MODEL,
++                if (r.hasContentModel(
+                                       Models.SERVICE_DEPLOYMENT_3_0)) {
+                     ServiceDeploymentReader mr =
+                             m_repoReader
+Index: server/src/main/java/fedora/server/resourceIndex/ModelBasedTripleGenerator.java
+===================================================================
+--- server/src/main/java/fedora/server/resourceIndex/ModelBasedTripleGenerator.java	(revision 8167)
++++ server/src/main/java/fedora/server/resourceIndex/ModelBasedTripleGenerator.java	Thu Aug 06 16:49:13 CEST 2009
+@@ -4,24 +4,20 @@
+  */
+ package fedora.server.resourceIndex;
+ 
+-import java.util.HashMap;
+-import java.util.HashSet;
+-import java.util.Map;
+-import java.util.Set;
+-
+-import org.jrdf.graph.Triple;
+-
+-import fedora.server.errors.ResourceIndexException;
+-import fedora.server.errors.ServerException;
+-import fedora.server.storage.DOReader;
+-import fedora.server.storage.types.RelationshipTuple;
+-
+-import static fedora.common.Constants.MODEL;
+ import static fedora.common.Models.CONTENT_MODEL_3_0;
+ import static fedora.common.Models.FEDORA_OBJECT_3_0;
+ import static fedora.common.Models.SERVICE_DEFINITION_3_0;
+ import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
++import fedora.server.errors.ResourceIndexException;
++import fedora.server.errors.ServerException;
++import fedora.server.storage.DOReader;
++import org.jrdf.graph.Triple;
+ 
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Set;
++
+ /**
+  * Generates an object's triples based upon its declared content models.
+  * <p>
+@@ -91,11 +87,14 @@
+         Set<Triple> objectTriples = new HashSet<Triple>();
+ 
+         try {
++            for (String modelRelobject:reader.getContentModels()){
++/*
+             for (RelationshipTuple modelRel : reader
+                     .getRelationships(MODEL.HAS_MODEL, null)) {
++*/
+ 
+-                if (m_generators.containsKey(modelRel.object)) {
+-                    objectTriples.addAll(m_generators.get(modelRel.object)
++                if (m_generators.containsKey(modelRelobject)) {
++                    objectTriples.addAll(m_generators.get(modelRelobject)
+                             .getTriplesForObject(reader));
+                 }
+             }
+Index: server/src/test/java/mock/sql/MockPreparedStatement.java
+===================================================================
+--- server/src/test/java/mock/sql/MockPreparedStatement.java	(revision 8167)
++++ server/src/test/java/mock/sql/MockPreparedStatement.java	Mon Aug 10 10:20:58 CEST 2009
+@@ -10,11 +10,11 @@
+ 
+ import java.net.URL;
+ 
+-/* JDBC_4_ANT_TOKEN_BEGIN -
++/* JDBC_4_ANT_TOKEN_BEGIN */
+ import java.sql.NClob;
+ import java.sql.RowId;
+ import java.sql.SQLXML;
+-- JDBC_4_ANT_TOKEN_END */
++/* JDBC_4_ANT_TOKEN_END */
+ 
+ import java.sql.Array;
+ import java.sql.Blob;
+@@ -428,7 +428,7 @@
+         throw new RuntimeException("MockPreparedStatement.setQueryTimeout not implemented");
+     }
+ 
+-    /* JDBC_4_ANT_TOKEN_BEGIN -
++    /* JDBC_4_ANT_TOKEN_BEGIN */
+     @Override
+     public void setAsciiStream(int arg0, InputStream arg1) throws SQLException {
+         throw new UnsupportedOperationException(
+@@ -571,5 +571,5 @@
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+-    - JDBC_4_ANT_TOKEN_END */
++    /* JDBC_4_ANT_TOKEN_END */
+ }
+Index: server/src/test/java/mock/sql/MockConnection.java
+===================================================================
+--- server/src/test/java/mock/sql/MockConnection.java	(revision 8167)
++++ server/src/test/java/mock/sql/MockConnection.java	Mon Aug 10 10:20:58 CEST 2009
+@@ -5,7 +5,7 @@
+ 
+ package mock.sql;
+ 
+-/* JDBC_4_ANT_TOKEN_BEGIN -
++/* JDBC_4_ANT_TOKEN_BEGIN */
+ import java.sql.Array;
+ import java.sql.Blob;
+ import java.sql.Clob;
+@@ -14,7 +14,7 @@
+ import java.sql.SQLXML;
+ import java.sql.Struct;
+ import java.util.Properties;
+-- JDBC_4_ANT_TOKEN_END */
++/* JDBC_4_ANT_TOKEN_END */
+ 
+ import java.sql.CallableStatement;
+ import java.sql.Connection;
+@@ -241,7 +241,7 @@
+         throw new RuntimeException("MockConnection.setTypeMap not implemented");
+     }
+ 
+-    /* JDBC_4_ANT_TOKEN_BEGIN -
++    /* JDBC_4_ANT_TOKEN_BEGIN */
+     @Override
+     public Array createArrayOf(String arg0, Object[] arg1) throws SQLException {
+         throw new UnsupportedOperationException(
+@@ -320,5 +320,5 @@
+         throw new UnsupportedOperationException(
+         "Java 1.6 JDBC methods are not supported");
+     }
+-    - JDBC_4_ANT_TOKEN_END */
++    /* JDBC_4_ANT_TOKEN_END */
+ }
+Index: server/src/main/java/fedora/server/storage/DOReader.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/DOReader.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/DOReader.java	Thu Aug 06 17:23:47 CEST 2009
+@@ -4,36 +4,34 @@
+  */
+ package fedora.server.storage;
+ 
+-import java.io.InputStream;
+-
+-import java.util.Date;
+-import java.util.List;
+-import java.util.Set;
+-
+-import org.jrdf.graph.ObjectNode;
+-import org.jrdf.graph.PredicateNode;
+-
+ import fedora.server.errors.ServerException;
+ import fedora.server.storage.types.AuditRecord;
+ import fedora.server.storage.types.Datastream;
+ import fedora.server.storage.types.DigitalObject;
+ import fedora.server.storage.types.ObjectMethodsDef;
+ import fedora.server.storage.types.RelationshipTuple;
++import org.jrdf.graph.ObjectNode;
++import org.jrdf.graph.PredicateNode;
+ 
++import java.io.InputStream;
++import java.util.Date;
++import java.util.List;
++import java.util.Set;
++
+ /**
+  * Interface for reading Fedora digital objects from within the storage sub
+  * system.
+- * 
++ *
+  * @author Sandy Payette
+  */
+ public interface DOReader {
+ 
+     /** Gets the underlying digital object this reader is working with. */
+     public DigitalObject getObject();
+-    
++
+     /**
+      * Gets the date of creation of this object.
+-     * 
++     *
+      * @return the date of creation of this object.
+      * @throws ServerException
+      *         If any type of error occurred fulfilling the request.
+@@ -42,7 +40,7 @@
+ 
+     /**
+      * Gets the date of the last modification of this object.
+-     * 
++     *
+      * @return the date of the last modification of this object.
+      * @throws ServerException
+      *         If any type of error occurred fulfilling the request.
+@@ -51,7 +49,7 @@
+ 
+     /**
+      * Gets the userid of the user who owns the objects.
+-     * 
++     *
+      * @return the userid
+      * @throws ServerException
+      *         If any type of error occurred fulfilling the request.
+@@ -61,7 +59,7 @@
+     /**
+      * Gets the entire list of audit records for the object. Changes to the list
+      * affect the underlying object if this is DOWriter.
+-     * 
++     *
+      * @return the entire list of audit records for the object.
+      * @throws ServerException
+      *         If any type of error occurred fulfilling the request.
+@@ -71,7 +69,7 @@
+     /**
+      * Gets the content of the entire digital object as XML. The object will be
+      * returned exactly as it is stored in the repository.
+-     * 
++     *
+      * @return the content of the entire digital object as XML.
+      * @throws ServerException
+      *         If there object could not be found or there was was a failure in
+@@ -115,7 +113,7 @@
+ 
+     /**
+      * Gets the PID of the digital object.
+-     * 
++     *
+      * @return the PID of the digital object.
+      * @throws ServerException
+      *         If any type of error occurred fulfilling the request.
+@@ -124,7 +122,7 @@
+ 
+     /**
+      * Gets the label of the digital object.
+-     * 
++     *
+      * @return the label of the digital object.
+      * @throws ServerException
+      *         If any type of error occurred fulfilling the request.
+@@ -135,7 +133,7 @@
+      * Gets the state of the digital object. The state indicates the status of
+      * the digital object at any point in time. Valid states are: A=Active,
+      * I=Inactive, D=Deleted
+-     * 
++     *
+      * @return the state of the digital object.
+      * @throws ServerException
+      *         If any type of error occurred fulfilling the request.
+@@ -143,12 +141,29 @@
+     public String GetObjectState() throws ServerException;
+ 
+     /**
++     * Gets a list of the content models of the object. The strings will be
++     * of the format "info:fedora/PID"
++     * @return the content models of the object
++     * @throws ServerException
++     *         If any type of error occurred fulfilling the request.
++     */
++    public List<String> getContentModels() throws ServerException;
++
++    /**
++     * Determins whether or not the object have the given uri as a content model.
++     *
++     * @param contentModel The object node of the content model
++     * @return true if the object have the content model.
++     */
++    public boolean hasContentModel(ObjectNode contentModel) throws ServerException;
++
++    /**
+      * Gets a list of Datastream identifiers for all Datastreams in the digital
+      * object. Will take a state parameter to specify that only Datastreams that
+      * are in a particular state should be listed (e.g., only active Datastreams
+      * with a state value of "A"). If state is given as null, all datastream ids
+      * will be returned, regardless of state.
+-     * 
++     *
+      * @param state
+      *        The state of the Datastreams to be listed.
+      * @return a list of Datastream identifiers for all Datastreams in the
+@@ -161,7 +176,7 @@
+     /**
+      * Gets the creation dates of all versions of a particular datastream, in no
+      * particular order.
+-     * 
++     *
+      * @param datastreamID
+      *        The datastream identifier
+      * @return the creation dates.
+@@ -178,7 +193,7 @@
+      * If the date/time given is null, the most recent version of each
+      * datastream is obtained. If the state is null, all datastreams as of the
+      * given time will be returned, regardless of state.
+-     * 
++     *
+      * @param versDateTime
+      *        The date-time stamp to get appropriate Datastream versions
+      * @param state
+@@ -196,7 +211,7 @@
+      * non-null, the closest version of the Datastream to the specified
+      * date/time (without going over) is given. If no datastreams match the
+      * given criteria, null is returned.
+-     * 
++     *
+      * @param datastreamID
+      *        The Datastream identifier
+      * @param versDateTime
+@@ -214,7 +229,7 @@
+      * version id (and not the date). The datastream id and version id must
+      * match actual ids of an existing datastream in the object. Otherwise, null
+      * will be returned.
+-     * 
++     *
+      * @param datastreamID
+      *        The datastream identifier
+      * @param versionID
+@@ -233,7 +248,7 @@
+      * The methods are reflected via the service deployment object, which is
+      * implementing the methods defined in a particular by a behavior
+      * definition.
+-     * 
++     *
+      * @param versDateTime
+      *        The date-time stamp to get appropriate version. If this is given
+      *        as null, the most recent version is used.
+@@ -249,7 +264,7 @@
+      * Gets the change history of an object by returning a list of timestamps
+      * that correspond to modification dates of components. This currently
+      * includes changes to datastreams and disseminators.
+-     * 
++     *
+      * @param PID
+      *        The persistent identifier of the digitla object.
+      * @return An Array containing the list of timestamps indicating when
+@@ -261,7 +276,7 @@
+ 
+     /**
+      * Determine of the object contains the given relationship.
+-     * 
++     *
+      * @param predicate
+      *        Predicate of the relationship, or null if unspecified (will match
+      *        any).
+@@ -277,7 +292,7 @@
+ 
+     /**
+      * Get all matching relationships in the object.
+-     * 
++     *
+      * @param predicate
+      *        Predicate of the relationship, or null if unspecified (will match
+      *        any).
+Index: server/src/main/java/fedora/server/storage/translation/METSFedoraExtDOSerializer.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/translation/METSFedoraExtDOSerializer.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/translation/METSFedoraExtDOSerializer.java	Thu Aug 06 17:30:34 CEST 2009
+@@ -5,19 +5,9 @@
+ 
+ package fedora.server.storage.translation;
+ 
+-import java.io.OutputStream;
+-import java.io.OutputStreamWriter;
+-import java.io.PrintWriter;
+-import java.io.UnsupportedEncodingException;
+-
+-import java.util.Date;
+-import java.util.Iterator;
+-
+-import org.apache.log4j.Logger;
+-
+ import fedora.common.Constants;
++import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
+ import fedora.common.xml.format.XMLFormat;
+-
+ import fedora.server.errors.ObjectIntegrityException;
+ import fedora.server.errors.StreamIOException;
+ import fedora.server.storage.types.DSBinding;
+@@ -28,10 +18,15 @@
+ import fedora.server.utilities.DateUtility;
+ import fedora.server.utilities.StreamUtility;
+ import fedora.server.utilities.StringUtility;
+-
+ import fedora.utilities.Base64;
++import org.apache.log4j.Logger;
+ 
+-import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
++import java.io.OutputStream;
++import java.io.OutputStreamWriter;
++import java.io.PrintWriter;
++import java.io.UnsupportedEncodingException;
++import java.util.Date;
++import java.util.Iterator;
+ 
+ /**
+  * Serializes objects in the constructor-provider version of the METS Fedora
+@@ -370,7 +365,7 @@
+             // If WSDL or SERVICE-PROFILE datastream (in BMech)
+             // make sure that any embedded URLs are encoded
+             // appropriately for either EXPORT or STORE.
+-            if (obj.hasRelationship(MODEL.HAS_MODEL, SERVICE_DEPLOYMENT_3_0)
++            if (obj.hasContentModel( SERVICE_DEPLOYMENT_3_0)
+                     && ds.DatastreamID.equals("SERVICE-PROFILE")
+                     || ds.DatastreamID.equals("WSDL")) {
+                 writer.print(DOTranslationUtility
+Index: server/src/main/java/fedora/server/storage/translation/FOXMLDOSerializer.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/translation/FOXMLDOSerializer.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/translation/FOXMLDOSerializer.java	Thu Aug 06 17:30:34 CEST 2009
+@@ -5,22 +5,10 @@
+ 
+ package fedora.server.storage.translation;
+ 
+-import java.io.BufferedWriter;
+-import java.io.OutputStream;
+-import java.io.OutputStreamWriter;
+-import java.io.PrintWriter;
+-import java.io.UnsupportedEncodingException;
+-
+-import java.util.Date;
+-import java.util.Iterator;
+-import java.util.List;
+-
+-import org.apache.log4j.Logger;
+-
+ import fedora.common.Constants;
++import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
+ import fedora.common.rdf.RDFName;
+ import fedora.common.xml.format.XMLFormat;
+-
+ import fedora.server.errors.ObjectIntegrityException;
+ import fedora.server.errors.StreamIOException;
+ import fedora.server.storage.types.DSBinding;
+@@ -31,10 +19,17 @@
+ import fedora.server.utilities.DateUtility;
+ import fedora.server.utilities.StreamUtility;
+ import fedora.server.utilities.StringUtility;
+-
+ import fedora.utilities.Base64;
++import org.apache.log4j.Logger;
+ 
+-import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
++import java.io.BufferedWriter;
++import java.io.OutputStream;
++import java.io.OutputStreamWriter;
++import java.io.PrintWriter;
++import java.io.UnsupportedEncodingException;
++import java.util.Date;
++import java.util.Iterator;
++import java.util.List;
+ 
+ /**
+  * Serializes objects in the constructor-provided version of FOXML.
+@@ -458,7 +453,7 @@
+         // in a SDep object search for any embedded URLs that are relative to
+         // the local repository (like internal service URLs) and make sure they
+         // are converted appropriately for the translation context.
+-        if (obj.hasRelationship(MODEL.HAS_MODEL, SERVICE_DEPLOYMENT_3_0)
++        if (obj.hasContentModel(SERVICE_DEPLOYMENT_3_0)
+                 && (ds.DatastreamID.equals("SERVICE-PROFILE") || ds.DatastreamID
+                         .equals("WSDL"))) {
+             // FIXME! We need a more efficient way than to search
+Index: server/src/main/java/fedora/server/storage/translation/FOXMLDODeserializer.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/translation/FOXMLDODeserializer.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/translation/FOXMLDODeserializer.java	Mon Sep 21 10:39:12 CEST 2009
+@@ -5,13 +5,30 @@
+ 
+ package fedora.server.storage.translation;
+ 
++import fedora.common.Constants;
++import fedora.common.Models;
++import fedora.common.xml.format.XMLFormat;
++import fedora.server.errors.ObjectIntegrityException;
++import fedora.server.errors.StreamIOException;
++import fedora.server.errors.ValidationException;
++import fedora.server.storage.types.*;
++import fedora.server.utilities.DateUtility;
++import fedora.server.utilities.StreamUtility;
++import fedora.server.validation.ValidationUtility;
++import fedora.utilities.Base64;
++import org.apache.log4j.Logger;
++import org.xml.sax.Attributes;
++import org.xml.sax.SAXException;
++import org.xml.sax.helpers.DefaultHandler;
++
++import javax.xml.parsers.SAXParser;
++import javax.xml.parsers.SAXParserFactory;
+ import java.io.File;
+ import java.io.FileNotFoundException;
+ import java.io.FileOutputStream;
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.io.UnsupportedEncodingException;
+-
+ import java.util.ArrayList;
+ import java.util.Date;
+ import java.util.HashMap;
+@@ -20,38 +37,6 @@
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+ 
+-import javax.xml.parsers.SAXParser;
+-import javax.xml.parsers.SAXParserFactory;
+-
+-import org.apache.log4j.Logger;
+-
+-import org.xml.sax.Attributes;
+-import org.xml.sax.SAXException;
+-import org.xml.sax.helpers.DefaultHandler;
+-
+-import fedora.common.Constants;
+-import fedora.common.Models;
+-import fedora.common.xml.format.XMLFormat;
+-
+-import fedora.server.errors.ObjectIntegrityException;
+-import fedora.server.errors.StreamIOException;
+-import fedora.server.errors.ValidationException;
+-import fedora.server.storage.types.AuditRecord;
+-import fedora.server.storage.types.DSBinding;
+-import fedora.server.storage.types.DSBindingMap;
+-import fedora.server.storage.types.Datastream;
+-import fedora.server.storage.types.DatastreamManagedContent;
+-import fedora.server.storage.types.DatastreamReferencedContent;
+-import fedora.server.storage.types.DatastreamXMLMetadata;
+-import fedora.server.storage.types.DigitalObject;
+-import fedora.server.storage.types.Disseminator;
+-import fedora.server.storage.types.RelationshipTuple;
+-import fedora.server.utilities.DateUtility;
+-import fedora.server.utilities.StreamUtility;
+-import fedora.server.validation.ValidationUtility;
+-
+-import fedora.utilities.Base64;
+-
+ /**
+  * Deserializes objects in the constructor-provided version of FOXML.
+  *
+@@ -874,11 +859,18 @@
+ 
+             StringBuilder rels = new StringBuilder();
+             if (m_dsId.equals("WSDL")) {
++
++
++                if (m_obj.hasContentModel(Models.SERVICE_DEPLOYMENT_3_0)){
++                    rels.append(Models.SERVICE_DEPLOYMENT_3_0 + "\n");
++                }
++/*
+                 for (RelationshipTuple rel : m_obj
+                         .getRelationships(MODEL.HAS_MODEL,
+                                           Models.SERVICE_DEPLOYMENT_3_0)) {
+                     rels.append(rel.object + "\n");
+                 }
++*/
+ 
+                 LOG.debug("Not processing WSDL from " + m_obj.getPid()
+                         + " with models:\n" + rels);
+Index: server/src/main/java/fedora/server/security/ResourceAttributeFinderModule.java
+===================================================================
+--- server/src/main/java/fedora/server/security/ResourceAttributeFinderModule.java	(revision 8167)
++++ server/src/main/java/fedora/server/security/ResourceAttributeFinderModule.java	Thu Aug 06 16:52:07 CEST 2009
+@@ -4,31 +4,26 @@
+  */
+ package fedora.server.security;
+ 
+-import java.net.URI;
+-import java.net.URISyntaxException;
+-
+-import java.util.Date;
+-import java.util.HashSet;
+-import java.util.Set;
+-
+ import com.sun.xacml.EvaluationCtx;
+ import com.sun.xacml.attr.AttributeDesignator;
+ import com.sun.xacml.attr.StringAttribute;
+ import com.sun.xacml.cond.EvaluationResult;
+-
+-import org.apache.log4j.Logger;
+-
+ import fedora.common.Constants;
+-
+ import fedora.server.ReadOnlyContext;
+ import fedora.server.Server;
+ import fedora.server.errors.ServerException;
+ import fedora.server.storage.DOManager;
+ import fedora.server.storage.DOReader;
+ import fedora.server.storage.types.Datastream;
+-import fedora.server.storage.types.RelationshipTuple;
+ import fedora.server.utilities.DateUtility;
++import org.apache.log4j.Logger;
+ 
++import java.net.URI;
++import java.net.URISyntaxException;
++import java.util.Date;
++import java.util.HashSet;
++import java.util.Set;
++
+ /**
+  * @author Bill Niebel
+  */
+@@ -230,10 +225,13 @@
+             else if (Constants.MODEL.HAS_MODEL.uri.equals(attributeId)) {
+                 Set<String> models = new HashSet<String>();
+                 try {
++                    models.addAll(reader.getContentModels());
++/*
+                     for (RelationshipTuple r : reader
+                             .getRelationships(Constants.MODEL.HAS_MODEL, null)) {
+                         models.add(r.object);
+                     }
++*/
+                 } catch (ServerException e) {
+                     LOG
+                             .debug("failed getting "
+Index: server/src/main/java/fedora/server/storage/types/DigitalObject.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/types/DigitalObject.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/types/DigitalObject.java	Thu Aug 06 17:23:47 CEST 2009
+@@ -12,6 +12,7 @@
+ 
+ import org.jrdf.graph.ObjectNode;
+ import org.jrdf.graph.PredicateNode;
++import fedora.server.errors.ServerException;
+ 
+ /**
+  * Java representation of a Fedora digital object.
+@@ -286,4 +287,22 @@
+      */
+     public Set<RelationshipTuple> getRelationships(PredicateNode predicate,
+                                                    ObjectNode object);
++
++
++
++    /**
++     * Gets a list of the content models of the object. The strings will be
++     * of the format "info:fedora/PID"
++     * @return the content models of the object
++     */
++    public List<String> getContentModels();
++
++    /**
++     * Determins whether or not the object have the given uri as a content model.
++     *
++     * @param contentModel The object node of the content model
++     * @return true if the object have the content model.
++     */
++    public boolean hasContentModel(ObjectNode contentModel);
++
+ }
+Index: server/src/main/java/fedora/server/access/defaultdisseminator/DefaultDisseminatorImpl.java
+===================================================================
+--- server/src/main/java/fedora/server/access/defaultdisseminator/DefaultDisseminatorImpl.java	(revision 8167)
++++ server/src/main/java/fedora/server/access/defaultdisseminator/DefaultDisseminatorImpl.java	Thu Aug 06 17:23:47 CEST 2009
+@@ -4,25 +4,8 @@
+  */
+ package fedora.server.access.defaultdisseminator;
+ 
+-import java.io.ByteArrayInputStream;
+-import java.io.ByteArrayOutputStream;
+-import java.io.File;
+-import java.io.InputStream;
+-import java.io.UnsupportedEncodingException;
+-
+-import java.util.ArrayList;
+-import java.util.Date;
+-
+-import javax.xml.transform.Templates;
+-import javax.xml.transform.Transformer;
+-import javax.xml.transform.TransformerException;
+-import javax.xml.transform.TransformerFactory;
+-import javax.xml.transform.stream.StreamResult;
+-import javax.xml.transform.stream.StreamSource;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
+-
+ import fedora.server.Context;
+ import fedora.server.access.Access;
+ import fedora.server.access.ObjectProfile;
+@@ -36,10 +19,21 @@
+ import fedora.server.storage.types.MethodDef;
+ import fedora.server.storage.types.MethodParmDef;
+ import fedora.server.storage.types.ObjectMethodsDef;
+-
+ import fedora.utilities.XmlTransformUtility;
+ 
+-import static fedora.common.Constants.MODEL;
++import javax.xml.transform.Templates;
++import javax.xml.transform.Transformer;
++import javax.xml.transform.TransformerException;
++import javax.xml.transform.TransformerFactory;
++import javax.xml.transform.stream.StreamResult;
++import javax.xml.transform.stream.StreamSource;
++import java.io.ByteArrayInputStream;
++import java.io.ByteArrayOutputStream;
++import java.io.File;
++import java.io.InputStream;
++import java.io.UnsupportedEncodingException;
++import java.util.ArrayList;
++import java.util.Date;
+ 
+ /**
+  * Implements the methods defined in the DefaultDisseminator interface. This is
+@@ -156,10 +150,8 @@
+     public MIMETypedStream viewMethodIndex() throws ServerException {
+         // sdp: the dissemination index is disabled for service definition and deployment objects
+         // so send back a message saying so.
+-        if (reader.hasRelationship(MODEL.HAS_MODEL,
+-                                   Models.SERVICE_DEFINITION_3_0)
+-                || reader.hasRelationship(MODEL.HAS_MODEL,
+-                                          Models.SERVICE_DEPLOYMENT_3_0)) {
++        if (reader.hasContentModel(Models.SERVICE_DEFINITION_3_0)
++                || reader.hasContentModel(Models.SERVICE_DEPLOYMENT_3_0)) {
+             return noMethodIndexMsg();
+         }
+ 
+Index: server/src/test/java/fedora/server/storage/MockRepositoryReader.java
+===================================================================
+--- server/src/test/java/fedora/server/storage/MockRepositoryReader.java	(revision 8167)
++++ server/src/test/java/fedora/server/storage/MockRepositoryReader.java	Thu Aug 06 17:23:47 CEST 2009
+@@ -4,19 +4,17 @@
+  */
+ package fedora.server.storage;
+ 
+-import java.util.HashMap;
+-import java.util.Iterator;
+-import java.util.Map;
+-
+-import fedora.common.Constants;
+ import fedora.common.Models;
+-
+ import fedora.server.Context;
+ import fedora.server.errors.GeneralException;
+ import fedora.server.errors.ObjectNotFoundException;
+ import fedora.server.errors.ServerException;
+ import fedora.server.storage.types.DigitalObject;
+ 
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.Map;
++
+ /**
+  * Mock implementation of <code>RepositoryReader</code> for testing. This
+  * works by simply keeping a map of <code>DigitalObject</code> instances in
+@@ -90,7 +88,8 @@
+                                                                            String pid)
+             throws ServerException {
+         DigitalObject obj = getObject(pid);
+-        if (!obj.hasRelationship(Constants.MODEL.HAS_MODEL,
++        //TODO hasModel
++        if (!obj.hasContentModel(
+                                  Models.SERVICE_DEPLOYMENT_3_0)) {
+             throw new GeneralException("Not a service deployment: " + pid);
+         } else {
+@@ -111,7 +110,8 @@
+                                                                            String pid)
+             throws ServerException {
+         DigitalObject obj = getObject(pid);
+-        if (!obj.hasRelationship(Constants.MODEL.HAS_MODEL,
++        //TODO hasModel
++        if (!obj.hasContentModel(
+                                  Models.SERVICE_DEFINITION_3_0)) {
+             throw new GeneralException("Not a service definition object: "
+                     + pid);
+Index: server/src/main/java/fedora/server/access/DefaultAccess.java
+===================================================================
+--- server/src/main/java/fedora/server/access/DefaultAccess.java	(revision 8167)
++++ server/src/main/java/fedora/server/access/DefaultAccess.java	Thu Aug 06 16:59:08 CEST 2009
+@@ -4,43 +4,13 @@
+  */
+ package fedora.server.access;
+ 
+-import java.io.ByteArrayInputStream;
+-import java.io.InputStream;
+-import java.io.UnsupportedEncodingException;
+-
+-import java.net.InetAddress;
+-import java.net.URLDecoder;
+-import java.net.UnknownHostException;
+-
+-import java.util.ArrayList;
+-import java.util.Date;
+-import java.util.Enumeration;
+-import java.util.HashSet;
+-import java.util.Hashtable;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.StringTokenizer;
+-import java.util.Vector;
+-import java.util.regex.Matcher;
+-import java.util.regex.Pattern;
+-
+-import org.apache.log4j.Logger;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
+-
+ import fedora.server.Context;
+ import fedora.server.Module;
+ import fedora.server.Server;
+ import fedora.server.access.dissemination.DisseminationService;
+-import fedora.server.errors.DatastreamNotFoundException;
+-import fedora.server.errors.DisseminationException;
+-import fedora.server.errors.DisseminatorNotFoundException;
+-import fedora.server.errors.GeneralException;
+-import fedora.server.errors.InvalidUserParmException;
+-import fedora.server.errors.MethodNotFoundException;
+-import fedora.server.errors.ModuleInitializationException;
+-import fedora.server.errors.ServerException;
++import fedora.server.errors.*;
+ import fedora.server.search.FieldSearchQuery;
+ import fedora.server.search.FieldSearchResult;
+ import fedora.server.security.Authorization;
+@@ -49,23 +19,20 @@
+ import fedora.server.storage.ExternalContentManager;
+ import fedora.server.storage.ServiceDefinitionReader;
+ import fedora.server.storage.ServiceDeploymentReader;
+-import fedora.server.storage.types.Datastream;
+-import fedora.server.storage.types.DatastreamDef;
+-import fedora.server.storage.types.DatastreamManagedContent;
+-import fedora.server.storage.types.DatastreamReferencedContent;
+-import fedora.server.storage.types.DatastreamXMLMetadata;
+-import fedora.server.storage.types.DeploymentDSBindRule;
+-import fedora.server.storage.types.DeploymentDSBindSpec;
+-import fedora.server.storage.types.DisseminationBindingInfo;
+-import fedora.server.storage.types.MIMETypedStream;
+-import fedora.server.storage.types.MethodDef;
+-import fedora.server.storage.types.MethodDefOperationBind;
+-import fedora.server.storage.types.MethodParmDef;
+-import fedora.server.storage.types.ObjectMethodsDef;
+-import fedora.server.storage.types.Property;
+-import fedora.server.storage.types.RelationshipTuple;
++import fedora.server.storage.types.*;
+ import fedora.server.utilities.DateUtility;
++import org.apache.log4j.Logger;
+ 
++import java.io.ByteArrayInputStream;
++import java.io.InputStream;
++import java.io.UnsupportedEncodingException;
++import java.net.InetAddress;
++import java.net.URLDecoder;
++import java.net.UnknownHostException;
++import java.util.*;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++
+ /**
+  * The Access Module, providing support for the Fedora Access subsystem.
+  *
+@@ -261,9 +228,14 @@
+          * mappings are ever stored in the registry, this may be simplified.
+          */
+         String serviceDeploymentPID = null;
++        for (String cModelURI: reader.getContentModels()){
++            String cModelPID = cModelURI.substring("info:fedora/".length());
++        
++/*
+         for (RelationshipTuple rel : reader.getRelationships(MODEL.HAS_MODEL,
+                                                              null)) {
+             String cModelPID = rel.getObjectPID();
++*/
+             String foundDeploymentPID =
+                     m_manager.lookupDeploymentForCModel(cModelPID, sDefPID);
+ 
+@@ -318,9 +290,13 @@
+             String cModelPID = null;
+             String message = null;
+ 
++/*
+             models: for (RelationshipTuple rel : reader
+                     .getRelationships(MODEL.HAS_MODEL, null)) {
+                 cModelPID = rel.getObjectPID();
++*/
++            models: for (String cm:reader.getContentModels()){
++                cModelPID = cm.substring(12);
+ 
+                 /* Skip over system models */
+                 if (Models.contains("info:fedora/" + cModelPID)) {
+@@ -619,10 +595,14 @@
+         profile.objectLastModDate = reader.getLastModDate();
+         profile.objectState = reader.GetObjectState();
+ 
++        profile.objectModels.addAll(reader.getContentModels());
++
++/*
+         for (RelationshipTuple rel : reader
+                 .getRelationships(Constants.MODEL.HAS_MODEL, null)) {
+             profile.objectModels.add(rel.object);
+         }
++*/
+ 
+         String reposBaseURL =
+                 getReposBaseURL(context
+Index: server/src/main/java/fedora/server/storage/types/BasicDigitalObject.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/types/BasicDigitalObject.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/types/BasicDigitalObject.java	Thu Aug 06 17:23:47 CEST 2009
+@@ -4,28 +4,16 @@
+  */
+ package fedora.server.storage.types;
+ 
+-import java.util.ArrayList;
+-import java.util.Collections;
+-import java.util.Date;
+-import java.util.HashMap;
+-import java.util.HashSet;
+-import java.util.Iterator;
+-import java.util.LinkedHashMap;
+-import java.util.LinkedHashSet;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
+-
+-import org.jrdf.graph.ObjectNode;
+-import org.jrdf.graph.PredicateNode;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
+ import fedora.common.rdf.JRDF;
+-
+ import fedora.server.errors.ServerException;
+ import fedora.server.storage.RDFRelationshipReader;
++import org.jrdf.graph.ObjectNode;
++import org.jrdf.graph.PredicateNode;
+ 
++import java.util.*;
++
+ /**
+  * A basic implementation of DigitalObject that stores things in memory.
+  *
+@@ -66,6 +54,8 @@
+ 
+     private final Map<String, String> m_extProperties;
+ 
++
++
+     public BasicDigitalObject() {
+         m_auditRecords = new ArrayList<AuditRecord>();
+         m_datastreams = new LinkedHashMap<String, List<Datastream>>();
+@@ -356,6 +346,20 @@
+         return foundRels;
+     }
+ 
++    public List<String> getContentModels() {
++        Set<RelationshipTuple> cmTubles = getRelationships(Constants.MODEL.HAS_MODEL,
++                                                           null);
++        List<String> cms = new ArrayList<String>();
++        for (RelationshipTuple cmTuble:cmTubles){
++            cms.add(cmTuble.object);
++        }
++        return cms;
++    }
++
++    public boolean hasContentModel(ObjectNode contentModel) {
++        return hasRelationship(Constants.MODEL.HAS_MODEL,contentModel);
++    }
++
+     /**
+      * Given an iterator of existing ids, return a new id that starts with
+      * <code>start</code> and is guaranteed to be unique. This algorithm adds
+Index: server/src/main/java/fedora/server/utilities/rebuild/SQLRebuilder.java
+===================================================================
+--- server/src/main/java/fedora/server/utilities/rebuild/SQLRebuilder.java	(revision 8167)
++++ server/src/main/java/fedora/server/utilities/rebuild/SQLRebuilder.java	Mon Aug 10 10:20:54 CEST 2009
+@@ -4,30 +4,8 @@
+  */
+ package fedora.server.utilities.rebuild;
+ 
+-import java.io.File;
+-import java.io.IOException;
+-import java.io.InputStream;
+-
+-import java.sql.Connection;
+-import java.sql.DatabaseMetaData;
+-import java.sql.DriverManager;
+-import java.sql.ResultSet;
+-import java.sql.SQLException;
+-import java.sql.Statement;
+-
+-import java.util.ArrayList;
+-import java.util.Date;
+-import java.util.HashMap;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
+-
+-import org.apache.log4j.Logger;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
+-
+ import fedora.server.Context;
+ import fedora.server.ReadOnlyContext;
+ import fedora.server.Server;
+@@ -53,7 +31,25 @@
+ import fedora.server.storage.types.RelationshipTuple;
+ import fedora.server.utilities.SQLUtility;
+ import fedora.server.utilities.TableSpec;
++import org.apache.log4j.Logger;
+ 
++import java.io.File;
++import java.io.IOException;
++import java.io.InputStream;
++import java.sql.Connection;
++import java.sql.DatabaseMetaData;
++import java.sql.DriverManager;
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.sql.Statement;
++import java.util.ArrayList;
++import java.util.Date;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
+ /**
+  * A Rebuilder for the SQL database.
+  */
+@@ -400,8 +396,7 @@
+             s1 = conn.createStatement();
+             s1.executeUpdate(query);
+ 
+-            if (obj.hasRelationship(Constants.MODEL.HAS_MODEL,
+-                                    Models.SERVICE_DEPLOYMENT_3_0)) {
++            if (obj.hasContentModel(Models.SERVICE_DEPLOYMENT_3_0)){
+                 updateDeploymentMap(obj, conn);
+             }
+         } catch (SQLException sqle) {
+Index: client/src/main/java/fedora/client/utility/validate/types/BasicObjectInfo.java
+===================================================================
+--- client/src/main/java/fedora/client/utility/validate/types/BasicObjectInfo.java	(revision 8167)
++++ client/src/main/java/fedora/client/utility/validate/types/BasicObjectInfo.java	Mon Sep 21 10:35:14 CEST 2009
+@@ -5,18 +5,13 @@
+ 
+ package fedora.client.utility.validate.types;
+ 
+-import java.util.ArrayList;
+-import java.util.Collection;
+-import java.util.Collections;
+-import java.util.HashMap;
+-import java.util.HashSet;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
++import fedora.common.Constants;
+ 
++import java.util.*;
++
+ /**
+  * A simple immutable implementation of {@link ObjectInfo}.
+- * 
++ *
+  * @author Jim Blake
+  */
+ public class BasicObjectInfo
+@@ -97,6 +92,29 @@
+         return datastreamMap.get(dsId);
+     }
+ 
++    public Collection<String> getContentModels() {
++        //TODO: This is one of the methods to change for inheritance
++        Collection<RelationshipInfo> cms = getRelations(Constants.MODEL.HAS_MODEL.uri);
++        List<String> result = new ArrayList<String>();
++        for (RelationshipInfo cm:cms){
++            String uri = cm.getObject();
++            result.add(uri);
++        }
++        return result;
++    }
++
++    public boolean hasContentModel(String contentmodelpid) {
++        //TODO: This is one of the methods to change for inheritance
++
++        Collection<RelationshipInfo> cms = getRelations(Constants.MODEL.HAS_MODEL.uri);
++        for (RelationshipInfo cm:cms){
++            if (cm.getObjectPid().equals(contentmodelpid)){
++                return true;
++            }
++        }
++        return false;
++    }
++
+     @Override
+     public boolean equals(Object obj) {
+         if (this == obj) {
+@@ -110,8 +128,8 @@
+         }
+         BasicObjectInfo that = (BasicObjectInfo) obj;
+         return equivalent(pid, that.pid)
+-                && equivalent(datastreamMap, that.datastreamMap)
+-                && equivalent(relations, that.relations);
++               && equivalent(datastreamMap, that.datastreamMap)
++               && equivalent(relations, that.relations);
+     }
+ 
+     private boolean equivalent(Object o1, Object o2) {
+@@ -130,7 +148,7 @@
+     @Override
+     public String toString() {
+         return "BasicObjectInfo[pid='" + pid + "', relations=" + relations
+-                + "', datastreamMap=" + datastreamMap + "]";
++               + "', datastreamMap=" + datastreamMap + "]";
+     }
+ 
+ }
+Index: server/src/test/java/fedora/server/storage/MockDOReader.java
+===================================================================
+--- server/src/test/java/fedora/server/storage/MockDOReader.java	(revision 8167)
++++ server/src/test/java/fedora/server/storage/MockDOReader.java	Mon Aug 10 15:56:11 CEST 2009
+@@ -5,8 +5,17 @@
+ 
+ package fedora.server.storage;
+ 
+-import java.io.InputStream;
++import fedora.server.errors.ServerException;
++import fedora.server.storage.types.AuditRecord;
++import fedora.server.storage.types.Datastream;
++import fedora.server.storage.types.DigitalObject;
++import fedora.server.storage.types.ObjectMethodsDef;
++import fedora.server.storage.types.RelationshipTuple;
++import static fedora.common.Constants.MODEL;
++import org.jrdf.graph.ObjectNode;
++import org.jrdf.graph.PredicateNode;
+ 
++import java.io.InputStream;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.Comparator;
+@@ -14,16 +23,6 @@
+ import java.util.List;
+ import java.util.Set;
+ 
+-import org.jrdf.graph.ObjectNode;
+-import org.jrdf.graph.PredicateNode;
+-
+-import fedora.server.errors.ServerException;
+-import fedora.server.storage.types.AuditRecord;
+-import fedora.server.storage.types.Datastream;
+-import fedora.server.storage.types.DigitalObject;
+-import fedora.server.storage.types.ObjectMethodsDef;
+-import fedora.server.storage.types.RelationshipTuple;
+-
+ /**
+  * A partial implementation of {@link DOReader} for use in unit tests. Add more
+  * mocking to this class as needed, or override methods in sub-classes.
+@@ -99,6 +98,21 @@
+         return theObject.getState();
+     }
+ 
++    public List<String> getContentModels() throws ServerException {
++
++           List<String> list = new ArrayList<String>();
++           for (RelationshipTuple rel : getRelationships(MODEL.HAS_MODEL,null)) {
++               list.add(rel.object);
++           }
++           return list;
++       }
++
++       public boolean hasContentModel(ObjectNode contentModel)
++               throws ServerException {
++           return hasRelationship(MODEL.HAS_MODEL,contentModel);
++       }
++
++
+     public Date getCreateDate() throws ServerException {
+         return theObject.getCreateDate();
+     }
+Index: server/src/main/java/fedora/server/storage/translation/AtomDOSerializer.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/translation/AtomDOSerializer.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/translation/AtomDOSerializer.java	Thu Aug 06 17:23:47 CEST 2009
+@@ -4,27 +4,6 @@
+  */
+ package fedora.server.storage.translation;
+ 
+-import java.io.ByteArrayInputStream;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.OutputStream;
+-import java.io.Reader;
+-import java.io.StringReader;
+-import java.io.UnsupportedEncodingException;
+-import java.util.Date;
+-import java.util.Iterator;
+-import java.util.zip.ZipEntry;
+-import java.util.zip.ZipOutputStream;
+-
+-import org.apache.abdera.Abdera;
+-import org.apache.abdera.ext.thread.ThreadHelper;
+-import org.apache.abdera.i18n.iri.IRI;
+-import org.apache.abdera.model.Entry;
+-import org.apache.abdera.model.Feed;
+-import org.apache.abdera.model.Link;
+-import org.apache.abdera.util.MimeTypeHelper;
+-import org.apache.commons.io.IOUtils;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
+ import fedora.common.PID;
+@@ -37,7 +16,27 @@
+ import fedora.server.utilities.DateUtility;
+ import fedora.server.utilities.StreamUtility;
+ import fedora.utilities.MimeTypeUtils;
++import org.apache.abdera.Abdera;
++import org.apache.abdera.ext.thread.ThreadHelper;
++import org.apache.abdera.i18n.iri.IRI;
++import org.apache.abdera.model.Entry;
++import org.apache.abdera.model.Feed;
++import org.apache.abdera.model.Link;
++import org.apache.abdera.util.MimeTypeHelper;
++import org.apache.commons.io.IOUtils;
+ 
++import java.io.ByteArrayInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.io.Reader;
++import java.io.StringReader;
++import java.io.UnsupportedEncodingException;
++import java.util.Date;
++import java.util.Iterator;
++import java.util.zip.ZipEntry;
++import java.util.zip.ZipOutputStream;
++
+ /**
+  * <p>Serializes a Fedora Object in Atom with Threading Extensions.</p>
+  * 
+@@ -345,7 +344,7 @@
+             throws UnsupportedEncodingException, StreamIOException {
+         String content;
+ 
+-        if (m_obj.hasRelationship(MODEL.HAS_MODEL,
++        if (m_obj.hasContentModel(
+                                   Models.SERVICE_DEPLOYMENT_3_0)
+                 && (ds.DatastreamID.equals("SERVICE-PROFILE") || ds.DatastreamID
+                         .equals("WSDL"))) {
+Index: client/src/main/java/fedora/client/utility/validate/types/ObjectInfo.java
+===================================================================
+--- client/src/main/java/fedora/client/utility/validate/types/ObjectInfo.java	(revision 8167)
++++ client/src/main/java/fedora/client/utility/validate/types/ObjectInfo.java	Mon Aug 10 10:20:54 CEST 2009
+@@ -26,4 +26,7 @@
+ 
+     public DatastreamInfo getDatastreamInfo(String dsId);
+ 
++    public Collection<String> getContentModels();
++
++    public boolean hasContentModel(String contentmodelpid);
+ }
+Index: server/src/main/java/fedora/server/utilities/ConnectionWrapper.java
+===================================================================
+--- server/src/main/java/fedora/server/utilities/ConnectionWrapper.java	(revision 8167)
++++ server/src/main/java/fedora/server/utilities/ConnectionWrapper.java	Mon Aug 10 10:20:58 CEST 2009
+@@ -4,14 +4,14 @@
+  */
+ package fedora.server.utilities;
+ 
+-/* JDBC_4_ANT_TOKEN_BEGIN -
++/* JDBC_4_ANT_TOKEN_BEGIN */
+ import java.sql.Array;
+ import java.sql.Blob;
+ import java.sql.Clob;
+ import java.sql.NClob;
+ import java.sql.SQLXML;
+ import java.sql.Struct;
+-- JDBC_4_ANT_TOKEN_END */
++/* JDBC_4_ANT_TOKEN_END */
+ import java.sql.CallableStatement;
+ import java.sql.Connection;
+ import java.sql.DatabaseMetaData;
+@@ -38,7 +38,7 @@
+         m_wrappedConnection = wrapped;
+     }
+     
+-    /* JDBC_4_ANT_TOKEN_BEGIN -
++    /* JDBC_4_ANT_TOKEN_BEGIN */
+ 
+     public boolean isWrapperFor(Class<?> iface) {
+         throw new UnsupportedOperationException(
+@@ -105,7 +105,7 @@
+                 "Java 1.6 Connection methods are not supported");
+     }
+ 
+-    - JDBC_4_ANT_TOKEN_END */
++    /* JDBC_4_ANT_TOKEN_END */
+ 
+     public Statement createStatement() throws SQLException {
+         return m_wrappedConnection.createStatement();
+Index: server/src/main/java/fedora/server/storage/SimpleDOReader.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/SimpleDOReader.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/SimpleDOReader.java	Fri Sep 18 14:16:37 CEST 2009
+@@ -4,27 +4,8 @@
+  */
+ package fedora.server.storage;
+ 
+-import java.io.ByteArrayInputStream;
+-import java.io.ByteArrayOutputStream;
+-import java.io.InputStream;
+-
+-import java.text.SimpleDateFormat;
+-
+-import java.util.ArrayList;
+-import java.util.Date;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Set;
+-import java.util.TreeSet;
+-
+-import org.apache.log4j.Logger;
+-
+-import org.jrdf.graph.ObjectNode;
+-import org.jrdf.graph.PredicateNode;
+-
+-import fedora.common.Constants;
++import static fedora.common.Constants.MODEL;
+ import fedora.common.Models;
+-
+ import fedora.server.Context;
+ import fedora.server.errors.DisseminationException;
+ import fedora.server.errors.MethodNotFoundException;
+@@ -35,16 +16,24 @@
+ import fedora.server.errors.UnsupportedTranslationException;
+ import fedora.server.storage.translation.DOTranslationUtility;
+ import fedora.server.storage.translation.DOTranslator;
+-import fedora.server.storage.types.AuditRecord;
+-import fedora.server.storage.types.BasicDigitalObject;
+-import fedora.server.storage.types.Datastream;
+-import fedora.server.storage.types.DigitalObject;
+-import fedora.server.storage.types.MethodDef;
+-import fedora.server.storage.types.MethodParmDef;
+-import fedora.server.storage.types.ObjectMethodsDef;
+-import fedora.server.storage.types.RelationshipTuple;
++import fedora.server.storage.types.*;
+ import fedora.server.utilities.DateUtility;
++import org.apache.log4j.Logger;
++import org.jrdf.graph.ObjectNode;
++import org.jrdf.graph.PredicateNode;
+ 
++import java.io.ByteArrayInputStream;
++import java.io.ByteArrayOutputStream;
++import java.io.InputStream;
++import java.text.SimpleDateFormat;
++import java.util.ArrayList;
++import java.util.Date;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Set;
++import java.util.TreeSet;
++
++
+ /**
+  * A DOReader backed by a DigitalObject.
+  *
+@@ -80,7 +69,7 @@
+                           String encoding,
+                           InputStream serializedObject)
+             throws ObjectIntegrityException, StreamIOException,
+-            UnsupportedTranslationException, ServerException {
++                   UnsupportedTranslationException, ServerException {
+         m_context = context;
+         m_repoReader = repoReader;
+         m_translator = translator;
+@@ -151,7 +140,7 @@
+      * format.
+      */
+     public InputStream GetObjectXML() throws ObjectIntegrityException,
+-            StreamIOException, UnsupportedTranslationException, ServerException {
++                                             StreamIOException, UnsupportedTranslationException, ServerException {
+         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+         m_translator.serialize(m_obj,
+                                bytes,
+@@ -166,14 +155,14 @@
+      */
+     public InputStream Export(String format, String exportContext)
+             throws ObjectIntegrityException, StreamIOException,
+-            UnsupportedTranslationException, ServerException {
++                   UnsupportedTranslationException, ServerException {
+         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+         int transContext;
+         // first, set the translation context...
+         LOG.debug("Export context: " + exportContext);
+ 
+         if (exportContext == null || exportContext.equals("")
+-                || exportContext.equalsIgnoreCase("default")) {
++            || exportContext.equalsIgnoreCase("default")) {
+             // null and default is set to PUBLIC translation
+             transContext = DOTranslationUtility.SERIALIZE_EXPORT_PUBLIC;
+         } else if (exportContext.equalsIgnoreCase("public")) {
+@@ -184,11 +173,11 @@
+             transContext = DOTranslationUtility.SERIALIZE_EXPORT_ARCHIVE;
+         } else {
+             throw new UnsupportedTranslationException("Export context "
+-                    + exportContext + " is not valid.");
++                                                      + exportContext + " is not valid.");
+         }
+         // now serialize for export in the proper XML format...
+         if (format == null || format.equals("")
+-                || format.equalsIgnoreCase("default")) {
++            || format.equalsIgnoreCase("default")) {
+             LOG.debug("Export in default format: " + m_exportFormat);
+             m_translator.serialize(m_obj,
+                                    bytes,
+@@ -209,7 +198,7 @@
+     @Deprecated
+     public InputStream ExportObject(String format, String exportContext)
+             throws ObjectIntegrityException, StreamIOException,
+-            UnsupportedTranslationException, ServerException {
++                   UnsupportedTranslationException, ServerException {
+         return Export(format, exportContext);
+     }
+ 
+@@ -237,6 +226,20 @@
+         return m_obj.getState();
+     }
+ 
++    public List<String> getContentModels() throws ServerException {
++
++        List<String> list = new ArrayList<String>();
++        for (RelationshipTuple rel : getRelationships(MODEL.HAS_MODEL,null)) {
++            list.add(rel.object);
++        }
++        return list;
++    }
++
++    public boolean hasContentModel(ObjectNode contentModel)
++            throws ServerException {
++        return hasRelationship(MODEL.HAS_MODEL,contentModel);
++    }
++
+     /**
+      * {@inheritDoc}
+      */
+@@ -371,11 +374,11 @@
+                                     Date versDateTime)
+             throws MethodNotFoundException, ServerException {
+         if (sDefPID.equalsIgnoreCase("fedora-system:1")
+-                || sDefPID.equalsIgnoreCase("fedora-system:3")) {
++            || sDefPID.equalsIgnoreCase("fedora-system:3")) {
+             throw new MethodNotFoundException("[getObjectMethods] The object, "
+-                    + m_obj.getPid()
+-                    + ", will not report on dynamic method definitions "
+-                    + "at this time (fedora-system:1 and fedora-system:3.");
++                                              + m_obj.getPid()
++                                              + ", will not report on dynamic method definitions "
++                                              + "at this time (fedora-system:1 and fedora-system:3.");
+         }
+ 
+         if (sDefReader == null) {
+@@ -426,11 +429,14 @@
+         ArrayList<String> sDefIDList = new ArrayList<String>();
+ 
+         ServiceDefinitionReader sDefReader = null;
++/*
+         Set<RelationshipTuple> cmRels =
+-                getRelationships(Constants.MODEL.HAS_MODEL, null);
++                getRelationships(MODEL.HAS_MODEL, null);
+ 
+         for (RelationshipTuple element : cmRels) {
++*/
+ 
++        for (String cm:getContentModels()){
+             /*
+              * FIXME: If the we encounter a relation to one of the "system"
+              * models, then skip it, since its functionality is hardwired in.
+@@ -438,12 +444,12 @@
+              * wire in the default system behaviour based upon their content
+              * (just like everything else)
+              */
+-            if (Models.contains(element.object)) {
++            if (Models.contains(cm)) {
+                 continue;
+             }
+ 
+             DOReader cmReader;
+-            String cModelPid = element.getObjectPID();
++            String cModelPid = cm.substring(12);
+             if ("self".equals(cModelPid)) {
+                 cmReader = this;
+                 cModelPid = GetObjectPID();
+@@ -454,8 +460,8 @@
+                 } catch (StorageException e) {
+                     throw new DisseminationException(null,
+                                                      "Content Model Object "
+-                                                             + cModelPid
+-                                                             + " does not exist.",
++                                                     + cModelPid
++                                                     + " does not exist.",
+                                                      null,
+                                                      null,
+                                                      e);
+@@ -463,7 +469,7 @@
+             }
+             Set<RelationshipTuple> hasServiceRels =
+                     cmReader
+-                            .getRelationships(Constants.MODEL.HAS_SERVICE, null);
++                            .getRelationships(MODEL.HAS_SERVICE, null);
+             for (RelationshipTuple element2 : hasServiceRels) {
+                 String sDefPid = element2.getObjectPID();
+ 
+@@ -474,8 +480,8 @@
+                                                                     sDefPid);
+                 } catch (StorageException se) {
+                     throw new DisseminationException("Service definition "
+-                            + sDefPid + " required by Content Model "
+-                            + cModelPid + " not found.");
++                                                     + sDefPid + " required by Content Model "
++                                                     + cModelPid + " not found.");
+                 }
+                 MethodDef[] methods =
+                         listMethods(sDefPid, sDefReader, versDateTime);
+Index: client/src/main/java/fedora/client/utility/validate/ObjectValidator.java
+===================================================================
+--- client/src/main/java/fedora/client/utility/validate/ObjectValidator.java	(revision 8167)
++++ client/src/main/java/fedora/client/utility/validate/ObjectValidator.java	Mon Aug 10 16:39:56 CEST 2009
+@@ -5,24 +5,21 @@
+ 
+ package fedora.client.utility.validate;
+ 
+-import java.util.Collection;
+-
+ import fedora.client.utility.validate.types.BasicObjectInfo;
+ import fedora.client.utility.validate.types.ContentModelInfo;
+-import fedora.client.utility.validate.types.DatastreamInfo;
+-import fedora.client.utility.validate.types.ObjectInfo;
+-import fedora.client.utility.validate.types.RelationshipInfo;
+ import fedora.client.utility.validate.types.ContentModelInfo.DsTypeModel;
+ import fedora.client.utility.validate.types.ContentModelInfo.Form;
++import fedora.client.utility.validate.types.DatastreamInfo;
++import fedora.client.utility.validate.types.ObjectInfo;
+ 
+-import fedora.common.Constants;
++import java.util.Collection;
+ 
+ /**
+  * This is the actual validation engine, performing validation tests on an
+  * {@link ObjectInfo}. The engine is provided with an {@link ObjectSource} at
+  * instantiation time, in case additional objects are required to complete the
+  * validation.
+- * 
++ *
+  * @author Jim Blake
+  */
+ public class ObjectValidator {
+@@ -75,14 +72,14 @@
+ 
+         ValidationResult result = new ValidationResult(object);
+ 
+-        if (!object.hasRelation(Constants.MODEL.HAS_MODEL.uri)) {
++        Collection<String> contentmodels = object.getContentModels();
++        if (contentmodels.size() == 0){
+             result.addNote(ValidationResultNotation.noContentModel());
+             return result;
+         }
+ 
+-        for (RelationshipInfo relation : object
+-                .getRelations(Constants.MODEL.HAS_MODEL.uri)) {
+-            validateAgainstContentModel(result, relation, object);
++        for (String contentmodel:contentmodels){
++            validateAgainstContentModel(result, contentmodel, object);
+         }
+ 
+         return result;
+@@ -102,16 +99,19 @@
+      * </p>
+      */
+     private void validateAgainstContentModel(ValidationResult result,
+-                                             RelationshipInfo relation,
+-                                             ObjectInfo object) {
+-        String contentModelPid = relation.getObjectPid();
++                                             String cm,
+ 
+-        if (contentModelPid == null) {
++                                             ObjectInfo object) {
++        String contentModelPid;
++        if (cm.startsWith("info:fedora/")){
++            contentModelPid = cm.substring(12);
++        } else{
+             result.addNote(ValidationResultNotation
+-                    .unrecognizedContentModelUri(relation.getObject()));
++                    .unrecognizedContentModelUri(cm));
+             return;
+         }
+ 
++
+         try {
+             ContentModelInfo contentModel =
+                     objectSource.getContentModelInfo(contentModelPid);
+@@ -162,8 +162,8 @@
+         // Otherwise, the datastream must meet the constraints of at least one form.
+         for (Form form : forms) {
+             if (meetsConstraint(dsInfo.getMimeType(), form.getMimeType())
+-                    && meetsConstraint(dsInfo.getFormatUri(), form
+-                            .getFormatUri())) {
++                && meetsConstraint(dsInfo.getFormatUri(), form
++                    .getFormatUri())) {
+                 return;
+             }
+         }
+Index: server/src/test/java/fedora/server/storage/translation/TestXMLDODeserializer.java
+===================================================================
+--- server/src/test/java/fedora/server/storage/translation/TestXMLDODeserializer.java	(revision 8167)
++++ server/src/test/java/fedora/server/storage/translation/TestXMLDODeserializer.java	Thu Aug 06 17:30:34 CEST 2009
+@@ -5,43 +5,29 @@
+ 
+ package fedora.server.storage.translation;
+ 
+-import java.io.ByteArrayInputStream;
+-import java.io.ByteArrayOutputStream;
+-import java.io.File;
+-import java.io.FileInputStream;
+-import java.io.FileOutputStream;
+-import java.io.InputStream;
+-import java.io.OutputStream;
+-import java.io.UnsupportedEncodingException;
+-
+-import java.lang.reflect.Field;
+-
+-import java.util.Date;
+-import java.util.Iterator;
+-import java.util.LinkedHashMap;
+-import java.util.List;
+-
+-import org.jrdf.graph.URIReference;
+-
+-import org.junit.Test;
+-
++import static fedora.common.Models.FEDORA_OBJECT_3_0;
++import static fedora.common.Models.SERVICE_DEFINITION_3_0;
++import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
+ import fedora.server.errors.ObjectIntegrityException;
+ import fedora.server.errors.StreamIOException;
++import static fedora.server.storage.translation.DOTranslationUtility.DESERIALIZE_INSTANCE;
++import static fedora.server.storage.translation.DOTranslationUtility.SERIALIZE_STORAGE_INTERNAL;
+ import fedora.server.storage.types.AuditRecord;
+ import fedora.server.storage.types.BasicDigitalObject;
+ import fedora.server.storage.types.Datastream;
+ import fedora.server.storage.types.DatastreamXMLMetadata;
+ import fedora.server.storage.types.DigitalObject;
+ import fedora.server.storage.types.Disseminator;
++import org.jrdf.graph.URIReference;
++import org.junit.Test;
+ 
+-import static fedora.common.Constants.MODEL;
+-import static fedora.common.Models.FEDORA_OBJECT_3_0;
+-import static fedora.common.Models.SERVICE_DEFINITION_3_0;
+-import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
++import java.io.*;
++import java.lang.reflect.Field;
++import java.util.Date;
++import java.util.Iterator;
++import java.util.LinkedHashMap;
++import java.util.List;
+ 
+-import static fedora.server.storage.translation.DOTranslationUtility.DESERIALIZE_INSTANCE;
+-import static fedora.server.storage.translation.DOTranslationUtility.SERIALIZE_STORAGE_INTERNAL;
+-
+ /**
+  * Common unit tests and utility methods for XML-based deserializers.
+  *
+@@ -241,7 +227,7 @@
+ 
+         for (URIReference model : models) {
+             assertTrue("Did not detect that object had model " + model, obj
+-                    .hasRelationship(MODEL.HAS_MODEL, model));
++                    .hasContentModel(model));
+         }
+         assertEquals(TEST_PID, obj.getPid());
+     }
+Index: server/src/test/java/mock/sql/MockStatement.java
+===================================================================
+--- server/src/test/java/mock/sql/MockStatement.java	(revision 8167)
++++ server/src/test/java/mock/sql/MockStatement.java	Mon Aug 10 10:20:58 CEST 2009
+@@ -197,7 +197,7 @@
+         throw new RuntimeException("MockStatement.setQueryTimeout not implemented");
+     }
+ 
+-    /* JDBC_4_ANT_TOKEN_BEGIN -
++    /* JDBC_4_ANT_TOKEN_BEGIN */
+     @Override
+     public boolean isPoolable() throws SQLException {
+         throw new UnsupportedOperationException(
+@@ -221,5 +221,5 @@
+         throw new UnsupportedOperationException(
+             "Java 1.6 JDBC methods are not supported");
+     }
+-    - JDBC_4_ANT_TOKEN_END */
++    /* JDBC_4_ANT_TOKEN_END */
+ }
+Index: server/src/main/java/fedora/server/storage/DefaultDOManager.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/DefaultDOManager.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/DefaultDOManager.java	Thu Aug 06 17:23:47 CEST 2009
+@@ -4,53 +4,13 @@
+  */
+ package fedora.server.storage;
+ 
+-import java.io.ByteArrayInputStream;
+-import java.io.ByteArrayOutputStream;
+-import java.io.File;
+-import java.io.FileInputStream;
+-import java.io.FileNotFoundException;
+-import java.io.FileOutputStream;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.UnsupportedEncodingException;
+-
+-import java.sql.Connection;
+-import java.sql.ResultSet;
+-import java.sql.SQLException;
+-import java.sql.Statement;
+-
+-import java.util.ArrayList;
+-import java.util.Date;
+-import java.util.HashMap;
+-import java.util.HashSet;
+-import java.util.Iterator;
+-import java.util.Map;
+-import java.util.Set;
+-import java.util.Map.Entry;
+-import java.util.concurrent.ConcurrentHashMap;
+-
+-import org.apache.log4j.Logger;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
+-
+ import fedora.server.Context;
+ import fedora.server.Module;
+ import fedora.server.RecoveryContext;
+ import fedora.server.Server;
+-import fedora.server.errors.ConnectionPoolNotFoundException;
+-import fedora.server.errors.GeneralException;
+-import fedora.server.errors.InvalidContextException;
+-import fedora.server.errors.LowlevelStorageException;
+-import fedora.server.errors.ModuleInitializationException;
+-import fedora.server.errors.ObjectAlreadyInLowlevelStorageException;
+-import fedora.server.errors.ObjectExistsException;
+-import fedora.server.errors.ObjectLockedException;
+-import fedora.server.errors.ObjectNotFoundException;
+-import fedora.server.errors.ObjectNotInLowlevelStorageException;
+-import fedora.server.errors.ServerException;
+-import fedora.server.errors.StorageDeviceException;
+-import fedora.server.errors.StreamIOException;
++import fedora.server.errors.*;
+ import fedora.server.management.Management;
+ import fedora.server.management.PIDGenerator;
+ import fedora.server.resourceIndex.ResourceIndex;
+@@ -60,14 +20,7 @@
+ import fedora.server.storage.lowlevel.ILowlevelStorage;
+ import fedora.server.storage.translation.DOTranslationUtility;
+ import fedora.server.storage.translation.DOTranslator;
+-import fedora.server.storage.types.BasicDigitalObject;
+-import fedora.server.storage.types.Datastream;
+-import fedora.server.storage.types.DatastreamManagedContent;
+-import fedora.server.storage.types.DatastreamXMLMetadata;
+-import fedora.server.storage.types.DigitalObject;
+-import fedora.server.storage.types.DigitalObjectUtil;
+-import fedora.server.storage.types.MIMETypedStream;
+-import fedora.server.storage.types.RelationshipTuple;
++import fedora.server.storage.types.*;
+ import fedora.server.utilities.DCField;
+ import fedora.server.utilities.DCFields;
+ import fedora.server.utilities.SQLUtility;
+@@ -75,7 +28,23 @@
+ import fedora.server.validation.DOValidator;
+ import fedora.server.validation.DOValidatorImpl;
+ import fedora.server.validation.ValidationUtility;
++import org.apache.log4j.Logger;
+ 
++import java.io.*;
++import java.sql.Connection;
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.sql.Statement;
++import java.util.ArrayList;
++import java.util.Date;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.Map.Entry;
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++
+ /**
+  * Manages the reading and writing of digital objects by instantiating an
+  * appropriate object reader or writer. Also, manages the object ingest process
+@@ -1373,8 +1342,8 @@
+                             + systemVersion + " " + "WHERE doPID='"
+                             + obj.getPid() + "'");
+ 
+-                    if (obj.hasRelationship(MODEL.HAS_MODEL,
+-                                            Models.SERVICE_DEPLOYMENT_3_0)) {
++                    //TODO hasModel
++                    if (obj.hasContentModel(Models.SERVICE_DEPLOYMENT_3_0)) {
+                         updateDeploymentMap(obj, conn, false);
+                     }
+                 } catch (SQLException sqle) {
+@@ -1667,8 +1636,8 @@
+                     .executeUpdate("DELETE FROM doRegistry WHERE doPID='" + pid
+                             + "'");
+ 
+-            if (obj.hasRelationship(MODEL.HAS_MODEL,
+-                                    Models.SERVICE_DEPLOYMENT_3_0)) {
++            //TODO hasModel
++            if (obj.hasContentModel(Models.SERVICE_DEPLOYMENT_3_0)) {
+                 updateDeploymentMap(obj, conn, true);
+             }
+         } catch (SQLException sqle) {
+Index: server/src/main/java/fedora/server/storage/translation/DOTranslationUtility.java
+===================================================================
+--- server/src/main/java/fedora/server/storage/translation/DOTranslationUtility.java	(revision 8167)
++++ server/src/main/java/fedora/server/storage/translation/DOTranslationUtility.java	Fri Sep 18 12:06:26 CEST 2009
+@@ -4,36 +4,14 @@
+  */
+ package fedora.server.storage.translation;
+ 
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.InputStreamReader;
+-import java.io.PrintWriter;
+-import java.io.Reader;
+-import java.io.StringWriter;
+-import java.io.UnsupportedEncodingException;
+-
+-import java.nio.charset.Charset;
+-
+-import java.util.ArrayList;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.regex.Pattern;
+-
+-import javax.xml.stream.XMLEventReader;
+-import javax.xml.stream.XMLInputFactory;
+-import javax.xml.stream.XMLStreamException;
+-import javax.xml.stream.events.Attribute;
+-import javax.xml.stream.events.Characters;
+-import javax.xml.stream.events.StartElement;
+-import javax.xml.stream.events.XMLEvent;
+-
+-import org.apache.log4j.Logger;
+-
+ import fedora.common.Constants;
+ import fedora.common.Models;
++import static fedora.common.Models.CONTENT_MODEL_3_0;
++import static fedora.common.Models.FEDORA_OBJECT_3_0;
++import static fedora.common.Models.SERVICE_DEFINITION_3_0;
++import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
+ import fedora.common.rdf.RDFName;
+ import fedora.common.xml.namespace.QName;
+-
+ import fedora.server.Server;
+ import fedora.server.config.ServerConfiguration;
+ import fedora.server.errors.ObjectIntegrityException;
+@@ -45,11 +23,27 @@
+ import fedora.server.storage.types.Disseminator;
+ import fedora.server.utilities.DateUtility;
+ import fedora.server.utilities.StreamUtility;
++import org.apache.log4j.Logger;
+ 
+-import static fedora.common.Models.CONTENT_MODEL_3_0;
+-import static fedora.common.Models.FEDORA_OBJECT_3_0;
+-import static fedora.common.Models.SERVICE_DEFINITION_3_0;
+-import static fedora.common.Models.SERVICE_DEPLOYMENT_3_0;
++import javax.xml.stream.XMLEventReader;
++import javax.xml.stream.XMLInputFactory;
++import javax.xml.stream.XMLStreamException;
++import javax.xml.stream.events.Attribute;
++import javax.xml.stream.events.Characters;
++import javax.xml.stream.events.StartElement;
++import javax.xml.stream.events.XMLEvent;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.io.PrintWriter;
++import java.io.Reader;
++import java.io.StringWriter;
++import java.io.UnsupportedEncodingException;
++import java.nio.charset.Charset;
++import java.util.ArrayList;
++import java.util.Iterator;
++import java.util.List;
++import java.util.regex.Pattern;
+ 
+ /**
+  * Utility methods for usage by digital object serializers and deserializers.
+@@ -735,7 +729,7 @@
+         if (transContext == AS_IS) {
+             return;
+         }
+-        if (obj.hasRelationship(MODEL.HAS_MODEL, Models.SERVICE_DEPLOYMENT_3_0)) {
++        if (obj.hasContentModel( Models.SERVICE_DEPLOYMENT_3_0)) {
+             Iterator<String> datastreams = obj.datastreamIdIterator();
+             while (datastreams.hasNext()) {
+                 String dsid = datastreams.next();
+@@ -808,18 +802,18 @@
+ 
+     public static RDFName getTypeAttribute(DigitalObject obj)
+             throws ObjectIntegrityException {
+-        if (obj.hasRelationship(MODEL.HAS_MODEL, SERVICE_DEFINITION_3_0)) {
++        if (obj.hasContentModel(SERVICE_DEFINITION_3_0)) {
+             return MODEL.BDEF_OBJECT;
+         }
+-        if (obj.hasRelationship(MODEL.HAS_MODEL, SERVICE_DEPLOYMENT_3_0)) {
++        if (obj.hasContentModel(SERVICE_DEPLOYMENT_3_0)) {
+             return MODEL.BMECH_OBJECT;
+         }
+-        if (obj.hasRelationship(MODEL.HAS_MODEL, CONTENT_MODEL_3_0)) {
++        if (obj.hasContentModel( CONTENT_MODEL_3_0)) {
+ 
+             // FOXML 1.0 doesn't support this type; down-convert
+             return MODEL.DATA_OBJECT;
+         }
+-        if (obj.hasRelationship(MODEL.HAS_MODEL, FEDORA_OBJECT_3_0)) {
++        if (obj.hasContentModel( FEDORA_OBJECT_3_0)) {
+             return MODEL.DATA_OBJECT;
+         }
+         return null;
+Index: resources/scripts/installLibs.sh
+===================================================================
+--- resources/scripts/installLibs.sh	(revision 8167)
++++ resources/scripts/installLibs.sh	Mon Sep 21 10:26:09 CEST 2009
+@@ -18,7 +18,7 @@
+ mvn install:install-file -Dfile=lib/jmx.jar -DgroupId=duraspace -DartifactId=jmx -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+ mvn install:install-file -Dfile=lib/lucene-core-2.4.0.jar -DgroupId=duraspace -DartifactId=lucene-core-2.4.0 -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+ mvn install:install-file -Dfile=lib/mptstore-0.9.1.jar -DgroupId=org.fedorarepo -DartifactId=mptstore -Dversion=0.9.1 -Dpackaging=jar -DgeneratePom=true
+-mvn install:install-file -Dfile=lib/mulgara-core-2.1.1.jar -DgroupId=org.fedorarepo -DartifactId=mulgara-core -Dversion=2.1.1 -Dpackaging=jar -DgeneratePom=true
++mvn install:install-file -Dfile=lib/mulgara-core-2.1.1.jar -DgroupId=org.mulgara -DartifactId=mulgara-core -Dversion=2.1.1 -Dpackaging=jar -DgeneratePom=true
+ mvn install:install-file -Dfile=lib/one-jar-boot-0.96.jar -DgroupId=org.fedorarepo -DartifactId=one-jar-boot -Dversion=0.96 -Dpackaging=jar -DgeneratePom=true
+ mvn install:install-file -Dfile=lib/openrdf-sesame-2.2.1-onejar.jar -DgroupId=duraspace -DartifactId=openrdf-sesame-2.2.1-onejar -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+ mvn install:install-file -Dfile=lib/saxon9-dom.jar -DgroupId=duraspace -DartifactId=saxon9-dom -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true

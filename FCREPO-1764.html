@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1764 Can&#x27;t Sparql Update to Delete Fragment URIs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1764</span> Can&#x27;t Sparql Update to Delete Fragment URIs</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Trey Pendragon</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2015-10-08 20:07 UTC</td></tr><tr><th>Updated</th><td>2016-02-16 18:23 UTC</td></tr><tr><th>Resolved</th><td>2016-02-16 18:23 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>When you create a fragment URI, I would expect to be able to delete it by running sparql update on the parent resource and doing something like </p>
+
+<p>DELETE</p>
+  { &lt;hashuri&gt; ?p ?v }
+<p>WHERE </p>
+{
+  &lt;hashuri&gt; ?p ?v .
+}
+
+<p>but doing so throws errors that it can't delete the server managed triples on that resource.</p>
+<h2>Comments (21)</h2>
+<div class="comment" id="comment-15440"><div class="by">Esmé Cowles, 2015-10-08 20:11 UTC</div><div class="text"><p>If you specify a particular property, you can delete it, e.g.:</p>
+
+<p>DELETE WHERE </p>
+{ &lt;hashuri&gt; &lt;http://example.org/foo&gt; "bar" }
+
+<p>But deleting all of the userspace properties doesn't delete the resource &#8211; the server managed resources associated with it being a container stick around.</p>
+
+<p>Also, trying to delete with an HTTP DELETE deletes the parent resource, e.g.:</p>
+
+<p>curl -X DELETE "http://localhost:8080/rest/foo#bar"</p>
+
+<p>deletes <a href="http://localhost:8080/rest/foo" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/foo</a>, not the hashuri.</p></div></div>
+<div class="comment" id="comment-15451"><div class="by">A. Soroka, 2015-10-14 13:24 UTC</div><div class="text"><p>I don't think we really know what hash-URIs mean in Fedora, anyway. They clearly aren't "anchors" in a representation. We need to get a handle on that and make sure that we aren't doing something that makes a hash of HTTP. See what I did there? Eh?</p></div></div>
+<div class="comment" id="comment-15621"><div class="by">justin, 2015-10-30 13:46 UTC</div><div class="text"><p>Is it possible to implement GC triggered by deleting all of the userspace properties?</p></div></div>
+<div class="comment" id="comment-15622"><div class="by">justin, 2015-10-30 13:48 UTC</div><div class="text"><p>Alternatively, is it possible for hash-based uri's to not be full JCR nodes, can they just be stored on the parent-URI?</p></div></div>
+<div class="comment" id="comment-15623"><div class="by">A. Soroka, 2015-10-30 13:49 UTC</div><div class="text"><p>It is, using JCR. As discussed on the email list, we are trying to avoid that because it severely restricts the possible future implementations of Fedora.</p></div></div>
+<div class="comment" id="comment-15624"><div class="by">A. Soroka, 2015-10-30 13:52 UTC</div><div class="text"><p>In the current design, if hash-URIs are going to serve as the subjects of triples, they must be associated with JCR nodes. Changing that design is certainly theoretically possible, but it would be a pretty tremendous amount of work and much <em>more</em> backward-incompatible than other suggestions that have been made to help resolve this problem. (I.e. 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1801" >
+                <a href="FCREPO-1801.html" class="jira-issue-macro-key issue-link"  title="Prevent inbound links to hash URI fragments" >
+            
+            FCREPO-1801
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+)</p></div></div>
+<div class="comment" id="comment-15625"><div class="by">Esmé Cowles, 2015-10-30 13:54 UTC</div><div class="text"><p>I think the other possibilities boil down to establishing an HTTP convention for explicitly triggering node cleanup and/or deletion.  This could be an HTTP header to indicate the hash URI fragments to delete, or a header/parameter/etc. to trigger the deletion of all hash URI fragments with no properties or referents, etc.</p></div></div>
+<div class="comment" id="comment-15626"><div class="by">justin, 2015-10-30 13:55 UTC</div><div class="text"><p>So, not just associated with, but strongly associated with?  So that the node representing <a href="http://example.org/fedora/rest/node1" class="external-link" rel="nofollow noreferrer">http://example.org/fedora/rest/node1</a> could not own the triples with the uri <a href="http://example.org/fedora/rest/node1#sub1" class="external-link" rel="nofollow noreferrer">http://example.org/fedora/rest/node1#sub1</a></p></div></div>
+<div class="comment" id="comment-15627"><div class="by">A. Soroka, 2015-10-30 14:02 UTC</div><div class="text"><p>Justin-- any subject must have its own node. Period. One-to-one. As I said, that could be changed, but if you have problems with back-incompatibility from 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1801" >
+                <a href="FCREPO-1801.html" class="jira-issue-macro-key issue-link"  title="Prevent inbound links to hash URI fragments" >
+            
+            FCREPO-1801
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, you will be much less happy with this idea.</p>
+
+<p>Esmé-- -1 in a big way to inventing magic Fedora-specific headers (or even worse, params) for this kind of subject selection. That sounds more-or-less like we're breaking HTTP at that point.</p></div></div>
+<div class="comment" id="comment-15628"><div class="by">justin, 2015-10-30 14:10 UTC</div><div class="text"><p>So, I don't know much about the Fedora implementation, so please help me understand.  The impression that I get is that Fedora has tightly coupled resources (the graph I get when I fetch a URI) with the data layer (what triples that live on that graph mean).  </p>
+
+<p>The benefits of tight coupling, is that you can check referential integrity.  And you don't have to figure out if a DELETE or UPDATE means update just the graph I'm pointing at or all the triples with this as my subject.</p>
+
+<p>The drawback being that hash URIs don't really have a place in the scheme.</p>
+
+<p>So one solution (which is probably hard to implement) would be to decouple the resources from the data they represent. Then impose constraints which ensure that you can't add/update triples on a resource they shouldn't go on.  That is, you can add <a href="http://example.com/fedora/rest/123#sub1" class="external-link" rel="nofollow noreferrer">http://example.com/fedora/rest/123#sub1</a> on <a href="http://example.com/fedora/rest/123" class="external-link" rel="nofollow noreferrer">http://example.com/fedora/rest/123</a> but not on <a href="http://example.com/fedora/rest/321" class="external-link" rel="nofollow noreferrer">http://example.com/fedora/rest/321</a>.  Would something like this be theoretically possible?  Or do I have I misconceived the whole idea?</p></div></div>
+<div class="comment" id="comment-15629"><div class="by">A. Soroka, 2015-10-30 14:13 UTC</div><div class="text"><p>I don't really understand what you mean by "decouple the resources from the data they represent". Are you talking about some kind of abstraction layer?</p></div></div>
+<div class="comment" id="comment-15630"><div class="by">justin, 2015-10-30 14:23 UTC</div><div class="text"><p>I suppose you could call it an abstraction layer.  I guess what I'm saying is add a type of node called "graph" which has a URI. The Graph object could contains 1-n child nodes that represent objects.  The objects would be identified by a unique subject URI (and the relationship to the parent graph).  Typically the child node shares the URI of the graph uri, but it may also be a sub-uri like a hash code or a b-node.  </p>
+
+<p>When you make a HTTP request it should return/update all the nodes in the Graph corresponding to the URI. Referential intergrity / GC is applied only to the child nodes.</p>
+
+<p>Fedora could apply constraints on the children ensuring you don't put an object into a graph where it doesn't belong (non-matching URIs).</p>
+
+<p>This could decouple the resource layer (graph) from the data layer. </p></div></div>
+<div class="comment" id="comment-15631"><div class="by">A. Soroka, 2015-10-30 14:26 UTC</div><div class="text"><p>Justin, that's pretty much exactly what we have now. It clearly does not solve the problem of nodes elsewhere in the repository making links into hash-URI nodes.</p></div></div>
+<div class="comment" id="comment-15632"><div class="by">justin, 2015-10-30 14:31 UTC</div><div class="text"><p>I guess I don't understand what the problem is with nodes making links into the hash-URI nodes then. Can you explain it to me?</p></div></div>
+<div class="comment" id="comment-15633"><div class="by">A. Soroka, 2015-10-30 14:47 UTC</div><div class="text"><p>It's explained very well in Esmé Cowles's first comment on this very ticket. If you allow that (as we currently do), then you cannot discover when to delete the hash-URI node without using JCR's special ability to know when links are pointing back into it.</p></div></div>
+<div class="comment" id="comment-15641"><div class="by">Trey Pendragon, 2015-10-30 17:58 UTC</div><div class="text"><p>A. Soroka So to reiterate: The problem is that I want to be able to delete the hash resource via a sparql query on the parent, which is equated to "magically delete the JCR resource when it doesn't have any triples left in it", but we don't want triples on outside objects to disappear if we do that?</p>
+
+<p>Why the assumption that I don't want those outside triples to disappear when I delete all the triples from a hash URI?</p></div></div>
+<div class="comment" id="comment-15642"><div class="by">A. Soroka, 2015-10-30 18:01 UTC</div><div class="text"><p>Because we have to make the assumption one way or another, and we sure as heck don't want to make it to the side of "Assume that the user just doesn't care and delete anything we need to delete to get this request finished."</p></div></div>
+<div class="comment" id="comment-15643"><div class="by">Trey Pendragon, 2015-10-30 18:04 UTC</div><div class="text"><p>A. Soroka Alright. It would have been nice for my use cases if that happened, but I can see why we'd want to go the careful route.</p></div></div>
+<div class="comment" id="comment-15644"><div class="by">A. Soroka, 2015-10-30 18:07 UTC</div><div class="text"><p>"Fedora: Careful to a fault, so you don't have to be."</p></div></div>
+<div class="comment" id="comment-16148"><div class="by">Esmé Cowles, 2016-02-16 16:25 UTC</div><div class="text"><p>The current behavior: if all the user-managed triples about a hash URI fragment are removed, then the node remains in place, but is invisible.  This could result in very large numbers of empty hash URI fragments hanging around.</p>
+
+<p>Here's a PR that remove them: <a href="https://github.com/fcrepo4/fcrepo4/pull/982" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/982</a></p>
+
+<p>Given our other choices (not including server-managed triples, not providing an explicit deletion mechanism), I think removing them when there are no user-managed/visible properties associated with them.</p></div></div>
+<div class="comment" id="comment-16149"><div class="by">Andrew Woods, 2016-02-16 18:23 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/a71298f4817887538112dccc1979ad40956c8ff3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a71298f4817887538112dccc1979ad40956c8ff3</a></p></div></div>
+<p><a href="data/FCREPO-1764.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

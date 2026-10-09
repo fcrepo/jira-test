@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-39 Ingest/Export Whole Objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-39</span> Ingest/Export Whole Objects</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2007-02-12 22:32 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2008-09-14 17:06 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 2.2, Fedora 3.0</td></tr></table>
+<h2>Description</h2>
+<p>There are a number of features that are important for<br/>
+supporting ingest and export of objects. These are:<br/>
+1. Ingest SIP (self-contained) - This would be for a<br/>
+single digital object, that there is the ability for<br/>
+all datastream content to be inlined or attached so<br/>
+that it is not necessary for the repository to call<br/>
+back to obtain the content bytestream.<br/>
+2. Ingest Archive - This would be a whole set of<br/>
+self-contained SIPS bound together as an archive that<br/>
+can be ingested into the repository in an efficient manner.<br/>
+3. Export (self-contained) - This would be an export<br/>
+of a single digital object where the content of all<br/>
+managed content datastreams is inlined or attached. <br/>
+This can enable a dump and load of a repository since<br/>
+this export can file become a self-contained SIP (as in<br/>
+#1) above. This allows you to dump a Fedora<br/>
+repository, shut it down, and still be able to load up<br/>
+a new repository using the export files as SIPS -<br/>
+without having to do callbacks to the original<br/>
+repository to get the managed content datastreams.<br/>
+4. Export Archive - This would be a whole set of<br/>
+self-contained export files bound together as an archive.<br/>
+Date: 2006-11-15 10:01<br/>
+Sender: payette<br/>
+Logged In: YES <br/>
+user_id=128<br/>
+Ingest/Export (self-contained objects) is complete (#1 and #3).<br/>
+Ingest/Export archive of many objects is a future item.<br/>
+Date: 2005-11-16 11:27<br/>
+Sender: payette<br/>
+Logged In: YES <br/>
+user_id=128<br/>
+Need to look at options for self-contained SIP ingest:<br/>
+1) base64 inlining<br/>
+2) SOAP attachments<br/>
+3) XOP<br/>
+4) ARC files<br/>
+5) other<br/>
+Date: 2005-11-16 11:25<br/>
+Sender: payette<br/>
+Logged In: YES <br/>
+user_id=128<br/>
+More comments on the problem:<br/>
+ Now, the object export will create "public" callback<br/>
+URLs<br/>
+for datastreams of type M (managed content). This<br/>
+works well for migration (export from one repository and<br/>
+ingest into new repository) as long as the old repository<br/>
+is up and running at the time of the ingest into the new<br/>
+repository. Then the datastream content can be<br/>
+sucked into the new repository via callback URLs<br/>
+(getItem requests on default disseminator).<br/>
+However, if the old repository is not available after an<br/>
+export, or if you just want to dump and re-load the<br/>
+SAME repository we need a way to get the managed<br/>
+content out of the repository as part of the export.<br/>
+In the Fedora spec, we envisioned a variant of the<br/>
+export file with base-64 encoded binary content inlined<br/>
+for the managed content datastreams. Then, the<br/>
+export file is complete in that it has all the datastream<br/>
+content that was in the repository within it.<br/>
+We can either create another export method on API-M<br/>
+such as exportWithContent() or parameterize the<br/>
+existing export method. From the ingest standpoint, we<br/>
+need to implement logic to look for base64-encoded<br/>
+content or the content location URL as two alternatives.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10057"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: sjw46<br/>
+Item #: 1658414<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1658414" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1658414</a><br/>
+Closed On: 2007-02-12 16:41:24<br/>
+Closed By: sjw46</p></div></div>
+<div class="comment" id="comment-10506"><div class="by">Chris Wilper, 2008-09-14 17:06 UTC</div><div class="text"><p>This is now possible on a single-object basis by base64-encoding managed content (Fedora 2.2), or using the new AtomZip ingest format (Fedora 3.0)</p></div></div>
+<p><a href="data/FCREPO-39.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

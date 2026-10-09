@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3203 Migration-utils:  improve performance of small batch migrations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3203</span> Migration-utils:  improve performance of small batch migrations</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2020-02-02 22:33 UTC</td></tr><tr><th>Updated</th><td>2020-02-03 14:42 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-utils-4.5.0</td></tr></table>
+<h2>Environment</h2>CentOs 7 Linux, Java 11, CIFS-mounted source filesystem (Fedora 3.8.1, Akubra storage), CIFS-mounted target filesystem
+<h2>Description</h2>
+<p>Migrating a single object from 400,000 objects takes approximately 3.5 hours in our environment, despite using a pre-generated datastream index.  Upon examination, it looks like every single object is scanned (from the filesystem?) then checked to see if it should be migrated.</p>
+
+<p>I ran the following command at 10:02 AM:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+java -jar target/migration-utils-4.4.1-SNAPSHOT-driver.jar --source-type=akubra --datastreams-dir=/fedora3-prod/fedora/datastreams --objects-dir=/fedora3-prod/fedora/objects --target-dir=/fedora-migration-test --layout=pairtree --pid-file=/<span class="code-keyword">var</span>/tmp/test-migration-pids.txt --index-dir=/<span class="code-keyword">var</span>/tmp/datastream-index --debug</pre>
+</div></div>
+<p> </p>
+
+<p>The file <tt>/var/tmp/test-migration-pids.txt</tt> contains a PID for a single object.</p>
+
+<p>Looking at the debug log, I saw many of these entries, one per object in our repository:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+DEBUG 10:02:16.741 (UserProvidedPidListManager) PID: 1711.dl:2IWVGDIWTE4FU8Q, accept? <span class="code-keyword">false</span>
+ DEBUG 10:02:16.765 (UserProvidedPidListManager) PID: 1711.dl:X6FSD5T4JBUPS9D, accept? <span class="code-keyword">false</span>
+ DEBUG 10:02:16.786 (UserProvidedPidListManager) PID: 1711.dl:56KTJDLD47H2D8R, accept? <span class="code-keyword">false</span>
+ DEBUG 10:02:16.816 (UserProvidedPidListManager) PID: 1711.dl:6OKBI5VJH3DD49B, accept? <span class="code-keyword">false</span>
+ DEBUG 10:02:16.840 (UserProvidedPidListManager) PID: 1711.dl:ALJVKGFZONRTD8R, accept? <span class="code-keyword">false</span>
+ DEBUG 10:02:16.863 (UserProvidedPidListManager) PID: 1711.dl:5U7C22BGOOC6C8B, accept? <span class="code-keyword">false</span></pre>
+</div></div>
+<p>Migration-utils scanned approximately 25 - 30 object per second.  There are 390,925 objects in our repository.</p>
+
+<p>At 10:35, it found the object to migrate, and migrated it:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+DEBUG 10:35:38.890 (UserProvidedPidListManager) PID: 1711.dl:4RJO2AJNM55JH82, accept? <span class="code-keyword">true</span>
+DEBUG 10:35:38.910 (ResumePidListManager) PID: 1711.dl:4RJO2AJNM55JH82, accept? <span class="code-keyword">true</span>
+</pre>
+</div></div>
+<p>After migrating it, it migration-utils then continued to scan through the rest of the objects in our repository.  It finished running at 1:28 PM.<br/>
+ Total run time for one object:  3 hours 26 minutes.</p>
+
+<p>Recommendations for partial migrations, reading from a PID list:</p>
+
+<p>1.  Stop the migration when the last PID in the list is migrated.</p>
+
+<p>2.  Generate a reusable object index, similar to the datastream index, that can be quickly scanned on subsequent runs.</p>
+<p><a href="data/FCREPO-3203.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

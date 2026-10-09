@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2430 Import/Export: Make use of configuration explicit</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2430</span> Import/Export: Make use of configuration explicit</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Joe Atzberger</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-04-26 22:05 UTC</td></tr><tr><th>Updated</th><td>2017-05-26 13:18 UTC</td></tr><tr><th>Resolved</th><td>2017-05-26 13:18 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>Generating a config implicitly and then using it on subsequent operations means that those who expect their command-line options to apply only for that command will be surprised.<br/>
+Generating a config to /var means that on certain OS, the config will be lost upon system restart.  So those who rely on the persistence of previous command line options will also be surprised.<br/>
+Generating a config on first execution means that order of operation between otherwise independent calls matters (say, 3 calls, each exporting a different object with different options).<br/>
+I would recommend an explicit --set-config or --write-config option to eliminate these 3 categories of surprise.  </p>
+
+<p>See: <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+Joe+Atzberger" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+Joe+Atzberger</a></p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-18889"><div class="by">Esmé Cowles, 2017-05-24 15:35 UTC</div><div class="text"><p>AFAICT, we do not use a config file unless the --config option is present in the config file.  So maybe this ticket should be a new feature: add a parameter to write the config file to disk at a specified location, and don't write the config file unless that is specified.</p></div></div>
+<div class="comment" id="comment-18895"><div class="by">Andrew Woods, 2017-05-24 18:18 UTC</div><div class="text"><p>That sounds reasonable to me. Thoughts, Joe Atzberger?</p></div></div>
+<div class="comment" id="comment-18913"><div class="by">Joe Atzberger, 2017-05-24 20:50 UTC</div><div class="text"><blockquote><p>I would recommend an explicit --set-config or --write-config option to eliminate these 3 categories of surprise.</p></blockquote>
+<p>So I think Esmé Cowles and I are on the same page there.  I don't understand this statement though:</p>
+<blockquote><p>AFAICT, we do not use a config file unless the --config option is present in the config file</p></blockquote>
+<p>So you read the file but then only use it conditionally?  via an option that would otherwise be used to refer to it?  That seems... odd.</p></div></div>
+<div class="comment" id="comment-18956"><div class="by">Esmé Cowles, 2017-05-25 18:00 UTC</div><div class="text"><p>Joe Atzberger, the tool checks if the config file is there, and writes it with the current options if it's not. Other than that, it doesn't read or use the config file, unless the –config option is specified (in which case, it gets parsed and used for the args).  I think the log message "Configuration file exists, new file will NOT be created" may be more confusing than helpful here.</p>
+
+<p>The logic behind writing a config file based on the current options was that it made it much easier to use the config file feature if you had a sample to work from.  But I'm increasingly thinking we shouldn't write one unless an option says we should (and provides the path to write it).</p></div></div>
+<div class="comment" id="comment-18965"><div class="by">Andrew Woods, 2017-05-25 19:48 UTC</div><div class="text"><p>Esmé Cowles +1 to your suggestion above.</p></div></div>
+<div class="comment" id="comment-18969"><div class="by">Esmé Cowles, 2017-05-25 20:51 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/96" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/96</a></p></div></div>
+<div class="comment" id="comment-18974"><div class="by">Andrew Woods, 2017-05-25 21:39 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-18984"><div class="by">Andrew Woods, 2017-05-26 13:18 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/34d138425ff12d99560fa969dc3b7e9e544e9adc" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/34d138425ff12d99560fa969dc3b7e9e544e9adc</a></p></div></div>
+<p><a href="data/FCREPO-2430.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

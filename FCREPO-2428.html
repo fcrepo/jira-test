@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2428 Re-import of hierarchy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2428</span> Re-import of hierarchy</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2017-04-26 21:09 UTC</td></tr><tr><th>Updated</th><td>2017-05-22 19:44 UTC</td></tr><tr><th>Resolved</th><td>2017-05-20 04:22 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to enable support for import of a hierarchy of resources that have been exported with the use of a user-provided membership predicate.</p>
+
+<p>For example, it is unclear how to reimport the export of:<br/>
+java -jar fcrepo-import-export-0.1.0.jar -b -a -p <a href="http://pcdm.org/models#hasMember" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#hasMember</a> -d data -m export -r <a href="http://localhost:8080/f4/rest/collection0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/f4/rest/collection0</a></p>
+
+<p>See: <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods</a></p>
+
+<h2>Comments (15)</h2>
+<div class="comment" id="comment-18733"><div class="by">Situ, Longshou, 2017-05-17 15:17 UTC</div><div class="text"><p>Andrew Woods It's a little tricky with the member resources that are located in different containers other than the container for the resource that are targeted for import. In this case the member resource need to be imported under different context and the member resource URL may not be rebased properly in those resources that reference it. Finally I made it work with a little trick. Here is the PR:  <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/79" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/79</a>.</p></div></div>
+<div class="comment" id="comment-18749"><div class="by">Andrew Woods, 2017-05-17 21:33 UTC</div><div class="text"><p>Without more debug logging statements, it is a little unclear why it is not working, but the scenario mentioned in this ticket is does not appear to be resolved based on this PR.</p>
+
+<p><a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test3-Export/Importsingleresource-withuser-providedmembershiprelationship,withinternalbinaries" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test3-Export/Importsingleresource-withuser-providedmembershiprelationship,withinternalbinaries</a></p>
+
+<p> </p>
+
+<p>See code review comments.</p></div></div>
+<div class="comment" id="comment-18764"><div class="by">Situ, Longshou, 2017-05-18 16:23 UTC</div><div class="text"><p>Andrew Woods I think this should fix the scenario for "Test 3 - Export/Import single resource - with user-provided membership relationship, with internal binaries" #3 (Import to /fcrepo, indicating membership predicate), as the example listed in the description text. What scenarios would you also expect to fix? Do you want me to provide a test with the same predicate and hierarchy structure?</p></div></div>
+<div class="comment" id="comment-18766"><div class="by">Andrew Woods, 2017-05-18 17:51 UTC</div><div class="text"><p>I am not seeing an update to your pull-request. When I tested "Test 3", it did not re-import the hierarchy. Have you tested the scenario as documented?</p></div></div>
+<div class="comment" id="comment-18767"><div class="by">Situ, Longshou, 2017-05-18 18:00 UTC</div><div class="text"><p>I haven't test it yet but I'll test and see what's the gap. Thanks.</p></div></div>
+<div class="comment" id="comment-18774"><div class="by">Situ, Longshou, 2017-05-18 21:49 UTC</div><div class="text"><p>Andrew Woods I think the major problem is that we use a different repository root (f4 /fcrepo) renamed it, while my code is trying to discovery the related resources by detecting the file existence. I've added a commit to compared the source url for discovering the member resource as well, and I also refactored the codes and correct the typos as you suggested (see commit <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/79/commits/8cdc75d74db92f149f50f10c2763f7d0541e96af" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/79/commits/8cdc75d74db92f149f50f10c2763f7d0541e96af</a>). I see it works with test #3 in "Test 3" now. Here is the command I used for test:<br/>
+java -jar fcrepo-import-export-0.1.1-SNAPSHOT.jar -b -a -p <a href="http://pcdm.org/models#hasMember" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#hasMember</a> -d data -m export -r <a href="http://localhost:8080/f4/rest/collection0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/f4/rest/collection0</a></p>
+
+<p>Thanks.</p>
+</div></div>
+<div class="comment" id="comment-18775"><div class="by">Andrew Woods, 2017-05-18 22:01 UTC</div><div class="text"><p>Thanks, Situ, Longshou. I have not tested your updates, but I am hopeful.</p>
+
+<p>As for the command that you used for testing, it looks like the "export" command. My export also worked successfully. What failed was the subsequent "import". Could you share the command you used for testing the import?</p></div></div>
+<div class="comment" id="comment-18776"><div class="by">Situ, Longshou, 2017-05-18 22:17 UTC</div><div class="text"><p>Andrew Woods Sorry it's my mistake. Here is the command I used for testing single resource import:<br/>
+$ java -jar ./bin/fcrepo-import-export-0.1.1-SNAPSHOT.jar -b -a -p <a href="http://pcdm.org/models#hasMember" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#hasMember</a> -d data -m import -s <a href="http://localhost:8686/f4/rest/collection0" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest/collection0</a> -r <a href="http://localhost:8080/fcrepo/rest/collection0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/collection0</a></p></div></div>
+<div class="comment" id="comment-18778"><div class="by">Andrew Woods, 2017-05-19 01:37 UTC</div><div class="text"><p>Situ, Longshou: as a heads-up, once I test and verify that your updates work as expected, I will be asking you to rebase this PR on master. As you may have noticed, this PR has significant conflicts with the latest commit in master. If you want to start rebasing now, that may not be a bad idea.</p>
+
+<p>Thanks.</p></div></div>
+<div class="comment" id="comment-18779"><div class="by">Situ, Longshou, 2017-05-19 02:07 UTC</div><div class="text"><p>Sure. I notice the conflicts and I think it's good though I may need to refactor my codes. You may still need to rename the folder /f4 to /fcrepo before testing it now but hopefully the "--map <a href="http://localhost:8686/f4/rest/,http://example.org:8080/fedora/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest/,http://example.org:8080/fedora/rest/</a>" option will save this manual step once the rebase is done.</p></div></div>
+<div class="comment" id="comment-18784"><div class="by">Andrew Woods, 2017-05-19 13:59 UTC</div><div class="text"><p>We are getting closer, but the documented test scenario [] is still not completely working.</p>
+
+<p>I do the export and import. The "collection0" resource is imported as well as the three books members in that collection: "book0", "book1", "book2". However, neither the properties of the books nor their "hasMember"s ("image0-5") are imported.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test3-Export/Importsingleresource-withuser-providedmembershiprelationship,withinternalbinaries" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test3-Export/Importsingleresource-withuser-providedmembershiprelationship,withinternalbinaries</a></p></div></div>
+<div class="comment" id="comment-18802"><div class="by">Situ, Longshou, 2017-05-19 19:23 UTC</div><div class="text"><p>Andrew Woods I've moved ahead to rebase it with master (see commits <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/79/commits/e172a4d33f2dbb5e29ab56f8df40c452e3cc3aa0" class="external-link" rel="nofollow noreferrer">e172a4d33f2dbb5e29ab56f8df40c452e3cc3aa0 </a>. I am able to see collection0 has three "hasMember"s (book0, book1, and book2) and book0 has two "hasMember"s (image0 and image1) now. But I don't see image3-5 in the the collection0 hierarchy so I think they won't be imported at all. Here is the command I use to test the import:<br/>
+$ java  -Dfcrepo.log.importexport=DEBUG -jar ./bin/fcrepo-import-export-0.1.1-SNAPSHOT.jar -b -a -p <a href="http://pcdm.org/models#hasMember" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#hasMember</a> -d data -m import -r <a href="http://localhost:8080/fcrepo/rest/collection0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/collection0</a> -M <a href="http://localhost:8686/f4/rest,http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest,http://localhost:8080/fcrepo/rest</a></p>
+
+<p>Note: We don't need to rename /f4 to /fcrepo now! And I think we should be able to choose to import any single resource (any sub-path in a repository hierarchy) now. Please let me know if see something different. Thanks.</p></div></div>
+<div class="comment" id="comment-18810"><div class="by">Andrew Woods, 2017-05-20 00:14 UTC</div><div class="text"><p>It gets better every time... but not there yet.</p>
+
+<p>After performing the documented import/export scenario <span class="error">&#91;1&#93;</span>, the binaries that are imported have zero size, no ebucore filename, nor ebucore hasMimeType. Otherwise, things look good.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test3-Export/Importsingleresource-withuser-providedmembershiprelationship,withinternalbinaries" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Test3-Export/Importsingleresource-withuser-providedmembershiprelationship,withinternalbinaries</a></p></div></div>
+<div class="comment" id="comment-18812"><div class="by">Situ, Longshou, 2017-05-20 04:22 UTC</div><div class="text"><p>Andrew Woods I think Those binaries are too specific, which are located at the repository root! Otherwise it will be reached when looping through the member container hierarchy. I've updated the PR to handle it specifically (see <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/79/commits/a7207cf2453503ed48df9ab29777b12164c9cf59" class="external-link" rel="nofollow noreferrer">commit</a>).</p></div></div>
+<div class="comment" id="comment-18833"><div class="by">Andrew Woods, 2017-05-22 19:44 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/321fa323fc3bffc3a0dbfd34e4c00885e99ac5e7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/321fa323fc3bffc3a0dbfd34e4c00885e99ac5e7</a></p></div></div>
+<p><a href="data/FCREPO-2428.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

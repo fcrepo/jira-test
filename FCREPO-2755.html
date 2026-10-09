@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2755 Duplicate header information on versioned resource</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2755</span> Duplicate header information on versioned resource</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2018-04-17 13:55 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-04-18 23:38 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>easy, versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>When I request a Time Map, I see duplicate "Link" LDP headers: </p>
+
+<p>BuckyKatt:/Users/bseeger&gt;curl -i <a href="http://localhost:8080/fcrepo5/rest/VersionedResource/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo5/rest/VersionedResource/fcr:versions</a> -u fedoraAdmin:fedoraAdmin</p>
+
+<p>HTTP/1.1 200 OK</p>
+
+<p>Server: Apache-Coyote/1.1</p>
+
+<p>Cache-Control: private</p>
+
+<p>Expires: Wed, 31 Dec 1969 19:00:00 EST</p>
+
+<p>ETag: W/"348e66c7e34371a8d14614ee55419ac1464ace70"</p>
+
+<p>Last-Modified: Tue, 17 Apr 2018 13:39:51 GMT</p>
+
+<p>Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;; rel="type"</p>
+
+<p>Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"</p>
+
+<p>Link: &lt;<a href="http://mementoweb.org/ns#TimeMap" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeMap</a>&gt;; rel="type"</p>
+
+<p>Link: &lt;<a href="http://localhost:8080/fcrepo5/rest/VersionedResource" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo5/rest/VersionedResource</a>&gt;; rel="original"</p>
+
+<p>Vary-Post: Memento-Datetime</p>
+
+<p>Allow: POST,HEAD,GET,OPTIONS</p>
+
+<p>Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"</p>
+
+<p>Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;;rel="type"</p>
+
+<p>Preference-Applied: return=representation</p>
+
+<p>Vary: Prefer</p>
+
+<p>Vary: Accept</p>
+
+<p>Vary: Range</p>
+
+<p>Vary: Accept-Encoding</p>
+
+<p>Vary: Accept-Language</p>
+
+<p>Content-Type: text/turtle;charset=utf-8</p>
+
+<p>Content-Length: 1567</p>
+
+<p>Date: Tue, 17 Apr 2018 13:53:04 GMT</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-19857"><div class="by">Danny Bernstein, 2018-04-17 15:19 UTC</div><div class="text"><p>Bethany Seeger: good catch.  I'll add it to the sprint.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19877"><div class="by">Situ, Longshou, 2018-04-18 19:51 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo4/fcrepo4/pull/1326" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1326</a></p></div></div>
+<div class="comment" id="comment-19879"><div class="by">Jared Whiklo, 2018-04-18 20:25 UTC</div><div class="text"><p>Couple small code review comments.</p></div></div>
+<div class="comment" id="comment-19880"><div class="by">Jared Whiklo, 2018-04-18 20:43 UTC</div><div class="text"><p>Actually this is bigger than original.</p>
+
+<p>I think when I made this for some reason I handled the headers in FedoraVersioning, but for non <tt>application/link-format</tt> requests I still called <tt>addResourceHttpHeaders.</tt></p>
+
+<p><tt>I would suggest that all of this (<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraVersioning.java#L252-L261)" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraVersioning.java#L252-L261)</a> be moved to where appropriate and this (<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraVersioning.java#L284)" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraVersioning.java#L284)</a> be moved out of the</tt></p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">if</span> {} <span class="code-keyword">else</span> {}</pre>
+</div></div>
+<p><tt>and get called each time and just test for the TimeMap type.</tt></p></div></div>
+<div class="comment" id="comment-19884"><div class="by">Situ, Longshou, 2018-04-18 23:38 UTC</div><div class="text"><p>Jared Whiklo Added commit <a href="https://github.com/fcrepo4/fcrepo4/pull/1326/commits/73f1d77ba6d9847d86df28404ae842ea431f97ed" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1326/commits/73f1d77ba6d9847d86df28404ae842ea431f97ed</a>.</p></div></div>
+<div class="comment" id="comment-19890"><div class="by">Jared Whiklo, 2018-04-19 21:21 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/35e42949e1c6ef95d537a777a379b4880ebfd1bc" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/35e42949e1c6ef95d537a777a379b4880ebfd1bc</a></p></div></div>
+<p><a href="data/FCREPO-2755.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

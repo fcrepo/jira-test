@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-55 User-provided log messages NOT recorded...</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-55</span> User-provided log messages NOT recorded...</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Bill Branan</td></tr><tr><th>Created</th><td>2007-02-19 20:06 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>...for object-level API-M Methods.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-10083"><div class="by">Chris Wilper, 2007-03-12 20:27 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: sjw46<br/>
+Logged In: YES <br/>
+user_id=1709161<br/>
+Originator: YES</p>
+
+<p>Normally, API-M methods that do object modification will result in a new audit<br/>
+record in the object.  This is true for all component (datastream and<br/>
+disseminator) methods, but in the case of the following methods, the logMessage<br/>
+is not recorded anywhere:</p>
+
+<ul class="alternate" type="square">
+	<li>ingestObject</li>
+	<li>modifyObject</li>
+	<li>purgeObject</li>
+</ul>
+
+
+<p>Note that for purgeObject, it makes no sense to put the audit record in the<br/>
+object.  Something else needs to be done, like writing it to the system log.</p></div></div>
+<div class="comment" id="comment-10084"><div class="by">Bill Branan, 2008-02-05 23:24 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: bbranan<br/>
+Logged In: YES <br/>
+user_id=1987639<br/>
+Originator: NO</p>
+
+<p>Fixed bug in tasks 145707 (trunk) and 145936 (maintenance-2.2), ingestObject and modifyObject now create audit records which include the provided log message. The log message for purgeObject is written to the server log. In order to allow the choice to create an audit record on object ingest or not, an audit record will only be created if a log message is provided. If no log message is provided on the call, no audit record is created.</p>
+
+<p>Audit records are now created for all API-M methods which update the object with the exception of addRelationship and purgeRelationship. Some discussion will be necessary to determine if providing audit records on these methods is appropriate.</p>
+
+<p>All API-M methods in 3.0 now log a completion notice at the INFO level which includes any provided log message (this is only done for purgeObject in 2.2.)</p></div></div>
+<div class="comment" id="comment-10085"><div class="by">Chris Wilper, 2008-02-06 21:02 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>committed fixes to trunk r6557 and maintenance-2.2 r6558</p></div></div>
+<div class="comment" id="comment-10086"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: sjw46<br/>
+Item #: 1663737<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1663737" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1663737</a><br/>
+Closed On: 2008-02-06 15:02:03<br/>
+Closed By: cwilper</p></div></div>
+<p><a href="data/FCREPO-55.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

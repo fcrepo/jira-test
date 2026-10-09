@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3014 Incremental backup using the import export tool</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3014</span> Incremental backup using the import export tool</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2019-06-11 18:15 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:42 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr></table>
+<h2>Description</h2>
+<p>Seth Shaw wrote: I can imagine two separate scenarios:</p>
+
+<p><b>First</b>:</p>
+<ol>
+	<li>Given a previous full export of the repository "java <del>jar fcrepo-import-export-0.3.0.jar --mode export --resource <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a> </del>-dir /data/fcrepo-export --binaries -u user:pass"</li>
+	<li>When the same command options are used, instead of exiting (since the root resource already exists in the export location), the tool inspects the exported resource for the value of "fedora:lastModified" and compares it with the value from the Fedora API response (the HEAD request's "Last-Modified" value should work and make the process more efficient).</li>
+	<li>If the Fedora resource responds with a lastModified value greater than the exported resource re-exports and replaces the existing one. Otherwise, it continues on to the next resource.</li>
+</ol>
+
+
+<p>This would allow me to maintain a full export without exporting all the binaries every run. run a tar command over the backup directory with the option to only include items modified/added since the last tar/gzip.</p>
+
+<p><b>Second</b>:</p>
+<ol>
+	<li>Add an option to the export that takes a date-time as the value.</li>
+	<li>The script then checks the resource's last modified date</li>
+	<li>IF the resource's last modified date is more recent than the provided date-time value, export the resource. Otherwise, skip to the next item. </li>
+</ol>
+
+
+<p>This scenario would require the repository to know when the last export occurred, but could support either updating an existing full export, or creating a partial update in an empty directory. In the latter's case I could first run the partial export then tar/zip the package for off-line storage leaving the target directory available for the next incremental export. </p>
+
+<p><b>In either case</b>, I imagine that the import process would include importing the first export I made and then importing each incremental in chronological order where the import only changes the items from the most recent import.</p>
+<ul>
+	<li><a href="https://jira.duraspace.org/secure/AddComment!default.jspa?id=35516" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/secure/AddComment!default.jspa?id=35516</a></li>
+</ul>
+
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20704"><div class="by">Danny Bernstein, 2019-06-11 18:16 UTC</div><div class="text"><p>Creating a placeholder for Seth Shaw to fill in the details of an ideal user experience.</p></div></div>
+<div class="comment" id="comment-20705"><div class="by">Seth Shaw, 2019-06-11 19:01 UTC</div><div class="text"><p>I can imagine two separate scenarios:</p>
+
+<p><b>First</b>:</p>
+<ol>
+	<li>Given a previous full export of the repository "java -jar fcrepo-import-export-0.3.0.jar --mode export --resource <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a> --dir /data/fcrepo-export --binaries -u user:pass"</li>
+	<li>When the same command options are used, instead of exiting (since the root resource already exists in the export location), the tool inspects the exported resource for the value of "fedora:lastModified" and compares it with the value from the Fedora API response (the HEAD request's "Last-Modified" value should work and make the process more efficient).</li>
+	<li>If the Fedora resource responds with a lastModified value greater than the exported resource re-exports and replaces the existing one. Otherwise, it continues on to the next resource.</li>
+</ol>
+
+
+<p>This would allow me to maintain a full export without exporting all the binaries every run. run a tar command over the backup directory with the option to only include items modified/added since the last tar/gzip.</p>
+
+<p><b>Second</b>:</p>
+<ol>
+	<li>Add an option to the export that takes a date-time as the value.</li>
+	<li>The script then checks the resource's last modified date</li>
+	<li>IF the resource's last modified date is more recent than the provided date-time value, export the resource. Otherwise, skip to the next item. </li>
+</ol>
+
+
+<p>This scenario would require the repository to know when the last export occurred, but could support either updating an existing full export, or creating a partial update in an empty directory. In the latter's case I could first run the partial export then tar/zip the package for off-line storage leaving the target directory available for the next incremental export. </p>
+
+<p><b>In either case</b>, I imagine that the import process would include importing the first export I made and then importing each incremental in chronological order where the import only changes the items from the most recent import.</p></div></div>
+<div class="comment" id="comment-20710"><div class="by">Danny Bernstein, 2019-06-19 15:59 UTC</div><div class="text"><p>Seth Shaw :  We discussed this ticket on last week's call ( <a href="https://wiki.duraspace.org/display/FF/2019-06-13+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2019-06-13+-+Fedora+Tech+Meeting</a>).  There was some questioning of whether this functionality would belong in the import/export tool,  or whether it would make sense to have a separate tool for doing incremental backups.  The tool was designed with the use case of exporting a complete repository and importing into an empty repository.   There was some concern expressed around the drifting away from that simple use case and specifically dealing with the  added complexity of accounting for resources that exist on disk (from a previous export) that were then deleted in a subsequent export.   Adding in support for tracking deletes would add some overhead since we would need to remove the set of items on disk that are no longer present in the repo.  Daniel Lamb made the observation that if we're going to be tracking file system deltas we're essentially reinventing git. </p>
+
+<p>So coming back to your use cases:  it seems that you have two concerns you are trying to address:</p>
+
+<p>1) Improve the performance of exports by having the option to not export binaries that haven't changed.</p>
+
+<p>2) Reduce data duplication in offline storage.</p>
+
+<p>Do I have that right? </p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20711"><div class="by">Seth Shaw, 2019-06-19 18:35 UTC</div><div class="text"><p>Right, I don't want to export things I already have off-line.</p>
+
+<p>I should also note that it doesn't matter if it is the same tool or a new one, just so long as the functionality exists somewhere. Although, I presume a separate tool would have a significant amount of code overlap.</p></div></div>
+<p><a href="data/FCREPO-3014.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

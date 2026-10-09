@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1760 WebAC: Non-Admin user gets 404 if target has versions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1760</span> WebAC: Non-Admin user gets 404 if target has versions</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-10-01 23:33 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:31 UTC</td></tr><tr><th>Resolved</th><td>2015-10-30 20:22 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>webac</td></tr></table>
+<h2>Description</h2>
+<p>When using WebAC, if a non-admin user tries to access a resource to which that should have permission AND that resource has versions, a 404 is returned.<br/>
+Note: admin users have no issue.</p>
+
+<p>To reproduce:</p>
+<ul class="alternate" type="square">
+	<li>Create acl/authorization:<br/>
+===========<br/>
+PREFIX acl: &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt;<br/>
+PREFIX pcdm: &lt;<a href="http://pcdm.org/models#" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#</a>&gt;</li>
+</ul>
+
+
+<p>INSERT </p>
+{
+&lt;&gt; a acl:Authorization ;
+acl:accessToClass pcdm:Object ;
+acl:mode acl:Read, acl:Write;
+acl:agent “testuser” .
+}
+<p> WHERE { }<br/>
+===========</p>
+<ul class="alternate" type="square">
+	<li>Create a resource of type "pcdm:Object" and link to the acl:<br/>
+===========<br/>
+PREFIX acl: &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt;<br/>
+PREFIX pcdm: &lt;<a href="http://pcdm.org/models#" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#</a>&gt;</li>
+</ul>
+
+
+<p>INSERT </p>
+{
+&lt;&gt; a pcdm:Object; 
+    acl:accessControl &lt;/fcrepo/rest/my-acls/acl&gt;
+}
+<p> WHERE { }<br/>
+===========</p>
+<ul class="alternate" type="square">
+	<li>Create a version of the resource<br/>
+===========<br/>
+curl -ufedoraAdmin:secret3 -i -XPOST -H"slug: v0" localhost:8080/fcrepo/rest/resource/fcr:versions<br/>
+===========</li>
+	<li>Access the resource as "fedoraAdmin" &#8211; works<br/>
+===========<br/>
+ curl -ufedoraAdmin:secret3 -i localhost:8080/fcrepo/rest/resource<br/>
+===========</li>
+	<li>Access the resource as "testuser" &#8211; FAILS with at 404<br/>
+===========<br/>
+ curl -utestuser:password1 -i localhost:8080/fcrepo/rest/resource<br/>
+===========</li>
+</ul>
+
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-15565"><div class="by">Jared Whiklo, 2015-10-26 20:30 UTC</div><div class="text"><p>Ok, I don't fully understand the versioning system. But here is what is causing the 404.</p>
+
+<p>After authenticating against the resource (successfully) and then failing to authenticate against the ACL (resource inaccessible), it seems to want to check the versions.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>DEBUG 20:10:41.136 (WebACRolesProvider) findRolesForPath: /{httpwww.jcp.orgjcr1.0}system/{httpwww.jcp.orgjcr1.0}versionStorage/{}cb/{}d7/{}b9/{}cbd7b91e8b5351c421754c4135cfdd1a0ee3b1b8/{}1.1
+</pre>
+</div></div>
+
+<p>Which is weird because my resource is at <tt><a href="http://localhost:8080/fcrepo/rest/d5/05/20/44/d5052044-1bf6-4217-8445-f00145046082" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/d5/05/20/44/d5052044-1bf6-4217-8445-f00145046082</a></tt></p>
+
+<p>You can see the error more clearly by trying a PATCH request as the testuser</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&gt; echo "PREFIX dc: &lt;http://purl.org/dc/elements/1.1/&gt; INSERT { &lt;&gt; dc:title \"This is a title\" . } WHERE {}" | curl -i -XPATCH -u"testuser:password1" -H"Content-type: application/sparql-update" --upload-file - "http://localhost:8080/fcrepo/rest/d5/05/20/44/d5052044-1bf6-4217-8445-f00145046082"
+HTTP/1.1 100 Continue
+
+HTTP/1.1 400 Bad Request
+Server: Apache-Coyote/1.1
+Cache-Control: private
+Expires: Thu, 01 Jan 1970 00:00:00 UTC
+Content-Type: text/plain
+Content-Length: 136
+Date: Mon, 26 Oct 2015 20:25:02 GMT
+Connection: close
+
+No node exists at path '/ns001:system/ns001:versionStorage/cb/d7/b9/cbd7b91e8b5351c421754c4135cfdd1a0ee3b1b8/1.1' in workspace "default"
+</pre>
+</div></div>
+
+<p>Andrew Woods, does that versionStorage thing seem correct or is this coming from somewhere in the resource? </p></div></div>
+<div class="comment" id="comment-15566"><div class="by">Andrew Woods, 2015-10-26 23:50 UTC</div><div class="text"><p>It seems correct. The version storage is in a separate, system-managed area. Michael Durbin is the one who is most familiar with versioning. You may want to touch base with him as well.</p></div></div>
+<div class="comment" id="comment-15570"><div class="by">Jared Whiklo, 2015-10-27 13:14 UTC</div><div class="text"><p>Michael Durbin, can you give me a run down on what happens when you create a version. Where is it stored and how is it referenced from the resource?</p></div></div>
+<div class="comment" id="comment-15572"><div class="by">Michael Durbin, 2015-10-27 14:11 UTC</div><div class="text"><p>Is the jcr namespace bound to ns001?  That seems odd to me, but perhaps things have changed since I last explored this area.  </p>
+
+<p>As for versioning, it's laid out here (<a href="http://www.day.com/specs/jcr/2.0/15_Versioning.html" class="external-link" rel="nofollow noreferrer">http://www.day.com/specs/jcr/2.0/15_Versioning.html</a>), but basically when you create a version it adds a mixin "mix:versionable" then uses the jcr version manager to create a version snapshot.  The copies of the content exist in the system space "/jcr:system/jcr:versionStorage".  The fedora 4 implementation does a lot of funny business to make those nodes (in the system space) addressable at URIs of the pattern "/original/node/path/fcr:versions/version-label".  </p>
+
+<p>I could imagine an issue if the ACL code makes standard JCR assumptions and invokes node.getParent() or something like that.</p>
+
+<p>If we had the line number where the caught exception is thrown that results in the 404 (or the line where we check whether a node exists) it would be easier to debug the issue.</p></div></div>
+<div class="comment" id="comment-15589"><div class="by">Andrew Woods, 2015-10-28 13:39 UTC</div><div class="text"><p>The access error is most likely coming from:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/impl/VersionsRdfContext.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/impl/VersionsRdfContext.java</a></p></div></div>
+<div class="comment" id="comment-15596"><div class="by">Jared Whiklo, 2015-10-28 21:47 UTC</div><div class="text"><p>It appears that the error is generated once the response is ready and is being written out by the RdfStreamProvider.</p>
+
+<p><a href="https://gist.github.com/whikloj/73f838a19080919f23f8" class="external-link" rel="nofollow noreferrer">A section of catalina.out for a request</a></p>
+
+<p>I'm not sure what is changing between the accumulation of the Rdf and the outputting.  Will look closer at RdfStreamingOutputProvider.</p></div></div>
+<div class="comment" id="comment-15597"><div class="by">Andrew Woods, 2015-10-28 22:02 UTC</div><div class="text"><p>The RdfStreams are lazy-loaded. In other words, the content of the various streams are only read when they are used (i.e. when creating the HTTP response). The RdfStreamingOutputProvider shows the error because it is the code that is running through the lazy streams. The actual access error is coming from the VersionsRdfContext... when its stream is actually read.</p></div></div>
+<div class="comment" id="comment-15634"><div class="by">Jared Whiklo, 2015-10-30 15:07 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/42" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/42</a></p></div></div>
+<div class="comment" id="comment-15648"><div class="by">Andrew Woods, 2015-10-30 20:22 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/fa718f2c3568bdb436b251e692006b70abf0dc96" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/fa718f2c3568bdb436b251e692006b70abf0dc96</a></p></div></div>
+<p><a href="data/FCREPO-1760.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

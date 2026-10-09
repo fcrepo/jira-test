@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3660 Prefer HTTP headers not working on TimeMap (versions) endpoint</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3660</span> Prefer HTTP headers not working on TimeMap (versions) endpoint</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2021-03-01 21:27 UTC</td></tr><tr><th>Updated</th><td>2021-05-05 18:05 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Environment</h2>Linux (CentOS 7), embedded jetty server
+<h2>Description</h2>
+<p>HTTP <tt>Prefer:</tt> header <tt>omits</tt> and <tt>includes</tt> do not function on the <tt>fcr:versions</tt> endpoint as they do on plain resource endpoints.</p>
+
+<p>Example <tt>PreferContainment</tt> results on resource (works):</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -H <span class="code-quote">"Accept: application/rdf+xml"</span> -H <span class="code-quote">"Prefer: <span class="code-keyword">return</span>=representation; omit=\"</span>http:<span class="code-comment">//www.w3.org/ns/ldp#PreferMinimalContainer\<span class="code-quote">"; include=\"</span>http://www.w3.org/ns/ldp#PreferContainment\<span class="code-quote">"" "</span>http://localhost:8080/<span class="code-keyword">rest</span>/myresource"</span>
+</pre>
+</div></div>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;rdf:RDF
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:ldp="http://www.w3.org/ns/ldp#" &gt; 
+  &lt;rdf:Description rdf:about="http://localhost:8080/rest/myresource"&gt;
+    &lt;ldp:contains rdf:resource="http://localhost:8080/rest/myresource/TECH0"/&gt;
+    &lt;ldp:contains rdf:resource="http://localhost:8080/rest/myresource/RELS-INT"/&gt;
+    &lt;ldp:contains rdf:resource="http://localhost:8080/rest/myresource/RELS-EXT"/&gt;
+    &lt;ldp:contains rdf:resource="http://localhost:8080/rest/myresource/MASTER0"/&gt;
+    &lt;ldp:contains rdf:resource="http://localhost:8080/rest/myresource/DC"/&gt;
+    &lt;ldp:contains rdf:resource="http://localhost:8080/rest/myresource/AUDIT"/&gt;
+    &lt;ldp:contains rdf:resource="http://localhost:8080/rest/myresource/ADMINMD"/&gt;
+  &lt;/rdf:Description&gt;
+&lt;/rdf:RDF&gt;</pre>
+</div></div>
+<p> Example <tt>PreferContainment</tt> results on resource versions (does not return results):</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -H <span class="code-quote">"Accept: application/rdf+xml"</span> -H<span class="code-quote">"Prefer: <span class="code-keyword">return</span>=representation; omit=\"</span>http:<span class="code-comment">//www.w3.org/ns/ldp#PreferMinimalContainer\<span class="code-quote">"; include=\"</span>http://www.w3.org/ns/ldp#PreferContainment\<span class="code-quote">"" "</span>http://localhost:8080/<span class="code-keyword">rest</span>/myresource/fcr:versions"</span></pre>
+</div></div>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;rdf:RDF
+    xmlns:rdf=<span class="code-quote">"http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#"</span> &gt; 
+</span>&lt;/rdf:RDF&gt;
+</pre>
+</div></div>
+<p><a href="data/FCREPO-3660.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

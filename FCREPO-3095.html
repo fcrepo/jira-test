@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3095 Implement OCFLObjectSession</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3095</span> Implement OCFLObjectSession</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2019-11-01 21:43 UTC</td></tr><tr><th>Updated</th><td>2019-11-22 18:50 UTC</td></tr><tr><th>Resolved</th><td>2019-11-11 19:02 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>f4-core</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Required by</th><td><a href="FCREPO-3094.html">FCREPO-3094</a> Implement OCFLPersistentStorageSession.persist(CreateRDFSourceOperation) </td></tr><tr><th>Required by</th><td><a href="FCREPO-3096.html">FCREPO-3096</a> Implement OCFLPersistentStorageSession.persist(CreateNonRDFSourceOperation) </td></tr><tr><th>Required by</th><td><a href="FCREPO-3097.html">FCREPO-3097</a> Implement OCFLPersistentStorageSession.persist(UpdateNonRDFSourceOperation) </td></tr><tr><th>Required by</th><td><a href="FCREPO-3098.html">FCREPO-3098</a> Implement OCFLPersistentStorageSession.persist(UpdateRDFSourceOperation) </td></tr><tr><th>Required by</th><td><a href="FCREPO-3099.html">FCREPO-3099</a> Implement OCFLPersistentStorageSession.persist(CreateRDFSourceOperation) </td></tr><tr><th>Required by</th><td><a href="FCREPO-3100.html">FCREPO-3100</a> Implement OCFLPersistentStorageSession.persist(DeleteReSourceOperation) </td></tr><tr><th>Depends on</th><td><a href="FCREPO-3101.html">FCREPO-3101</a> Create skeletal (placeholder) implementation of OCFLObjectSession</td></tr></table>
+<h2>Description</h2>
+<p>The PersistentStorageSession manages 1 to n OCFLObjectSession objects under hood.  The OCFLObjectSession manages the staging and persistence of content for a single OCFL object within a single transaction.   The OCFLObjectSession must be able to span multiple requests and must be persistent across reboots (though it would not be included in any notion of rebuildability).   The caller must be able to indicate whether changes should be committed to the OCFL object's mutable head or as a new version.   </p>
+
+<p>The basic flow is as follows: </p>
+<ol>
+	<li>OCFLObjectSession is created based on a new or existing OCFL object.</li>
+	<li>0 to n  changes are written to a staging space.</li>
+	<li>On commit,  the changes are then written to the OCFL client and commit either to the MUTABLE HEAD or to a new OCFL Version, and the staging content is removed.</li>
+</ol>
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20849"><div class="by">Ben Pennell, 2019-11-04 22:40 UTC</div><div class="text"><p>Regarding ocfl object sessions surviving reboots, that seems to also imply that fedora transactions would need to as well, since the hierarchy goes fedora tx -&gt; persistence session -&gt; object session. Is that something new we are committing to?</p>
+
+<p> </p>
+
+<p>I'm also trying to work out where the decision about whether to commit to the mutable head or a new version would happen. If autoversioning is repo wide, then it could probably happen almost anywhere. If it were to be an option per object, then it seems like a decision to make at the object level, which might imply that the OCFLObjectSession would figure this out rather than being told how to commit.</p></div></div>
+<div class="comment" id="comment-20864"><div class="by">Ben Pennell, 2019-11-11 19:02 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1576" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1576</a></p></div></div>
+<div class="comment" id="comment-20872"><div class="by">Danny Bernstein, 2019-11-12 17:48 UTC</div><div class="text"><p>Resolved by: <a href="https://github.com/fcrepo4/fcrepo4/commit/c125058a28ac050830eaa15a91b35a7e73bd109e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/c125058a28ac050830eaa15a91b35a7e73bd109e</a></p></div></div>
+<p><a href="data/FCREPO-3095.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

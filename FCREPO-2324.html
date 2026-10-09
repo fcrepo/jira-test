@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2324 WebAC module does not follow all containment relations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2324</span> WebAC module does not follow all containment relations</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Created</th><td>2016-12-05 15:51 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.0</td></tr></table>
+<h2>Description</h2>
+<p>Presently fcrepo-module-auth-webac follows ldp:contains relations in basic containers (via jcr node containment), but not other containment arrangements.  It was suggested that the WebAC specification indicates that the model should work with other containment relations, such as pcdm:hasMember via ldp:IndirectContainers.</p>
+
+<p>The following test is run against the fcrepo4-vagrant vm with authentication set to true (fcrepo version 4.7.0), and shows that a policy assigned to container does not inherit to its child via indirect containment:</p>
+
+<p><a href="https://github.com/bbpennel/fcrepo-webac-test" class="external-link" rel="nofollow noreferrer">https://github.com/bbpennel/fcrepo-webac-test</a></p>
+
+<p>There are some questions about the practicality of addressing this issue, particularly in multiple containment situations.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-18082"><div class="by">Andrew Woods, 2016-12-06 05:13 UTC</div><div class="text"><p>As a point of clarification, LDP (and Fedora) have a very specific definition of "containment" which is limited to a parent container / child resource relationship. Any given child resource can have only one parent container, therefore resources can have one and only one containment relation.</p>
+
+<p>This ticket should be reworded in the context of an updated title along the lines of: "WebAC module does not inherit policies from arbitrarily related resources".</p></div></div>
+<div class="comment" id="comment-18084"><div class="by">Former user, 2016-12-06 15:43 UTC</div><div class="text"><p>Sorry, apparently I need to read up more on LDP.  In the Fedora Tech call last week we talked about how the WebAC spec indicates that inheritance should follow containment, but it seems like I was conflating membership and containment.  From what I can tell there isn't a mechanism for specifying a different containment relationship, which I assume might have impacts on functionality.  </p>
+
+<p>From what others were saying it would be out of spec for webac to inherit through triples other than the containment, and I'll admit inheriting through arbitrary relations sounds potentially challenging to manage.  So I am not sure how this should proceed.</p></div></div>
+<div class="comment" id="comment-18085"><div class="by">Andrew Woods, 2016-12-06 15:51 UTC</div><div class="text"><p>Yes, I left some comments on the tech meeting minutes. It seems like some of the conversation was misinformed:<br/>
+<a href="https://wiki.duraspace.org/display/FF/2016-12-01+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2016-12-01+-+Fedora+Tech+Meeting</a></p>
+
+<p>Anyways, we could potentially scope this ticket down from "arbitrarily related resources" to "LDP membership relations". That would still be a challenging task, but if it more accurately represents your need, we could update the ticket and keep it around in the case that use cases and priorities push us in this direction.</p></div></div>
+<div class="comment" id="comment-18096"><div class="by">Unknown, 2016-12-07 14:18 UTC</div><div class="text"><p>I would note that the WebAC spec (as defined by the SOLID project) defines how WebAC inheritance should work: <a href="https://github.com/solid/web-access-control-spec#acl-inheritance-algorithm" class="external-link" rel="nofollow noreferrer">https://github.com/solid/web-access-control-spec#acl-inheritance-algorithm</a>. The Fedora API specification explicitly refers to this algorithm, and this is, basically, how the existing WebAC implementation works.</p>
+
+<p>That spec states that the algorithm should look in a resource's "parent" container. The spec does not define "parent" (i.e. parent via basic LDP containment vs. direct/indirect containment), so there is a possibility that one could define parent in different ways. However &#8211; and I want to be very clear here &#8211; if there are multiple parent ACL definitions (which will absolutely happen if you use anything that's not based on basic containment), it is entirely undefined how those different ACL interact.</p>
+
+<p>The other thing to keep in mind is: say you're using pcdm:hasMember via indirect LDP containment &#8211; what happens if I set a simple property on the resource that is &lt;/some/private/resource&gt; pcdm:memberOf &lt;/some/public/resource&gt; OR &lt;/some/public/resource&gt; pcdm:hasMember &lt;/some/private/resource&gt; (that is &#8211; not using LDP membership triples). If multiple ACLs are interpreted by means of set UNION, it becomes really easy to hijack any existing ACL permission structure. If, however, you use set INTERSECTION, you are, arguably, going against some basic principles of RDF.</p>
+
+<p>So, while I don't want to dissuade you from exploring alternate definitions of "parent" in the context of WebAC, I do want to encourage you to exercise great caution.</p></div></div>
+<div class="comment" id="comment-22345"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2324.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

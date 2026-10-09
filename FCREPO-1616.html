@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1616 /rest/ should have an etag</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1616</span> /rest/ should have an etag</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Robert Sanderson</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2015-07-06 16:23 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:29 UTC</td></tr><tr><th>Resolved</th><td>2016-07-21 12:54 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1498.html">FCREPO-1498</a> Indirectly Contained Resource Etags</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1742.html">FCREPO-1742</a> Last-Modified and ETag should not change with inbound references</td></tr></table>
+<h2>Description</h2>
+<p>The base LDP / REST endpoint (/rest/) is modifiable but does not have an etag.  This allows for race conditions in which multiple systems are using PUT to update it simultaneously. It is also inconsistent with other LDP containers provided, though hopefully code would not assume the existence of an etag.</p>
+
+<p>Expected Behavior: All HTTP responses from all modifiable resources, including /rest/, should have an ETag HTTP Header.</p>
+
+<p>Actual Behavior: /rest/ does not have an ETag HTTP Header.</p>
+
+<p>Related: #1498 from Trey Pendragon</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-14643"><div class="by">Aaron Birkland, 2015-07-06 18:56 UTC</div><div class="text"><p>Aren't Etags required by LDP anyway?  The way I read it is that ETag values in the headers is a MUST, and using it to avoid collisions is a SHOULD.</p>
+
+<p>4.2.1.3 LDP server responses MUST use entity tags (either weak or strong ones) as response ETag header values, for responses that contain resource representations or successful responses to HTTP HEAD requests. </p>
+
+<p>4.2.4.5 LDP clients SHOULD use the HTTP If-Match header and HTTP ETags to ensure it isn’t modifying a resource that has changed</p></div></div>
+<div class="comment" id="comment-14644"><div class="by">Robert Sanderson, 2015-07-06 19:23 UTC</div><div class="text"><p>Thanks Aaron! Yes, s/should/must/ in my expected behavior and the issue title.  That said, I still think it's minor as modifying the base container isn't something most actual systems would bother with.</p></div></div>
+<div class="comment" id="comment-15743"><div class="by">Esmé Cowles, 2015-11-04 19:41 UTC</div><div class="text"><p>Looks like the root node doesn't have an automatically-managed jcr:lastModified, which is why it doesn't have an ETag.  But an explicitly-updated fedora:lastModified property would fix this and result in a Last-Modified and ETag being set for the root.</p></div></div>
+<div class="comment" id="comment-16291"><div class="by">A. Soroka, 2016-03-10 16:29 UTC</div><div class="text"><p>Esmé Cowles, is this still something you're going to tackle?</p></div></div>
+<div class="comment" id="comment-16293"><div class="by">Esmé Cowles, 2016-03-10 16:44 UTC</div><div class="text"><p>A. Soroka, this got pulled into <a href="https://github.com/fcrepo4/fcrepo4/pull/917" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/917</a>, which has languished and needs rebasing.  I think that is still a good approach, though.</p></div></div>
+<div class="comment" id="comment-16295"><div class="by">A. Soroka, 2016-03-10 16:49 UTC</div><div class="text"><p>Cool-- are you going to be able to pick up 917 again?</p></div></div>
+<div class="comment" id="comment-17086"><div class="by">Unknown, 2016-07-21 12:54 UTC</div><div class="text"><p>This was resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/04d534da3b446feca644b83e11667a04e0113975</a></p>
+
+<p>along with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1742" >
+                <a href="FCREPO-1742.html" class="jira-issue-macro-key issue-link"  title="Last-Modified and ETag should not change with inbound references" >
+            
+            FCREPO-1742
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1498" >
+                <a href="FCREPO-1498.html" class="jira-issue-macro-key issue-link"  title="Indirectly Contained Resource Etags" >
+            
+            FCREPO-1498
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<p><a href="data/FCREPO-1616.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

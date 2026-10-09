@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-704 Ingesting a managed content datastream via REST fails with files larger than 2GB</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-704</span> Ingesting a managed content datastream via REST fails with files larger than 2GB</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-05-24 19:06 UTC</td></tr><tr><th>Updated</th><td>2010-06-14 18:32 UTC</td></tr><tr><th>Resolved</th><td>2010-06-14 18:32 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 3, Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>Reported by Graeme West<br/>
+<a href="http://fedora-commons.1317035.n2.nabble.com/Large-datastream-ingest-issue-Bad-request-unable-to-fulfill-REST-API-request-java-lang-NumberFormatE-td5094256.htm" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/Large-datastream-ingest-issue-Bad-request-unable-to-fulfill-REST-API-request-java-lang-NumberFormatE-td5094256.htm</a></p>
+
+<p>Ingesting a file larger than 2GB fails with java.lang.NumberFormatException.</p>
+
+<p>The source of this is in RestUtil - <br/>
+rContent.size = Integer.parseInt(lengthHeaders.get(0));</p>
+
+<p>This should be long rather than int (along with inner class RequestContent size field and related methods).</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-704/10080_RestUtil.java.diff">RestUtil.java.diff</a>, 1150 bytes, added by Graeme West on 2010-05-25</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11393"><div class="by">Graeme West, 2010-05-25 01:24 UTC</div><div class="text"><p>Thanks for logging this, Steve.</p>
+
+<p>Just to note for others' benefit Steve's quick fix against trunk:</p>
+
+<p>org.fcrepo.server.rest.RestUtil.:</p>
+
+<p>Line 108 - change Integer.ParseInt to Long.parseLong<br/>
+Line 119 - change the type of size from int to long<br/>
+line 138 - change the return type of method getSize() from int to long</p>
+
+<p>Graeme</p></div></div>
+<div class="comment" id="comment-11397"><div class="by">Graeme West, 2010-05-25 16:11 UTC</div><div class="text"><p>Hi there,<br/>
+I don't have a complete Fedora-Commons build environment set up quite yet, but I have implemented Steve's suggested changes against a checkout of the trunk.</p>
+
+<p>They work great. I tested with a 2.3GB file, and the hard limit is gone. An example log output is as follows:</p>
+
+<p>INFO 2010-05-25 15:38:31.162 <span class="error">&#91;http-8080-1&#93;</span> (DefaultManagement) Completed getDatastream(pid: mydemo:1, datastreamID: bigmovie, asOfDateTime: null)<br/>
+INFO 2010-05-25 15:44:00.746 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Committing modification of mydemo:1<br/>
+INFO 2010-05-25 15:44:00.748 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Getting managed datastream from internal uploaded location: uploaded://1<br/>
+INFO 2010-05-25 15:45:28.965 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Replaced managed datastream location with internal id: mydemo:1+bigmovie+bigmovie.0<br/>
+INFO 2010-05-25 15:45:28.989 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Updating dissemination index<br/>
+INFO 2010-05-25 15:45:28.989 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Updating FieldSearch index<br/>
+INFO 2010-05-25 15:45:28.994 <span class="error">&#91;http-8080-1&#93;</span> (DefaultManagement) Completed addDatastream(pid: mydemo:1, dsID: bigmovie, altIDs: '', dsLabel: A large video file, versionable: true, MIMEType: video/mp4, formatURI: , dsLocation: uploaded://1, controlGroup: M, dsState: A, checksumType: Default, checksum: null, logMessage: null)</p>
+
+<p>Caveat:<br/>
+The only niggle I can see is that the Flex interface does not give any visual feedback indicating that the file upload has completed - the little 'upload' window continues to display with an indefinite progress indicator, despite the addition of the datastream having already completed. However, testing indicates that this is the case regardless of the size of Managed Content datastream uploaded.</p>
+
+<p>I've attached a diff of the file /trunk/fcrepo-server/src/main/java/org/fcrepo/server/rest/RestUtil.java   which implements the change against version 8587 of the same file from the SVN.</p>
+
+<p>Hopefully this is of some help to those with commit privileges.</p>
+
+<p>Graeme</p></div></div>
+<div class="comment" id="comment-11398"><div class="by">Stephen Bayliss, 2010-05-25 16:15 UTC</div><div class="text"><p>The Flex interface issue is covered by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-605" >
+                <a href="FCREPO-605.html" class="jira-issue-macro-key issue-link"  title="Web Admin dialog appears to hang when creating managed datastream" >
+            
+            FCREPO-605
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<div class="comment" id="comment-11424"><div class="by">Stephen Bayliss, 2010-06-14 18:32 UTC</div><div class="text"><p>patch applied.</p></div></div>
+<p><a href="data/FCREPO-704.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-509 REST API does not properly handle ingests with FOXML that does not contain a PID</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-509</span> REST API does not properly handle ingests with FOXML that does not contain a PID</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Bill Branan</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2009-06-24 14:44 UTC</td></tr><tr><th>Updated</th><td>2010-08-20 02:41 UTC</td></tr><tr><th>Resolved</th><td>2010-05-18 07:40 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 1, Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>POSTing FOXML without a PID but with the pid included as part of the request gives an error that the PID is malformed</p>
+
+<p>Tried doing the following using Firefox Poster:</p>
+
+<p>POST to <a href="http://localhost:8080/fedora/objects/newpid:foo" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/newpid:foo</a></p>
+
+<p>with FOXML as request data (note that no PID is defined):</p>
+
+<p>&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br/>
+&lt;foxml:digitalObject VERSION="1.1" xmlns:foxml="info:fedora/fedora-system:def/foxml#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="info:fedora/fedora-system:def/foxml# <a href="http://www.fedora.info/definitions/1/0/foxml1-1.xsd" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/foxml1-1.xsd</a>"&gt;<br/>
+&lt;foxml:objectProperties&gt;<br/>
+&lt;foxml:property NAME="info:fedora/fedora-system:def/model#state" VALUE="Active"/&gt;<br/>
+&lt;foxml:property NAME="info:fedora/fedora-system:def/model#label" VALUE="Label"/&gt;<br/>
+&lt;/foxml:objectProperties&gt;<br/>
+&lt;/foxml:digitalObject&gt;</p>
+
+<p>Response:</p>
+
+<p>fedora.server.errors.GeneralException: Ingest failed: <br/>
+...<br/>
+Caused by: fedora.common.FaultException: Malformed PID: PID delimiter ( is missing.<br/>
+	at fedora.common.PID.getInstance(PID.java:77)<br/>
+	at fedora.server.validation.ValidationUtility.validateReservedDatastreams(ValidationUtility.java:81)<br/>
+...</p>
+
+<p>What should happen in this case is that the PID provided as part of the REST request should be used as the object's PID upon ingest.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-509/10093_fcrepo-509-test-output.txt">fcrepo-509-test-output.txt</a>, 6587 bytes, added by Scott Prater on 2010-08-20</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10967"><div class="by">Chris Wilper, 2009-06-30 16:32 UTC</div><div class="text"><p>discussed on committer call.  Also, if they conflict, it's an error.</p></div></div>
+<div class="comment" id="comment-11559"><div class="by">Scott Prater, 2010-08-20 02:41 UTC</div><div class="text"><p>See the fcrepo-509-test-output.txt attachment for test outputs. </p></div></div>
+<p><a href="data/FCREPO-509.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

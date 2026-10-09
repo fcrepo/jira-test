@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1976 ldp:contains can be asserted via hasMemberRelation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1976</span> ldp:contains can be asserted via hasMemberRelation</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Robert Sanderson</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2016-04-05 04:11 UTC</td></tr><tr><th>Updated</th><td>2018-10-14 17:16 UTC</td></tr><tr><th>Resolved</th><td>2018-10-14 17:16 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2899.html">FCREPO-2899</a> Must disallow PATCH of Indirect Containers updating SMTs</td></tr></table>
+<h2>Description</h2>
+<p>If you set up a Direct or Indirect Container, with a memberRelation of ldp:contains, then F4 will happily go ahead and add the triple to the membershipResource.  As everything is a Container, you can mess with consistency in a horrible way with this, resulting in children with multiple parents. </p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1976/10258_Screen_Shot_2016-04-04_at_9.06.57_PM.png">Screen Shot 2016-04-04 at 9.06.57 PM.png</a>, 52101 bytes, added by Robert Sanderson on 2016-04-05</li>
+</ul>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-16449"><div class="by">Robert Sanderson, 2016-04-05 04:23 UTC</div><div class="text"><p>There will be a prize at Open Repositories for the first implementation of the model described in: <a href="https://www.youtube.com/watch?v=eYlJH81dSiw" class="external-link" rel="nofollow noreferrer">https://www.youtube.com/watch?v=eYlJH81dSiw</a> </p></div></div>
+<div class="comment" id="comment-16450"><div class="by">Esmé Cowles, 2016-04-05 12:12 UTC</div><div class="text"><p>For example, here's a script that creates a binary that ldp:contains itself: <a href="https://gist.github.com/escowles/08452c164446dd878970269379ea2409" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/08452c164446dd878970269379ea2409</a></p></div></div>
+<div class="comment" id="comment-16462"><div class="by">A. Soroka, 2016-04-06 13:56 UTC</div><div class="text"><p>Is this explicitly against the LDP spec? I'm not asking because I think this is just fine and we needn't do anything about it (although I don't think it's actually all that problematic-- I can think of (admittedly obscure) use cases for recursive constructions). I'm asking because if it isn't, then a sub-issue here is to work with the LDP editors to get this marked out in the spec as it goes forward.</p></div></div>
+<div class="comment" id="comment-16509"><div class="by">Robert Sanderson, 2016-04-12 18:43 UTC</div><div class="text"><p>It's not explicitly an error according to the spec, it's just wrong in Fedora4. The NonRDFSource in Esme's example clearly does not contain itself.</p></div></div>
+<div class="comment" id="comment-16510"><div class="by">A. Soroka, 2016-04-12 18:50 UTC</div><div class="text"><p>So there are two issues here: do what we need to do with Fedora, and work with LDP to clarify the spec going forward. Andrew Woods, do you want to break these up? I feel like they are pretty different sorts of tasks.</p></div></div>
+<div class="comment" id="comment-16518"><div class="by">Andrew Woods, 2016-04-15 00:03 UTC</div><div class="text"><p>The conversation with the LDP community has already been started:<br/>
+<a href="https://lists.w3.org/Archives/Public/public-ldpnext/2016Apr/0000.html" class="external-link" rel="nofollow noreferrer">https://lists.w3.org/Archives/Public/public-ldpnext/2016Apr/0000.html</a></p>
+
+<p>It seems useful, assuming we all agree, to use this ticket for the Fedora implementation restriction on the use of <tt>ldp:contains</tt>.</p></div></div>
+<div class="comment" id="comment-16519"><div class="by">A. Soroka, 2016-04-15 12:21 UTC</div><div class="text"><p>Yes, that's what I understand this ticket to be. I would like a separate ticket for the other piece of the puzzle. Much as I appreciate Benjamin Armintor taking on that discussion, it would have been nice to know that it had happened at all.</p></div></div>
+<div class="comment" id="comment-16520"><div class="by">Andrew Woods, 2016-04-15 13:48 UTC</div><div class="text"><p>Thanks, A. Soroka. Please create and link the "separate ticket" to this current ticket when you have a moment.</p></div></div>
+<div class="comment" id="comment-16521"><div class="by">A. Soroka, 2016-04-15 13:56 UTC</div><div class="text"><p>Andrew Woods, please add the "Task" issue type to the Jira config for this project.</p></div></div>
+<div class="comment" id="comment-16528"><div class="by">Andrew Woods, 2016-04-15 20:32 UTC</div><div class="text"><p>Hello A. Soroka, the "Task" issue type does not work very well with the Scrum Board and sprints in that sub-tasks render in a different row than the other tickets and we are unable to close a sprint if an issue has some completed and some outstanding sub-tasks. <br/>
+Would you be amenable to creating the new ticket as either a "Documentation" or "Improvement" type, and simply linking the two tickets together?</p></div></div>
+<div class="comment" id="comment-18693"><div class="by">Andrew Woods, 2017-05-07 14:14 UTC</div><div class="text"><p>Danny Bernstein, Assuming you removed your name from the 'assignee' intentionally, can you please move the state of this ticket out of "In Progress"?</p></div></div>
+<div class="comment" id="comment-20445"><div class="by">Andrew Woods, 2018-10-14 17:16 UTC</div><div class="text"><p>Resolved by: <a href="https://jira.duraspace.org/browse/FCREPO-2899" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2899</a></p></div></div>
+<p><a href="data/FCREPO-1976.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

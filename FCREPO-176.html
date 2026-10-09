@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-176 Lockup after frequent dissemination requests</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-176</span> Lockup after frequent dissemination requests</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2008-01-03 20:41 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr></table>
+<h2>Description</h2>
+<p>When making many back-to-back requests for the same dissemination, the Fedora server becomes unresponsive to similar dissemination requests.  When this state is reached, the server does not recover until it is restarted.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-176/10022_sf-1863382-1863382-bugfix-for-Fedora-2.2.1.zip">sf-1863382-1863382-bugfix-for-Fedora-2.2.1.zip</a>, 13476 bytes, added by Chris Wilper on 2008-02-06</li>
+<li><a href="attachments/FCREPO-176/10021_sf-1863382-FedoraCrashObject.zip">sf-1863382-FedoraCrashObject.zip</a>, 6936 bytes, added by Chris Wilper on 2008-01-03</li>
+</ul>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10369"><div class="by">Chris Wilper, 2008-01-03 20:47 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>This problem has been reproduced consistently with the following instructions (and ZIP attachment) provided by Anoop Kumar:</p>
+
+<p>In order to replicate the behavior, you need to ingest all three objects <br/>
+in the zip file and change the hosts file/ or add the spoofs in hosts <br/>
+file that are provided in zip package.  Once the object is in repository <br/>
+you need to find the object by searching for its id <br/>
+tufts:UA069.001.DO.MS008.  and call the disseminator getChunckList by <br/>
+setting parameter to true.  Here is the url to access the object in <br/>
+repository  from fedoras root path<br/>
+/fedora/get/tufts:UA069.001.DO.MS008/bdef:TuftsText/getChunkList?withBody=true<br/>
+You can also access it on our test machine at <br/>
+(<a href="http://vue-dl.tccs.tufts.edu:8080/fedora/get/tufts:UA069.001.DO.MS008/fedora-system:3/viewMethodIndex" class="external-link" rel="nofollow noreferrer">http://vue-dl.tccs.tufts.edu:8080/fedora/get/tufts:UA069.001.DO.MS008/fedora-system:3/viewMethodIndex</a>)</p>
+
+<p>Once you see the dissemination click on the reload button of the browse <br/>
+several times rapidly.  It may take about 15-20 clicks or a little more <br/>
+and then you will notice that the page doesn't reload anymore and the <br/>
+browser keeps trying to load the page.  This essentially crashes the <br/>
+dissemination process and the disseminator cannot be loaded anymore.  I <br/>
+have included fedora server log at the bottom of this email. Once the <br/>
+server freezes disseminating the only way out is to re-start the server. <br/>
+We have been doing that for a month now.</p>
+
+<p>&#8212;</p>
+
+<p>ClientAbortException:  java.net.SocketException: Broken pipe<br/>
+         at <br/>
+org.apache.catalina.connector.OutputBuffer.doFlush(OutputBuffer.java:327)<br/>
+         at <br/>
+org.apache.catalina.connector.OutputBuffer.flush(OutputBuffer.java:293)<br/>
+         at <br/>
+org.apache.catalina.connector.CoyoteOutputStream.flush(CoyoteOutputStream.java:98)<br/>
+         at <br/>
+fedora.server.access.FedoraAccessServlet.getDissemination(FedoraAccessServlet.java:785)<br/>
+         at <br/>
+fedora.server.access.FedoraAccessServlet.doGet(FedoraAccessServlet.java:462)<br/>
+         at javax.servlet.http.HttpServlet.service(HttpServlet.java:690)<br/>
+         at javax.servlet.http.HttpServlet.service(HttpServlet.java:803)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:269)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+         at <br/>
+fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:143)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:215)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+         at <br/>
+fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:143)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:215)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+         at <br/>
+fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:143)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:215)<br/>
+         at <br/>
+org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+         at <br/>
+org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:213)<br/>
+         at <br/>
+org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:174)<br/>
+         at <br/>
+org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)<br/>
+         at <br/>
+org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:127)<br/>
+         at <br/>
+org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:117)<br/>
+         at <br/>
+org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:108)<br/>
+         at <br/>
+org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:151)<br/>
+         at <br/>
+org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:874)<br/>
+         at <br/>
+org.apache.coyote.http11.Http11BaseProtocol$Http11ConnectionHandler.processConnection(Http11BaseProtocol.java:665)<br/>
+         at <br/>
+org.apache.tomcat.util.net.PoolTcpEndpoint.processSocket(PoolTcpEndpoint.java:528)<br/>
+         at <br/>
+org.apache.tomcat.util.net.LeaderFollowerWorkerThread.runIt(LeaderFollowerWorkerThread.java:81)<br/>
+         at <br/>
+org.apache.tomcat.util.threads.ThreadPool$ControlRunnable.run(ThreadPool.java:689)<br/>
+         at java.lang.Thread.run(Thread.java:595)<br/>
+Caused by: java.net.SocketException: Broken pipe<br/>
+File Added: FedoraCrashObject.zip</p></div></div>
+<div class="comment" id="comment-10370"><div class="by">Chris Wilper, 2008-01-03 20:51 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>Ross has found that upping WebClient's default "max connections per host" seems to alleviate the problem, but we haven't found why these connections aren't being released.  It appears that threads are waiting in line for a connection to the host, but older connections aren't being released for some reason, so they wait indefinitely.</p></div></div>
+<div class="comment" id="comment-10371"><div class="by">Chris Wilper, 2008-02-06 04:09 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>File Added: 1863382-bugfix-for-Fedora-2.2.1.zip</p></div></div>
+<div class="comment" id="comment-10372"><div class="by">eddie, 2008-03-18 10:54 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: NO</p>
+
+<p>Fixed in maintenance-2.2 (r6795) and trunk (r6797)</p></div></div>
+<div class="comment" id="comment-10373"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1863382<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1863382" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1863382</a><br/>
+Closed On: 2008-03-18 05:54:01<br/>
+Closed By: pangloss</p></div></div>
+<p><a href="data/FCREPO-176.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

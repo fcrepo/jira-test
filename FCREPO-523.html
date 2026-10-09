@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-523 POST to /objects/pid/datastreams/dsid is counter-intuitive</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-523</span> POST to /objects/pid/datastreams/dsid is counter-intuitive</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben O&#x27;Steen</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-08-19 18:27 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:57 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:57 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr><tr><th>Required by</th><td><a href="FCREPO-543.html">FCREPO-543</a> Stabilize REST API (non-beta)</td></tr></table>
+<h2>Environment</h2>Linux, any JRE, included tomcat
+<h2>Description</h2>
+<p>From the RFC for HTTP 1.1:</p>
+
+<p>The POST method is used to request that the destination server accept<br/>
+   the entity enclosed in the request as a new subordinate of the<br/>
+   resource identified by the Request-URI in the Request-Line.</p>
+
+<p>   If a resource has been created on the origin server, the response<br/>
+   SHOULD be 201 (Created) and contain an entity which describes the<br/>
+   status of the request and refers to the new resource, and a Location<br/>
+   header (see section 14.30).</p>
+
+<p>Whilst an initial create is conformant to the spec as the posted resource becomes GETable at an alternate location (/content), not returning a Location header is highly confusing for new users/developers.</p>
+
+<p>POST for creation is typically reserved for POSTing to a collection URL, which will return a URL of the created resource (if created)</p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-11024"><div class="by">Chris Wilper, 2009-10-16 20:51 UTC</div><div class="text"><p>Increased priority, as doing this right is considered part of completing the REST api for 3.3</p></div></div>
+<div class="comment" id="comment-11109"><div class="by">Chris Wilper, 2009-11-24 18:16 UTC</div><div class="text"><p>Discussed on Nov24 call, agreement to do a 201 in each case.  Location value should be URL to the datastream resource (not content), as the representation of that resource indicates where the content is.  Without asOfDateTime, entity body should be datastream profile of that version.</p></div></div>
+<div class="comment" id="comment-11119"><div class="by">Chris Wilper, 2009-11-26 21:23 UTC</div><div class="text"><p>The more I look at this one, the more I find the use of POST vs PUT for "add" and "modify", to the same URI, to be strange.</p>
+
+<p>I think PUT might be the wrong verb for modify altogether; should the operation really be considered idempotent if the default behavior is for Fedora to create a new, accessible revision of the datastream?  (for one request, this would result in a different datastream "history" than for two identical requests).</p>
+
+<p>It seems safer, semantically, to use POST for both.</p></div></div>
+<div class="comment" id="comment-11120"><div class="by">Stephen Bayliss, 2009-11-27 09:49 UTC</div><div class="text"><p>Doesn't Fedora's notion of versions vs history come in to this?</p>
+
+<p>a "modify" via PUT could be considered a modification of the datastream content, with Fedora in the background keeping track of changes and the datastream history.  If Fedora doesn't consider versions as identified resources in their own right, but instead permits access to the history of datastreams, then it seems to me that this is ok.  The response then doesn't need to return a URI for the new version created, as this can be considered "internal" to Fedora.  From the perspective of the datastream content URI it is idempotent as multiple calls will result in the same datastream content.  (and the location header should just be the datastream content? - ie the resource which was requested to be modified?)</p>
+
+<p>And if versions are promoted to first-class identifiable resources then it should be a POST to a datastream versions URI, with a new subordinate being created.  (And in that case I'd recommend using datastream version Identifiers directly and treat the modification date as an attribute, not as part of the identifier).</p>
+
+<p>So in fact we could support both if we expose versions as a collection; PUT to the datastream content (modify) and POST to the datastram versions (returning a URI for the new version).</p>
+
+<p>Is the intent of the method to modify a datastream, or is it to create a new datastream version?  Personally I like the idea of versions being internal, with Fedora being capable of showing an object's history.</p>
+</div></div>
+<div class="comment" id="comment-11122"><div class="by">Chris Wilper, 2009-11-28 10:11 UTC</div><div class="text"><p>Steve, thanks for your comments on this. I also found this particularly relevant:</p>
+
+<p>From <a href="http://tech.groups.yahoo.com/group/rest-discuss/message/7387" class="external-link" rel="nofollow noreferrer">http://tech.groups.yahoo.com/group/rest-discuss/message/7387</a><br/>
+"What matters is the effect on the interface as expected by the client, not what actually happens on the server to implement that effect."</p>
+
+<p>Actually, the whole thread there really speaks to this question.  And the subsequently-updated httpbis draft now clarifies here: <a href="http://trac.tools.ietf.org/wg/httpbis/trac/changeset/657" class="external-link" rel="nofollow noreferrer">http://trac.tools.ietf.org/wg/httpbis/trac/changeset/657</a><br/>
+"It is important to note that idempotence refers only to changes requested by the client: a server is free to change its state due to multiple requests for the purpose of tracking those requests, versioning of results, etc." </p>
+
+<p>So I think you're right, that it boils down to the intent of the client. Although it may be aware that Fedora is keeping an accessible history of revisions around, the primary reason for making the request is to replace the resource in question (the current revision of the datastream) with the one implied by the request.</p>
+
+<p>As you point out, in the current REST API, we have not made datastream versions first-class web citizens.  I'm also happy keeping them that way for now.</p></div></div>
+<div class="comment" id="comment-11123"><div class="by">Chris Wilper, 2009-11-28 10:46 UTC</div><div class="text"><p>Although I now think PUT is the appropriate verb for "modify", I now find the use of POST for "add" to be strange.</p>
+
+<p>To clarify, I think a POST to </p>
+{pid}/datastreams would be ok (as Ben points out, POSTing to a collection URL is customary)...but today's REST api has clients POSTing to: {pid}
+<p>/datastreams/</p>
+{dsId}<br/>
+<br/>
+This is weird because:<br/>
+- You're POSTing to a resource that doesn't yet exist.<br/>
+- If we agree that "modify" is idempotent as described above, then surely "add" has the same property.<br/>
+<br/>
+So how about using the same verb+URL for add that is used for modify?<br/>
+<br/>
+PUT {pid}/datastreams/{dsId}</div></div>
+<div class="comment" id="comment-11124"><div class="by">Stephen Bayliss, 2009-11-28 11:18 UTC</div><div class="text"><p>Think I agree with you there... Some interesting reading.</p>
+
+<p>I think it is acceptable to PUT to a resource URI even though the resource doesn't yet exist, so that sounds ok to me.</p>
+
+<p>And yes, for POST, it should be to the datastreams collection, to create a new subordinate (which could be added to the API in the future).  And I guess in the latter case if you wanted a specific datastream identifier this would have to be something like a query parameter on the URL?</p></div></div>
+<div class="comment" id="comment-11125"><div class="by">Chris Wilper, 2009-11-28 12:50 UTC</div><div class="text"><p>If PUT to the datastream URI is adequate to support the functionality we want to expose, I would favor just having one way &#8211; it's less for people to have to grok when trying to program to the REST api, and less to document and maintain.</p>
+
+<p>If a client has problems doing "real" PUTs, there's always the X-HTTP-Method-Override trick.  The only reason I can think of for supporting a POST to the datastreams/ collection would be if the client wants Fedora to generate the datastream id.  This is not something the REST api currently does; I would only want to add it if we could come up with some use cases.</p></div></div>
+<div class="comment" id="comment-11127"><div class="by">Asger Askov Blekinge, 2009-11-30 14:33 UTC</div><div class="text"><p>Autogenerating datastream IDs is not a good idea. Content models enforce the existence of specific datastream IDs. </p></div></div>
+<div class="comment" id="comment-11132"><div class="by">Chris Wilper, 2009-12-01 12:49 UTC</div><div class="text"><p>Ugh. I've been updating the webadmin (flash) client, and have uncovered a problem that argues for continuing to support POST.</p>
+
+<p>To quote myself:<br/>
+&gt; If PUT to the datastream URI is adequate to support the functionality we want to expose, I would favor just having one way<br/>
+&gt; <span class="error">&#91;...&#93;</span><br/>
+&gt; If a client has problems doing "real" PUTs, there's always the X-HTTP-Method-Override trick.</p>
+
+<p>In order to upload content from the user's filesystem, the webadmin client reverts to standard browser behavior (a file upload form) due to file upload limitations with Flash (it cannot reliably provide file upload capabilities when the server is protected by http authentication).</p>
+
+<p>Unfortunately, browsers generally don't support PUT as the method for file upload, and we also cannot manipulate the HTTP request headers when such a form is employed (so the X-HTTP-Method-Override trick doesn't work).</p>
+
+<p>Using XMLHttpRequest to submit the request is also not an option in this case: browsers generally don't provide javascript access to file content when "Browse..." is invoked on a form.</p>
+
+<p>Of course, this problem isn't just limited to the webadmin client.  If someone were to try to develop a non-flash (ajax) interface that allowed upload of content to Fedora, they would run into this problem as well.  For this reason, I think it makes sense to continue supporting POST for adding and modifying datastreams.</p>
+
+<p>Modifying, you ask?  Yes, although the current REST API documentation (as of Fedora 3.2.1) states that adding is done through POST and modifying is done through PUT (and this is true), it omits the fact that modifying a datastream is also possible via POST.  This fact needs to be documented.</p></div></div>
+<div class="comment" id="comment-11137"><div class="by">Chris Wilper, 2009-12-01 16:07 UTC</div><div class="text"><p>Fixed in trunk.  Now, on successful POST to this url, response will be:</p>
+<ul class="alternate" type="square">
+	<li>Status code 201 (Created)</li>
+	<li>Location header to this url<br/>
+On successful PUT to this url, response will be:</li>
+	<li>Status code 200 (OK)<br/>
+In either case, response body (text/xml) is now the resulting datastream profile xml.<br/>
+Updated javadocs to clarify that POST may be used for add or modify.<br/>
+If PUT is attempted for non-existing datastream, response will be 404.<br/>
+Added tests for each of these cases</li>
+</ul>
+
+
+<p>This does not address the REST-oddness of POSTing to a resource that doesn't exist (which, btw, also exists in the case of ingest), but it should be backward-compatible with clients that worked with 3.2.1, since it just adds additional information to the responses.</p></div></div>
+<div class="comment" id="comment-11474"><div class="by">Stephen Bayliss, 2010-07-11 17:00 UTC</div><div class="text"><p>Noting the comment "Updated javadocs to clarify that POST may be used for add or modify", re-opening this to ensure:<br/>
+1) REST API docs are updated to note this behaviour and<br/>
+2) REST API test cases include a test for this behaviour (they might do already...)</p>
+
+<p>And as an aside, a grid/table of REST endpoints vs HTTP verbs, summarising the action taken for each case, would probably be a useful addition.</p></div></div>
+<div class="comment" id="comment-12814"><div class="by">Andrew Woods, 2015-01-16 20:57 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-523.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

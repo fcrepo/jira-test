@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3313 Out of memory error when uploading large files to AWS S3</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3313</span> Out of memory error when uploading large files to AWS S3</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>David Cook</td></tr><tr><th>Created</th><td>2020-05-12 00:31 UTC</td></tr><tr><th>Updated</th><td>2020-05-13 20:04 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.5</td></tr></table>
+<h2>Environment</h2>Ubuntu 18.04<br/>
+Tomcat 8
+<h2>Description</h2>
+<p>When uploading a 1+GB file to Fedora, there's no issue uploading the file to the Fedora API, but we get the warning when it starts to upload the data to AWS S3:</p>
+
+<p> </p>
+
+<p>"(AmazonS3Client) No content length specified for stream data.  Stream contents will be buffered in memory and could result in out of memory errors."</p>
+
+<p> </p>
+
+<p>Sure enough, with default Tomcat memory options of 2GB, we get Java out of memory errors: "java.lang.OutOfMemoryError: Java heap space"</p>
+
+<p> </p>
+
+<p>The band-aid fix was just to increase the memory allocated to Tomcat, but it would be better if the whole file wasn't read into memory, as memory limits will always provide an arbitrary ceiling for file size limits.</p>
+
+<p> </p>
+
+<p>Since the file has already been uploaded to Fedora at this point, it should be easy to determine the content length, set the Content-Length in the ObjectMetadata object, and then do the upload via AmazonS3Client. </p>
+
+<p> </p>
+
+<p>See:</p>
+
+<p><a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/model/ObjectMetadata.html" class="external-link" rel="nofollow noreferrer">https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/model/ObjectMetadata.html</a><br/>
+<a href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/AmazonS3Client.html" class="external-link" rel="nofollow noreferrer">https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/AmazonS3Client.html</a></p>
+
+<p> </p>
+
+<p>Although as I say that... I'm getting the feeling that perhaps this is a ModeShape issue instead, which looks like it's correct in the master Modeshape: <a href="https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/S3BinaryStore.java#L283" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/S3BinaryStore.java#L283</a></p>
+
+<p> </p>
+
+<p>Something to look out for in Fedora 6 without ModeShape I suppose... </p>
+
+<p> </p>
+
+<p>Fedora 4.7.5 uses ModeShape 5.4.0.Final which didn't set the Content-Length:</p>
+
+<p><a href="https://github.com/ModeShape/modeshape/blob/modeshape-5.4.0.Final/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/S3BinaryStore.java#L203" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/modeshape-5.4.0.Final/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/S3BinaryStore.java#L203</a></p>
+
+<p> </p>
+
+<p>Fedora 5.1.0 uses ModeShape 5.4.1.fcr... which I assume is similar enough to ModeShape 5.4.1.Final. It still has the bug: <a href="https://github.com/ModeShape/modeshape/blob/modeshape-5.4.1.Final/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/S3BinaryStore.java#L203" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/modeshape-5.4.1.Final/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/S3BinaryStore.java#L203</a></p>
+
+<p> </p>
+
+<p>It was added as a commit to master 3 years ago <a href="https://github.com/ModeShape/modeshape/commit/e8b8a2a1f55f8220b30bc723f8b3d0fd30f5a6f5" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/commit/e8b8a2a1f55f8220b30bc723f8b3d0fd30f5a6f5</a></p>
+
+<p> </p>
+
+<p>Ah, but the ModeShape project appears to be dead. </p>
+
+<p> </p>
+
+<p>I don't actually see AmazonS3Client in the Fedora 6 code, but perhaps that's a future project.</p>
+
+<p> </p>
+
+<p>In any case, I don't see a fix for this coming to Fedora any time soon, but it's certainly an issue. </p>
+<p><a href="data/FCREPO-3313.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

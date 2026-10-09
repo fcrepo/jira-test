@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3374 Catch PersistentStorageExceptions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3374</span> Catch PersistentStorageExceptions</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jon Roby</td></tr><tr><th>Created</th><td>2020-07-09 14:06 UTC</td></tr><tr><th>Updated</th><td>2020-12-18 07:54 UTC</td></tr><tr><th>Resolved</th><td>2020-11-27 15:18 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, fcrepo-6.0.0-alpha-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>This bug can be observed by running the following script:<br/>
+```<br/>
+#!/usr/bin/bash</p>
+
+<p>x=0; <br/>
+r="http://localhost:8080/rest/"; <br/>
+while true; <br/>
+  do x=$(($x + 1));<br/>
+  r=`curl -s -H"Slug: $x" -XPOST $r`; <br/>
+  echo "r = $r"; <br/>
+done <br/>
+```</p>
+
+<p>We will likely want to catch PersistentStorageExceptions and send an appropriate response code to the client... instead of a stacktrace.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-21607"><div class="by">Jared Whiklo, 2020-11-13 21:35 UTC</div><div class="text"><p>As of <a href="https://github.com/fcrepo-exts/migration-utils/commit/25cdf92975afc8b7dda740fb1d4ffbc8df16a226" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/25cdf92975afc8b7dda740fb1d4ffbc8df16a226</a></p>
+
+<p>I can get to 150 levels deep.</p>
+<blockquote><p>r = <a href="http://localhost:8080/rest/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23/24/25/26/27/28/29/30/31/32/33/34/35/36/37/38/39/40/41/42/43/44/45/46/47/48/49/50/51/52/53/54/55/56/57/58/59/60/61/62/63/64/65/66/67/68/69/70/71/72/73/74/75/76/77/78/79/80/81/82/83/84/85/86/87/88/89/90/91/92/93/94/95/96/97/98/99/100/101/102/103/104/105/106/107/108/109/110/111/112/113/114/115/116/117/118/119/120/121/122/123/124/125/126/127/128/129/130/131/132/133/134/135/136/137/138/139/140/141/142/143/144/145/146/147/148/149/150" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/1/2/3/4/5/6/7/8/9/10/11/12/13/14/15/16/17/18/19/20/21/22/23/24/25/26/27/28/29/30/31/32/33/34/35/36/37/38/39/40/41/42/43/44/45/46/47/48/49/50/51/52/53/54/55/56/57/58/59/60/61/62/63/64/65/66/67/68/69/70/71/72/73/74/75/76/77/78/79/80/81/82/83/84/85/86/87/88/89/90/91/92/93/94/95/96/97/98/99/100/101/102/103/104/105/106/107/108/109/110/111/112/113/114/115/116/117/118/119/120/121/122/123/124/125/126/127/128/129/130/131/132/133/134/135/136/137/138/139/140/141/142/143/144/145/146/147/148/149/150</a></p></blockquote>
+<p>Before I get a 500 Server Error because </p>
+<blockquote><p>Value too long for column "FEDORA_ID VARCHAR(503)</p></blockquote>
+<p>That is a problem (one I think we have discussed with having a single table to hold the Fedora IDs and have all other tables reference it and use a shorter hash internally), but its not this problem.</p></div></div>
+<div class="comment" id="comment-21619"><div class="by">Andrew Woods, 2020-11-14 19:55 UTC</div><div class="text"><p>Can we catch the error and return a more client-friendly response?</p></div></div>
+<div class="comment" id="comment-21634"><div class="by">Jon Roby, 2020-11-16 22:54 UTC</div><div class="text"><p>Is there a suggestion for the exception message to return/stackdisplay?</p></div></div>
+<div class="comment" id="comment-21639"><div class="by">Jon Roby, 2020-11-17 19:50 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1806" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1806</a></p></div></div>
+<div class="comment" id="comment-21758"><div class="by">Jared Whiklo, 2020-11-27 15:18 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/6ab7c3f18d560b22df2a2bf43d38b188c6c54dcf" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/6ab7c3f18d560b22df2a2bf43d38b188c6c54dcf</a></p></div></div>
+<p><a href="data/FCREPO-3374.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

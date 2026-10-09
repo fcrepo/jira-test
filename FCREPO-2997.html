@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2997 RDF for a binary contains the type fedora:NonRdfSourceDescription</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2997</span> RDF for a binary contains the type fedora:NonRdfSourceDescription</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2019-05-09 16:08 UTC</td></tr><tr><th>Updated</th><td>2019-05-13 21:02 UTC</td></tr><tr><th>Resolved</th><td>2019-05-10 17:43 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.2</td></tr><tr><th>Fix versions</th><td>Fedora 5.1.0</td></tr></table>
+<h2>Description</h2>
+<p>Discovered in Islandora 8</p>
+
+<p><a href="https://github.com/Islandora-CLAW/CLAW/issues/1114#issuecomment-490652072" class="external-link" rel="nofollow noreferrer">https://github.com/Islandora-CLAW/CLAW/issues/1114#issuecomment-490652072</a></p>
+
+<p>It seems that the fedora:NonRdfSourceDescription triple is returned but the RDF is about the binary and so this seems incorrect.</p>
+
+<p>Should probably hide that triple.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-20678"><div class="by">Rosie Le Faive, 2019-05-09 19:59 UTC</div><div class="text"><p>As pointed out by Danny in the CLAW issue linked there, we <b>do</b> expect to see this attached to the /fcr:metadata, but as a &lt;link rel="type"/&gt; in its HTTP headers and not in the content (since the content is about the binary proper). </p></div></div>
+<div class="comment" id="comment-20680"><div class="by">Jared Whiklo, 2019-05-09 20:42 UTC</div><div class="text"><p>Currently a binary returns these &lt;link rel="type"/&gt;s in its headers</p>
+
+<p>Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"</p>
+
+<p>A binary description returns these &lt;link rel="type"/&gt;s in its headers.</p>
+
+<p>Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"</p>
+
+<p>So in the headers you have a correct separation of RDFSource and NonRDFSource. So I will just look at the RDF properties.</p></div></div>
+<div class="comment" id="comment-20681"><div class="by">Jared Whiklo, 2019-05-09 21:23 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1525" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1525</a></p></div></div>
+<div class="comment" id="comment-20683"><div class="by">Peter Matthew Eichman, 2019-05-10 17:43 UTC</div><div class="text"><p>Merged: <a href="https://github.com/fcrepo4/fcrepo4/commit/7bf23de767b451b7840b36fc48439d4e414ae343" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/7bf23de767b451b7840b36fc48439d4e414ae343</a></p></div></div>
+<div class="comment" id="comment-20684"><div class="by">Rosie Le Faive, 2019-05-13 20:52 UTC</div><div class="text"><p>Is it easy to put it into the appropriate http headers? (I don't understand Fedora's architecture or where these different triples come from, but it seems like it should go in the headers of the binary description.</p></div></div>
+<div class="comment" id="comment-20685"><div class="by">Jared Whiklo, 2019-05-13 21:02 UTC</div><div class="text"><p>Rosie Le Faive it is relatively easy to add it to the headers, but it is an internal "type" and so does not really mean anything outside of Fedora.</p>
+
+<p>I would suggest that as the actual binary has a rel="describedby" header which points to the description, you are better to use that and treat the description like any other ldp:RDFSource object.</p>
+
+<p>But maybe you have a use case for this fedora:* type? </p>
+
+<p> </p></div></div>
+<p><a href="data/FCREPO-2997.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

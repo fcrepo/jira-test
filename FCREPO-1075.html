@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1075 FieldSearch ConcurrentModificationException with many queries</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1075</span> FieldSearch ConcurrentModificationException with many queries</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2012-03-08 19:39 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.3, Fedora 2.2.4, Fedora 3.2, Fedora 3.2.1, Fedora 3.3, Fedora 3.4, Fedora 3.3.1, Fedora 3.4.1, Fedora 3.4.2, Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Environment</h2>Reported vs. Fedora 3.2 with Muradora, but appears to be an issue in all Fedora releases up to and including 3.5
+<h2>Description</h2>
+<p>While stress testing Fedora, hitting the fieldsearch interface with many simultaneous requests, a ConcurrentModificationException is sometimes thrown.</p>
+
+<p>See related thread: <a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-ConcurrentModificationException-td7351953.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-ConcurrentModificationException-td7351953.html</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1075/10151_FieldSearchSQLImpl.class">FieldSearchSQLImpl.class</a>, 11660 bytes, added by Chris Wilper on 2012-03-08</li>
+</ul>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-12262"><div class="by">Chris Wilper, 2012-03-08 19:46 UTC</div><div class="text"><p>Try this alternate class file for Fedora 3.2   ...it uses a ConcurrentHashMap instead.</p></div></div>
+<div class="comment" id="comment-12371"><div class="by">eddie, 2012-08-10 07:06 UTC</div><div class="text"><p>Chris,</p>
+
+<p>Any reason why the switch to ConcurrentHashMap you proposed wasn't made in master? Does this ticket need to be moved against 3.6.1?</p></div></div>
+<div class="comment" id="comment-12523"><div class="by">Davide Gallina, 2013-03-29 20:53 UTC</div><div class="text"><p>Hello,</p>
+
+<p>We currently use Fedora Commons v.3.6.1, and we recently got through this very same problem.</p>
+
+<p>Also, we noticed that it can be worked around by applying the patch explained at:<br/>
+<a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-ConcurrentModificationException-td7351953.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-ConcurrentModificationException-td7351953.html</a><br/>
+but apparently this patch has not been included in subsequent releases.</p>
+
+<p>Do you know the reason for this choice? Do you think that we can apply the same patch to our 3.6.1 in order to have it fixed?</p>
+
+<p>Thanks in advance for your response,<br/>
+Davide Gallina</p></div></div>
+<div class="comment" id="comment-12524"><div class="by">eddie, 2013-03-30 09:05 UTC</div><div class="text"><p>Davide,</p>
+
+<p>I'm not sure why this hasn't been applied against 3.6.1 yet. I believe you should be able to apply this against 3.6.1.</p></div></div>
+<div class="comment" id="comment-12576"><div class="by">Davide Gallina, 2013-11-07 22:04 UTC</div><div class="text"><p>Dear Frank,</p>
+
+<p>As you may know, we have been delivered with a special version of Fedora (3.6.1-FCREPO-1075) - built on the basis of 3.6.1 and that fixes this particular problem.<br/>
+Now, I saw that the new Fedora 3.7 is available: is this fix applied on it? I can't find it into the release notes.</p>
+
+<p>Thank you in advance for your response,<br/>
+Davide</p></div></div>
+<div class="comment" id="comment-12577"><div class="by">frank asseg, 2013-11-08 15:52 UTC</div><div class="text"><p>Hola Davide, <br/>
+Let me ask Ben, who rolled the release and let me come back to you. I thought the pathc would go into 3.7.1 but I'm not sure about that.</p></div></div>
+<div class="comment" id="comment-12578"><div class="by">Benjamin Armintor, 2013-11-25 08:20 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/60a7c78701a5501784c742ea522f9fdac898c84f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/60a7c78701a5501784c742ea522f9fdac898c84f</a></p>
+
+<p>Was included in 3.7.0</p></div></div>
+<div class="comment" id="comment-12945"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1075.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

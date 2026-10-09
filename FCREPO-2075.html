@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2075 Fedora does not warn that non-SHA1 checksums are ignored</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2075</span> Fedora does not warn that non-SHA1 checksums are ignored</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-07-07 14:19 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:31 UTC</td></tr><tr><th>Resolved</th><td>2016-07-07 19:09 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>api-spec, preservation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1842.html">FCREPO-1842</a> Calculate and compare alternate checksum on ingest</td></tr></table>
+<h2>Description</h2>
+<p>Any user-provided digest algorithms that are not supported by Fedora should respond with a 400 status or some other indicator to the client that the digest can not be used.</p>
+
+<p>Example below:</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-16973"><div class="by">Jared Whiklo, 2016-07-07 14:23 UTC</div><div class="text"><p>Example:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[whikloj@net227.lib.umanitoba.ca 8:40 ] 
+[/sw/var/www/DAM2/test_objects] 
+&gt; shasum -a 1 IMG_2437.JPG
+1589663722e1d5ce49420a58db0a3d25c9b43b85  IMG_2437.JPG
+
+[whikloj@net227.lib.umanitoba.ca 8:40 ] 
+[/sw/var/www/DAM2/test_objects] 
+&gt; md5 IMG_2437.JPG 
+MD5 (IMG_2437.JPG) = 407d039bbaf3b357600c4f3acca4cdad
+[whikloj@net227.lib.umanitoba.ca 8:41 ] 
+[/sw/var/www/DAM2/test_objects] 
+
+# Using invalid SHA-1
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" --data-binary "@IMG_2437.JPG" -H"digest: sha1=1589663722e1d5ce49420a58db0a3d25c9b43b8" http://localhost:8080/rest
+HTTP/1.1 100 Continue
+
+HTTP/1.1 409 Conflict
+Date: Thu, 07 Jul 2016 13:43:05 GMT
+Content-Type: text/turtle
+Content-Length: 123
+Server: Jetty(9.3.1.v20150714)
+
+Checksum Mismatch of urn:sha1:1589663722e1d5ce49420a58db0a3d25c9b43b85 and urn:sha1:1589663722e1d5ce49420a58db0a3d25c9b43b8
+
+# Using valid MD5 checksum
+[whikloj@net227.lib.umanitoba.ca 8:43 ] 
+[/sw/var/www/DAM2/test_objects] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" --data-binary "@IMG_2437.JPG" -H"digest: md5=407d039bbaf3b357600c4f3acca4cdad" http://localhost:8080/rest
+HTTP/1.1 100 Continue
+
+HTTP/1.1 201 Created
+Date: Thu, 07 Jul 2016 13:43:36 GMT
+ETag: "ce8862cc830f2960f4cc4df5838905546e524f14"
+Last-Modified: Thu, 07 Jul 2016 13:43:37 GMT
+Link: &lt;http://localhost:8080/rest/a7/b8/43/b7/a7b843b7-16f6-4038-8105-9276cef1bd99/fcr:metadata&gt;; rel="describedby"; anchor="http://localhost:8080/rest/a7/b8/43/b7/a7b843b7-16f6-4038-8105-9276cef1bd99"
+Location: http://localhost:8080/rest/a7/b8/43/b7/a7b843b7-16f6-4038-8105-9276cef1bd99
+Content-Type: text/plain
+Content-Length: 75
+Server: Jetty(9.3.1.v20150714)
+
+http://localhost:8080/rest/a7/b8/43/b7/a7b843b7-16f6-4038-8105-9276cef1bd99%
+
+# Using invalid MD5 checksum
+[whikloj@net227.lib.umanitoba.ca 8:43 ] 
+[/sw/var/www/DAM2/test_objects] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" --data-binary "@IMG_2437.JPG" -H"digest: md5=407d039bbaf3b357600c4f3acca4cda" http://localhost:8080/rest 
+HTTP/1.1 100 Continue
+
+HTTP/1.1 201 Created
+Date: Thu, 07 Jul 2016 13:43:47 GMT
+ETag: "bae09703ea69c06d0ec145f026d8421e6475a5c8"
+Last-Modified: Thu, 07 Jul 2016 13:43:47 GMT
+Link: &lt;http://localhost:8080/rest/a1/e9/99/3a/a1e9993a-c6cf-4e9b-9b62-fdfedeedf22b/fcr:metadata&gt;; rel="describedby"; anchor="http://localhost:8080/rest/a1/e9/99/3a/a1e9993a-c6cf-4e9b-9b62-fdfedeedf22b"
+Location: http://localhost:8080/rest/a1/e9/99/3a/a1e9993a-c6cf-4e9b-9b62-fdfedeedf22b
+Content-Type: text/plain
+Content-Length: 75
+Server: Jetty(9.3.1.v20150714)
+
+http://localhost:8080/rest/a1/e9/99/3a/a1e9993a-c6cf-4e9b-9b62-fdfedeedf22b
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16974"><div class="by">Jared Whiklo, 2016-07-07 14:24 UTC</div><div class="text"><p>This duplicates part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1842" >
+                <a href="FCREPO-1842.html" class="jira-issue-macro-key issue-link"  title="Calculate and compare alternate checksum on ingest" >
+            
+            FCREPO-1842
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ but doesn't cover the request for storage/handling of non-SHA1 checksums.</p></div></div>
+<div class="comment" id="comment-16975"><div class="by">Jared Whiklo, 2016-07-07 17:49 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1063" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1063</a></p></div></div>
+<div class="comment" id="comment-16979"><div class="by">A. Soroka, 2016-07-07 19:09 UTC</div><div class="text"><p>Fixed with <a href="https://github.com/fcrepo4/fcrepo4/commit/c3eeee4675ef1ce1474793ad1ef991677d4901dd" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/c3eeee4675ef1ce1474793ad1ef991677d4901dd</a></p></div></div>
+<p><a href="data/FCREPO-2075.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

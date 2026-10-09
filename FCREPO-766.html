@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-766 System test failure on Windows with Akubra: TestCommandLineFormats.testExportATOM_ZIP</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-766</span> System test failure on Windows with Akubra: TestCommandLineFormats.testExportATOM_ZIP</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-08-16 21:07 UTC</td></tr><tr><th>Updated</th><td>2010-09-01 23:27 UTC</td></tr><tr><th>Resolved</th><td>2010-09-01 23:27 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-775.html">FCREPO-775</a> Failing to close input stream when reading datastream content leaves file locked - can&#x27;t purge</td></tr></table>
+<h2>Environment</h2>ConfigA
+<h2>Description</h2>
+<p>Error purging object demo:998, underlying Exception:</p>
+
+<p>Caused by: java.io.IOException: Failed to delete file: </p>
+
+<p>D:\Fedora34\fedora\data\datastreamStore\61\info%3Afedora%2Fdemo%3A998%2FDS1%2FDS1.0<br/>
+	at org.akubraproject.fs.FSBlob.delete(FSBlob.java:129) <span class="error">&#91;akubra-fs-0.3.jar:na&#93;</span><br/>
+	at org.akubraproject.impl.BlobWrapper.delete(BlobWrapper.java:117) <span class="error">&#91;akubra-core-0.3.jar:na&#93;</span><br/>
+	at org.fcrepo.server.storage.lowlevel.akubra.AkubraLowlevelStorage.delete(AkubraLowlevelStorage.java:456) </p>
+
+<p>On closer inspection, this is due to an InputStream not being closed in:<br/>
+org.fcrepo.server.storage.translation.AtomDOSerializer.setManagedContent(Entry entry, Datastream vds), line 418:</p>
+
+<p>                    IOUtils.copy(vds.getContentStream(), m_zout);</p>
+
+<p>Replacing with the following resolves the issue:</p>
+
+<p>                    InputStream is = vds.getContentStream();<br/>
+                    IOUtils.copy(is, m_zout);<br/>
+                    is.close();</p>
+
+<p>From <a href="http://commons.apache.org/io/api-release/org/apache/commons/io/IOUtils.html:" class="external-link" rel="nofollow noreferrer">http://commons.apache.org/io/api-release/org/apache/commons/io/IOUtils.html:</a></p>
+
+<p>"Wherever possible, the methods in this class do not flush or close the stream. This is to avoid making non-portable assumptions about the streams' origin and further use. Thus the caller is still responsible for closing streams after use. "</p>
+
+<p>Given this, might be worth a bit of a general code trawl-through for other instances of IOUtils to ensure streams are closed correctly where they should be.</p>
+
+<p>(I'm pretty sure I have used IOUtils.copy() without thinking about closing streams afterwards.  And this might explain why I end up with so many temp files that are not deleted).</p>
+
+<p>Curious as to why this was not an issue with the legacy low-level storage implementation.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-11593"><div class="by">Stephen Bayliss, 2010-09-01 23:27 UTC</div><div class="text"><p>Moved back to 3.4 and marked fixed - the test itself was fixed in 3.4, 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-775" >
+                <a href="FCREPO-775.html" class="jira-issue-macro-key issue-link"  title="Failing to close input stream when reading datastream content leaves file locked - can&#39;t purge" >
+            
+            FCREPO-775
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ addresses the general issue.</p></div></div>
+<p><a href="data/FCREPO-766.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

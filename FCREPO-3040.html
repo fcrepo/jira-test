@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3040 Migration-utils: OCFL impl of exists()</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3040</span> Migration-utils: OCFL impl of exists()</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Remi Malessa</td></tr><tr><th>Created</th><td>2019-09-16 20:48 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 16:38 UTC</td></tr><tr><th>Resolved</th><td>2019-09-24 16:36 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-utils-4.5.0, Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Depends on</th><td><a href="FCREPO-3041.html">FCREPO-3041</a> Migration-utils: OCFL stub impl</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3069.html">FCREPO-3069</a> Migration-utils: Integration test for OCFL impl of exists()</td></tr></table>
+<h2>Description</h2>
+<p>This task is to implement the 'exists()' method of the OCFL client:<br/>
+<a href="https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/Fedora4Client.java#L33" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/Fedora4Client.java#L33</a></p>
+
+<p>An integration test must be included.</p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-20758"><div class="by">Remi Malessa, 2019-09-19 13:41 UTC</div><div class="text"><p>I am waiting for Peter Wincles to create contains() method for the OcflRepository class.</p></div></div>
+<div class="comment" id="comment-20759"><div class="by">Remi Malessa, 2019-09-19 13:44 UTC</div><div class="text"><p>Implemented the constructor in org.fcrepo.migration.f4clients.OCFLFedora4Client</p></div></div>
+<div class="comment" id="comment-20762"><div class="by">Dan Field, 2019-09-19 14:50 UTC</div><div class="text"><p>I am also looking at the constructor in order to develop FCREPO-3052 </p>
+
+<p> </p>
+
+<p>I was going to propose the following</p>
+
+<p> </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/** 
+     * Constructor
+     * 
+     * @param storage Root for OCFL Objects
+     * @param staging directory for in-progress OCFL Objects
+     */
+    public OCFLFedora4Client(final String storage, final String staging, final String fcrepoBaseURL) {
+        LOGGER.info("to-be-implemented: OCFLFedora4Client: " + storage + "," + staging);
+    
+        storageRoot = fcrepoBaseURL;
+        stagingRoot = staging;
+        baseUri = fcrepoBaseURL;
+  </pre>
+</div></div></div></div>
+<div class="comment" id="comment-20774"><div class="by">Remi Malessa, 2019-09-20 07:37 UTC</div><div class="text"><p>Dan, I looked at Andrew's Go client implementation and added checks for the storage and staging existence and being directories. Also added an OcflRepository object and initialization. I pushed my commit to the origin, branch fcrepo-3040 if you'd like to have a look.  Peter Wincles has added the containsObject() method, so I am back to work and hopefully will finish soon.</p></div></div>
+<div class="comment" id="comment-20775"><div class="by">Dan Field, 2019-09-20 07:49 UTC</div><div class="text"><p>Remi Malessa Thanks, it turns out that I think my constructor requirements are actually not needed anyway so We'll go with your implementation for now. </p></div></div>
+<div class="comment" id="comment-20778"><div class="by">Remi Malessa, 2019-09-20 08:19 UTC</div><div class="text"><p>Writing tests</p></div></div>
+<div class="comment" id="comment-20780"><div class="by">Remi Malessa, 2019-09-23 07:47 UTC</div><div class="text"><p>I suddenly started to receive a missing method exception when I initialise the OcflRepository :</p>
+
+<p>java.lang.NoSuchMethodError: org.apache.commons.codec.digest.DigestUtils.digest(Ljava/security/MessageDigest;Ljava/io/File[B<br/>
+    at edu.wisc.library.ocfl.core.storage.FileSystemOcflStorage.computeDigest(FileSystemOcflStorage.java:325)<br/>
+    at edu.wisc.library.ocfl.core.storage.FileSystemOcflStorage.verifyInventory(FileSystemOcflStorage.java:242)<br/>
+    at edu.wisc.library.ocfl.core.storage.FileSystemOcflStorage.parseInventory(FileSystemOcflStorage.java:233)<br/>
+    at edu.wisc.library.ocfl.core.storage.FileSystemOcflStorage.validateExistingRepo(FileSystemOcflStorage.java:381)<br/>
+    at edu.wisc.library.ocfl.core.storage.FileSystemOcflStorage.initializeStorage(FileSystemOcflStorage.java:212)<br/>
+    at edu.wisc.library.ocfl.core.OcflRepositoryBuilder.build(OcflRepositoryBuilder.java:149)<br/>
+    at org.fcrepo.migration.f4clients.OCFLFedora4Client.&lt;init&gt;(OCFLFedora4Client.java:52)<br/>
+    at org.fcrepo.migration.f4clients.OCFLFedora4ClientTest.setUp(OCFLFedora4ClientTest.java:29)</p>
+
+<p>Peter has made a small change to his code on Friday. I asked him whether this could be related. I'll let you know when I have a reply.</p></div></div>
+<div class="comment" id="comment-20782"><div class="by">Andrew Woods, 2019-09-23 15:08 UTC</div><div class="text"><p>I am not seeing the issue building against `master` of migration-utils. Remi Malessa, do you have a link to your local branch?</p></div></div>
+<div class="comment" id="comment-20783"><div class="by">Remi Malessa, 2019-09-23 15:13 UTC</div><div class="text"><p>Sorry, this has been sorted by Dan with the commons-codec ticket  <a href="https://jira.duraspace.org/browse/FCREPO-3055" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-3055</a></p></div></div>
+<div class="comment" id="comment-20784"><div class="by">Remi Malessa, 2019-09-23 15:24 UTC</div><div class="text"><p>Created pull request : <a href="https://github.com/fcrepo4-exts/migration-utils/pull/61" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/pull/61</a></p></div></div>
+<div class="comment" id="comment-20785"><div class="by">Andrew Woods, 2019-09-23 16:34 UTC</div><div class="text"><p>Pending response to code review.</p></div></div>
+<div class="comment" id="comment-20791"><div class="by">Dan Field, 2019-09-24 13:35 UTC</div><div class="text"><p>Merged PR in order to work on dependant tickets but we want to revisit this to improve the integration test once the other interface methods are implemented. </p></div></div>
+<div class="comment" id="comment-20796"><div class="by">Andrew Woods, 2019-09-24 16:36 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/migration-utils/commit/b7c8235427e12d58450427f61289b5fdf8b40a1f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/commit/b7c8235427e12d58450427f61289b5fdf8b40a1f</a></p></div></div>
+<p><a href="data/FCREPO-3040.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

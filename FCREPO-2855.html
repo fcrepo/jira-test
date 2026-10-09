@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2855 Only one of acl:accessTo or acl:accessToClass should be allowed in an Authorization</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2855</span> Only one of acl:accessTo or acl:accessToClass should be allowed in an Authorization</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2018-09-06 20:16 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 21:13 UTC</td></tr><tr><th>Resolved</th><td>2018-09-15 16:56 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>fall-2018-sprint-1, webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Because the acl:default predicate means that the specified Authorization should be shared to child resources, then there is no reason to specify both of the acl:accessTo and acl:accessToClass.</p>
+
+<p>acl:accessToClass would allow you more options (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2854" >
+                <a href="FCREPO-2854.html" class="jira-issue-macro-key issue-link"  title="Defining acl:accessToClass without an acl:default predicate has no benefit" >
+            
+            FCREPO-2854
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).</p>
+
+<p>But acl:accessTo would be re-written to the child objects URI, voiding any acl:accessToClass statements.</p>
+
+<p>ie.</p>
+
+<p>/rest/test_object</p>
+
+<p>&lt;&gt; a example:Box .</p>
+
+<p>/rest/test_object/fcr:acl</p>
+
+<p>&lt;&gt; a webac:Acl .</p>
+
+<p>&lt;#auth1&gt; a acl:Authorization ;<br/>
+    acl:mode acl:Read ;<br/>
+    acl:accessTo &lt;/rest/test_object&gt; ;<br/>
+    acl:accessToClass example:Box ;<br/>
+    acl:agent "Bob" ;<br/>
+    acl:default &lt;/rest/test_object&gt; .</p>
+
+<p>Any child (ie. /rest/test_object/child) would see an effective Acl of</p>
+
+<p>&lt;&gt; a webac:Acl .</p>
+
+<p>&lt;#auth1&gt; a acl:Authorization ;<br/>
+    acl:mode acl:Read ;<br/>
+    acl:accessTo &lt;/rest/test_object/child&gt; ;<br/>
+    acl:accessToClass example:Box ;<br/>
+    acl:agent "Bob" .</p>
+
+<p> </p>
+
+<p>Therefore it is probably better to disallow having both acl:accessTo and acl:accessToClass in the same authorization.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-20176"><div class="by">Danny Bernstein, 2018-09-07 18:09 UTC</div><div class="text"><p>So Jared Whiklo I would assume a 400 response with an appropriate constraints link header to an appropriate document?</p></div></div>
+<div class="comment" id="comment-20178"><div class="by">Jared Whiklo, 2018-09-07 19:08 UTC</div><div class="text"><p>Since we are into implementation specifics here it is really up to us. But I would agree that a 4xx response with an appropriate constraint document would make sense.</p></div></div>
+<div class="comment" id="comment-20200"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-09-12 19:43 UTC</div><div class="text"><p>Completed with PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1401" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1401</a></p></div></div>
+<div class="comment" id="comment-20211"><div class="by">Peter Matthew Eichman, 2018-09-13 17:43 UTC</div><div class="text"><p>Pending response to review comments.</p></div></div>
+<div class="comment" id="comment-20239"><div class="by">Peter Matthew Eichman, 2018-09-15 16:56 UTC</div><div class="text"><p>Merged: <a href="https://github.com/fcrepo4/fcrepo4/commit/6498ca759ae3e51ef45218dc2eeff2d6efe8d864" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/6498ca759ae3e51ef45218dc2eeff2d6efe8d864</a></p></div></div>
+<p><a href="data/FCREPO-2855.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

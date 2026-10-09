@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2628 Change userAgent references in FedoraSession to userURI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2628</span> Change userAgent references in FedoraSession to userURI</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2017-09-25 20:14 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2017-10-06 20:49 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>In <a href="https://jira.duraspace.org/browse/FCREPO-2608" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2608</a>,  the userAgent URI was introduced into the session.   The HTTP user agent header definition is at odds with the way the term is being used here: </p>
+
+<p>According the http spec the user-agent header is used for identifying the software agent acting on behalf of the user (<a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43" class="external-link" rel="nofollow noreferrer">https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43</a>).  In FedoraSession we are using it to mean a URI representation of the user proper.  </p>
+
+<p>To  prevent confusion I propose changing the member to "userURI". </p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-19380"><div class="by">Aaron Birkland, 2017-09-25 20:44 UTC</div><div class="text"><p>The complication is that WebAC uses the term "agent" for this:</p>
+
+<p><a href="https://github.com/solid/web-access-control-spec#describing-agents" class="external-link" rel="nofollow noreferrer">https://github.com/solid/web-access-control-spec#describing-agents</a></p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19381"><div class="by">Danny Bernstein, 2017-09-25 20:58 UTC</div><div class="text"><p>Aaron Birkland:  okay - well that makes sense why "user agent" is used in the first place.  I'm content to close this one unless you or anyone feels that it should be addressed. </p></div></div>
+<div class="comment" id="comment-19382"><div class="by">Esmé Cowles, 2017-09-25 21:28 UTC</div><div class="text"><p>I think it's important to represent both the user and the software the user is using to interact with the repository.  And I agree that if we're using the term "userAgent" it should be the software, not the user themselves.</p></div></div>
+<div class="comment" id="comment-19406"><div class="by">Situ, Longshou, 2017-09-28 17:42 UTC</div><div class="text"><p>Andrew Woods The user agent concept is introduced in WebAC (<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L101" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L101</a>). And I think fedora-event-serialization/Modeshape use the user agent term (<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-event-serialization/src/main/java/org/fcrepo/event/serialization/JsonLDEventMessage.java#L193" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-event-serialization/src/main/java/org/fcrepo/event/serialization/JsonLDEventMessage.java#L193</a>) as well. Do we want to change the environment variable fcrepo.auth.webac.userAgent.baseUri that is used across Fedora as well? It could be a breaking change for WebAC if we want to change it.</p></div></div>
+<div class="comment" id="comment-19409"><div class="by">Andrew Woods, 2017-09-28 19:37 UTC</div><div class="text"><p>Danny Bernstein: I am trying to determine the intent of this ticket. Are you suggesting that the following method be changed to 'FedoraSession.getUserURI()'?</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/55acd4bd2c226968d933afe4ca75118311a2eb57/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/FedoraSession.java#L73" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/55acd4bd2c226968d933afe4ca75118311a2eb57/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/FedoraSession.java#L73</a></p></div></div>
+<div class="comment" id="comment-19412"><div class="by">Danny Bernstein, 2017-09-28 20:27 UTC</div><div class="text"><p>Andrew Woods: Yes. That's right.</p></div></div>
+<div class="comment" id="comment-19413"><div class="by">Situ, Longshou, 2017-09-28 22:23 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1247" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1247</a></p>
+
+<p>I've rename it and also refactor the codes to use of a global constant for the related environment variable <br/>
+ fcrepo.auth.webac.userAgent.baseUri that are shared across WebAC and fedora-event-serialization as well.</p></div></div>
+<div class="comment" id="comment-19482"><div class="by">Andrew Woods, 2017-10-06 19:28 UTC</div><div class="text"><p>Pending rebase and refactoring based on: <a href="https://github.com/fcrepo4/fcrepo4/pull/1243" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1243</a></p></div></div>
+<div class="comment" id="comment-19488"><div class="by">Situ, Longshou, 2017-10-06 20:49 UTC</div><div class="text"><p>Andrew Woods I've rebased it and renamed signature UserAgent to UserURI in FedoraEvent as suggested by Danny Bernstein in his <a href="https://github.com/fcrepo4/fcrepo4/pull/1247#pullrequestreview-66221456" class="external-link" rel="nofollow noreferrer">review </a>. See <a href="https://github.com/fcrepo4/fcrepo4/pull/1247/commits/0fc16c0ef344f4f8ff7343d2c39e8d7422a2fb79" class="external-link" rel="nofollow noreferrer">commit</a>.</p></div></div>
+<div class="comment" id="comment-19492"><div class="by">Andrew Woods, 2017-10-06 23:27 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/6034a73c0b3acca0622362b3c06dd48169b4a535" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/6034a73c0b3acca0622362b3c06dd48169b4a535</a></p></div></div>
+<p><a href="data/FCREPO-2628.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

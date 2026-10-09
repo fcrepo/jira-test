@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3537 Enforce Fedora ID restrictions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3537</span> Enforce Fedora ID restrictions</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-11-19 14:24 UTC</td></tr><tr><th>Updated</th><td>2020-12-18 07:50 UTC</td></tr><tr><th>Resolved</th><td>2020-12-04 22:29 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, fcrepo-6.0.0-alpha-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3539.html">FCREPO-3539</a> Spaces in IDs create problems when working with RDF</td></tr></table>
+<h2>Description</h2>
+<p>Fedora uses naming conventions to store system generated files within OCFL objects as described here: <a href="https://wiki.lyrasis.org/display/FF/Design+-+Fedora+OCFL+Object+Structure" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FF/Design+-+Fedora+OCFL+Object+Structure</a></p>
+
+<p>In order for these conventions to work, there are handful of restrictions that must be enforced on user resource ids in order to avoid overwriting system generated files. We are not currently enforcing these restrictions. Here are a couple of examples:</p>
+
+<p>In the following example, the fcr-root.json header file of the AG is overwritten with a binary header file:</p>
+
+<p>curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/ag-01" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/ag-01</a> -H'Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"' -H'Link: &lt;<a href="http://fedora.info/definitions/v4/repository#ArchivalGroup" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#ArchivalGroup</a>&gt;;rel="type"' -v -H "Content-Type: text/turtle" -X PUT --data "&lt;&gt; &lt;<a href="http://purl.org/dc/elements/1.1/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/title</a>&gt; 'AG Parent'"</p>
+
+<p>curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/ag-01/fcr-root" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/ag-01/fcr-root</a> -H "Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;; rel=type" -v -H "Content-Type: text/plain" -X PUT --data-binary "testing"</p>
+
+<p>In this example, the binary description file of one binary is overwritten by another binary:</p>
+
+<p>curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/ag-02" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/ag-02</a> -H'Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"' -H'Link: &lt;<a href="http://fedora.info/definitions/v4/repository#ArchivalGroup" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#ArchivalGroup</a>&gt;;rel="type"' -v -H "Content-Type: text/turtle" -X PUT --data "&lt;&gt; &lt;<a href="http://purl.org/dc/elements/1.1/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/title</a>&gt; 'AG Parent'"</p>
+
+<p>curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/ag-02/child-01" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/ag-02/child-01</a> -H "Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;; rel=type" -v -H "Content-Type: text/plain" -X PUT --data-binary "testing"</p>
+
+<p>curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/ag-02/child-01~fcr-desc.nt" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/ag-02/child-01~fcr-desc.nt</a> -H "Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;; rel=type" -v -H "Content-Type: text/plain" -X PUT --data-binary "changed!"</p>
+
+<p>Note, these are not exhaustive examples.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21784"><div class="by">Peter Winckles, 2020-12-02 21:03 UTC</div><div class="text"><p>pr: <a href="https://github.com/fcrepo/fcrepo/pull/1825" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1825</a></p></div></div>
+<div class="comment" id="comment-21817"><div class="by">Jared Whiklo, 2020-12-04 22:29 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/b7e77a103afaf96dadfd9664cf57038166e1cf8a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/b7e77a103afaf96dadfd9664cf57038166e1cf8a</a></p></div></div>
+<p><a href="data/FCREPO-3537.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

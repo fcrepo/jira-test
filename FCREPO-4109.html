@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4109 Concurrent ingest deadlocks on PostgreSQL: containment index commit locks parent rows in nondeterministic order</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4109</span> Concurrent ingest deadlocks on PostgreSQL: containment index commit locks parent rows in nondeterministic order</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>In Progress</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>David Novák</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2026-09-17 13:17 UTC</td></tr><tr><th>Updated</th><td>2026-09-17 13:25 UTC</td></tr><tr><th>Affects versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Description</h2>
+<h2><a name="Summary"></a>Summary</h2>
+
+<p>When several transactions that add resources under the <b>same parent containers</b> are committed concurrently, Fedora fails with <tt>Failed to commit transaction</tt> caused by a PostgreSQL deadlock on the <tt>containment</tt> table.</p>
+
+<p>The commit updates one <tt>containment</tt> row per changed parent, in a loop, driven by a query that has <b>no</b> <tt>ORDER BY</tt>. Two concurrent commits that touch the same set of parents can therefore acquire the same row locks in opposite order, which is a textbook deadlock.</p>
+
+<p>A second, independent problem makes this visible to clients on 7.0.0: fcrepo <em>does</em> wrap the commit in a retry policy for deadlocks, but with Spring 6 on PostgreSQL that policy never matches the exception that is actually thrown, so nothing is retried and the error propagates out as a failed request. On 6.5.1 the same deadlock is still retried and stays invisible, so this half looks like a regression.</p>
+
+<p>Both are one-line-ish fixes; we are running with them applied locally (see <em>Suggested fix</em>).</p>
+
+<h2><a name="Environment"></a>Environment</h2>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>&nbsp;</th>
+<th class='confluenceTh'>&nbsp;</th>
+</tr>
+<tr>
+<td class='confluenceTd'>Fedora</td>
+<td class='confluenceTd'>7.0.0 (<tt>fcrepo/fcrepo:7.0.0-tomcat10</tt>)</td>
+</tr>
+<tr>
+<td class='confluenceTd'>Database</td>
+<td class='confluenceTd'>PostgreSQL 12.3</td>
+</tr>
+<tr>
+<td class='confluenceTd'>Spring</td>
+<td class='confluenceTd'>6.2.16 (<tt>spring-jdbc-6.2.16.jar</tt> in the deployment)</td>
+</tr>
+<tr>
+<td class='confluenceTd'>Client</td>
+<td class='confluenceTd'>multi-threaded bulk ingest, one Fedora transaction (<tt>Atomic-ID</tt>) per record</td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>Both code paths below are <b>unchanged on</b> <tt>main</tt> as of <tt>d11e34c382</tt> (2026-09-10), so this is not specific to the 7.0.0 tag.</p>
+
+<h2><a name="Observedbehaviour"></a>Observed behaviour</h2>
+
+<p>Over a set of bulk ingest runs our Fedora log contains <b>700</b> occurrences of the following pair (same transaction id in both lines, so 700 events, not 1400):</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql">WARN  (ContainmentIndexImpl) Unable <span class="code-keyword">to</span> <span class="code-keyword">commit</span> containment <span class="code-keyword">index</span> <span class="code-keyword">transaction</span> &lt;tx&gt;:
+      PreparedStatementCallback; <span class="code-keyword">SQL</span> [<span class="code-keyword">UPDATE</span> containment <span class="code-keyword">SET</span> updated = ? <span class="code-keyword">WHERE</span> fedora_id = ?];
+      ERROR: deadlock detected
+  Detail: <span class="code-keyword">Process</span> 151 waits <span class="code-keyword">for</span> ShareLock <span class="code-keyword">on</span> <span class="code-keyword">transaction</span> 221057; blocked <span class="code-keyword">by</span> <span class="code-keyword">process</span> 236.
+          <span class="code-keyword">Process</span> 236 waits <span class="code-keyword">for</span> ShareLock <span class="code-keyword">on</span> <span class="code-keyword">transaction</span> 221053; blocked <span class="code-keyword">by</span> <span class="code-keyword">process</span> 151.
+  <span class="code-keyword">Where</span>:  <span class="code-keyword">while</span> updating tuple (1940,28) <span class="code-keyword">in</span> relation <span class="code-quote">"containment"</span>
+
+ERROR (TransactionImpl) Failed <span class="code-keyword">to</span> <span class="code-keyword">commit</span> <span class="code-keyword">transaction</span>: &lt;tx&gt;</pre>
+</div></div>
+
+<p>The <tt>Detail</tt> lines show a genuine two-process cycle, and the same heap tuple recurs across events, i.e. the contention is on a small number of hot parent rows.</p>
+
+<h2><a name="Rootcause1%E2%80%94parentrowsarelockedinnondeterministicorder"></a>Root cause 1 — parent rows are locked in nondeterministic order</h2>
+
+<p><tt>ContainmentIndexImpl</tt> collects the parents to touch with (<tt>ContainmentIndexImpl.java#L467</tt>):</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"><span class="code-keyword">private</span> <span class="code-keyword">static</span> <span class="code-keyword">final</span> <span class="code-object">String</span> GET_UPDATED_RESOURCES = <span class="code-quote">"SELECT DISTINCT "</span> + PARENT_COLUMN + <span class="code-quote">" FROM "</span> +
+        TRANSACTION_OPERATIONS_TABLE + <span class="code-quote">" WHERE "</span> + TRANSACTION_ID_COLUMN + <span class="code-quote">" = :transactionId AND "</span> +
+        OPERATION_COLUMN + <span class="code-quote">" in (<span class="code-quote">'add'</span>, <span class="code-quote">'delete'</span>)"</span>;</pre>
+</div></div>
+
+<p>and then updates them one at a time (<tt>ContainmentIndexImpl.java#L777</tt>):</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"><span class="code-keyword">for</span> (<span class="code-keyword">final</span> <span class="code-keyword">var</span> parent : changedParents) {
+    <span class="code-keyword">final</span> <span class="code-keyword">var</span> updated = jdbcTemplate.queryForObject(SELECT_LAST_UPDATED_IN_TX, ...);
+    <span class="code-keyword">if</span> (updated != <span class="code-keyword">null</span>) {
+        jdbcTemplate.update(UPDATE_LAST_UPDATED, Map.of(<span class="code-quote">"resourceId"</span>, parent, <span class="code-quote">"updated"</span>, updated));
+    }
+}</pre>
+</div></div>
+
+<p><tt>SELECT DISTINCT</tt> without <tt>ORDER BY</tt> gives no ordering guarantee — PostgreSQL will typically satisfy it with a <tt>HashAggregate</tt> whose output order varies. Each commit therefore takes row locks on its parent rows in an arbitrary order, and two commits sharing two or more parents can deadlock.</p>
+
+<p>This only shows up once a workload has <b>two or more shared parents per transaction</b>, which is exactly what a repository with a flat container plus membership/proxy containers produces. In our case every record adds a child to both:</p>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'><tt>containment.parent</tt></th>
+<th class='confluenceTh'>children</th>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>info:fedora/&lt;server&gt;/record</tt></td>
+<td class='confluenceTd'>178 277 (every record)</td>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>info:fedora/&lt;server&gt;/model/&lt;model&gt;/member</tt></td>
+<td class='confluenceTd'>14 … 37 667 (per model)</td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>All other parents are per-record and never contended. So any two concurrent commits of the same model contend on exactly two rows — enough for a cycle. Two commits of <em>different</em> models share only one row and cannot deadlock, which matches what we see in practice.</p>
+
+<h2><a name="Rootcause2%E2%80%94thedeadlockretryneverfiresonPostgreSQL%287.0.0%2FSpring6%29"></a>Root cause 2 — the deadlock retry never fires on PostgreSQL (7.0.0 / Spring 6)</h2>
+
+<p><tt>TransactionImpl</tt> commits the indexes inside a retrying executor (<tt>TransactionImpl.java#L350</tt>), and the policy is (<tt>DbTransactionExecutor.java#L36</tt>):</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">.handleIf(e -&gt; {
+    <span class="code-keyword">return</span> e <span class="code-keyword">instanceof</span> DeadlockLoserDataAccessException
+            || (e.getCause() != <span class="code-keyword">null</span> &amp;&amp; e.getCause() <span class="code-keyword">instanceof</span> DeadlockLoserDataAccessException);
+})</pre>
+</div></div>
+
+<p>On PostgreSQL the exception that actually arrives is <tt>org.springframework.dao.PessimisticLockingFailureException</tt> — the <b>superclass</b> of <tt>DeadlockLoserDataAccessException</tt> — so <tt>instanceof</tt> is <tt>false</tt> and the operation is not retried.</p>
+
+<p>Evidence from 102 518 log lines covering the runs above:</p>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>class in the <tt>Caused by</tt> chain</th>
+<th class='confluenceTh'>occurrences</th>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>org.springframework.dao.PessimisticLockingFailureException</tt></td>
+<td class='confluenceTd'>700</td>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>org.springframework.dao.DeadlockLoserDataAccessException</tt></td>
+<td class='confluenceTd'><b>0</b></td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>This looks unintentional rather than deliberate: the retry infrastructure was added in #1909 / #1910 (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3720" >
+                <a href="FCREPO-3720.html" class="jira-issue-macro-key issue-link"  title="Fedora 6 fails to start on migrated content when using MySQL" >
+            
+            FCREPO-3720
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, May 2021) to address <b>MySQL</b> deadlocks, and the javadoc still says so — <em>"Executes the runnable within a DB transaction that will retry entire block on MySQL deadlock exceptions"</em> (<tt>DbTransactionExecutor.java#L60</tt>). PostgreSQL appears never to have been covered.</p>
+
+<h3><a name="Whythisisaregressionfrom6.5.1%2Candwhyitisnobody%27sfaultinfcrepo"></a>Why this is a regression from 6.5.1, and why it is nobody's fault in fcrepo</h3>
+
+<p>The predicate above is <b>byte-for-byte identical in 6.5.1 and 7.0.0</b> — fcrepo did not change it. What changed is the Spring version underneath (5.3.39 → 6.2.16) and, with it, the default <tt>SQLExceptionTranslator</tt> chosen by <tt>JdbcAccessor.getExceptionTranslator()</tt>:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"><span class="code-comment">// Spring 5.3.39 — a DataSource is always present in fcrepo, so <span class="code-keyword">this</span> branch wins
+</span><span class="code-keyword">else</span> <span class="code-keyword">if</span> (dataSource != <span class="code-keyword">null</span>) {
+    exceptionTranslator = <span class="code-keyword">new</span> SQLErrorCodeSQLExceptionTranslator(dataSource);
+}
+
+<span class="code-comment">// Spring 6.2.16 — the error-code translator is deprecated and only used <span class="code-keyword">if</span> the
+</span><span class="code-comment">// application ships its own sql-error-codes.xml, which fcrepo does not
+</span><span class="code-keyword">if</span> (SQLErrorCodeSQLExceptionTranslator.hasUserProvidedErrorCodesFile()) {
+    exceptionTranslator = <span class="code-keyword">new</span> SQLErrorCodeSQLExceptionTranslator(obtainDataSource());
+} <span class="code-keyword">else</span> {
+    exceptionTranslator = <span class="code-keyword">new</span> SQLExceptionSubclassTranslator();
+}</pre>
+</div></div>
+
+<p><tt>SQLErrorCodeSQLExceptionTranslator</tt> knows vendor-specific codes: Spring's bundled <tt>sql-error-codes.xml</tt> lists <tt>40P01</tt> (PostgreSQL <tt>deadlock_detected</tt>) under PostgreSQL's <tt>deadlockLoserCodes</tt>, so it produced <tt>DeadlockLoserDataAccessException</tt> — and the predicate matched.</p>
+
+<p><tt>SQLExceptionSubclassTranslator</tt> knows no vendor codes; it classifies by SQLSTATE class, and class <tt>40</tt> maps to <tt>PessimisticLockingFailureException</tt> — the <b>superclass</b>. The predicate no longer matches.</p>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>&nbsp;</th>
+<th class='confluenceTh'>fcrepo 6.5.1</th>
+<th class='confluenceTh'>fcrepo 7.0.0</th>
+</tr>
+<tr>
+<td class='confluenceTd'>Spring</td>
+<td class='confluenceTd'>5.3.39</td>
+<td class='confluenceTd'>6.2.16</td>
+</tr>
+<tr>
+<td class='confluenceTd'>default translator</td>
+<td class='confluenceTd'><tt>SQLErrorCodeSQLExceptionTranslator</tt></td>
+<td class='confluenceTd'><tt>SQLExceptionSubclassTranslator</tt></td>
+</tr>
+<tr>
+<td class='confluenceTd'>knows <tt>40P01</tt>?</td>
+<td class='confluenceTd'>yes, from <tt>sql-error-codes.xml</tt></td>
+<td class='confluenceTd'>no, only SQLSTATE class <tt>40</tt></td>
+</tr>
+<tr>
+<td class='confluenceTd'>exception produced</td>
+<td class='confluenceTd'><tt>DeadlockLoserDataAccessException</tt></td>
+<td class='confluenceTd'><tt>PessimisticLockingFailureException</tt></td>
+</tr>
+<tr>
+<td class='confluenceTd'>predicate matches?</td>
+<td class='confluenceTd'><b>yes</b> → up to 10 retries</td>
+<td class='confluenceTd'>no → not retried</td>
+</tr>
+<tr>
+<td class='confluenceTd'>what the client sees</td>
+<td class='confluenceTd'>nothing; a WARN in the log</td>
+<td class='confluenceTd'>a failed request</td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>This also explains why it went unnoticed: on MySQL, for which the retry was written, the error code translates differently.</p>
+
+<p>The deadlock itself (root cause 1) exists identically in both versions — 6.5.1 just swallows it. Our production instance shows exactly that, and it means an upgrade to 7.x turns a latent, invisible problem into user-visible request failures.</p>
+
+<h2><a name="Thesamedeadlockoccursinordinaryoperation%2Cnotjustbulkingest"></a>The same deadlock occurs in ordinary operation, not just bulk ingest</h2>
+
+<p>This is not an artefact of a bulk-loading tool. Searching ~1.5 years of centrally collected container logs from our <b>production</b> instance (fcrepo 6.5.1, PostgreSQL, ordinary interactive traffic — no bulk ingest) for <tt>deadlock detected</tt> returns 21 log records, spread over roughly 7 distinct incidents:</p>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>period</th>
+<th class='confluenceTh'>records</th>
+</tr>
+<tr>
+<td class='confluenceTd'>2025-02</td>
+<td class='confluenceTd'>6</td>
+</tr>
+<tr>
+<td class='confluenceTd'>2025-03</td>
+<td class='confluenceTd'>6</td>
+</tr>
+<tr>
+<td class='confluenceTd'>2026-06</td>
+<td class='confluenceTd'>3</td>
+</tr>
+<tr>
+<td class='confluenceTd'>2026-07</td>
+<td class='confluenceTd'>6</td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>15 of them come from the PostgreSQL container and 6 from the Fedora container, and they are the same failure as above:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>WARN (ContainmentIndexImpl) Unable to commit containment index transaction 018cda3d-...
+  Where: while updating tuple (0,110) in relation "containment";
+  nested exception is org.postgresql.util.PSQLException: ERROR: deadlock detected</pre>
+</div></div>
+
+<p>The rate simply scales with how many transactions commit concurrently: a handful of incidents per year under interactive load, against 700 in a few hours of parallel ingest. On 6.5.1 none of these reached the client, because the retry still worked there (see root cause 2).</p>
+
+<h2><a name="Stepstoreproduce"></a>Steps to reproduce</h2>
+
+<ol>
+	<li>Run Fedora 7 against PostgreSQL.</li>
+	<li>Create a container <tt>/parentA</tt> and a container <tt>/parentB</tt>.</li>
+	<li>From N ≥ 4 concurrent clients, repeat: open a transaction, <tt>POST</tt> one child to <tt>/parentA</tt> <b>and</b> one child to <tt>/parentB</tt> within that same transaction, commit.</li>
+	<li>A fraction of the commits fail with <tt>deadlock detected</tt> on <tt>UPDATE containment SET updated = ? WHERE fedora_id = ?</tt>.</li>
+</ol>
+
+
+<p>The rate scales with client concurrency; with a single shared parent per transaction the problem does not occur.</p>
+
+<h2><a name="Suggestedfix"></a>Suggested fix</h2>
+
+<p>We have both changes applied to a local 7.0.0 build and are running with them; happy to open a PR if the approach looks right.</p>
+
+<ol>
+	<li><b>Order the lock acquisition.</b> Adding <tt>ORDER BY parent</tt> to <tt>GET_UPDATED_RESOURCES</tt> makes every commit take the row locks in the same order, which removes this class of deadlock entirely for all backends. This looks like a one-line change.</li>
+	<li><b>Make the retry policy match PostgreSQL.</b> Broadening the predicate to <tt>PessimisticLockingFailureException</tt> (or checking <tt>ConcurrencyFailureException</tt>, or inspecting SQLSTATE <tt>40P01</tt> / <tt>40001</tt>) would restore the intended safety net. Worth doing regardless of (1), since it currently gives a false sense of protection on any non-MySQL backend.</li>
+</ol>
+
+
+<h2><a name="Notesonworkarounds"></a>Notes on workarounds</h2>
+
+<p>For anyone hitting this before a fix lands, the only reliable client-side mitigation we found is to ensure that concurrently committing transactions do not share more than one parent container — e.g. by interleaving work across membership containers instead of processing one container to completion, and serialising commits per shared parent.</p>
+
+<p>Reducing <tt>fcrepo.db.max.pool.size</tt> is <b>not</b> a viable workaround: per 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3725" >
+                <a href="FCREPO-3725.html" class="jira-issue-macro-key issue-link"  title="Fedora deadlocks when the number of active requests exceeds the number of pooled db connections" >
+            
+            FCREPO-3725
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, Fedora needs more than one pooled connection per in-flight request, so shrinking the pool deadlocks the application itself.</p>
+
+<p>Client-side retries do work — after retrying the failed records our repository ends up fully consistent — but each retry repeats the whole record, so the cost is real on large ingests.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-29109"><div class="by">Dan Field, 2026-09-17 13:22 UTC</div><div class="text"><p>Thank you for the detailed issue David. I’m looking into this now. </p></div></div>
+<p><a href="data/FCREPO-4109.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

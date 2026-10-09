@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2902 Review CTS Failures</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2902</span> Review CTS Failures</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jon Roby</td></tr><tr><th>Created</th><td>2018-10-09 22:20 UTC</td></tr><tr><th>Updated</th><td>2019-04-26 17:06 UTC</td></tr><tr><th>Resolved</th><td>2019-04-26 17:06 UTC</td></tr><tr><th>Components</th><td>f4-api-tests</td></tr><tr><th>Fix versions</th><td>Fedora 5.1.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>This task is to run the <a href="https://github.com/fcrepo/Fedora-API-Test-Suite" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/Fedora-API-Test-Suite</a> against the `master` branch of fcrepo and analyze all of the failures for correctness.</p>
+
+<ol>
+	<li>Start up Fedora from within the fcrepo4 project directory:<br/>
+&gt; mvn jetty:run -Dfcrepo.external.content.allowed=fcrepo-http-api/src/test/resources/allowed_external_paths.txt -pl fcrepo-webapp/</li>
+</ol>
+
+
+<ol>
+	<li>Build the Test-Suite<br/>
+&gt; mvn clean install</li>
+</ol>
+
+
+<ol>
+	<li>Run the Test-Suite<br/>
+&gt; java -jar target/testsuite-1.0-SNAPSHOT-shaded.jar -c config.yml.dist</li>
+</ol>
+
+
+<p>For reference, my local results are:<br/>
+===============================================<br/>
+Fedora API Specification Test Suite<br/>
+Total tests run: 196, Failures: 17, Skips: 0<br/>
+===============================================</p>
+
+
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-20455"><div class="by">Jon Roby, 2018-10-15 15:21 UTC</div><div class="text"><p>After running the Test Suite, there were 16 Fails. The 9 fails which are considered categorized "Should" or "Must" have been added as tickets 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2910" >
+                <a href="FCREPO-2910.html" class="jira-issue-macro-key issue-link"  title="Fedora-Test-Suite Test 5.1" >
+            
+            FCREPO-2910
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ to FCFREPO-2918</p></div></div>
+<div class="comment" id="comment-20492"><div class="by">Jon Roby, 2018-10-29 16:09 UTC</div><div class="text"><p>I just checked the current master of fcrepo4 versus the current master of the test suite.</p>
+
+<p>There seems to be a large block of tests failing in the 3.9.* area that are "MUST" or "SHOULD". every other test passes or is a "MAY". I don't know where this block of fail tests came from, whether I just missed them or they started failing</p></div></div>
+<div class="comment" id="comment-20493"><div class="by">Andrew Woods, 2018-10-29 17:14 UTC</div><div class="text"><p>You will need to enable external content on your Fedora. I run the test suite against a Fedora that has been started with the following command:<br/>
+```<br/>
+mvn jetty:run -Dfcrepo.external.content.allowed=fcrepo-http-api/src/test/resources/allowed_external_paths.txt -Dfcrepo.auth.webac.userAgent.baseUri=<a href="http://example.com/" class="external-link" rel="nofollow noreferrer">http://example.com/</a> -pl fcrepo-webapp/<br/>
+```</p></div></div>
+<div class="comment" id="comment-20494"><div class="by">Jon Roby, 2018-10-29 17:39 UTC</div><div class="text"><p>Wow, cool thanks. That worked!</p>
+
+<p> </p>
+
+<p>Now, its 9 "MAY" fails and 3 Skips</p></div></div>
+<div class="comment" id="comment-20669"><div class="by">Danny Bernstein, 2019-04-26 17:06 UTC</div><div class="text"><p>With the completion of <a href="https://jira.duraspace.org/browse/FCREPO-2976" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2976</a>, <a href="https://jira.duraspace.org/browse/FCREPO-2993" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2993</a>, and <a href="https://jira.duraspace.org/browse/FCREPO-2994" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2994</a></p>
+
+<p>There are no CTS failures.</p></div></div>
+<p><a href="data/FCREPO-2902.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

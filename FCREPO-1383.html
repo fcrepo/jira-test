@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1383 LDP Indirect Containers not including references</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1383</span> LDP Indirect Containers not including references</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Benjamin Armintor</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-02-26 14:35 UTC</td></tr><tr><th>Updated</th><td>2015-04-07 13:48 UTC</td></tr><tr><th>Resolved</th><td>2015-03-10 16:22 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1398.html">FCREPO-1398</a> LDP Indirect Containers not including references in Java 8</td></tr></table>
+<h2>Description</h2>
+<p>This task is to walk through the IndirectContainer example here:<br/>
+<a href="https://docs.google.com/a/fedora-commons.org/document/d/1RI8aX8XQEk-30-Ht-DaPF5nz_VtI1-eqxUuDvF3nhv0/edit#" class="external-link" rel="nofollow noreferrer">https://docs.google.com/a/fedora-commons.org/document/d/1RI8aX8XQEk-30-Ht-DaPF5nz_VtI1-eqxUuDvF3nhv0/edit#</a></p>
+
+<p>...ensuring that the "/collections/</p>
+{id}
+<p>" container is updated with member statements.<br/>
+Currently it is not.</p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-13583"><div class="by">Andrew Woods, 2015-03-01 00:01 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/740" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/740</a></p></div></div>
+<div class="comment" id="comment-13634"><div class="by">Andrew Woods, 2015-03-06 14:13 UTC</div><div class="text"><p>PR-740 has been merged into the master branch.</p></div></div>
+<div class="comment" id="comment-13663"><div class="by">A. Soroka, 2015-03-09 19:43 UTC</div><div class="text"><p>1) I'm having trouble rebasing the Java 8 branch past this patch. The test added by Andrew Woods uses JCR properties with a "_ref" suffix, and it's not at all clear to me what they are for or how they should be handled.</p>
+
+<p>2) I cannot find any "IndirectContainer example" in the document linked.</p>
+
+<p>3) Is this issue actually a question of LDP compliance/support, or is Fedora 4 taking special pains to support helpful behaviors for one particular data model?</p></div></div>
+<div class="comment" id="comment-13664"><div class="by">Benjamin Armintor, 2015-03-09 19:51 UTC</div><div class="text"><p>The IndirectContainer example is on the second and third pages.</p>
+
+<p>As far as I know, this is the behavior that is indicated in the LDP spec.</p>
+
+<p>The *_ref properties are from a mock in a unit test; I believe they were used to guarantee that there wasn't a built-in expectation of property URIs.</p></div></div>
+<div class="comment" id="comment-13665"><div class="by">A. Soroka, 2015-03-09 19:54 UTC</div><div class="text"><p>Thanks Benjamin Armintor, but I'm still not with you. Are you referring to the text that begins "Instead the Proxy is POSTed to an IndirectContainer" or to something else?</p>
+
+<p>The "_ref" properties are indeed mocks in the unit test that Andrew Woods added: can you clarify what you mean by "a built-in expectation of property URIs"? Are you talking about the JCR names of properties?</p></div></div>
+<div class="comment" id="comment-13666"><div class="by">Benjamin Armintor, 2015-03-09 20:09 UTC</div><div class="text"><p>Yes- language of Proxy aside, the action there is a completely unremarkable example of using an IndirectContainer.</p>
+
+<p>The reason for the _ref URIs in the mock is to test the insertion for references to arbitrary properties; the suffix comes from:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/FedoraTypesUtils.java#L48" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/FedoraTypesUtils.java#L48</a></p>
+
+<p>and it's inserted by:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/FedoraTypesUtils.java#L258" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/FedoraTypesUtils.java#L258</a> </p></div></div>
+<div class="comment" id="comment-13670"><div class="by">Andrew Woods, 2015-03-10 00:00 UTC</div><div class="text"><p>Thanks, Benjamin Armintor, for helping A. Soroka with the explanation.</p></div></div>
+<div class="comment" id="comment-13676"><div class="by">A. Soroka, 2015-03-10 13:13 UTC</div><div class="text"><p>I'm even more confused now. If we're currently testing this functionality using knowledge of the internal workings of the component under test in order to prove a workflow that is defined by an outside spec, then shouldn't this have been an integration test to begin with?</p></div></div>
+<div class="comment" id="comment-13677"><div class="by">Benjamin Armintor, 2015-03-10 13:48 UTC</div><div class="text"><p>There is also an integration test. Andrew added a unit test at my request. Is the unit test failing in your rebase? Do you see ways in which the mocking could be done at a higher level?</p></div></div>
+<div class="comment" id="comment-13678"><div class="by">A. Soroka, 2015-03-10 13:51 UTC</div><div class="text"><p>The unit test <em>is</em> failing, but more importantly, I don't perceive the need for it. The class under test cannot alone fulfill the workflow to which we've referred. It seems to me that the only meaningful test is the integration test...</p></div></div>
+<div class="comment" id="comment-13679"><div class="by">Benjamin Armintor, 2015-03-10 14:23 UTC</div><div class="text"><p>I think there is a need for some kind of unit testing here, although looking again at the changeset I could see refactoring the private function there to be viewable to package tests might be preferable. Do you want to mark that test with Ignore and open a ticket for a minor refactor? Do you want to re-open this ticket?</p></div></div>
+<div class="comment" id="comment-13683"><div class="by">A. Soroka, 2015-03-10 15:56 UTC</div><div class="text"><p>Given that this is a pending branch (the Java 8 branch) and not some pressing open ticket-branch, I'm willing to @Ignore it for now and reopen this ticket, which can become part of the punchlist for the Java 8 move.</p></div></div>
+<div class="comment" id="comment-13685"><div class="by">A. Soroka, 2015-03-10 15:58 UTC</div><div class="text"><p>Reopened for Java 8: see discussion for rationale. </p></div></div>
+<div class="comment" id="comment-13686"><div class="by">Andrew Woods, 2015-03-10 16:15 UTC</div><div class="text"><p>This ticket addresses a very specific bug, namely, prior to the PR associated with this ticket LDP Indirect Containers did not work in F4. That bug has been fixed and merged with the master branch. When we release 4.1.1 next week, this JIRA ticket will be included (unless we want to roll back the bug fix).<br/>
+If the unit tests are not working in the Java8 branch, I would suggest creating a new ticket to that effect, and moving this current ticket back to "closed".</p></div></div>
+<div class="comment" id="comment-13688"><div class="by">A. Soroka, 2015-03-10 16:18 UTC</div><div class="text"><p>Okay, that's more clear.</p></div></div>
+<div class="comment" id="comment-13689"><div class="by">A. Soroka, 2015-03-10 16:22 UTC</div><div class="text"><p>Moved reopening to 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1398" >
+                <a href="FCREPO-1398.html" class="jira-issue-macro-key issue-link"  title="LDP Indirect Containers not including references in Java 8" >
+            
+            FCREPO-1398
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<p><a href="data/FCREPO-1383.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

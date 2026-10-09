@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3759 Reindexing a specific resource does not work in Camel Toolbox</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3759</span> Reindexing a specific resource does not work in Camel Toolbox</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2021-09-10 18:20 UTC</td></tr><tr><th>Updated</th><td>2021-10-08 23:01 UTC</td></tr><tr><th>Resolved</th><td>2021-10-08 23:00 UTC</td></tr><tr><th>Components</th><td>fcrepo-camel-toolbox</td></tr><tr><th>Affects versions</th><td>fcrepo-camel-toolbox-6.0.0-SNAPSHOT</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox-6.0.0-SNAPSHOT</td></tr><tr><th>Labels</th><td>fcrepo-camel-toolbox-6.0.0</td></tr></table>
+<h2>Description</h2>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -v -XPOST localhost:9080/reindexing -H"Content-Type: application/json" -d '["broker:queue:solr.reindex"]'</pre>
+</div></div>
+
+<p>will reindex all resources.</p>
+
+
+
+<p>However </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -v -XPOST localhost:9080/reindexing/myresource -H"Content-Type: application/json" -d '["broker:queue:solr.reindex"]'</pre>
+</div></div>
+
+<p>does not reindex http://&lt;fedora host port&gt;/myresource as it should.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-22520"><div class="by">Michael Ritter, 2021-10-07 17:39 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo-exts/fcrepo-camel-toolbox/pull/171" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel-toolbox/pull/171</a> </p></div></div>
+<div class="comment" id="comment-22522"><div class="by">Calvin Xu, 2021-10-07 23:47 UTC</div><div class="text"><p>I tested this build with our migrated F3 data, and got the error: </p>
+
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>DEBUG 19:43:02.340 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:03.340 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:04.342 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:05.343 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:06.344 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:07.345 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:08.347 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:09.348 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:10.349 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:11.350 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+DEBUG 19:43:12.351 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoProducer) Fcrepo Request [123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC] with method [GET]
+INFO 19:43:12.352 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (FcrepoReindexingTraverse) Index Routing Error: FcrepoReindexingTraverse
+ERROR 19:43:12.354 [Camel (camel-1) thread #0 - JmsConsumer[reindexing]] (DefaultErrorHandler) Failed delivery for (MessageId: 46979BD88E6DC99-000000000000000B on ExchangeId: 46979BD88E6DC99-000000000000000A). Exhausted after delivery attempt: 11 caught: java.lang.IllegalArgumentException: Illegal character in scheme name at index 0: 123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC. Processed by failure processor: FatalFallbackErrorHandler[Channel[log1]]
+
+Message History (complete message history is disabled)
+---------------------------------------------------------------------------------------------------------------------------------------
+RouteId              ProcessorId          Processor                                                                        Elapsed (ms)
+[FcrepoReindexingTr] [FcrepoReindexingTr] [from[broker://queue:reindexing?asyncConsumer=true]                            ] [     10020]
+
+Stacktrace
+---------------------------------------------------------------------------------------------------------------------------------------
+
+java.lang.IllegalArgumentException: Illegal character in scheme name at index 0: 123.45.67.789:8080/fcrepo-webapp-6.0.0/rest/nlm:nlmuid-101595354-img/DC
+        at java.base/java.net.URI.create(URI.java:883)
+        at org.fcrepo.camel.FcrepoProducer.getMetadataUri(FcrepoProducer.java:255)
+        at org.fcrepo.camel.FcrepoProducer.getUri(FcrepoProducer.java:229)
+        at org.fcrepo.camel.FcrepoProducer.doRequest(FcrepoProducer.java:196)
+        at org.fcrepo.camel.FcrepoProducer.process(FcrepoProducer.java:158)
+        at org.apache.camel.support.AsyncProcessorConverterHelper$ProcessorToAsyncProcessorBridge.process(AsyncProcessorConverterHelper.java:66)
+        at org.apache.camel.processor.SendProcessor.process(SendProcessor.java:172)
+        at org.apache.camel.processor.errorhandler.RedeliveryErrorHandler$RedeliveryTask.redeliver(RedeliveryErrorHandler.java:846)
+        at org.apache.camel.impl.engine.DefaultReactiveExecutor$Worker.schedule(DefaultReactiveExecutor.java:181)
+        at org.apache.camel.impl.engine.DefaultReactiveExecutor.scheduleMain(DefaultReactiveExecutor.java:62)
+        at org.apache.camel.processor.Pipeline.process(Pipeline.java:167)
+        at org.apache.camel.impl.engine.CamelInternalProcessor.process(CamelInternalProcessor.java:388)
+        at org.apache.camel.component.jms.EndpointMessageListener.onMessage(EndpointMessageListener.java:143)
+        at org.springframework.jms.listener.AbstractMessageListenerContainer.doInvokeListener(AbstractMessageListenerContainer.java:736)
+        at org.springframework.jms.listener.AbstractMessageListenerContainer.invokeListener(AbstractMessageListenerContainer.java:696)
+        at org.springframework.jms.listener.AbstractMessageListenerContainer.doExecuteListener(AbstractMessageListenerContainer.java:674)
+        at org.springframework.jms.listener.AbstractPollingMessageListenerContainer.doReceiveAndExecute(AbstractPollingMessageListenerContainer.java:318)
+        at org.springframework.jms.listener.AbstractPollingMessageListenerContainer.receiveAndExecute(AbstractPollingMessageListenerContainer.java:257)
+        at org.springframework.jms.listener.DefaultMessageListenerContainer$AsyncMessageListenerInvoker.invokeListener(DefaultMessageListenerContainer.java:1237)
+        at org.springframework.jms.listener.DefaultMessageListenerContainer$AsyncMessageListenerInvoker.executeOngoingLoop(DefaultMessageListenerContainer.java:1227)
+        at org.springframework.jms.listener.DefaultMessageListenerContainer$AsyncMessageListenerInvoker.run(DefaultMessageListenerContainer.java:1120)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-22523"><div class="by">Danny Bernstein, 2021-10-08 20:17 UTC</div><div class="text"><p>Calvin Xu : What value did you did you set for the fcrepo.jms.baseUrl property in your Fedora properties?  I believe it should be <tt><a href="http://123.45.67.789:8080/fcrepo-webapp-6.0.0/rest" class="external-link" rel="nofollow noreferrer">http://123.45.67.789:8080/fcrepo-webapp-6.0.0/rest</a></tt> or <tt><a href="https://123.45.67.789:8080/fcrepo-webapp-6.0.0/rest" class="external-link" rel="nofollow noreferrer">https://123.45.67.789:8080/fcrepo-webapp-6.0.0/rest</a></tt></p>
+</div></div>
+<div class="comment" id="comment-22524"><div class="by">Danny Bernstein, 2021-10-08 23:00 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo-exts/fcrepo-camel-toolbox/commit/8c0948d395760bad36dbf2db79a64350843899b3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel-toolbox/commit/8c0948d395760bad36dbf2db79a64350843899b3</a></p></div></div>
+<p><a href="data/FCREPO-3759.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

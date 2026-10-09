@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3044 Profile the performance of migration-utils against Fedora 3 and Fedora 6</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3044</span> Profile the performance of migration-utils against Fedora 3 and Fedora 6</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2019-09-17 16:05 UTC</td></tr><tr><th>Updated</th><td>2021-07-06 17:57 UTC</td></tr><tr><th>Resolved</th><td>2021-07-06 17:57 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-utils-4.5.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<ul>
+	<li>Generate meaningful metrics for profiling migration processes (e.g. time/number objects, time/repository size on disk etc.)</li>
+	<li>Generate results for the aforementioned metrics to guide development and user documentation</li>
+</ul>
+
+
+<p>Depends on 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3054" >
+                <a href="FCREPO-3054.html" class="jira-issue-macro-key issue-link"  title="Migration Utils: OCFL Impl of createPlaceholder" >
+            
+            FCREPO-3054
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20751"><div class="by">Dan Field, 2019-09-18 14:32 UTC</div><div class="text"><p>Due to being unable to get a runnable fedora6 at present from HEAD, I will focus on building the tooling and initial profiling development on fedora5. </p></div></div>
+<div class="comment" id="comment-20757"><div class="by">Dan Field, 2019-09-19 08:10 UTC</div><div class="text"><p>I am defining my initial dataset, taken from the NLW collections as everything ingested in Feb 2018. This equates to:</p>
+<ul>
+	<li>5348 datastreams totalling `170MB` on disk</li>
+	<li>5369 objects totalling `4.3GB` on disk</li>
+	<li>data is stored in legacy FS format, not Akubra</li>
+</ul>
+
+
+<p>Although small, this will only form the initial test dataset. Other larger datasets will follow and will comprise a different ratio of datastreams to objects as well. </p>
+
+<p>I will initially run all tests from local solid state disk, performance stats below:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ sudo hdparm -I /dev/sda
+/dev/sda:
+
+ATA device, with non-removable media
+	Model Number:       SanDisk SD8SBAT-256G-1006               
+	Serial Number:      164547401752        
+	Firmware Revision:  Z2311006
+	Transport:          Serial, ATA8-AST, SATA 1.0a, SATA II Extensions, SATA Rev 2.5, SATA Rev 2.6, SATA Rev 3.0
+</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ sudo hdparm -Tt /dev/sda
+
+/dev/sda:
+ Timing cached reads:   33416 MB in  1.99 seconds = 16816.65 MB/sec
+ Timing buffered disk reads: 1530 MB in  3.00 seconds = 509.58 MB/sec
+</pre>
+</div></div>
+<p> </p></div></div>
+<div class="comment" id="comment-20765"><div class="by">Dan Field, 2019-09-19 16:18 UTC</div><div class="text"><p>I've spent some time getting familiar with the config and process but I can not get the code to run past the following issue at present:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>INFO 17:21:20.282 (InternalIDResolver) No index directory specified.  Creating temporary index at "/tmp/tempfile1356584637906048365basedir/index".
+INFO 17:21:20.355 (InternalIDResolver) Builidng an index of all the datastreams in "/home/dof/fedora38_data_export/datastreams"...
+INFO 17:21:20.803 (OCFLFedora4Client) to-be-implemented: OCFLFedora4Client: TODO what goes here,TODO what goes here
+WARN 17:21:20.804 (OpaqueIDMapper) Index exists at "legacyFS-native-id-index" and will be used.  To clear index, simply delete this directory and re-run the application.
+INFO 17:21:20.827 (Migrator) Processing "llgc-id:4779390"...
+DEBUG 17:21:20.924 (BasicObjectVersionHandler) Considering object llgc-id:4779390 version at 2018-02-01T14:57:37.313Z.
+INFO 17:21:20.924 (OCFLFedora4Client) to-be-implemented: createPlaceholder: null
+INFO 17:21:20.924 (OCFLFedora4Client) to-be-implemented: getRepositoryUrl
+Exception in thread "main" java.lang.IllegalArgumentException: value cannot be null
+	at org.apache.lucene.document.Field.&lt;init&gt;(Field.java:240)
+	at org.apache.lucene.document.StringField.&lt;init&gt;(StringField.java:60)
+	at org.fcrepo.migration.idmappers.OpaqueIDMapper.cacheObjectPath(OpaqueIDMapper.java:184)
+	at org.fcrepo.migration.idmappers.OpaqueIDMapper.mapObjectPath(OpaqueIDMapper.java:135)
+	at org.fcrepo.migration.handlers.BasicObjectVersionHandler.processObjectVersions(BasicObjectVersionHandler.java:185)
+	at org.fcrepo.migration.handlers.VersionAbstractionFedoraObjectHandler.processObject(VersionAbstractionFedoraObjectHandler.java:110)
+	at org.fcrepo.migration.handlers.ObjectAbstractionStreamingFedoraObjectHandler.completeObject(ObjectAbstractionStreamingFedoraObjectHandler.java:89)
+	at org.fcrepo.migration.foxml.FoxmlInputStreamFedoraObjectProcessor.processObject(FoxmlInputStreamFedoraObjectProcessor.java:150)
+	at org.fcrepo.migration.Migrator.run(Migrator.java:126)
+	at org.fcrepo.migration.Migrator.main(Migrator.java:61)
+INFO 17:21:20.925 (InternalIDResolver) Deleting index directory at "/tmp/tempfile1356584637906048365basedir/index"...
+</pre>
+</div></div>
+
+<p>Working back through the stacktrace doesn't really help me identify the source of the problem</p></div></div>
+<div class="comment" id="comment-22283"><div class="by">Danny Bernstein, 2021-07-06 17:57 UTC</div><div class="text"><p>Issue is addressed in <a href="FCREPO-3692.html" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3692</a></p></div></div>
+<p><a href="data/FCREPO-3044.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

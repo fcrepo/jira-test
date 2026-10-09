@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1074 debug messages in gsearch 2.4 and 2.4.1</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1074</span> debug messages in gsearch 2.4 and 2.4.1</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Rastislav Hudak</td></tr><tr><th>Assignee</th><td>Gert Schmeltz Pedersen</td></tr><tr><th>Created</th><td>2012-03-08 04:17 UTC</td></tr><tr><th>Updated</th><td>2012-06-20 20:12 UTC</td></tr><tr><th>Resolved</th><td>2012-05-25 18:46 UTC</td></tr><tr><th>Components</th><td>legacy - GSearch</td></tr></table>
+<h2>Environment</h2>redhat, tomcat6, fedora 3.3
+<h2>Description</h2>
+<p>When I deploy fedoragsearch.war (2.4 or 2.4.1) there are debug messages turned on filling catalina.out. Everything seems to be logged, even some 'binary' data and oaiprovider stuff so the log fills extremely fast. I've tried to remove/edit all log4j.xml and logging.properties I found with no success. The logs from tomcat (and I think also gsearch itself) were turned off but there were still debug messages going in from activemq, axis and other libraries.<br/>
+The only thing finally seemed to helped was using /lib dependencies from gsearch 2.3 and adding only what was necessary from 2.4 (tika-1.0, fcrepo-3.5, lucene-3.5, servlet-api-2.4).<br/>
+Any idea which dependency is turning this on or what is happening?</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-12263"><div class="by">Chris Wilper, 2012-03-08 20:43 UTC</div><div class="text"><p>Not sure what could be causing this. Perhaps there's a log4j config in a jar somewhere....or is log4j defaulting to debug?</p></div></div>
+<div class="comment" id="comment-12272"><div class="by">Roel de Cock, 2012-03-21 15:11 UTC</div><div class="text"><p>After deployment of 2.4.1, I had to move webapps/fedoragsearch/WEB-INF/classes/log4j.xml out of the way in order for my own log4j to start working again. But the OP claims he also removed/edited any log4j configs, so I'm not certain this helps him.</p></div></div>
+<div class="comment" id="comment-12276"><div class="by">Gert Schmeltz Pedersen, 2012-04-18 20:03 UTC</div><div class="text"><p>Rastislav, I do not see the problem in my installation. I have talked to Roel de Cock, who made the above comment, and who is my former colleague. He has not seen the problem of catalina.out being filled. I wonder, if you have come further, since your original creation of the issue, maybe finding a log4j.xml in some jar, which may cause the problem, this could help me recreate the problem. </p></div></div>
+<div class="comment" id="comment-12277"><div class="by">Rastislav Hudak, 2012-04-19 15:28 UTC</div><div class="text"><p>As I had a workaround I was not looking into it any further. Since the war rebuilt with old libs was working it must have to be something within the dependencies, but if no one else has the issue then probably in combination with our config too (although it's just tomcat on redhat and no other than fcrepo applications running on it).<br/>
+Well if it works for others I guess you can forget about it, if I ever find anything I'll let you know.</p></div></div>
+<div class="comment" id="comment-12279"><div class="by">Remi Malessa, 2012-04-19 19:07 UTC</div><div class="text"><p>I have exactly the same issue, not sure what causes it. Don't know how to fix it.<br/>
+I'm using Fedora Generic Search Service 2.4.1 with Fedora 3.3.1 on Tomcat 5.5.23</p></div></div>
+<div class="comment" id="comment-12280"><div class="by">Gert Schmeltz Pedersen, 2012-04-19 19:56 UTC</div><div class="text"><p>Rastislav, Remigiusz, I would like to know what is going on when catalina.out is being filled, it might be found out from the time stamps. E.g. it would be nice to know if it has to do with Apache Tika, which is the major new jar added to gsearch 2.4. If you could extract  the debug lines from fedoragsearch.log when a gsearch operation is performing as catalina.out is filling simultaneously, then that might be helpful.</p></div></div>
+<div class="comment" id="comment-12281"><div class="by">Remi Malessa, 2012-04-20 13:59 UTC</div><div class="text"><p>Here goes the log:</p>
+
+<p>INFO: XML validation disabled<br/>
+SLF4J: Class path contains multiple SLF4J bindings.<br/>
+SLF4J: Found binding in <span class="error">&#91;jar:file:/usr/share/tomcat5/webapps/fedoragsearch/WEB-INF/lib/logback-classic-0.9.18.jar!/org/slf4j/impl/StaticLoggerBinder.class&#93;</span><br/>
+SLF4J: Found binding in <span class="error">&#91;jar:file:/usr/share/tomcat5/webapps/fedoragsearch/WEB-INF/lib/tika-app-1.0.jar!/org/slf4j/impl/StaticLoggerBinder.class&#93;</span><br/>
+SLF4J: See <a href="http://www.slf4j.org/codes.html#multiple_bindings" class="external-link" rel="nofollow noreferrer">http://www.slf4j.org/codes.html#multiple_bindings</a> for an explanation.<br/>
+16:16:39.453 <span class="error">&#91;main&#93;</span> DEBUG o.a.commons.digester.Digester.sax - setDocumentLocator(org.apache.xerces.parsers.AbstractSAXParser$LocatorProxy@18488ef)<br/>
+16:16:39.458 <span class="error">&#91;main&#93;</span> DEBUG o.a.commons.digester.Digester.sax - startDocument()<br/>
+16:16:39.459 <span class="error">&#91;main&#93;</span> DEBUG o.a.commons.digester.Digester.sax - startElement(,,web-app)<br/>
+16:16:39.459 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   Pushing body text ''<br/>
+16:16:39.459 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   New match='web-app'<br/>
+16:16:39.459 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   Fire begin() for org.apache.catalina.startup.SetPublicIdRule@1754699<br/>
+16:16:39.459 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester - org.apache.catalina.core.StandardContext.setPublicId(null)<br/>
+16:16:39.463 <span class="error">&#91;main&#93;</span> DEBUG o.a.commons.digester.Digester.sax - startElement(,,servlet)<br/>
+16:16:39.463 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   Pushing body text '<br/>
+16:16:39.463 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   New match='web-app/servlet'<br/>
+16:16:39.463 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   Fire begin() for org.apache.catalina.startup.WrapperCreateRule@6e1dec<br/>
+16:16:39.463 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester - new org.apache.catalina.core.StandardWrapper<br/>
+16:16:39.464 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   Fire begin() for SetNextRule<span class="error">&#91;methodName=addChild, paramType=org.apache.catalina.Container&#93;</span><br/>
+16:16:39.464 <span class="error">&#91;main&#93;</span> DEBUG o.a.commons.digester.Digester.sax - startElement(,,servlet-name)<br/>
+16:16:39.464 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   Pushing body text '<br/>
+16:16:39.464 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   New match='web-app/servlet/servlet-name'<br/>
+16:16:39.464 <span class="error">&#91;main&#93;</span> DEBUG org.apache.commons.digester.Digester -   Fire begin() for CallMethodRule[methodName=setName, paramCount=0, paramTypes=</p>
+{java.lang.String}
+<p>]<br/>
+16:16:39.464 <span class="error">&#91;main&#93;</span> DEBUG o.a.commons.digester.Digester.sax - characters(default)<br/>
+16:16:39.464 <span class="error">&#91;main&#93;</span> DEBUG o.a.commons.digester.Digester.sax - endElement(,,servlet-name)</p></div></div>
+<div class="comment" id="comment-12297"><div class="by">Gert Schmeltz Pedersen, 2012-05-25 18:46 UTC</div><div class="text"><p>This behaviour was probably due to the axis library used in 2.4.1. Now axis 1.4 is included.</p></div></div>
+<div class="comment" id="comment-12330"><div class="by">Remi Malessa, 2012-06-20 20:12 UTC</div><div class="text"><p>Thank you Gert, upgrading to 2.4.2 solved the issue.</p>
+
+<p>Remi</p></div></div>
+<p><a href="data/FCREPO-1074.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

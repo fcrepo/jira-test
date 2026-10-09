@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-66 XACML AttributeSelector support for 2.x</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-66</span> XACML AttributeSelector support for 2.x</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Created</th><td>2007-03-09 05:02 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-02-23 03:29 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>Add support for AttributeSelectors to the ResourceAttributeFinderModule.</p>
+
+<p>This will allow the use of AttributeSelector elements (contrast AttributeDesignators)in policies which can 'select', using an Xpath query, attributes of the resource the policy pertains to.  This affords the ability to write policies based on elements contained in XML datastreams - such as DC, RDF, and many more.</p>
+
+<p>The significance of this feature is that policies will be able to refer to a far greater range of resource attributes such as true object metadata (rather than the system level metadata available now), and relationships to other objects e.g. composition, aggregation.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-10113"><div class="by">Chris Wilper, 2007-03-16 10:19 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: bbethwaite<br/>
+Logged In: YES <br/>
+user_id=1738061<br/>
+Originator: YES</p>
+
+<p>Particularly relevant sections of the XACML 2.0 core spec relating to attributes are:<br/>
+2.7. - Policies based on resource contents,<br/>
+3.2. - XACML context,<br/>
+7.2.5. - Attribute Retrieval</p></div></div>
+<div class="comment" id="comment-10114"><div class="by">Chris Wilper, 2007-04-20 07:51 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: bbethwaite<br/>
+Logged In: YES <br/>
+user_id=1738061<br/>
+Originator: YES</p>
+
+<p>The XACML 2.0 core spec insists that the RequestContextPath attribute of AttributeSelector elements should be an xpath expression whose context node is the &lt;xacml-context:Request&gt; element, which seems to read that AttributeSelectors should be evaluated against the request context.  Things get hazier after comparison with the Sun implementation where there does not seem to be anything directly corresponding with the XACML context handler as illustrated in the XACML data-flow model - although the EvaluationContext seems pretty close.</p>
+
+<p>What this boils down to is my confusion over whether it is valid (according to the XACML spec) to interpret RequestContextPaths for AttributeSelectors as a compound string comprising "Datastream ID"<ins>"Absolute XPath expression over Datastream" such as, "DC"</ins>"/oai_dc:dc/dc:publisher" which would be written in XACML as:<br/>
+&lt;AttributeSelector RequestContextPath="DC/oai_dc:dc/dc:publisher" DataType="http://www.w3.org/2001/XMLSchema#string"/&gt;<br/>
+and evaluate to a string bag of matching values.  I suspect that it is technically not allowable, however I can see no reasonable alternative that does not render the AttributeSelector redundant (such as an AttributeDesignator that performs the same operation).  Perhaps this is an unaddressed usage scenario with regard to the spec.</p>
+
+<p>The advantage to including the datastream ID in the path is that it allows a narrowing down of the data required to fulfill the query and hence saves time in retrieval.  After receiving no response from the sunxacml mailing lists on the topic I have gone ahead and implemented as described above.  The resulting code is now in the custody of Chris and Bill who will hopefully do the commit for inclusion in the 2.3 release.</p></div></div>
+<div class="comment" id="comment-10115"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: bbethwaite<br/>
+Item #: 1676954<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1676954" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1676954</a></p></div></div>
+<div class="comment" id="comment-10847"><div class="by">Chris Wilper, 2009-02-23 03:29 UTC</div><div class="text"><p>This feature was never merged in, and Fedora's code has changed significantly since.  There is also an effort underway to re-work Fedora's XACML implmentation based on the work done in the Muradora project.  See 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-451" >
+                <a href="FCREPO-451.html" class="jira-issue-macro-key issue-link"  title="Fedora Enhanced Security Layer (FeSL) Integration" >
+            
+            FCREPO-451
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for more on that.  I'm closing this feature request for now in order to reduce confusion.  If anyone still wants AttributeSelectors against the new XACML impl, please check whether it was done by FCREPO-451or submit as a new feature request.</p></div></div>
+<p><a href="data/FCREPO-66.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

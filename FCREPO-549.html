@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-549 RELS-EXT is not validated on creation, only validated when updated</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-549</span> RELS-EXT is not validated on creation, only validated when updated</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-10-19 19:35 UTC</td></tr><tr><th>Updated</th><td>2009-12-17 15:31 UTC</td></tr><tr><th>Resolved</th><td>2009-11-01 16:54 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Description</h2>
+<p>See recent report on dev list from Richard Jones for Fedora 3.2</p>
+
+<p>Reproduced on 3.2.1 and on the trunk (post RELS-INT integration).</p>
+
+<p>Richard reports that adding a new RELS-EXT datastream using the REST API with a dateTime literal that is invalid, eg 2009-10-05T16:02:26+0100, is not validated.  However updating the datastream (eg adding a new relationship) then results in a validation error.</p>
+
+<p>Reproduced using the admin client (so this is not limited to the REST API): create a new object, add RELS-EXT with invalid date time, does not result in a validation error.  However subsequently amending RELS-EXT does throw a validation error.</p>
+
+<p>The bug is not limited to dateTime, this also occurs for integer values (eg 1.23 is allowed), and also occurs when adding relationships with predicates that are not allowed in RELS-EXT, so it would appear that RELS-EXT is not validated at all when it is created for the first time.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11045"><div class="by">Stephen Bayliss, 2009-10-31 10:09 UTC</div><div class="text"><p>Validation is taking place based on ds.DatastreamID before this has been set - need to use the passed-in dsID instead (or validate after ID has been set).</p></div></div>
+<div class="comment" id="comment-11046"><div class="by">Stephen Bayliss, 2009-11-01 16:54 UTC</div><div class="text"><p>Changes have a fairly minor impact, but ready for review if this is warranted</p></div></div>
+<div class="comment" id="comment-11176"><div class="by">Stephen Bayliss, 2009-12-17 15:30 UTC</div><div class="text"><p>Test Notes:</p>
+
+<p>1) check validation on creation:  using admin gui (web) add a RELS-EXT datastream relationship with the following date/time value: 2009-10-05T16:02:26+0100</p>
+
+<p>NB test object pid in this case was changeme:1</p>
+
+<p>RELS-EXT:</p>
+
+<p>&lt;rdf:RDF xmlns:fedora-model="info:fedora/fedora-system:def/model#" xmlns:ns="http://www.example.org/dummy#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"&gt;<br/>
+  &lt;rdf:Description rdf:about="info:fedora/changeme:1"&gt;<br/>
+    &lt;ns:test rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime"&gt;2009-10-05T16:02:26+0100&lt;/ns:test&gt;<br/>
+  &lt;/rdf:Description&gt;<br/>
+&lt;/rdf:RDF&gt;</p>
+
+<ul class="alternate" type="square">
+	<li>check validation error reported</li>
+	<li>modify to 2009-10-05T16:02:26 - save and check no validation eror</li>
+</ul>
+
+
+<p>2) check validation on updates:</p>
+<ul class="alternate" type="square">
+	<li>edit above datastream and</li>
+	<li>modify back to 2009-10-05T16:02:26+0100</li>
+	<li>verify validation error reported</li>
+</ul>
+
+
+<p>3) Confirm for RELS-INT also (modify subject to </p>
+{pid}
+<p>/DC) - repeat above, starting from RELS-INT as:</p>
+
+<p>&lt;rdf:RDF xmlns:fedora-model="info:fedora/fedora-system:def/model#" xmlns:ns="http://www.example.org/dummy#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"&gt;<br/>
+  &lt;rdf:Description rdf:about="info:fedora/changeme:1/DC"&gt;<br/>
+    &lt;ns:test rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime"&gt;2009-10-05T16:02:26+0100&lt;/ns:test&gt;<br/>
+  &lt;/rdf:Description&gt;<br/>
+&lt;/rdf:RDF&gt;</p></div></div>
+<p><a href="data/FCREPO-549.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

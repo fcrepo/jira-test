@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3931 Migration-utils: datastream file extensions option not working</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3931</span> Migration-utils: datastream file extensions option not working</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Doron Shalvi</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2024-04-02 22:13 UTC</td></tr><tr><th>Updated</th><td>2025-03-06 16:15 UTC</td></tr></table>
+<h2>Description</h2>
+<p>The "extensions" (-x) runtime configuration option of the Fedora 3 to 6 migration-utils migration tool, as originally requested and successfully tested in <a href="FCREPO-3181.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3181</a>, does not appear to be working.</p>
+
+<p>I recently migrated a Fedora 3 object using the following command:</p>
+
+<p><span class="error">&#91;foo@bar somedir&#93;</span>$ java -jar ../migration-utils-6.5.0-driver.jar -x -p=extensiontest.txt -t=legacy -f="<a href="http://someurl.nlm.nih.gov" class="external-link" rel="nofollow noreferrer">http://someurl.nlm.nih.gov</a> " -d=/foo/datastreams/2012/0316 -o=/foo/objects/2012/0316 -a=/bar/collections-small/data/ocfl-root<br/>
+INFO 15:20:16.884 (PicocliMigrator) No working-dir option passed in - using current directory.<br/>
+WARN 15:20:16.900 (InternalIDResolver) Index exists at "/bar/fedora6/headtest/index" and will be used.  To clear index, simply delete this directory and re-run the application.<br/>
+INFO 15:21:08.133 (Migrator) Processing "nlm:nlmuid-0311156-bk"...<br/>
+INFO 15:21:09.632 (Migrator) finished processing everything in pidlist - exiting.</p>
+
+<p>This Fedora 3 object includes:</p>
+
+<ul>
+	<li>In-line XML datastreams DC, DMDINDEX, RELS-EXT with MIME type “text/xml”</li>
+	<li>Managed datastreams METS, MARCXML with MIME type “text/xml”</li>
+	<li>Other external datastreams of assorted MIME types, for which it is assumed this flag will have no effect</li>
+</ul>
+
+
+<p>The in-line XML and managed datastreams are all migrated successfully to Fedora 6, but without any file extension.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3931/10383_0311156.xml">0311156.xml</a>, 18953 bytes, added by Doron Shalvi on 2024-05-21</li>
+</ul>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-23048"><div class="by">Dan Field, 2024-05-21 16:18 UTC</div><div class="text"><p>Would you be able to share the FoxML for the datastream definitions and the relevant RELS-EXT for the object? The logic for creating file names uses the following:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> info:fedora/fedora-system:def/model#downloadFilename from RELS-INT
+ LABEL from datastream meta
+ Name of the datastream</pre>
+</div></div>
+
+<p>In that order to generate a filename. However, if any of those contain a '.' then the extension will not be added. </p>
+
+<p>Beyond that, there is a passing test for extensions within the ArchiveGroupHandler and you appear to be doing an Archival Group migration here as --atomic-resources is not specified on the command line you provided so there could be an issue with the test. </p>
+
+<p>I’ll try and run my own test on some sample data too. </p></div></div>
+<div class="comment" id="comment-23049"><div class="by">Dan Field, 2024-05-21 17:15 UTC</div><div class="text"><p>A quick test on the Brown dataset shows the same issue. I’ll investigate</p></div></div>
+<div class="comment" id="comment-23050"><div class="by">Doron Shalvi, 2024-05-21 19:07 UTC</div><div class="text"><p><span class="nobr"><a href="attachments/FCREPO-3931/10383_0311156.xml" title="0311156.xml attached to FCREPO-3931" data-attachment-type="file" data-attachment-name="0311156.xml" data-media-services-type="file" data-media-services-id="a03c56eb-8100-4843-9e8d-7e020361af1d" rel="noreferrer">0311156.xml</a></span></p>
+
+<p>Thanks Dan.  Attached is the FOXML for the object we migrated, including the embedded RELS-EXT.  Yes, we migrated this object using Archival Groups.</p></div></div>
+<div class="comment" id="comment-23054"><div class="by">Dan Field, 2024-05-24 14:10 UTC</div><div class="text"><p>Looks like this bug was introduced back in 6.1 with <a href="https://github.com/fcrepo-exts/migration-utils/commit/dee8c11316ac0c1ca5fc352514bea2d2382f19c5" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/dee8c11316ac0c1ca5fc352514bea2d2382f19c5</a> I tested releases working back until it worked and 6.0 was the only release this feature has worked in.</p></div></div>
+<div class="comment" id="comment-23071"><div class="by">Dan Field, 2024-07-03 13:17 UTC</div><div class="text"><p>I’ve fixed the initial issue but in doing so, have uncovered another issue where spaces in filenames are url encoded when being moved from the staged to the final OCFL structure. </p></div></div>
+<div class="comment" id="comment-23284"><div class="by">Dan Field, 2024-09-10 18:02 UTC</div><div class="text"><p>I’ve finally tracked the percent encoding down to a LogicalPathMappers within dcfl-java. The default mapper is supposed to be a DirectMapper but it seems somewhere (I haven't found where yet) we or dcfl-java is defaulting to the percent encoder. Could it be that this was a deliberate design choice by the migration-utils developers ? </p></div></div>
+<div class="comment" id="comment-24043"><div class="by">Dan Field, 2024-12-06 10:48 UTC</div><div class="text"><p>INCOMPLETE PR for discussion <a href="https://github.com/fcrepo-exts/migration-utils/pull/209" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/pull/209</a> </p>
+
+<p>I have some questions in the PR and would appreciate some more eyes on the issue before I continue</p></div></div>
+<div class="comment" id="comment-25363"><div class="by">Dan Field, 2025-03-06 16:15 UTC</div><div class="text"><p>Agreed to pause this while we do dependency updates</p></div></div>
+<p><a href="data/FCREPO-3931.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

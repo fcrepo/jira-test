@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2326 Export/Import Penn State data as a litmus test for the process</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2326</span> Export/Import Penn State data as a litmus test for the process</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Trivial</td></tr><tr><th>Reporter</th><td>Adam Wead</td></tr><tr><th>Assignee</th><td>pketienne</td></tr><tr><th>Created</th><td>2016-12-05 17:05 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 17:54 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-import-export-0.3.0 fcrepo-import-export-1.0.0</td></tr><tr><th>Labels</th><td>import-export-phase-1</td></tr></table>
+<h2>Description</h2>
+<p>Export entire  Scholarsphere repo and reimport... see if it works.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2326/10290_20161221-master.csv">20161221-master.csv</a>, 41991 bytes, added by pketienne on 2016-12-21</li>
+<li><a href="attachments/FCREPO-2326/10291_20161221-master.log">20161221-master.log</a>, 27517 bytes, added by pketienne on 2016-12-21</li>
+<li><a href="attachments/FCREPO-2326/10292_20161221-pr17.csv">20161221-pr17.csv</a>, 42633 bytes, added by pketienne on 2016-12-21</li>
+<li><a href="attachments/FCREPO-2326/10293_20161221-pr17.log">20161221-pr17.log</a>, 28455 bytes, added by pketienne on 2016-12-21</li>
+</ul>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-18095"><div class="by">pketienne, 2016-12-07 14:02 UTC</div><div class="text"><p>Completed a backup of a mirror of our production data via our staging server (~212GB). No immediately feasible avenue for testing the restore of this backup into Fedora 4.7, but should be viable with sufficient disk space.</p>
+
+<p>Have been working on export of this same production data through use of the fcrepo-import-export tool. So far, I've gotten through 157 of 212 GB without errors, however I've run into a few of the following kind of errors:</p>
+
+<p>ERROR 17:46:57.627 (ImportExportDriver) Error performing import/export: Export operation failed: unexpected status 500 for <a href="http://localhost:8080/SSstagingFedora4/rest/prod/mk/61/rg/99/mk61rg99w/content" class="external-link" rel="nofollow noreferrer">http://localhost:8080/SSstagingFedora4/rest/prod/mk/61/rg/99/mk61rg99w/content</a></p>
+
+<p>Browsing to <a href="http://localhost:8080/SSstagingFedora4/rest/prod/mk/61/rg/99/mk61rg99w/content/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/SSstagingFedora4/rest/prod/mk/61/rg/99/mk61rg99w/content/fcr:metadata</a> and then uploading any file seems to resolve the issue, and allows the export process to run again without failing on this record.</p>
+
+<p>I believe these export errors are just a side effect of some of our data not having valid content.</p></div></div>
+<div class="comment" id="comment-18148"><div class="by">pketienne, 2016-12-12 15:23 UTC</div><div class="text"><p>There ended up being about 10 records that "contained bad data" (described above). Once those records were fixed, the export worked as expected. I performed two different exports of the data based on slightly different versions of the import/export utility. Both ran successfully.</p>
+</div></div>
+<div class="comment" id="comment-18149"><div class="by">pketienne, 2016-12-12 15:29 UTC</div><div class="text"><p>Running the verify.py command (RHEL 6.8, Python 2.6.6) results in the following error:</p>
+
+<p>/usr/bin/env: python3.5: No such file or directory</p>
+
+<p>Editing the verify.py file to "#<span class="error">Unable to render embedded object: File (/usr/bin/env python&quot; from &quot;#) not found.</span>/usr/bin/python3.5" resolves this issue. The README.md of the project does say that python 3 is the recommended environment so reverting to the earlier version of python that's included with RHEL 6.8 may not be the appropriate answer.</p></div></div>
+<div class="comment" id="comment-18150"><div class="by">pketienne, 2016-12-12 15:31 UTC</div><div class="text"><p>Running the verify.py command at this point results in a different error:</p>
+
+<p>Traceback (most recent call last):<br/>
+  File "fcrepo-import-export-verify/verify.py", line 12, in &lt;module&gt;<br/>
+    from os import scandir, stat<br/>
+ImportError: cannot import name scandir</p>
+
+<p>From reading up on Python, this would indicate a potential issue with circular dependencies. I'm reasonably certain that there would not be any circular dependency for folks who have been running the tool successfully, so I'm guessing that this may be related to the version of python I'm using.</p></div></div>
+<div class="comment" id="comment-18179"><div class="by">pketienne, 2016-12-12 20:35 UTC</div><div class="text"><p>Got a little help from bseeger - noted that the error I'd been experiencing may be due to using python 2.x. Attempted several different methods of getting python 3.x running on the rhel 6.8 box. All methods resulted in the same error as before. This was due to conflicts between the system python and the additional python I'd installed specifically for using the verification tool. In short, this problem with conflicts between system and user python versions is the same or at least very similar to the process of setting up system rubies/gems versus user rubies/gems. I then setup pyenv and pyenv-virtualenv to handle python from my user's perspective on our staging server. This resolved the import issue.</p></div></div>
+<div class="comment" id="comment-18180"><div class="by">pketienne, 2016-12-12 20:35 UTC</div><div class="text"><p>Traceback (most recent call last):<br/>
+  File "fcrepo-import-export-verify/verify.py", line 435, in &lt;module&gt;<br/>
+    main()<br/>
+  File "fcrepo-import-export-verify/verify.py", line 332, in main<br/>
+    config = Config(args.configfile, args.user, logger)<br/>
+  File "fcrepo-import-export-verify/verify.py", line 98, in _<em>init</em>_<br/>
+    for key, value in opts.items():<br/>
+AttributeError: 'str' object has no attribute 'items'</p>
+
+<p>I believe this is due to the previous export using an incorrect version of the config file. Will re-export using the updated version of the import-export utility and see if this resolves the issue.</p></div></div>
+<div class="comment" id="comment-18184"><div class="by">pketienne, 2016-12-13 14:51 UTC</div><div class="text"><p>This last error seems to have been resolved through running a new export with the updated import-export tool.</p></div></div>
+<div class="comment" id="comment-18186"><div class="by">pketienne, 2016-12-13 14:58 UTC</div><div class="text"><p>When running verify.py with valid credentials I receive from standard out:<br/>
+urllib.error.HTTPError: HTTP Error 401: Unauthorized</p>
+
+<p>When running verify.py with invalid credentials I receive from the log file:<br/>
+Error communicating with repository. Response: 401 for node <a href="http://localhost:8080/SSstagingFedora4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/SSstagingFedora4/rest</a></p></div></div>
+<div class="comment" id="comment-18283"><div class="by">pketienne, 2016-12-21 18:27 UTC</div><div class="text"><p>Earlier authorization/authentication issues seem to be resolved. However there are still issues getting through an export verification process. I've used an export from the fcrepo4-labs/fcrepo-import-export (master branch as of 20161221, commit: da94dcbc6fed71d8492ae8739ba2f10602d24902). The export was successful. I've tried verification on that export through fcrepo4-labs/fcrepo-import-export-verify using: master branch as of 20161221, commit: ce1aec4fbe7c71a83cb2520fa87f4126ad9757fc and PR17. I'm unsure how beneficial my error logs will be without access to the source data but I'm attaching them here. I'll also be closing this ticket (if I have access) but I believe it would be worth coming back to this data set again in a later sprint if others deem it valuable. <span class="nobr"><a href="attachments/FCREPO-2326/10290_20161221-master.csv" title="20161221-master.csv attached to FCREPO-2326" data-attachment-type="file" data-attachment-name="20161221-master.csv" data-media-services-type="file" data-media-services-id="671f5318-4301-4bd1-b710-cbd7f9cd173d" rel="noreferrer">20161221-master.csv</a></span>  <span class="nobr"><a href="attachments/FCREPO-2326/10291_20161221-master.log" title="20161221-master.log attached to FCREPO-2326" data-attachment-type="file" data-attachment-name="20161221-master.log" data-media-services-type="file" data-media-services-id="91d1c9a7-c41a-48ef-a051-8a900241ca42" rel="noreferrer">20161221-master.log</a></span>  <span class="nobr"><a href="attachments/FCREPO-2326/10292_20161221-pr17.csv" title="20161221-pr17.csv attached to FCREPO-2326" data-attachment-type="file" data-attachment-name="20161221-pr17.csv" data-media-services-type="file" data-media-services-id="61d90d65-497b-42dd-8895-626761161dcc" rel="noreferrer">20161221-pr17.csv</a></span>  <span class="nobr"><a href="attachments/FCREPO-2326/10293_20161221-pr17.log" title="20161221-pr17.log attached to FCREPO-2326" data-attachment-type="file" data-attachment-name="20161221-pr17.log" data-media-services-type="file" data-media-services-id="95dd2a3d-3baf-4f60-8b3a-d6d3093634e9" rel="noreferrer">20161221-pr17.log</a></span> </p></div></div>
+<div class="comment" id="comment-22361"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2326.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

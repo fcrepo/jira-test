@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1363 The fedora:status property cannot be modified </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1363</span> The fedora:status property cannot be modified </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Riedlberger</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-02-11 22:18 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-03-13 22:04 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>When you try to update the fedora:status property, you get this error:</p>
+
+<p>Ldp::HttpError: STATUS: 409 Could not persist triple containing predicate <a href="http://fedora.info/definitions/v4/repository#status" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#status</a></p>
+
+<p>This is because properties in the fedora: namespace are not user-modifiable.  So we need to move the property to a different namespace, or provide a mechanism for updating it in the REST API.</p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-13392"><div class="by">Former user, 2015-02-11 22:24 UTC</div><div class="text"><p>This wiki page recommends using fedora:status to do soft deletes:</p>
+
+<p><a href="https://wiki.duraspace.org/display/FF/Design+-+Deleting+Resources" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+Deleting+Resources</a></p>
+
+<p>I think fedora:status should be replaced with a different predicate, or moved to a different namespace if an appropriate existing predicate can't be found.</p></div></div>
+<div class="comment" id="comment-13400"><div class="by">A. Soroka, 2015-02-12 21:09 UTC</div><div class="text"><p>I agree with Former user. I'll go further (based on various conversations on the fedora-tech list and elsewhere) to say that Fedora itself shouldn't be managing this kind of state. This stuff is workflow-specific, and therefore application specific. Communities like Hydra or Islandora might support this kind of thing in some common way, but that's the lowest level of the stack on which it belongs.</p></div></div>
+<div class="comment" id="comment-13548"><div class="by">Andrew Woods, 2015-02-24 17:22 UTC</div><div class="text"><p>There are two possible actions here:<br/>
+1) Remove the #status predicate from the repository namespace. There is currently no internal use of that predicate. Do we plan on such a use?<br/>
+2) Create a new Fedora vocabulary to host the #status predicate... unless there is a more standard term already in the wild.</p>
+
+<p>Thoughts?<br/>
+If not, we can take the third option: close this ticket and do nothing.</p></div></div>
+<div class="comment" id="comment-13550"><div class="by">Former user, 2015-02-24 17:35 UTC</div><div class="text"><p>I think we should, at a minimum, remove the status predicate from the repository# ontology.  It cannot be used in the intended way, and we have no plans to add REST API functionality to manipulate it.</p>
+
+<p>I would be find with creating a new ontology to house this predicate and the related values, if there are users who want to use them.  This is a carryover from fcrepo3, so I suspect there will be people migrating data who will want some standard way to express the fcrepo3 state for objects as they are migrated.  If there is an existing predicate, that would be preferable.</p></div></div>
+<div class="comment" id="comment-13551"><div class="by">Andrew Woods, 2015-02-24 17:42 UTC</div><div class="text"><p>Is there an existing predicate in the Fedora 3 namespace or elsewhere that can be used for this purpose? Creating vocabularies for single terms does not sound very manageable... or attractive.</p></div></div>
+<div class="comment" id="comment-13552"><div class="by">Former user, 2015-02-24 18:02 UTC</div><div class="text"><p>I believe fcrepo3 XML uses the element:</p>
+
+<p><a href="http://www.fedora.info/definitions/1/0/access/objState" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/access/objState</a></p>
+
+<p>That isn't deferenceable, so I don't know if there is an ontology defining it or not.</p></div></div>
+<div class="comment" id="comment-13553"><div class="by">Andrew Woods, 2015-02-24 18:31 UTC</div><div class="text"><p>This is as close as we have to dereferencing/understanding #objState:<br/>
+<a href="http://www.fedora.info/definitions/1/0/objectProfile.xsd" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/objectProfile.xsd</a></p>
+
+<p>Let's talk about it on the Thursday call.</p></div></div>
+<div class="comment" id="comment-13571"><div class="by">Andrew Woods, 2015-02-27 00:26 UTC</div><div class="text"><p>After further discussion, this task should:<br/>
+1. Remove "status" related terms from the fedora/repository ontology<br/>
+2. Create a dereferenceable resource at:<br/>
+<a href="http://www.fedora.info/definitions/1/0/access/objState" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/access/objState</a></p></div></div>
+<div class="comment" id="comment-13694"><div class="by">Jared Whiklo, 2015-03-10 18:19 UTC</div><div class="text"><p>Sorry, but I am unclear how I should achieve #2.</p></div></div>
+<div class="comment" id="comment-13695"><div class="by">A. Soroka, 2015-03-10 18:24 UTC</div><div class="text"><p>Actually publishing anything at that URL is definitely not something you can do without intervention from Andrew Woods, but you could write up whatever it is that should go at that location. Perhaps an RDFS document explaining `objState`?</p></div></div>
+<div class="comment" id="comment-13696"><div class="by">Andrew Woods, 2015-03-10 18:25 UTC</div><div class="text"><p>Jared Whiklo, Could you create a new, small ontology document called "objState" that defines the "objState" property? I will then publish that resource so that the following will dereference:<br/>
+<a href="http://www.fedora.info/definitions/1/0/access/objState" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/access/objState</a></p>
+
+<p>Please add this to the Thursday tech meeting agenda for discussion. There may be a better way??<br/>
+Thoughts A. Soroka? Former user?</p></div></div>
+<div class="comment" id="comment-13698"><div class="by">A. Soroka, 2015-03-10 18:27 UTC</div><div class="text"><p>My thoughts? See my comment above yours.</p></div></div>
+<div class="comment" id="comment-13701"><div class="by">Jared Whiklo, 2015-03-10 19:32 UTC</div><div class="text"><p>Okay, this is my <a href="https://github.com/fcrepo4/ontology/compare/master...whikloj:FCREPO-1363?expand=1" class="external-link" rel="nofollow noreferrer">first attempt</a> to define a resource I'm going to let you all have your say before I submit a PR. </p>
+
+<p>Also, do we want this part of the HTML reference build?</p></div></div>
+<div class="comment" id="comment-13706"><div class="by">Andrew Woods, 2015-03-11 12:21 UTC</div><div class="text"><p>Please make a PR of this, Jared Whiklo so others can review.</p></div></div>
+<div class="comment" id="comment-13718"><div class="by">Jared Whiklo, 2015-03-11 16:25 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/ontology/pull/23" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/ontology/pull/23</a></p></div></div>
+<div class="comment" id="comment-13737"><div class="by">Andrew Woods, 2015-03-13 22:04 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/ontology/commit/88766107f78a5d7fd1ebc3044142ea9034617e61" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/ontology/commit/88766107f78a5d7fd1ebc3044142ea9034617e61</a></p></div></div>
+<p><a href="data/FCREPO-1363.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-840 Allow more complex specification of attributes in the FeSL FedoraRIAttributeFinder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-840</span> Allow more complex specification of attributes in the FeSL FedoraRIAttributeFinder</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-12-17 17:28 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2011-05-03 21:14 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Depends on</th><td><a href="FCREPO-839.html">FCREPO-839</a> Allow FeSL relationship resolver to make use of the resource index if enabled</td></tr><tr><th>Is related to</th><td><a href="FCREPO-933.html">FCREPO-933</a> Refactor FeSL and existing XACML attribute finder modules</td></tr><tr><th>Is related to</th><td><a href="FCREPO-939.html">FCREPO-939</a> Allow FeSL RI Attribute finder queries to be based on object URI as well as resource URI</td></tr></table>
+<h2>Description</h2>
+<p>The FedoraRIAttributeFinder permits a flexible means of defining XACML policies based on resource information from the Resource Index.</p>
+
+<p>Currently this is limited to specification of an rdf property/predicate - eg to determine an object's last modified date, or a datastream's mime-type.</p>
+
+<p>When the resource index is enabled, it would be useful to allow more complex queries - for example to determine some property of a parent object, etc.</p>
+
+<p>Add the ability to specify</p>
+<ul class="alternate" type="square">
+	<li>SPARQL queries</li>
+	<li>TQL queries</li>
+</ul>
+
+
+<p>These would have a parameter marker for the xacml resource ID, and would return a single "column" of results.</p>
+
+<p>EG:<br/>
+select $value from &lt;#ri&gt;<br/>
+where<br/>
+<span class="error">&#91;resource&#93;</span> &lt;rels:isMemberOf&gt; $parent<br/>
+and<br/>
+$parent &lt;some:property&gt; $value</p>
+
+<p>(<span class="error">&#91;resource&#93;</span> is the XACML resource identifier from the request in this case - the info:fedora resource URI)</p>
+
+<p>This feature should be optional as it will only work if the RI is enabled</p>
+
+<p>(note that SPO queries are not included, as the current functionality effectively provides this)</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-11741"><div class="by">Stephen Bayliss, 2010-12-17 17:29 UTC</div><div class="text"><p>The attribute finder makes use of the relationship resolver.</p></div></div>
+<div class="comment" id="comment-11743"><div class="by">Stephen Bayliss, 2010-12-20 16:35 UTC</div><div class="text"><p>It would also be useful to be able to specify object properties when retrieving datastreams - ie some attribute definition that specifies "the object's property xyz" (rather than the resource's property xyz - which when looking at a datastream would only reflect datastream properties).</p></div></div>
+<div class="comment" id="comment-11872"><div class="by">Benjamin Armintor, 2011-03-15 21:19 UTC</div><div class="text"><p>I'm going to work on Spring-ifying attribute finders this week as a first step towards this.  Starting today, in fact.</p></div></div>
+<div class="comment" id="comment-11899"><div class="by">Stephen Bayliss, 2011-04-05 11:26 UTC</div><div class="text"><p>Current config is a set of attribute nodes, with attributes:<br/>
+designator - target (resource, subject etc)<br/>
+name - name of XACML AttributeID (see ResourceAttributeDesignator) and name (URI) of relationships</p>
+
+<p>Proposed (retaining above for compatibility):<br/>
+Add one or more config nodes under the attribute, as follows:<br/>
+1) Simple "rdf property" relationship attributes<br/>
+name="relationship", value=query predicate (relationship) to use<br/>
+2) Attributes derived using queries<br/>
+name="query" value=query to perform (written in TQL/SPARQL/SPO)<br/>
+name="queryLang" value=query language [ tql | itql | sparql | spo ]<br/>
+name="variable" value=name of output variable (variable name in TQL/SPARQL tuple queries; and either "s", "p" or "o" for SPO triple queries)</p></div></div>
+<div class="comment" id="comment-11908"><div class="by">Stephen Bayliss, 2011-04-10 21:57 UTC</div><div class="text"><p>Implementation for FeSL committed to master.  Should we move refactoring/springification to allow use by legacy XACML authz to another issue?</p></div></div>
+<p><a href="data/FCREPO-840.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

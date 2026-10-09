@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-453 Allow the retrieval of content via the file URI scheme</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-453</span> Allow the retrieval of content via the file URI scheme</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2009-02-26 13:32 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-08-19 20:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr><tr><th>Depends on</th><td><a href="FCREPO-485.html">FCREPO-485</a> Refactoring to Support More Fully-Modularized External Content Manager</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-776.html">FCREPO-776</a> Allow externally-managed content referring to a file URI to be readable by unauthenticated users</td></tr></table>
+<h2>Description</h2>
+<p>Chris Wilper wrote:<br/>
+I got a chance to read through your performance wiki<span class="error">&#91;1&#93;</span> again in more<br/>
+detail and found it quite informative.  One part I missed before was<br/>
+the discussion on "Managed Content Retrieval", where you discuss the<br/>
+use of a Tomcat FileDirContext in order to avoid sending content in<br/>
+via the upload servlet.  If Fedora just had the option to accept local<br/>
+"file:///" URLs on ingest, I think that would be even better.  There's<br/>
+a security consideration to doing that, but I think as long as the<br/>
+repository could be configured to reject <a href="file:///" class="external-link" rel="nofollow noreferrer">file:///</a> URLs from all but a<br/>
+set of "allowed" local paths and the input was sanitized (removing<br/>
+"..", etc), we would be ok.  </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-453/10052_deny-unallowed-file-resolution.xml">deny-unallowed-file-resolution.xml</a>, 1987 bytes, added by Benjamin Armintor on 2009-03-25</li>
+<li><a href="attachments/FCREPO-453/10049_DisseminationService.patch">DisseminationService.patch</a>, 2425 bytes, added by Benjamin Armintor on 2009-03-25</li>
+<li><a href="attachments/FCREPO-453/10088_fcrepo-453-test-output.txt">fcrepo-453-test-output.txt</a>, 32487 bytes, added by Scott Prater on 2010-08-19</li>
+<li><a href="attachments/FCREPO-453/10050_FileExternalContentManager.java">FileExternalContentManager.java</a>, 14580 bytes, added by Benjamin Armintor on 2009-03-25</li>
+<li><a href="attachments/FCREPO-453/10051_ValidationUtility.patch">ValidationUtility.patch</a>, 757 bytes, added by Benjamin Armintor on 2009-03-25</li>
+</ul>
+<h2>Comments (22)</h2>
+<div class="comment" id="comment-10869"><div class="by">Benjamin Armintor, 2009-03-10 04:16 UTC</div><div class="text"><p>I'm looking over the 3.1 code, and I don't think allowing the DatastreamReferencedContent to get the bytes would be too tall an order- it would only require an examination of the dsLocation at some point to decide whether to use the WebClient or simply a java.net.URL.  This would also allow custom URL protocols, which would be nice for some folks.</p>
+
+<p>The validation utility would have to be changed to remove the special case for file: url's, but that's actually a simplification.</p>
+
+<p>In 3.0 (which we're running at work), there seemed to be a pretty clear security path with XACML and the ExternalContentManager module.  I'm not familiar enough with 3.1 to suggest how it might work there.  In any case, I'd be interested in seeing this feature go into 3.1 (and maybe back-ported into a 3.0 maintenance release?).</p></div></div>
+<div class="comment" id="comment-10870"><div class="by">Benjamin Armintor, 2009-03-13 16:08 UTC</div><div class="text"><p>I'm trying to put together a very rudimentary implementation of this, and have run into a few places outside the ExternalContentManager implementation where the presumption of http<span class="error">&#91;s&#93;</span> urls required a change:</p>
+<ul class="alternate" type="square">
+	<li>fedora.server.storage.types.DatastreamReferencedContent</li>
+	<li>fedora.server.validation.ValidationUtility</li>
+	<li>fedora.server.access.DisseminationService</li>
+</ul>
+
+
+<p>There may be others; I expect you could identify them by looking for uses of MIMETypedStream and seeing if the class is using fedora.common.http.WebClient.</p>
+
+<p>In general, faking HTTP headers into the Property array of the MIMETypedStream and serving up a FileInputStream (or an InputStream from a java.net.URL) seems to work fine, leaving aside the implementation of a security policy.  Without access to the DO, you need to guess at MIME type, which is a little unfortunate.</p>
+
+<p>On a related note, working on this inclines me to think that it would be good if classes like ValidationUtility were able to query the ExternalContentManager implementation for supported url protocols, rather than hard-coding them or relying simply on Java not considering them malformed.  Maybe querying them for configuration parameters? That seems a little hackish.</p></div></div>
+<div class="comment" id="comment-10872"><div class="by">Chris Wilper, 2009-03-13 19:46 UTC</div><div class="text"><p>Ben, thanks for looking into this and logging your findings here.   A couple quick notes:</p>
+
+<p>RE:Releases - We generally include new features only in trunk (e.g. the baseline for the next 3.x release).  We don't really have the resources to do much backporting and/or maintenance releases, but if you want to do/provide a backport, you can of course attach it as a patch.</p>
+
+<p>RE:getting an InputStream from java.net.URL - I'm not sure if you were suggesting using URL.openStream().  But this has historically been problematic, as java.net.URL isn't very flexible (especially when it comes to configuring timeouts/blocking).  I think it would be better to use commons-httpclient for retrieving content from URLs.  Essentially, this is what fedora.common.http.WebClient does.</p></div></div>
+<div class="comment" id="comment-10873"><div class="by">Benjamin Armintor, 2009-03-13 20:04 UTC</div><div class="text"><p>RE:getting an InputStream from java.net.URL - I understand your concern there, I think of it only as a fallback (Is it a file protocol? Does http-client support the protocol? Ok then, URL.openStream()).  Alternatively, there could be a requirement for (protocol)-client implementations.</p>
+
+<p>I'm trying to sort out the file path sanitizing and a XACML rig for allowable File sources- I'm thinking maybe regex rules to govern the path prefixes?- and I'll try to attach some patchfiles if I get it working.</p>
+
+<p>Thanks for the notes! </p>
+</div></div>
+<div class="comment" id="comment-10877"><div class="by">Benjamin Armintor, 2009-03-19 16:35 UTC</div><div class="text"><p>As far as security:  I'd been working on an implementation that uses a XACML policy enforcement for Action="urn:fedora:names:fedora:2.1:action:id-resolveDatastream", and setting the resource attribute for "urn:fedora:names:fedora:2.1:resource:datastream:location" to be the canonicalized file path as a URI.  The testing has been a little rough, which I realize now is due to the lack of support for anyURI matching functions in the shipped sunxacml implementation.</p>
+
+<p>I'm going to see about building the trunk release of sunxacml (the binary download doesn't appear to support xacml-2 functions, but the source does) and testing it in a local Fedora-3.1 install. </p></div></div>
+<div class="comment" id="comment-10879"><div class="by">Former user, 2009-03-20 19:56 UTC</div><div class="text"><p>un-assigning this issue due to ongoing work on <a href="https://fedora-commons.org/jira/browse/FCREPO-406" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/jira/browse/FCREPO-406</a> which takes more time than anticipated</p></div></div>
+<div class="comment" id="comment-10881"><div class="by">Benjamin Armintor, 2009-03-24 00:27 UTC</div><div class="text"><p>Well, I'm in the midst of unwinding a lot now that I sorted out the clearest path to a configurable XACML-based policy: Use an internal user and the getDatastreams action for the policy target, and use the canonicalized file URI as the "pid."  If I pare back to that, I can isolate the changes to the three classes I mentioned before, and of course the ExternalContentManager implementation.  It also removes the XACML 2 support requirement (although it does bastardize the action enforcement a bit).  I should be able to post some patch files this week (finally).</p></div></div>
+<div class="comment" id="comment-10882"><div class="by">Benjamin Armintor, 2009-03-25 17:54 UTC</div><div class="text"><p>patches for an example implementation of an ExternalContentManager that allows file urls, and checks the canonical form of file urls against XACML policy before serving. </p></div></div>
+<div class="comment" id="comment-10883"><div class="by">Benjamin Armintor, 2009-03-25 17:55 UTC</div><div class="text"><p>Example XACML policy for the attached FileExternalContentManager implementation</p></div></div>
+<div class="comment" id="comment-10884"><div class="by">Benjamin Armintor, 2009-03-25 18:05 UTC</div><div class="text"><p>Some thoughts after working through this:</p>
+<ul>
+	<li>ExternalContentManagers get no direct access to DatastreamReferencedContent objects.  This means that the association of a mime-type with a served file is guesswork (and ugly guesswork, at that).  The addition of a method to serve content from a DatastreamReferencedContent  (rather than a String url) would allow the ExternalContentManager to use the datastream's defined mime-type</li>
+	<li>The exception signature on ExternalContentManager.getExternalContent doesn't allow for an AuthzDeniedException, so authorization failures are shoehorned into GeneralExceptions or HttpServiceNotFoundExceptions, resulting in response codes of 500 instead 40x</li>
+	<li>The lack of a generic policy enforcement method means an existing method has to be hijacked (hence the kind of ugly policy, and the use of PID for the canonical file path URI)</li>
+</ul>
+
+
+<p>On the other hand, it works, and the policy enforcement is working (in our development environment, anyway).</p></div></div>
+<div class="comment" id="comment-11002"><div class="by">Chris Wilper, 2009-09-08 12:09 UTC</div><div class="text"><p>See review at: <a href="http://fedora-commons.org/fisheye/cru/CR-1" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/fisheye/cru/CR-1</a></p></div></div>
+<div class="comment" id="comment-11172"><div class="by">Benjamin Armintor, 2009-12-16 18:34 UTC</div><div class="text"><p>Having trouble getting the feature to work with pre-3.3 trunk.</p>
+
+<p>1. If I change the ValidationUtility to allow control group 'E', file content can be fetched when allowed by xacml policy</p>
+
+<p>2. control group 'M' is ingested, but trying to access the content throws:<br/>
+javax.ws.rs.WebApplicationException: fedora.server.errors.StreamIOException: <span class="error">&#91;DatastreamManagedContent&#93;</span> returned  the error: "fedora.server.errors.ObjectNotInLowlevelStorageException". Reason: no path in db registry for <span class="error">&#91;demo:5000+HIGHRES_IMG+HIGHRES_IMG1.0&#93;</span><br/>
+	at fedora.server.rest.BaseRestResource.handleException(BaseRestResource.java:162)<br/>
+	at fedora.server.rest.DatastreamResource.getDatastream(DatastreamResource.java:186)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+...</p>
+
+<p>I'll look into this more this afternoon.</p></div></div>
+<div class="comment" id="comment-11174"><div class="by">Benjamin Armintor, 2009-12-16 21:23 UTC</div><div class="text"><p>The issue with managed content is that the DefaultDOManager is using too narrow a pattern to pick up all file: url's.  This causes it to silently skip the retrieval of the datastream bytes, which results in downstream access errors.</p>
+
+<p>1. fedora.server.validation.ValidationUtility should allow 'E' or 'M' control groups for file urls<br/>
+2. fedora.server.storage.DefaultDOManager should use a more flexible pattern, and should either log inoperable DSLocations, or throw an exception on same, or do both.</p>
+
+<p>There's also an unpleasant reliance on ValidationException to trigger internal id handling in fedora.server.storage.types.DatastreamManagedContent, but the refactoring a fix would require is probably too ambitious for 3.3.</p></div></div>
+<div class="comment" id="comment-11175"><div class="by">Benjamin Armintor, 2009-12-16 21:24 UTC</div><div class="text"><p>Working on fixes mentioned above.</p></div></div>
+<div class="comment" id="comment-11182"><div class="by">Stephen Bayliss, 2009-12-18 09:28 UTC</div><div class="text"><p>Question on this - does this also work with modifyDatastreamByValue?</p></div></div>
+<div class="comment" id="comment-11183"><div class="by">Former user, 2009-12-18 10:33 UTC</div><div class="text"><p>No, it only works for the control groups "M" and "E".</p></div></div>
+<div class="comment" id="comment-11184"><div class="by">Stephen Bayliss, 2009-12-18 10:35 UTC</div><div class="text"><p>Apologies, I meant to type modifyDatastreamByReference - will it work for that?</p></div></div>
+<div class="comment" id="comment-11185"><div class="by">Former user, 2009-12-18 10:43 UTC</div><div class="text"><p>Yes, it works for modifyDatastreamByReference.</p></div></div>
+<div class="comment" id="comment-11550"><div class="by">Stephen Bayliss, 2010-08-19 20:36 UTC</div><div class="text"><p>Moving to 3.3 released version as this was originally released then</p></div></div>
+<div class="comment" id="comment-11551"><div class="by">Stephen Bayliss, 2010-08-19 20:36 UTC</div><div class="text"><p>Outstanding issue covered by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-776" >
+                <a href="FCREPO-776.html" class="jira-issue-macro-key issue-link"  title="Allow externally-managed content referring to a file URI to be readable by unauthenticated users" >
+            
+            FCREPO-776
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<div class="comment" id="comment-11552"><div class="by">Stephen Bayliss, 2010-08-19 20:37 UTC</div><div class="text"><p>Covers the remaining outstanding issue - E datastream content retrieval by unauthorised users</p></div></div>
+<div class="comment" id="comment-11553"><div class="by">Scott Prater, 2010-08-19 20:39 UTC</div><div class="text"><p>See the fcrepo-453-test-output.txt attachment for test outputs.</p></div></div>
+<p><a href="data/FCREPO-453.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

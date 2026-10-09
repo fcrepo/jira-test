@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1743 LevelDB file creation error on Windows</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1743</span> LevelDB file creation error on Windows</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-09-23 13:24 UTC</td></tr><tr><th>Updated</th><td>2016-10-07 03:17 UTC</td></tr><tr><th>Resolved</th><td>2016-10-07 03:17 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr></table>
+<h2>Environment</h2>Windows 7, 64-bit, Tomcat 8
+<h2>Description</h2>
+<p>Ingesting a few thousand objects creates (or rather keeps creating) stack traces, with the message "Could not create random access file." </p>
+
+<p>Please see the attached stack trace file.</p>
+
+<p>This seems to be related to a LevelDB driver issue from Infinispan Java driver for LevelDB (leveldbjni):</p>
+
+<p><a href="https://github.com/fusesource/leveldbjni/issues/28" class="external-link" rel="nofollow noreferrer">https://github.com/fusesource/leveldbjni/issues/28</a></p>
+
+<p>The items do keep on getting ingested even after this error happens (and one can still make HTTP calls to retrieve container properties, etc.), but visiting the application home page results in the same stack trace.</p>
+
+<p>This apparent bug might have implications for admins who want to run Fcrepo on a Windows machine.</p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1743/10237_body.rdf">body.rdf</a>, 6477 bytes, added by Osman Din on 2015-09-23</li>
+<li><a href="attachments/FCREPO-1743/10236_stacktrace.txt">stacktrace.txt</a>, 11089 bytes, added by Osman Din on 2015-09-23</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-15273"><div class="by">Osman Din, 2015-09-23 13:29 UTC</div><div class="text"><p>The command given by Andrew was used:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-none">
+
+for x in {0..50000}; do echo "number $x"; echo ""; curl -i -XPOST -H"Content-Type: text/turtle" --data-binary @body.rdf localhost:8080/fcrepo/rest; done
+
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-15696"><div class="by">Andrew Woods, 2015-11-02 01:21 UTC</div><div class="text"><p>Will you have a chance to look into this, Osman Din?</p></div></div>
+<div class="comment" id="comment-17737"><div class="by">Unknown, 2016-10-07 03:17 UTC</div><div class="text"><p>Closing as LevelDB is no longer supported (as of the 4.7.0 release)</p></div></div>
+<p><a href="data/FCREPO-1743.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

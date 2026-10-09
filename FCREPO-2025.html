@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2025 Memory leak in GET to containers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2025</span> Memory leak in GET to containers</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2016-05-16 14:47 UTC</td></tr><tr><th>Updated</th><td>2016-05-19 17:56 UTC</td></tr><tr><th>Resolved</th><td>2016-05-19 17:55 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>performance</td></tr></table>
+<h2>Environment</h2>Java HotSpot(TM) 64-Bit Server VM (build 25.66-b17, mixed mode)
+<h2>Description</h2>
+<p>Approx. 3KB of memory leaks per GET request to a Fedora container.  Heap analysis shows that this is due to an increasing number of LinkedHashMaps held by hk2, each resulting from the injection of MultiPrefer into ContentExposingResource.  This leak has likely been present since fedora 4.0.0.</p>
+
+<p>It appears that this is ultimately a bug in Jersey, introduced in 2.9:<br/>
+<a href="https://java.net/jira/browse/HK2-216" class="external-link" rel="nofollow noreferrer">https://java.net/jira/browse/HK2-216</a></p>
+
+<p>Reverting to Jersey 2.8 fixes the memory leak</p>
+
+<p>It's possible that this was fixed in Jersey 2.17:<br/>
+<a href="https://java.net/jira/browse/JERSEY-2800" class="external-link" rel="nofollow noreferrer">https://java.net/jira/browse/JERSEY-2800</a></p>
+
+<p>After fixing a few compilation errors due to method signature changes in Jersey, LDP tests fail with Jersey 2.17+.  </p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-16650"><div class="by">Aaron Birkland, 2016-05-16 14:51 UTC</div><div class="text"><p>Here are some spreadsheets that indicate the effects of the leak:<br/>
+<a href="https://docs.google.com/spreadsheets/d/1Htgf_i9hyiBfz4-1ctnqX0kSk7_t3EIheb3nVBZTKQk/edit?usp=sharing" class="external-link" rel="nofollow noreferrer">https://docs.google.com/spreadsheets/d/1Htgf_i9hyiBfz4-1ctnqX0kSk7_t3EIheb3nVBZTKQk/edit?usp=sharing</a><br/>
+<a href="https://docs.google.com/spreadsheets/d/1MpJsZhCzKevcn-UF5VA78LWK1wDwWeYbwXvJGv5zMco/edit?usp=sharing" class="external-link" rel="nofollow noreferrer">https://docs.google.com/spreadsheets/d/1MpJsZhCzKevcn-UF5VA78LWK1wDwWeYbwXvJGv5zMco/edit?usp=sharing</a></p>
+
+<p>.. and after reverting to Jersey 2.8:<br/>
+<a href="https://docs.google.com/spreadsheets/d/1cx5J8R8kzSO2vmf9hYwxIV_bmGIc7Ajy77RoXzem_RA/edit?usp=sharing" class="external-link" rel="nofollow noreferrer">https://docs.google.com/spreadsheets/d/1cx5J8R8kzSO2vmf9hYwxIV_bmGIc7Ajy77RoXzem_RA/edit?usp=sharing</a></p></div></div>
+<div class="comment" id="comment-16654"><div class="by">Andrew Woods, 2016-05-16 16:19 UTC</div><div class="text"><p>Aaron Birkland, There are some LDP tests that have always failed.<br/>
+&gt; After fixing a few compilation errors due to method signature changes in Jersey, LDP tests fail with Jersey 2.17+.<br/>
+Are you saying that there are more failures in your Jersey 2.17+ branch? Ideally, we could upgrade Jersey to resolve the memory leak issue.<br/>
+If upgrading Jersey is not an option, however, we should seriously consider reverting the Jersey version.</p></div></div>
+<div class="comment" id="comment-16660"><div class="by">Aaron Birkland, 2016-05-16 21:19 UTC</div><div class="text"><p>Hi Andrew,</p>
+
+<p>Yes, there are a ton of 500 errors in   FedoraLdpIT, FedoraNodesIT,  FedoraTransactionsIT,  FedoraVersionsIT that appear with Jersey 2.17 (and the latest 2.22.2), but do not appear when using 2.8.  It looks like they're all related to parsing quality values.  it could very well be the case that a one-liner would fix them all, but I haven't looked that deep into it.</p>
+
+<p>{{Caused by: java.lang.IllegalArgumentException: <br/>
+	at org.glassfish.jersey.message.internal.QualitySourceMediaType.getQs(QualitySourceMediaType.java:175)<br/>
+	at org.glassfish.jersey.message.internal.QualitySourceMediaType.getQualitySource(QualitySourceMediaType.java:167)<br/>
+	at org.glassfish.jersey.server.internal.routing.CombinedMediaType.create(CombinedMediaType.java:130)<br/>
+	at org.glassfish.jersey.server.internal.routing.MethodSelectingRouter.selectMethod(MethodSelectingRouter.java:706)<br/>
+	at org.glassfish.jersey.server.internal.routing.MethodSelectingRouter.getMethodRouter(MethodSelectingRouter.java:486)<br/>
+	at org.glassfish.jersey.server.internal.routing.MethodSelectingRouter.access$000(MethodSelectingRouter.java:94)<br/>
+	at org.glassfish.jersey.server.internal.routing.MethodSelectingRouter$2.apply(MethodSelectingRouter.java:364)<br/>
+	at org.glassfish.jersey.server.internal.routing.MethodSelectingRouter.apply(MethodSelectingRouter.java:371)<br/>
+	at org.glassfish.jersey.server.internal.routing.RoutingStage._apply(RoutingStage.java:109)<br/>
+	at org.glassfish.jersey.server.internal.routing.RoutingStage._apply(RoutingStage.java:112)<br/>
+	at org.glassfish.jersey.server.internal.routing.RoutingStage._apply(RoutingStage.java:112)<br/>
+	at org.glassfish.jersey.server.internal.routing.RoutingStage.apply(RoutingStage.java:92)<br/>
+	at org.glassfish.jersey.server.internal.routing.RoutingStage.apply(RoutingStage.java:61)<br/>
+	at org.glassfish.jersey.process.internal.Stages.process(Stages.java:197)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:297)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)<br/>
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:288)<br/>
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1110)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:401)<br/>
+	... 13 more<br/>
+Caused by: java.text.ParseException: Error parsing Quality value: a decimal place is expected rather than '0'<br/>
+	at org.glassfish.jersey.message.internal.HttpHeaderReader.readQualityFactor(HttpHeaderReader.java:223)<br/>
+	at org.glassfish.jersey.message.internal.QualitySourceMediaType.getQs(QualitySourceMediaType.java:184)<br/>
+	at org.glassfish.jersey.message.internal.QualitySourceMediaType.getQs(QualitySourceMediaType.java:173)<br/>
+	... 36 more<br/>
+}}</p></div></div>
+<div class="comment" id="comment-16661"><div class="by">Andrew Woods, 2016-05-16 21:43 UTC</div><div class="text"><p>Thanks, Aaron Birkland.<br/>
+Based on our IRC chat, if there is no loss of functionality, reverting to Jersey-2.8 seems like an easy win.</p></div></div>
+<div class="comment" id="comment-16662"><div class="by">Andrew Woods, 2016-05-16 22:13 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1037" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1037</a></p></div></div>
+<div class="comment" id="comment-16669"><div class="by">Aaron Birkland, 2016-05-17 16:40 UTC</div><div class="text"><p>Added commit to PR which upgrades to Jersey 2.22.2.  The memory leak is fixed in this version, and I see substantial performance improvement in the GET microbenchmark.  Throughput improves by 3x, latency decreases 4-10x compared to Jersey 2.8. </p>
+
+<p>Updated GET microbenchmark using Jersey 2.22.2:<br/>
+<a href="https://docs.google.com/spreadsheets/d/1c4QnTk3tW8S9t53Ro1PXr5aSRiKpXT_TqqucaG4_SZg/edit?usp=sharing" class="external-link" rel="nofollow noreferrer">https://docs.google.com/spreadsheets/d/1c4QnTk3tW8S9t53Ro1PXr5aSRiKpXT_TqqucaG4_SZg/edit?usp=sharing</a></p></div></div>
+<div class="comment" id="comment-16676"><div class="by">Andrew Woods, 2016-05-18 19:09 UTC</div><div class="text"><p>Related impact PR: <a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/22" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/22</a></p></div></div>
+<div class="comment" id="comment-16677"><div class="by">Unknown, 2016-05-18 20:20 UTC</div><div class="text"><p>Related PR (fcrepo-transform) merged via: <a href="https://github.com/fcrepo4-exts/fcrepo-transform/commit/1d9d2852c7ceb629257e2e4cad5617871fba3c80" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/commit/1d9d2852c7ceb629257e2e4cad5617871fba3c80</a></p></div></div>
+<div class="comment" id="comment-16684"><div class="by">Unknown, 2016-05-19 17:55 UTC</div><div class="text"><p>Resolved via <a href="https://github.com/fcrepo4/fcrepo4/commit/1fb2e86b3b9bb55dc4ba7609cf8b853b0809e16e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1fb2e86b3b9bb55dc4ba7609cf8b853b0809e16e</a></p></div></div>
+<p><a href="data/FCREPO-2025.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

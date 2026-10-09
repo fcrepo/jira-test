@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3961 Fedora in Tomcat hangs when ocfl-root permission is denied</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3961</span> Fedora in Tomcat hangs when ocfl-root permission is denied</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Received</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Demian Katz</td></tr><tr><th>Created</th><td>2024-11-21 17:33 UTC</td></tr><tr><th>Updated</th><td>2024-11-21 17:36 UTC</td></tr></table>
+<h2>Environment</h2>Ubuntu 22.04 ; Java 11.0.25 ; Tomcat 9.0.97 ; Fedora 6.5.1-RC
+<h2>Description</h2>
+<p>When testing the 6.5.1-RC, I discovered that in my test environment, Tomcat gets into a stuck state if Fedora does not have read/write access to the OCFL root.</p>
+
+<p>I previously used the one-click .jar for testing, so this is my first attempt to set up Tomcat in my test environment. Thus, I doubt the problem is specifically tied to 6.5.1-RC; I just haven’t tried this with earlier releases.</p>
+
+<p>Tomcat is set up by sym-linking the Fedora .war file as webapps/ROOT.war inside my Tomcat installation. I’ve also made the necessary adjustments to conf/tomcat-users.xml.</p>
+
+<p>See attached catalina.out file for details on my environment and the point at which the log stops being updated. During this time, if I try to access Tomcat from a web browser, the connection hangs until it times out. If I fix the permission issues and restart Tomcat, everything starts up correctly and responds as normal.</p>
+
+<p>This is not a critical issue for me, but since it might cause confusion/inconvenience for others, I thought it might be worth investigating.</p>
+
+<p>Happy to share any additional details that might be enlightening!</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3961/10384_catalina.out.txt">catalina.out.txt</a>, 8134 bytes, added by Demian Katz on 2024-11-21</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-23911"><div class="by">Demian Katz, 2024-11-21 17:36 UTC</div><div class="text"><p>Here are the permissions on my OCFL root which causes the failure (when I run Tomcat as my own user):</p>
+
+<p>drwxr-xr-x   4 root     root        4096 Jun 20 10:29 base-ocfl/</p>
+
+<p>And here are the contents of the base-ocfl directory:</p>
+
+<p>drwxr-xr-x 4 root  root    4096 Jun 20 10:29 ./<br/>
+drwxrwxr-x 6 dkatz techies 4096 Nov 12 12:56 ../<br/>
+drwxr-xr-x 2 root  root    4096 Jun 20 10:29 config/<br/>
+drwxr-xr-x 7 root  root    4096 Nov 12 13:24 data/</p>
+
+<p>…nothing too surprising there, I think!</p></div></div>
+<p><a href="data/FCREPO-3961.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

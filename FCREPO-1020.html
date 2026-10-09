@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1020 Out-of-memory exceptions due to FeSL PEP buffering datastreams in memory</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1020</span> Out-of-memory exceptions due to FeSL PEP buffering datastreams in memory</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-10-24 19:03 UTC</td></tr><tr><th>Updated</th><td>2012-08-07 09:40 UTC</td></tr><tr><th>Resolved</th><td>2012-05-31 14:08 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr></table>
+<h2>Description</h2>
+<p>See report from Greg Jansen here:  <a href="http://sourceforge.net/mailarchive/message.php?msg_id=28272473" class="external-link" rel="nofollow noreferrer">http://sourceforge.net/mailarchive/message.php?msg_id=28272473</a></p>
+
+<p>The code looks like it is buffering the datastream in memory, which is clearly a bad thing.  It should be passing the stream through.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-12081"><div class="by">Gregory Jansen, 2011-10-24 20:08 UTC</div><div class="text"><p>I looks like the problem stems from the way the PEP enforces both before and after the remaining parts of the filter chain. Looking at the contract for RESTFilter, there is a handleResponse method that can return a RequestCtx that may inform enforcement. It looks like the response is wrapped and buffered in it's entirety, such that this context object can be used for enforcement... </p>
+
+
+<p>    /**</p>
+<ul>
+	<li>Handles the response path and returns a RequestCtx if necessary.</li>
+	<li></li>
+	<li>@param request</li>
+	<li>the servlet request</li>
+	<li>@param response</li>
+	<li>the servlet response</li>
+	<li>@return the RequestCtx if one is needed, or else null</li>
+	<li>@throws IOException</li>
+	<li>@throws ServletException<br/>
+     */<br/>
+    public RequestCtx handleResponse(HttpServletRequest request,<br/>
+                                     HttpServletResponse response)<br/>
+            throws IOException, ServletException;</li>
+</ul>
+
+
+<p>This additional enforcement step impacts API-A only, as any API-M operations will have been called by this point in the filter chain. In practice it looks like all RESTFilter implementations return a null for handleResponse. Perhaps this was meant as a future extension point, but I'm having trouble imagining the use case. To me it looks as if the Response wrapper can go away and the second enforcement step can be completely removed, so that all enforcement is before the rest of the filter chain is called.</p></div></div>
+<div class="comment" id="comment-12082"><div class="by">Stephen Bayliss, 2011-10-24 20:25 UTC</div><div class="text"><p>I believe there is a use case around handling search results - to ensure that only "permitted" resources are in the result set.  I've not looked at the code in detail though; from memory there is an implementation for the basic search.  I believe there was a similar intent for RISearch results (and potentially this could apply to the Relationships API methods).  Probably worth checking methods such as list datastreams also as these may also have some response filtering.</p></div></div>
+<div class="comment" id="comment-12083"><div class="by">Gregory Jansen, 2011-10-25 00:04 UTC</div><div class="text"><p>Yes, I eventually saw that use case, the filtering of search results one. I expect that on basic search, but I would be a surprised if RISearch results were filtered that way.<br/>
+Maybe there is some way that post-processed responses can be the exception, rather than the rule. (Seems like an easy way to speed up most response times too.)</p></div></div>
+<div class="comment" id="comment-12084"><div class="by">Gregory Jansen, 2011-10-25 00:43 UTC</div><div class="text"><p>Looking at SearchFilter, where it post-processes the results of the search. There's a lot of knowledge about the search results format embedded in there, but its main function seems to be the batch evaluation of policy and pruning the pids. Since the filters are an integral part of the PEP, it seems like a new ResponseHandlingRESTFilter could be a subclass of a pre-processing only RESTFilter interface. Then SearchFilter could implement that inteface and PEP would know when it needs to wrap the response.</p>
+
+<p>Unless someone is already working this, I could give it a shot..</p></div></div>
+<div class="comment" id="comment-12085"><div class="by">Gregory Jansen, 2011-10-25 00:43 UTC</div><div class="text"><p>But first let me know if this is the right idea pls.. thx.</p></div></div>
+<div class="comment" id="comment-12086"><div class="by">Gregory Jansen, 2011-10-25 01:21 UTC</div><div class="text"><p>Looks like the ObjectsFilter is a filter that parses the servlet path in a more fine grained way to find and execute another RESTFilter. The class is a barrier to the strategy outlined above, in that it would make a whole range of servlet paths into ResponseHandlingRESTFilters, due to the search implemented at /objects.</p>
+
+<p>Putting RESTFilters within RESTFilters makes this code a bit hard for me to understand. Might be clearer just to put the /objects path logic from ObjectsFilter.getObjectsHandler(req) in the PEP.getFilter(path) method. You would need to have the request method added to the signature, or the whole request object.</p></div></div>
+<div class="comment" id="comment-12087"><div class="by">Gregory Jansen, 2011-10-25 18:18 UTC</div><div class="text"><p>Here is my attempt at a fix: <a href="https://github.com/UNC-Libraries/fcrepo/tree/FCREPO-1020/maintenance-3-4" class="external-link" rel="nofollow noreferrer">https://github.com/UNC-Libraries/fcrepo/tree/FCREPO-1020/maintenance-3-4</a><br/>
+Maybe someone with FeSL expertise can review it. I'm able to use this patch to the fcrepo-security-pep jar with existing configuration files. Memory is stable and downloads of files begin immediately.<br/>
+I'm not sure that I've created my fork in the most convenient way possible, still learning the git.</p></div></div>
+<div class="comment" id="comment-12088"><div class="by">Gregory Jansen, 2011-10-25 20:33 UTC</div><div class="text"><p>Note that the fix above was written against 3.4 maintenance branch. Not sure if the REST Summer of Code stuff would change the fix.</p></div></div>
+<div class="comment" id="comment-12261"><div class="by">Greg Jansen, 2012-03-08 03:01 UTC</div><div class="text"><p>I just submitted a pull request via github for this issue. I hope that doesn't break normal fcrepo procedure.</p></div></div>
+<div class="comment" id="comment-12305"><div class="by">Benjamin Armintor, 2012-05-31 14:08 UTC</div><div class="text"><p>Merged Greg Jansen's pull request to address this issue for 3.6, in master as of:<br/>
+<a href="https://github.com/fcrepo/fcrepo/commit/beb9595a140311077be7ced2caf88092b4d3a6be" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/beb9595a140311077be7ced2caf88092b4d3a6be</a></p></div></div>
+<p><a href="data/FCREPO-1020.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

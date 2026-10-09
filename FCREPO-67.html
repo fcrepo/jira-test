@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-67 risearch fails to load stylesheets w/Jetty</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-67</span> risearch fails to load stylesheets w/Jetty</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2007-03-09 22:53 UTC</td></tr><tr><th>Updated</th><td>2015-04-02 18:39 UTC</td></tr><tr><th>Resolved</th><td>2015-04-02 18:39 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2, Fedora 2.2.1, Fedora 3.0b1, Fedora 2.2.2, Fedora 3.0b2, Fedora 3.0, Fedora 2.2.3, Fedora 2.2.4, Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.1</td></tr></table>
+<h2>Description</h2>
+<p>This is an issue when using Jetty, or any other webapp container<br/>
+that doesn't physically unpack the war file into the webapps directory<br/>
+on auto-deployment.</p>
+
+<p>The workaround is to manually deploy the war file:</p>
+<ul class="alternate" type="square">
+	<li>don't put it in webapps/</li>
+	<li>instead, create a directory under webapps/ called 'fedora'</li>
+	<li>un-jar the fedora.war file inside that directory</li>
+	<li>start fedora and try risearch again</li>
+</ul>
+
+
+<p>The problem is, the stylesheet that presents the risearch interface<br/>
+can't be loaded (and this prematurely ends the search attempt) because<br/>
+the code that loads it assumes it's on the filesystem.  This is is true<br/>
+for tomcat, which physically unpacks the war file on automatic deployment,<br/>
+but not true for other webapp containers.  The solution will be to change<br/>
+org.trippi.server.http.Styler#load(String) to resolve the xsl from<br/>
+classloader.getResourceAsStream.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-10116"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1677628<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1677628" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1677628</a></p></div></div>
+<div class="comment" id="comment-13002"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<div class="comment" id="comment-13794"><div class="by">Benjamin Armintor, 2015-03-21 19:46 UTC</div><div class="text"><p><a href="https://github.com/barmintor/fcrepo/commit/c14763c13403f8fd8d790e8577576b1fbcb0da04" class="external-link" rel="nofollow noreferrer">https://github.com/barmintor/fcrepo/commit/c14763c13403f8fd8d790e8577576b1fbcb0da04</a></p></div></div>
+<div class="comment" id="comment-13868"><div class="by">Benjamin Armintor, 2015-04-02 18:39 UTC</div><div class="text"><p>Effectively running in jetty requires replacing Jetty's slf4j-to-log4j library with log4j-over-slf4j, and adding the logback implementation JARs to jetty/lib/ext</p></div></div>
+<p><a href="data/FCREPO-67.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

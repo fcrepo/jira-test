@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2188 ERROR on import of dataset - plantpatents</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2188</span> ERROR on import of dataset - plantpatents</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-09-08 21:02 UTC</td></tr><tr><th>Updated</th><td>2016-09-09 18:55 UTC</td></tr><tr><th>Resolved</th><td>2016-09-09 18:55 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr></table>
+<h2>Description</h2>
+<p>Setup per: <a href="https://jira.duraspace.org/browse/FCREPO-2187" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2187</a></p>
+
+<p>After successful export, start an empty F4.<br/>
+Perform the same operation as on export but changing the mode:<br/>
+&#8212;<br/>
+&gt; java -jar fcrepo-import-export-driver-0.0.1-SNAPSHOT.jar -b /tmp/bin -m import -d /tmp/rdf -r <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a><br/>
+&#8212;</p>
+
+<p>! Notice immediately:<br/>
+&#8212;<br/>
+INFO 16:59:25.473 (ArgParser) Configuration file exists, new file will NOT be created: /tmp/importexport.config<br/>
+INFO 16:59:25.478 (Importer) Running importer...<br/>
+WARN 16:59:25.889 (riot) <span class="error">&#91;line: 31, col: 10&#93;</span> Lexical form '10/23/2014 17:02:32' not valid for datatype <a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a><br/>
+INFO 16:59:25.910 (Importer) Importing binary /tmp/awoods/test/x/rdf/rest/bb/34/ab/0d/bb34ab0d-e036-4b7b-9316-ace9378dba06/internal/fcr%3Ametadata.ttl<br/>
+ERROR 16:59:26.137 (Importer) Import failed<br/>
+&#8212;</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-17452"><div class="by">Esmé Cowles, 2016-09-09 11:45 UTC</div><div class="text"><p>The external URI is retrieved by the export client and saved to disk.  Since the request is redirected, then it doesn't see the original response, so the binary description with the metadata (including the mime type with the external link) is never seen or retrieved.</p></div></div>
+<div class="comment" id="comment-17453"><div class="by">Andrew Woods, 2016-09-09 12:50 UTC</div><div class="text"><p>I wonder if disabling the client from following redirects would do the trick? Like: <a href="https://github.com/fcrepo4/fcrepo4/commit/1aeada253499b771409c92b2309d6ec11a58d7cc#diff-39785d72ffe23548cc619403f35d9028R295" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1aeada253499b771409c92b2309d6ec11a58d7cc#diff-39785d72ffe23548cc619403f35d9028R295</a></p></div></div>
+<div class="comment" id="comment-17469"><div class="by">Esmé Cowles, 2016-09-09 17:00 UTC</div><div class="text"><p>I think the issue here is that the ".binary" suffix wasn't being added.  I've fixed that and improved the test to cover that better: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/30" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/30</a></p></div></div>
+<div class="comment" id="comment-17484"><div class="by">Nick Ruest, 2016-09-09 18:55 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/98def5a5a5bca7fd1b3c4278c485083199190540" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/98def5a5a5bca7fd1b3c4278c485083199190540</a></p></div></div>
+<p><a href="data/FCREPO-2188.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-802 external JMS broker unavailable at startup halts startup</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-802</span> external JMS broker unavailable at startup halts startup</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2010-09-21 19:04 UTC</td></tr><tr><th>Updated</th><td>2010-11-02 05:10 UTC</td></tr><tr><th>Resolved</th><td>2010-11-02 05:10 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2.1, Fedora 3.4</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>If Fedora is started with JMS messaging turned on and configured for an external broker with direct connection (and not through a JNDI provider) but that broker is unavailable at startup, the entire server goes back down. That seems like a pretty drastic failure.</p>
+
+<p>To duplicate:</p>
+
+<p>0) Turn off a repository.</p>
+
+<p>1) Turn on the Messaging module and assign an external broker to "java.naming.provider.url" in fedora.fcfg, e.g.</p>
+
+<p>    &lt;param name="java.naming.provider.url" value="tcp://localhost:61616"/&gt;</p>
+
+<p>2) Make sure the external broker is not available.</p>
+
+<p>3) Start up Fedora.</p>
+
+<p>You'll see something like:</p>
+
+<p>FATAL 2010-09-21 09:59:55.571 <span class="error">&#91;main&#93;</span> (Server) Module (fedora.server.messaging.Messaging) failed to initialize<br/>
+fedora.server.errors.ModuleInitializationException: Could not connect to broker URL: tcp://localhost:61616. Reason: java.net.ConnectException: Connection refused<br/>
+	at fedora.server.messaging.MessagingModule.initModule(MessagingModule.java:81)<br/>
+	at fedora.server.Module.&lt;init&gt;(Module.java:63)<br/>
+	at fedora.server.messaging.MessagingModule.&lt;init&gt;(MessagingModule.java:58)<br/>
+...</p>
+
+<p>and then a server shutdown. Much better would be to see some kind of warning, then attempts to connect as appropriate with warnings thrown on failures.</p>
+
+<p>It's not known to me whether this behavior is the same with a JNDI-provided ConnectionFactory, because I've never been able to get that stronger configuration to work, which is a whole 'nother problem. </p>
+{grin}
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-802/10105_message-graceful-disable.patch">message-graceful-disable.patch</a>, 3068 bytes, added by Scott Prater on 2010-10-28</li>
+</ul>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-11608"><div class="by">Scott Prater, 2010-09-21 19:52 UTC</div><div class="text"><p>I'd like to see more robust connection management built into the Fedora JMS producer service.  Something along these lines:</p>
+
+<p>1.  If messaging is configured, Fedora will try to connect to the message broker upon startup, log a warning if it cannot connect;</p>
+
+<p>It will reattempt to connect at a specified interval (configurable in fedora.fcfg), log a warning after every failed connection attempt;</p>
+
+<p>It will quit trying to reconnect after a specified number of attempts (also configured in fedora.fcfg), logging an INFO message that it will no longer attempt to connect.  If this parameter is not set, it will try to keep reconnecting forever.</p>
+
+<p>Some sort of stepped reconnect attempt interval may also be desirable, such as doubling the time between attempts on each connect after the first five (or X, again configurable?) attempts.</p>
+
+<p>2.  Any messages that are generated while the message broker is unavailable will be stored in a (cache?  hash?).  As soon as the message broker is contacted, all the stored messages will be sent and then deleted.  This will also happen at startup (which argues for some sort of persistent on-disk cache, with a predetermined max size, also configurable in fedora.fcfg).</p>
+
+<p>Fedora will stop storing undeliverable messages after max attempts have been made to contact the message broker, or after the cache size limit has been reached.  A warning will be logged to that effect.</p></div></div>
+<div class="comment" id="comment-11613"><div class="by">Scott Prater, 2010-09-28 02:07 UTC</div><div class="text"><p>Upon further investigation, I think this may be a broker configuration issue, rather than a deficiency in the Fedora code base.</p>
+
+<p>ActiveMQ and other brokers have hooks to configure connection management.  ActiveMQ, in particular, has the "failover" transport macro, which allows you to periodically poll for a remote broker, along the lines I specified in my previous comment.</p>
+
+<p>I was able to implement a store-and-forward topology, using the ActiveMQ broker embedded in Fedora to forward messages to a remote broker.  Using the failover transport, the embedded broker holds messages when the remote broker is unavailable, and sends them along when it comes back online.  It periodically polls the remote broker until it successfully connects.  I tested this setup under a number of different scenarios (starting Fedora first, then the remote broker;  starting the remote broker, then Fedora, then shutting down the remote broker, then starting it up again, etc., sending messages both when the remote broker was down and when it was up), and in every case, the messages eventually reached their endpoints, as desired.</p>
+
+<p>I posted my notes on how to configure this for Fedora at <a href="http://sdg.library.wisc.edu/blog/2010/09/27/configuring-activemq-with-failover-in-fedora-for-higher-availability/" class="external-link" rel="nofollow noreferrer">http://sdg.library.wisc.edu/blog/2010/09/27/configuring-activemq-with-failover-in-fedora-for-higher-availability/</a> .</p>
+
+<p>Given that properly configuring ActiveMQ can fix the problem addressed by this issue, I suggest that we resolve the issue by updating the Fedora Messaging documentation:  explicitly pointing out the problems that can occur when configuring an external broker to consume messages, and offering this technique as a way to fix the problem.</p></div></div>
+<div class="comment" id="comment-11614"><div class="by">Scott Prater, 2010-09-28 02:17 UTC</div><div class="text"><p>But I do agree with Adam's original point:  that it seems a rather ungraceful failure for Fedora to grind to a halt if a directly-configured remote broker is unavailable.  In this case, logging an error and disabling messaging would be a more elegant solution.  </p></div></div>
+<div class="comment" id="comment-11615"><div class="by">Chris Wilper, 2010-09-28 15:51 UTC</div><div class="text"><p>I think updating the official docs to suggest this technique is the right way to go, provided we can get someone else to follow your steps successfully, Scott.</p>
+
+<p>I actually think that if the messages can't be persisted at all, it <b>is</b> a pretty big failure.  However, the store-and-forward technique neatly solves that by persisting the messages in an embedded broker if they can't be immediately delivered to the remote broker.</p></div></div>
+<div class="comment" id="comment-11616"><div class="by">A. Soroka, 2010-09-28 17:16 UTC</div><div class="text"><p>I can happily verify that Scott's procedure works very well for me. I also support the notion that the first line of attack here should be improved documentation.</p></div></div>
+<div class="comment" id="comment-11617"><div class="by">Scott Prater, 2010-09-28 17:16 UTC</div><div class="text"><p>Thinking more about Fedora's startup behavior, two different use cases presented themselves to me.  If messaging is not a crucial part of your environment, but provides some nice value-added features (such as reporting data, etc.), then you may want not want Fedora to halt if the message broker cannot be contacted.  If, on the other hand, you absolutely cannot afford to lose a single message, since messaging forms a critical part of your repository workflow, then it may be preferable that Fedora shut itself down if the broker is not available (in which case, you'd probably want to implement some sort of redundant, high-availability network of brokers, anyways).</p>
+
+<p>I wrote a simple patch that introduces a new parameter into the messaging module's configuration:  failGracefully.  If the value is set to "true", then Fedora will log a warning to the log file when the broker is not available upon startup, and disable messaging.  If set to "false" (the default), then Fedora will shut itself down if the JMS broker is not reachable.</p>
+
+<p>I still need to write an integration test for this patch before submitting it, but I'm not convinced it's really a necessary patch.  Any other opinions?  Maybe this is a question that could be briefly addressed and decided by the committers?</p></div></div>
+<div class="comment" id="comment-11642"><div class="by">Scott Prater, 2010-10-28 05:46 UTC</div><div class="text"><p>After a discussion with the committers, it was decided not to incorporate the graceful fail feature into Fedora, but to offer it as a patch for whomever is interested.  The patch is attached to this issue.</p>
+
+<p>I'll update the Fedora documentation to include the instructions for configuring a store-and-forward broker bridge with ActiveMQ;  this will be recommended as a best practice for messaging in production environments.</p></div></div>
+<div class="comment" id="comment-11643"><div class="by">Scott Prater, 2010-10-28 05:48 UTC</div><div class="text"><p>Patch to optionally enable graceful disabling of messaging in Fedora upon startup, if the configured broker is not available.</p></div></div>
+<div class="comment" id="comment-11652"><div class="by">Scott Prater, 2010-11-02 05:07 UTC</div><div class="text"><p>I provided instructions to configure the store-and-forward brokers in the Fedora documentation wiki:  <a href="https://wiki.duraspace.org/display/FCR30/Messaging#Messaging-activemqbridge" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FCR30/Messaging#Messaging-activemqbridge</a><br/>
+This configuration is recommended as best practice for production environments that have messaging enabled.</p></div></div>
+<p><a href="data/FCREPO-802.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

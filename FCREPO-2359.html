@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2359 User credentials don&#x27;t work for verification tool</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2359</span> User credentials don&#x27;t work for verification tool</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-12-14 15:38 UTC</td></tr><tr><th>Updated</th><td>2016-12-16 15:31 UTC</td></tr><tr><th>Resolved</th><td>2016-12-16 15:31 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Labels</th><td>import-export-phase-2, verification</td></tr></table>
+<h2>Description</h2>
+<p>When using the user credentials feature of the verification tool, some, but not all the requests to fedora are passing the credentials correctly.  This leads to a 401 access denied failure.</p>
+
+<p>The offending request appears to be in line 206 (rdflib.parse). This needs to be handled with the requests module instead in order to pass the credentials along.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-18231"><div class="by">Jared Whiklo, 2016-12-15 01:11 UTC</div><div class="text"><p>Verified, I used the fcrepo-webapp with WebAC enabled and restored the plantpatents to it. <br/>
+I then exported the entire repo successfully. </p>
+
+<p>Using Joshua Allan Westgard's 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2347" >
+                <a href="FCREPO-2347.html" class="jira-issue-macro-key issue-link"  title="verification tool needs to set ext based on lang in config" >
+            
+            FCREPO-2347
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ branch I did</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&gt; ./verify.py -u admin1:password3 ../fcrepo-import-export/importexport.yml --csv=./out.csv --log=./out.log
+key (source) and (http://localhost:8080/rest)
+key (resource) and (http://localhost:8080/rest)
+key (binaries) and (True)
+key (predicates) and (http://www.w3.org/ns/ldp#contains)
+key (dir) and (/sw/var/www/fcrepo4/fcrepo-import-export/fcrepo-import-export-temp)
+key (mode) and (export)
+key (rdfLang) and (application/ld+json)
+
+Running verification on Fedora 4 export
+Traceback (most recent call last):
+  File "./verify.py", line 455, in &lt;module&gt;
+    main()
+  File "./verify.py", line 368, in main
+    original = Resource(filepath, config, logger)
+  File "./verify.py", line 226, in __init__
+    self.graph = Graph().parse(self.origpath)
+  File "/usr/local/lib/python3.5/site-packages/rdflib/graph.py", line 1033, in parse
+    data=data, format=format)
+  File "/usr/local/lib/python3.5/site-packages/rdflib/parser.py", line 171, in create_input_source
+    input_source = URLInputSource(absolute_location, format)
+  File "/usr/local/lib/python3.5/site-packages/rdflib/parser.py", line 100, in __init__
+    file = urlopen(req)
+  File "/usr/local/Cellar/python3/3.5.1/Frameworks/Python.framework/Versions/3.5/lib/python3.5/urllib/request.py", line 162, in urlopen
+    return opener.open(url, data, timeout)
+  File "/usr/local/Cellar/python3/3.5.1/Frameworks/Python.framework/Versions/3.5/lib/python3.5/urllib/request.py", line 471, in open
+    response = meth(req, response)
+  File "/usr/local/Cellar/python3/3.5.1/Frameworks/Python.framework/Versions/3.5/lib/python3.5/urllib/request.py", line 581, in http_response
+    'http', request, response, code, msg, hdrs)
+  File "/usr/local/Cellar/python3/3.5.1/Frameworks/Python.framework/Versions/3.5/lib/python3.5/urllib/request.py", line 509, in error
+    return self._call_chain(*args)
+  File "/usr/local/Cellar/python3/3.5.1/Frameworks/Python.framework/Versions/3.5/lib/python3.5/urllib/request.py", line 443, in _call_chain
+    result = func(*args)
+  File "/usr/local/Cellar/python3/3.5.1/Frameworks/Python.framework/Versions/3.5/lib/python3.5/urllib/request.py", line 589, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 401: Unauthorized
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18233"><div class="by">Jared Whiklo, 2016-12-15 01:33 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/15" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/15</a></p></div></div>
+<div class="comment" id="comment-18265"><div class="by">Nick Ruest, 2016-12-16 15:31 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/53ab9e1a2ae28d97c056df950669940c87ba5868" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/53ab9e1a2ae28d97c056df950669940c87ba5868</a></p></div></div>
+<p><a href="data/FCREPO-2359.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

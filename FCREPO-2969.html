@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2969 Cannot add rdf:type properties to binaries</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2969</span> Cannot add rdf:type properties to binaries</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-12-14 21:19 UTC</td></tr><tr><th>Updated</th><td>2019-01-28 18:17 UTC</td></tr><tr><th>Resolved</th><td>2018-12-17 20:20 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2968.html">FCREPO-2968</a> Include rdf:type values in Link rel=type header</td></tr></table>
+<h2>Description</h2>
+<p>I am unable to add rdf:type properties to binary descriptions. When doing so, fcrepo returns a 204 but no new property appears when making a GET to the description.</p>
+
+<p>You can see this behavior in the following failing integration test:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/compare/5.0.0-RC...bbpennel:add-type-to-binary" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/compare/5.0.0-RC...bbpennel:add-type-to-binary</a></p>
+
+<p>As well as from the UI by bringing up the fcrepo 5 web console, creating a binary, then pasting the following into the update properties box:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+INSERT {
+ &lt;&gt; &lt;http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;http://pcdm.org/models#File&gt; .
+</span>}
+WHERE {}
+</pre>
+</div></div>
+<p>It returns with no error, but the property does not appear.</p>
+
+<p>Meanwhile the following update works and the new relationship appears:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+INSERT {
+ &lt;&gt; &lt;http:<span class="code-comment">//example.com/link&gt; &lt;http://example.com/goodstuff&gt; .
+</span>}
+WHERE {}
+</pre>
+</div></div>
+<p> </p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-20595"><div class="by">Danny Bernstein, 2018-12-17 14:17 UTC</div><div class="text"><p>So I looked into this problem over the weekend.  The issue seems to be that the inserted triple lands on the binary jcr node rather than the binary description.  It is a very simple fix to simply merge any rdf:type properties on the jcr binary node with those on the jcr binary description node.   It is not clear to me what, in any, implications there would be to try to get the rdf:type properties to land on the binary description jcr node.</p></div></div>
+<div class="comment" id="comment-20596"><div class="by">Ben Pennell, 2018-12-17 15:42 UTC</div><div class="text"><p>Danny Bernstein I had the feeling it might end up being something along those lines. Generally, it seems more appropriate to me that the rdf:types would land on the description node.</p>
+
+<p>The one caveat coming to mind is the Link rel="type" header, would it make sense for a HEAD request against the binary to return the rdf:types added to the description? Maybe so, if we were returning all rdf:types as described in <a href="https://jira.duraspace.org/browse/FCREPO-2968" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2968</a></p></div></div>
+<div class="comment" id="comment-20597"><div class="by">Ben Pennell, 2018-12-17 20:20 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1491" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1491</a></p></div></div>
+<div class="comment" id="comment-20598"><div class="by">Andrew Woods, 2018-12-18 18:11 UTC</div><div class="text"><p>As a follow-on note, this PR will need to be cherry-picked onto the 5.x-maintenance branch, once that branch is created.</p></div></div>
+<div class="comment" id="comment-20600"><div class="by">Danny Bernstein, 2018-12-19 17:31 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/1f85a2f267471093a7e8e8972dfaf4042bb1a320" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1f85a2f267471093a7e8e8972dfaf4042bb1a320</a></p></div></div>
+<div class="comment" id="comment-20602"><div class="by">Andrew Woods, 2018-12-20 21:36 UTC</div><div class="text"><p>Merge to master above.<br/>
+Merge to 5.x-maintenance: <a href="https://github.com/fcrepo4/fcrepo4/commit/dd32e65a1e4d1f4fac2610a2262b8ef49be0a38a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/dd32e65a1e4d1f4fac2610a2262b8ef49be0a38a</a></p></div></div>
+<p><a href="data/FCREPO-2969.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

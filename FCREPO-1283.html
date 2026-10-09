@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1283 Role-based authorization delegate allows user with only reader permission to PATCH</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1283</span> Role-based authorization delegate allows user with only reader permission to PATCH</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-01-13 15:56 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-02-25 00:26 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1374.html">FCREPO-1374</a> Upgrade Modeshape - 4.2.0.Final</td></tr></table>
+<h2>Description</h2>
+<p>On a Fedora 4 instance configured to use the role-based authorization delegate, I have added an fcr:accessroles ACL to the collection /bulk13<br/>
+that sets up "testuser" with just read-only access:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>{ "testuser": [ "reader" ] }
+</pre>
+</div></div>
+
+<p>Everything appears fine when I attempt to modify a container resource<br/>
+under /bulk13 with PUT or POST; the PUT is rejected with a 409 and error<br/>
+messages referring to insufficient permissions to modify the triples, and<br/>
+the POST is rejected with a 403.</p>
+
+<p>However, when I send a PATCH request with a SPARQL update query, it<br/>
+succeeds (returns 204, and the resource gets updated). For example, this<br/>
+command will add a triple with the predicate dc:title and the object<br/>
+"foobar 2":</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -X PATCH
+http://localhost:8080/rest/bulk13/6c/16/04/6d/6c16046d-3c21-4a21-b866-febdf
+cb8a61d -H 'Content-Type: application/sparql-update' -d'INSERT { &lt;&gt;
+&lt;http://purl.org/dc/elements/1.1/title&gt; "foobar 2". } WHERE {}' -u
+testuser:XXXXXX -i
+</pre>
+</div></div>
+<p>Yields:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>HTTP/1.1 204 No Content
+ETag: "ad1d4b9ed567a9bbd470de712e6c71765345d0c5"
+Last-Modified: Tue, 13 Jan 2015 14:34:07 GMT
+Server: Jetty(8.1.11.v20130520)
+</pre>
+</div></div>
+
+<p>This is incorrect behavior, since testuser should not be able to modify<br/>
+any resources under /bulk13, per the fcr:accessroles configuration.</p>
+
+<p>Checking the effective access roles using an admin user, this is what I get:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl 'http://localhost:8080/rest/bulk13/6c/16/04/6d/6c16046d-3c21-4a21-b866-febdfcb8a61d/fcr:accessroles?effective' -u fedoraAdmin:XXXX -i
+</pre>
+</div></div>
+<p>Yields:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre></pre>
+</div></div>
+<p>HTTP/1.1 200 OK<br/>
+Content-Length: 23<br/>
+Content-Type: application/json<br/>
+Server: Jetty(8.1.11.v20130520)</p>
+
+{"testuser":["reader"]}
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre></pre>
+</div></div>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-13254"><div class="by">Osman Din, 2015-01-29 19:13 UTC</div><div class="text"><p>I set up F4 and issued the calls along the lines mentioned. But Fedora 4 delegates, it is my understanding, node authorization operations to ModeShape, and ModeShape does not check permissions when it's updating properties, only when it's creating them (see AbstractJcrNode etc for implementation details). That's why if you try to PATCH with a reader role, your first request should fail (I say "should" because it definitely fails for me with the F4/Tomcat versions I have). ModeShape probably has performance implications or practibility considerations in mind (or perhaps this specific form of change authorization is not required by JCR). With respect to existing F4 code (especifically, modules auth, kernel, auth-rabcl) the credentials are maintained through out the session (so it's not an explicit lapse). If I have overlooked something, please feel free to point it out.</p></div></div>
+<div class="comment" id="comment-13255"><div class="by">Andrew Woods, 2015-01-29 19:55 UTC</div><div class="text"><p>Where do you see in AbstractJcrNode that authorization is enforced on property creation?</p></div></div>
+<div class="comment" id="comment-13261"><div class="by">Osman Din, 2015-01-29 21:16 UTC</div><div class="text"><p>I found references in the following:</p>
+
+<p><a href="https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/AbstractJcrNode.java#L1670" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/AbstractJcrNode.java#L1670</a></p>
+
+<p>No corresponding check in, it seems:</p>
+
+<p><a href="https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/AbstractJcrProperty.java" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/java/org/modeshape/jcr/AbstractJcrProperty.java</a></p>
+
+<p>The corresponding F4 calls are made in NodePropertiesTools#appendOrReplaceNodeProperty:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/NodePropertiesTools.java#L64" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/utils/NodePropertiesTools.java#L64</a></p></div></div>
+<div class="comment" id="comment-13340"><div class="by">Andrew Woods, 2015-02-05 19:05 UTC</div><div class="text"><p>Osman Din, this certainly looks like an issue at the ModeShape level. Please make a post to the ModeShape forum asking if this is expected behavior.<br/>
+<a href="https://developer.jboss.org/en/modeshape" class="external-link" rel="nofollow noreferrer">https://developer.jboss.org/en/modeshape</a></p>
+
+<p>If it is not, please be prepared to offer an integration test.</p></div></div>
+<div class="comment" id="comment-13384"><div class="by">Osman Din, 2015-02-11 15:18 UTC</div><div class="text"><p>After discussing the issue on the forum, I created a JIRA ticket for Modeshape:</p>
+
+<p><a href="https://issues.jboss.org/browse/MODE-2428" class="external-link" rel="nofollow noreferrer">https://issues.jboss.org/browse/MODE-2428</a></p></div></div>
+<div class="comment" id="comment-13386"><div class="by">Andrew Woods, 2015-02-11 15:35 UTC</div><div class="text"><p>Thanks, Osman Din. Can you please include a link here to the ModeShape forum thread?</p></div></div>
+<div class="comment" id="comment-13388"><div class="by">Osman Din, 2015-02-11 16:01 UTC</div><div class="text"><p>Discussion: <a href="https://developer.jboss.org/thread/252234" class="external-link" rel="nofollow noreferrer">https://developer.jboss.org/thread/252234</a></p></div></div>
+<div class="comment" id="comment-13411"><div class="by">Osman Din, 2015-02-16 15:56 UTC</div><div class="text"><p>ModeShape has made the necessary change. </p>
+
+<p><a href="https://github.com/ModeShape/modeshape/commit/4f2ea5b7b9c88b00e7c4607cae02acd435fcaf19" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/commit/4f2ea5b7b9c88b00e7c4607cae02acd435fcaf19</a></p>
+</div></div>
+<div class="comment" id="comment-13412"><div class="by">Andrew Woods, 2015-02-16 16:29 UTC</div><div class="text"><p>The underlying modeshape issue has been merged with their master and should be included in modeshape-4.2.<br/>
+This ticket should remain "in review" until modeshape-4.2 has been released and verified.</p></div></div>
+<div class="comment" id="comment-13485"><div class="by">Osman Din, 2015-02-18 20:45 UTC</div><div class="text"><p>From the following e-mail it looks like ModeShape 4.2 has been released:</p>
+
+<p>Hello Osman,</p>
+
+<p>Thank you for participating in the ModeShape community. We've recently <br/>
+released ModeShape 4.2.0.Final, and you've played an important part in <br/>
+this release by helping identify and solve the following issues:</p>
+
+<ul class="alternate" type="square">
+	<li>MODE-2428 <span class="error">&#91;1&#93;</span> - ACLs not checked when updating properties</li>
+</ul>
+
+
+<p>For more details about ModeShape and the new 4.2.0.Final release, please <br/>
+see the project website at <a href="https://urldefense.proofpoint.com/v2/url?u=http-3A__jboss.org_modeshape&amp;d=AwICaQ&amp;c=-dg2m7zWuuDZ0MUcV7Sdqw&amp;r=ogdRab9RQ1FK40y38qJHfVMjXs1HSR-OvLRD74IMzz8&amp;m=SzTRCWXOvncrjdUGXpK6ssBk60fUh5r0hkbCY5WPohY&amp;s=QeZclZcTQkVxHNCeOd0tVAgsKzlVIx6wZDdJrwzXbBA&amp;e=" class="external-link" rel="nofollow noreferrer">https://urldefense.proofpoint.com/v2/url?u=http-3A__jboss.org_modeshape&amp;d=AwICaQ&amp;c=-dg2m7zWuuDZ0MUcV7Sdqw&amp;r=ogdRab9RQ1FK40y38qJHfVMjXs1HSR-OvLRD74IMzz8&amp;m=SzTRCWXOvncrjdUGXpK6ssBk60fUh5r0hkbCY5WPohY&amp;s=QeZclZcTQkVxHNCeOd0tVAgsKzlVIx6wZDdJrwzXbBA&amp;e=</a> .</p>
+
+<p>We greatly appreciate your contribution as it helped us make ModeShape <br/>
+better for you as well as for other users. Please keep up the good work, <br/>
+and we encourage you to continue to give us feedback and play an active <br/>
+role in the ModeShape community.</p>
+
+<p>Thank you very much,<br/>
+--The ModeShape team</p></div></div>
+<div class="comment" id="comment-13557"><div class="by">Andrew Woods, 2015-02-25 00:26 UTC</div><div class="text"><p>Resolved by documented ModeShape ticket.</p>
+
+<p>The following ticket is a follow-on to return a more accurate status code:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1379" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1379</a></p></div></div>
+<p><a href="data/FCREPO-1283.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

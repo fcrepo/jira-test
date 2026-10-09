@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-190 Inline XML Canonicalization (c14n) for SIZE and CHECKSUM</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-190</span> Inline XML Canonicalization (c14n) for SIZE and CHECKSUM</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2008-02-12 16:16 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Is related to</th><td><a href="FCREPO-64.html">FCREPO-64</a> Datastream SIZE attribute not fully implemented</td></tr><tr><th>Is related to</th><td><a href="FCREPO-725.html">FCREPO-725</a> Provide dynamic generation of datastream size for E and R datastreams.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-796.html">FCREPO-796</a> Fedora objects are not valid xml when using inline datastreams</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1062.html">FCREPO-1062</a> invalid XML datastream checksums after migration from inline (X) to managed (M) via migration script</td></tr></table>
+<h2>Description</h2>
+<p>The current pseudo-canonicalization of inline XML (for checksum computation) is non-standard.  The w3c has published c14n which defines a canonicalization, and Fedora should use this for:</p>
+
+<p>1) Computation of the checksum<br/>
+2) Computation of the SIZE attribute </p>
+
+<p>This behavior should also be documented in the system docs.</p>
+
+<p>Note that this also applies to METS.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-10396"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1892010<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1892010" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1892010</a></p></div></div>
+<div class="comment" id="comment-11415"><div class="by">eddie, 2010-06-06 23:24 UTC</div><div class="text"><p>While we're fixing 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-696" >
+                <a href="FCREPO-696.html" class="jira-issue-macro-key issue-link"  title="Adding datastream with managed content throws Exception when providing a checksum" >
+            
+            FCREPO-696
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, it'd be nice to finally wrap this one up too. Checksums for inline XML datastreams are pretty well useless in the current state since you need to deduce Fedora's internal, undocumented, non-standard (any more adjectives?) canonicalization.</p>
+
+<p>There are a few choices for c14n: inclusive and exclusive, both with or without comments. For out purposes, I believe we'd want inclusive w/ comments. If someone can lend a hand identifying various places in the code c14n needs to happen (tests would be bonus), I can provide the implementation.</p></div></div>
+<div class="comment" id="comment-11753"><div class="by">Chris Wilper, 2011-01-05 19:10 UTC</div><div class="text"><p>I've recently had some experience with Axiom, which looks like it'd be a good library to use for this (it's been recently active, is on central, and provides the 4 standard types of canonicalization: <a href="http://svn.apache.org/viewvc/webservices/commons/tags/axiom/1.2.10/modules/axiom-c14n/src/main/java/org/apache/axiom/c14n/impl/" class="external-link" rel="nofollow noreferrer">http://svn.apache.org/viewvc/webservices/commons/tags/axiom/1.2.10/modules/axiom-c14n/src/main/java/org/apache/axiom/c14n/impl/</a> )</p>
+
+<p>I would favor exclusive + omitting comments.  People are already over-using inline XML (straining memory), so I think if people want comments in the XML they keep in Fedora, steering them toward managed content is a better approach.  Also, retaining comments would require additional code in the FOXML and METS deserializers &#8211; currently, they drop comments as a side effect of parsing.</p></div></div>
+<div class="comment" id="comment-11755"><div class="by">Chris Wilper, 2011-01-07 12:13 UTC</div><div class="text"><p>Eddie, I noticed you were using Apache Santuario (xmlsec) in fedora-client, and looked into it a bit.  I actually think Santuario is a better choice because it's smaller (doesn't bring in a bunch of unneeded dependencies like axiom-c14n does) and provides a c14n11 impl (something I had previously not known about).  I found this comparison of the different c14n specs at w3c helpful in thinking about it <a href="http://www.w3.org/standards/techs/xmlc14n" class="external-link" rel="nofollow noreferrer">http://www.w3.org/standards/techs/xmlc14n</a></p>
+
+<p>I now think c14n11 with comments omitted is the best option for Fedora's Inline XML.</p></div></div>
+<div class="comment" id="comment-11756"><div class="by">Chris Wilper, 2011-01-07 13:26 UTC</div><div class="text"><p>Fyi, it turns out that some inline XML that Fedora currently accepts cannot be canonicalized.  The case I've noticed so far is when an XML namespace is declared and the "URI" is given as relative.  For example:</p>
+
+<p>&lt;myns:doc xmlns:myns="a-relative-uri"/&gt;</p>
+
+<p>I've tried this both with Axiom and Santuario, with c14n and c14n11.  Both fail with: Element myns:doc has a relative namespace: myns="a-relative-uri"</p>
+
+<p>Note that this is a well-formed XML document when parsing doesn't care about namespace, but c14n needs namespace declarations to be absolute.</p>
+
+<p>There may be other kinds of inline XML that Fedora accepts today which cannot be canonicalized.  I just noticed this one because the case occurs with a lot of the demo Service Deployment objects' WSDL datastreams.  (&lt;wsdl:definitions xmlns:this="bmech" ..&gt;..)  This should of course be addressed in these demo objects for future releases, but also need to decide what to do about other such objects that people no doubt have lying around in their repositories.</p>
+
+<p>A couple options I can think of include:</p>
+
+<p>1) Start rejecting non-canonicalizable inlineXML as soon as this feature is implemented.  This would require we come up with a way for people to repair old sdeps and any other non-c14n-able FOXML in their repository.</p>
+
+<p>2) Add a new attribute to stored FOXML, indicating that the inline XML is canonicalized (and will be provided as such on every request to get it).  (e.g. &lt;xmlContent C14N="c14n11"&gt;...&lt;/xmlContent&gt;.  This would require a new release of the FOXML schema.</p></div></div>
+<div class="comment" id="comment-12917"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-190.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

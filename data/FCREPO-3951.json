@@ -1,0 +1,1517 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "I was very easily able to replicate the transaction database entries persisting through restarts (and never going away), but I’m having a hard to replicating the transactions not rolling back after timing out.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "I have been testing with ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "mvn jetty:run",
+          "type": "text"
+         },
+         {
+          "text": " and postgres running in docker using the instructions from:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "attrs": {
+           "url": "https://wiki.lyrasis.org/display/FEDORA6x/Database+Cache#DatabaseCache-PostgreSQL.2"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": " ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Its possible I replicated this at some point, but I think it might be getting confounded by weirdness with the expiration times. The ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "Atomic-Expires",
+          "type": "text"
+         },
+         {
+          "text": " header when doing a GET against a TX is returning values that don’t seem to match my config. Like I configured it to expire in 60 seconds, and it seemed to take about 3 minutes, and then i configured 2 minutes and the ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "Atomic-Expires",
+          "type": "text"
+         },
+         {
+          "text": " was about 5-6 minutes in the future, and the database entries finally cleared about 7-8 minutes after the last request made to the tx. I also removed the config so that it’d default to 3 minutes, and it took about 7 minutes to expire.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "I wanted to note that I also don’t see any entries in the ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "containment_transactions",
+          "type": "text"
+         },
+         {
+          "text": ", ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "search_resource_rdf_type_transactions",
+          "type": "text"
+         },
+         {
+          "text": ", or ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "simple_search_transactions",
+          "type": "text"
+         },
+         {
+          "text": " tables if I just create a transaction and don’t make any changes. As far as I can tell there isn’t a representation of the transaction on its own. So it would make sense that we only see stuff left over after making changes in the TX. Unless there is some sort of postgres internal transactions table you were referring to?",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Just recording my steps here:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Started fcrepo with:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "MAVEN_OPTS='-Dfcrepo.config.file=/path/to/test-config.properties' mvn jetty:run -pl fcrepo-webapp ",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "where the properties file configures fedora to use postgres based the instructions on that page. I also tried various transaction timeout values.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "I then started a transaction and used it to create a container and check the expiration time.",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "curl -i -X POST \"http://localhost:8080/rest/fcr:tx\" -ufedoraAdmin:fedoraAdmin\ncurl -H\"Atomic-ID: http://localhost:8080/rest/fcr:tx/9e0bfafc-94a1-4178-976c-27998f279937\" -X POST \"http://localhost:8080/rest/test_container\" -H\"Slug: newone\" -ufedoraAdmin:fedoraAdmin\ncurl -i -X GET \"http://localhost:8080/rest/fcr:tx/9e0bfafc-94a1-4178-976c-27998f279937\" -ufedoraAdmin:fedoraAdmin",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "Connected to the database and queried the transaction tables:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "fcrepo=# select * from containment_transactions;\n             fedora_id             |           parent           |     start_time      | end_time |            transa\nction_id            | operation \n-----------------------------------+----------------------------+---------------------+----------+------------------\n--------------------+-----------\n info:fedora/test_container/newone | info:fedora/test_container | 2024-09-06 11:34:34 |          | 2ea259e5-c743-487\n3-b1aa-dfb1a80d5105 | add\n(1 row)\n\nfcrepo=# select * from simple_search_transactions;\n id |             fedora_id             |         created         |        modified         | content_size | mime_ty\npe |            transaction_id            | operation \n----+-----------------------------------+-------------------------+-------------------------+--------------+--------\n---+--------------------------------------+-----------\n  3 | info:fedora/test_container/newone | 2024-09-06 11:34:33.991 | 2024-09-06 11:34:33.991 |            0 |        \n   | 2ea259e5-c743-4873-b1aa-dfb1a80d5105 | add\n(1 row)",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "I then waited for the transaction to timeout. ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "As described above, the entries seem to get cleared if I wait until after the Atomic Expires value returned in a GET request to the TX URI. But the amount of time before it expires seems a lot longer than the time i configured.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "I tried methodically trying various conditions, but never ended up with transaction entries that stuck around forever except when I restarted fedora with transactions still live. Recording the approaches tried:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "attrs": {
+           "order": 1
+          },
+          "content": [
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Starting TX, creating a new container, then waiting 3 minutes (have it configured to 60s but it seems to be taking 3 minutes)",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back and clears DB",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "After letting a tx roll back without restarting anything, start tx, create new container with same name, wait 3 minutes",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back and clears DB",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Without restarting, start tx, make GET requests against TX to check exp, create container, make GET requests against TX",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back after the updated tx exp time",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Create a container outside tx, make a tx, create a container in the tx (not in the outside container)",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back after the tx exp time",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Make a tx, create a container in a basic container that existed before the tx",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back after the tx exp time",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Make a tx, create a container in an existing basic container, manually roll back, make another tx, create container again",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back after about 2 minutes",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Make a tx, create a container in an existing basic container, shut down fedora, start fedora back up",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "tx entries still in db",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               },
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "GET for the tx returns 404, DELETE to tx returns 404",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               },
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "7b. With tx table containing stale entry from before restart, make a tx, create a container",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 },
+                 {
+                  "content": [
+                   {
+                    "content": [
+                     {
+                      "content": [
+                       {
+                        "text": "rolls back, and cleans up the new tx entries (the old ones stay)",
+                        "type": "text"
+                       }
+                      ],
+                      "type": "paragraph"
+                     }
+                    ],
+                    "type": "listItem"
+                   }
+                  ],
+                  "type": "bulletList"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Restart postgres and fcrepo, make a tx, create a container",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back, cleans up the new tx entries",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Restart fcrepo (but not postgres), make a tx, create a container",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back, cleans up the new tx entries",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Change fcrepo timeout to 2 minutes, make a tx, create a container, GET request to check exp time",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "rolls back, cleans up tx entries after about 7-8 minutes",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "2 min timeout, Make tx, create container, use GET to check Atomic Expires and compare to DB",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "Atomic-Expires 19:01:01 GMT, start time in DB 14:55:16, so almost 6 minutes",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               },
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "after 2 minutes, GET to tx still says its active ",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               },
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "at :01:01 mark, GET returns 410 and the db entries are gone",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           },
+           {
+            "content": [
+             {
+              "content": [
+               {
+                "text": "Remove timeout config, make tx, create container",
+                "type": "text"
+               }
+              ],
+              "type": "paragraph"
+             },
+             {
+              "content": [
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "Atomic expires 19:13:04 GMT, start time in DB 15:04:25, so close to 7 minutes",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               },
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "GET still active after 3mins",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               },
+               {
+                "content": [
+                 {
+                  "content": [
+                   {
+                    "text": "Reports 410 and db entries removed after the atomic expires value",
+                    "type": "text"
+                   }
+                  ],
+                  "type": "paragraph"
+                 }
+                ],
+                "type": "listItem"
+               }
+              ],
+              "type": "bulletList"
+             }
+            ],
+            "type": "listItem"
+           }
+          ],
+          "type": "orderedList"
+         }
+        ],
+        "type": "blockquote"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-09-06T16:22:40.951-0300",
+     "id": "23219",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23219",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2024-09-06T16:22:40.951-0300"
+    },
+    {
+     "author": {
+      "accountId": "70121:bc4e5839-97af-495c-9ccd-ae12309a105a",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png"
+      },
+      "displayName": "David Novák",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=70121%3Abc4e5839-97af-495c-9ccd-ae12309a105a",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "The problem with transactions after reboot is in another issue: ",
+          "type": "text"
+         },
+         {
+          "attrs": {
+           "url": "https://fedora-repository.atlassian.net/browse/FCREPO-3952?atlOrigin=eyJpIjoiM2YxYTUxZjczZTRlNDA5Mjk1NTJjNDU4ZmY5NGEwZDIiLCJwIjoiaiJ9"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": " ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "As for remaining transactions without restart, in our case the transaction gets stuck permanently and no rollback occurs at all. We have left the default value in the configuration. Also, I'll just explicitly point out that we're working with version 6.4 - if you were testing on 6.5, it might be different.",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "As for opening the transaction without further changes, I honestly don't know how it is represented. But I have tested its closure by checking that if I waited more than 3 min (approximately) after opening a transaction to send additional content, Fedora returned the information that the transaction did not exist.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "If it would help, I can send some more information about our instance or the procedure, but there is nothing particularly special about them. Transactions remain stuck sometimes for a single action, sometimes for a series of actions - it doesn't seem to matter.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-09-09T04:59:52.449-0300",
+     "id": "23251",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23251",
+     "updateAuthor": {
+      "accountId": "70121:bc4e5839-97af-495c-9ccd-ae12309a105a",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png"
+      },
+      "displayName": "David Novák",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=70121%3Abc4e5839-97af-495c-9ccd-ae12309a105a",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2024-09-09T04:59:52.449-0300"
+    },
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Hopefully this PR should either help with or resolve the issue:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "attrs": {
+           "url": "https://github.com/fcrepo/fcrepo/pull/2093"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": " ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "The expiration times of transactions were having the timeout period added to them every request rather than being set to the now+timeout. The result was that if you made a lot of requests in a transaction, each one would add 3 minutes to the expiration time. For example, making 100 requests (read or write) gives you an expiration time 300min after the transaction was started. So it could effectively produce transactions that never seem to timeout.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-09-23T16:05:52.461-0300",
+     "id": "23482",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23482",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2024-09-23T16:05:52.461-0300"
+    },
+    {
+     "author": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Resolved with ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo/fcrepo/commit/dc4040691a3540ba8d997cf66a798b6ad3ac96bf"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo/fcrepo/commit/dc4040691a3540ba8d997cf66a798b6ad3ac96bf",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-09-27T16:47:38.595-0300",
+     "id": "23548",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23548",
+     "updateAuthor": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2024-09-27T16:47:38.595-0300"
+    }
+   ],
+   "maxResults": 4,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment",
+   "startAt": 0,
+   "total": 4
+  },
+  "components": [],
+  "created": "2024-07-26T19:58:23.374-0300",
+  "creator": {
+   "accountId": "70121:bc4e5839-97af-495c-9ccd-ae12309a105a",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png"
+   },
+   "displayName": "David Novák",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=70121%3Abc4e5839-97af-495c-9ccd-ae12309a105a",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|103d5k:",
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "2024-09-06T16:22:40.951-0300",
+  "customfield_10025": "1_*:*_1_*:*_2509_*|*_3_*:*_1_*:*_7119164_*|*_10002_*:*_1_*:*_0_*|*_10003_*:*_1_*:*_5076538443",
+  "customfield_10026": null,
+  "customfield_10029": {
+   "accountId": "6089a594bb0b0500707c78d8",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/16",
+    "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/24",
+    "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/32",
+    "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/48"
+   },
+   "displayName": "Dan Field",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a594bb0b0500707c78d8",
+   "timeZone": "Europe/London"
+  },
+  "customfield_10030": [
+   {
+    "id": "10024",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/customFieldOption/10024",
+    "value": "Services: Transactions"
+   }
+  ],
+  "customfield_10037": null,
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "During testing, we encounter the problem that the automatic transaction rollback (",
+       "type": "text"
+      },
+      {
+       "attrs": {
+        "url": "https://wiki.lyrasis.org/display/FEDORA6x/Transactions"
+       },
+       "type": "inlineCard"
+      },
+      {
+       "text": ") is not applied if at least one reuqest has been sent to the transaction. In this case, the transaction remains uncommitted until the manual rollback is performed. If transaction is empty it is correctly rolled back after the period set in the config file.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": null,
+  "fixVersions": [],
+  "issuelinks": [],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10303,
+   "description": "A problem or error.",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+   "id": "10004",
+   "name": "Bug",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10004",
+   "subtask": false
+  },
+  "labels": [],
+  "lastViewed": null,
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/medium_new.svg",
+   "id": "3",
+   "name": "Medium",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/3"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "70121:bc4e5839-97af-495c-9ccd-ae12309a105a",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png"
+   },
+   "displayName": "David Novák",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=70121%3Abc4e5839-97af-495c-9ccd-ae12309a105a",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "A fix for this issue is checked into the tree and tested.",
+   "id": "10004",
+   "name": "Fixed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10004"
+  },
+  "resolutiondate": "2024-09-27T16:47:38.533-0300",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": "2024-09-27T16:47:38.698-0300",
+  "subtasks": [],
+  "summary": "Transactions not rolled back after timeout if there are existing requests",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2024-09-27T16:47:38.919-0300",
+  "versions": [
+   {
+    "archived": false,
+    "description": "",
+    "id": "10173",
+    "name": "Fedora 6.4.0",
+    "releaseDate": "2023-03-20",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10173"
+   }
+  ],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-3951/votes",
+   "votes": 0
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-3951/watchers",
+   "watchCount": 3
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "13858",
+ "key": "FCREPO-3951",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>I was very easily able to replicate the transaction database entries persisting through restarts (and never going away), but I’m having a hard to replicating the transactions not rolling back after timing out.</p>\n\n<p>I have been testing with <tt>mvn jetty:run</tt> and postgres running in docker using the instructions from:</p>\n\n<p><a href=\"https://wiki.lyrasis.org/display/FEDORA6x/Database+Cache#DatabaseCache-PostgreSQL.2\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://wiki.lyrasis.org/display/FEDORA6x/Database+Cache#DatabaseCache-PostgreSQL.2</a> </p>\n\n<p>Its possible I replicated this at some point, but I think it might be getting confounded by weirdness with the expiration times. The <tt>Atomic-Expires</tt> header when doing a GET against a TX is returning values that don’t seem to match my config. Like I configured it to expire in 60 seconds, and it seemed to take about 3 minutes, and then i configured 2 minutes and the <tt>Atomic-Expires</tt> was about 5-6 minutes in the future, and the database entries finally cleared about 7-8 minutes after the last request made to the tx. I also removed the config so that it’d default to 3 minutes, and it took about 7 minutes to expire.</p>\n\n<p>I wanted to note that I also don’t see any entries in the <tt>containment_transactions</tt>, <tt>search_resource_rdf_type_transactions</tt>, or <tt>simple_search_transactions</tt> tables if I just create a transaction and don’t make any changes. As far as I can tell there isn’t a representation of the transaction on its own. So it would make sense that we only see stuff left over after making changes in the TX. Unless there is some sort of postgres internal transactions table you were referring to?</p>\n\n<p>Just recording my steps here:</p>\n\n<p>Started fcrepo with:</p>\n\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre>MAVEN_OPTS='-Dfcrepo.config.file=/path/to/test-config.properties' mvn jetty:run -pl fcrepo-webapp </pre>\n</div></div>\n\n<p>where the properties file configures fedora to use postgres based the instructions on that page. I also tried various transaction timeout values.</p>\n\n<p>I then started a transaction and used it to create a container and check the expiration time.</p>\n\n\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre>curl -i -X POST \"http://localhost:8080/rest/fcr:tx\" -ufedoraAdmin:fedoraAdmin\ncurl -H\"Atomic-ID: http://localhost:8080/rest/fcr:tx/9e0bfafc-94a1-4178-976c-27998f279937\" -X POST \"http://localhost:8080/rest/test_container\" -H\"Slug: newone\" -ufedoraAdmin:fedoraAdmin\ncurl -i -X GET \"http://localhost:8080/rest/fcr:tx/9e0bfafc-94a1-4178-976c-27998f279937\" -ufedoraAdmin:fedoraAdmin</pre>\n</div></div>\n\n<p>Connected to the database and queried the transaction tables:</p>\n\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre>fcrepo=# select * from containment_transactions;\n             fedora_id             |           parent           |     start_time      | end_time |            transa\nction_id            | operation \n-----------------------------------+----------------------------+---------------------+----------+------------------\n--------------------+-----------\n info:fedora/test_container/newone | info:fedora/test_container | 2024-09-06 11:34:34 |          | 2ea259e5-c743-487\n3-b1aa-dfb1a80d5105 | add\n(1 row)\n\nfcrepo=# select * from simple_search_transactions;\n id |             fedora_id             |         created         |        modified         | content_size | mime_ty\npe |            transaction_id            | operation \n----+-----------------------------------+-------------------------+-------------------------+--------------+--------\n---+--------------------------------------+-----------\n  3 | info:fedora/test_container/newone | 2024-09-06 11:34:33.991 | 2024-09-06 11:34:33.991 |            0 |        \n   | 2ea259e5-c743-4873-b1aa-dfb1a80d5105 | add\n(1 row)</pre>\n</div></div>\n\n<p>I then waited for the transaction to timeout. </p>\n\n<p>As described above, the entries seem to get cleared if I wait until after the Atomic Expires value returned in a GET request to the TX URI. But the amount of time before it expires seems a lot longer than the time i configured.</p>\n\n<p>I tried methodically trying various conditions, but never ended up with transaction entries that stuck around forever except when I restarted fedora with transactions still live. Recording the approaches tried:</p>\n\n<blockquote><ol>\n\t<li>Starting TX, creating a new container, then waiting 3 minutes (have it configured to 60s but it seems to be taking 3 minutes)\n\t<ul>\n\t\t<li>rolls back and clears DB</li>\n\t</ul>\n\t</li>\n\t<li>After letting a tx roll back without restarting anything, start tx, create new container with same name, wait 3 minutes\n\t<ul>\n\t\t<li>rolls back and clears DB</li>\n\t</ul>\n\t</li>\n\t<li>Without restarting, start tx, make GET requests against TX to check exp, create container, make GET requests against TX\n\t<ul>\n\t\t<li>rolls back after the updated tx exp time</li>\n\t</ul>\n\t</li>\n\t<li>Create a container outside tx, make a tx, create a container in the tx (not in the outside container)\n\t<ul>\n\t\t<li>rolls back after the tx exp time</li>\n\t</ul>\n\t</li>\n\t<li>Make a tx, create a container in a basic container that existed before the tx\n\t<ul>\n\t\t<li>rolls back after the tx exp time</li>\n\t</ul>\n\t</li>\n\t<li>Make a tx, create a container in an existing basic container, manually roll back, make another tx, create container again\n\t<ul>\n\t\t<li>rolls back after about 2 minutes</li>\n\t</ul>\n\t</li>\n\t<li>Make a tx, create a container in an existing basic container, shut down fedora, start fedora back up\n\t<ul>\n\t\t<li>tx entries still in db</li>\n\t\t<li>GET for the tx returns 404, DELETE to tx returns 404</li>\n\t\t<li>7b. With tx table containing stale entry from before restart, make a tx, create a container\n\t\t<ul>\n\t\t\t<li>rolls back, and cleans up the new tx entries (the old ones stay)</li>\n\t\t</ul>\n\t\t</li>\n\t</ul>\n\t</li>\n\t<li>Restart postgres and fcrepo, make a tx, create a container\n\t<ul>\n\t\t<li>rolls back, cleans up the new tx entries</li>\n\t</ul>\n\t</li>\n\t<li>Restart fcrepo (but not postgres), make a tx, create a container\n\t<ul>\n\t\t<li>rolls back, cleans up the new tx entries</li>\n\t</ul>\n\t</li>\n\t<li>Change fcrepo timeout to 2 minutes, make a tx, create a container, GET request to check exp time\n\t<ul>\n\t\t<li>rolls back, cleans up tx entries after about 7-8 minutes</li>\n\t</ul>\n\t</li>\n\t<li>2 min timeout, Make tx, create container, use GET to check Atomic Expires and compare to DB\n\t<ul>\n\t\t<li>Atomic-Expires 19:01:01 GMT, start time in DB 14:55:16, so almost 6 minutes</li>\n\t\t<li>after 2 minutes, GET to tx still says its active</li>\n\t\t<li>at :01:01 mark, GET returns 410 and the db entries are gone</li>\n\t</ul>\n\t</li>\n\t<li>Remove timeout config, make tx, create container\n\t<ul>\n\t\t<li>Atomic expires 19:13:04 GMT, start time in DB 15:04:25, so close to 7 minutes</li>\n\t\t<li>GET still active after 3mins</li>\n\t\t<li>Reports 410 and db entries removed after the atomic expires value</li>\n\t</ul>\n\t</li>\n</ol>\n</blockquote>",
+     "created": "06/Sep/24 4:22 PM",
+     "id": "23219",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23219",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "06/Sep/24 4:22 PM"
+    },
+    {
+     "author": {
+      "accountId": "70121:bc4e5839-97af-495c-9ccd-ae12309a105a",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png"
+      },
+      "displayName": "David Novák",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=70121%3Abc4e5839-97af-495c-9ccd-ae12309a105a",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>The problem with transactions after reboot is in another issue: <a href=\"https://fedora-repository.atlassian.net/browse/FCREPO-3952?atlOrigin=eyJpIjoiM2YxYTUxZjczZTRlNDA5Mjk1NTJjNDU4ZmY5NGEwZDIiLCJwIjoiaiJ9\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://fedora-repository.atlassian.net/browse/FCREPO-3952?atlOrigin=eyJpIjoiM2YxYTUxZjczZTRlNDA5Mjk1NTJjNDU4ZmY5NGEwZDIiLCJwIjoiaiJ9</a> </p>\n\n<p>As for remaining transactions without restart, in our case the transaction gets stuck permanently and no rollback occurs at all. We have left the default value in the configuration. Also, I'll just explicitly point out that we're working with version 6.4 - if you were testing on 6.5, it might be different.<br/>\nAs for opening the transaction without further changes, I honestly don't know how it is represented. But I have tested its closure by checking that if I waited more than 3 min (approximately) after opening a transaction to send additional content, Fedora returned the information that the transaction did not exist.</p>\n\n<p>If it would help, I can send some more information about our instance or the procedure, but there is nothing particularly special about them. Transactions remain stuck sometimes for a single action, sometimes for a series of actions - it doesn't seem to matter.</p>",
+     "created": "09/Sep/24 4:59 AM",
+     "id": "23251",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23251",
+     "updateAuthor": {
+      "accountId": "70121:bc4e5839-97af-495c-9ccd-ae12309a105a",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/f734d7c89d0700e7643b52d316dc0c67?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FDN-1.png"
+      },
+      "displayName": "David Novák",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=70121%3Abc4e5839-97af-495c-9ccd-ae12309a105a",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "09/Sep/24 4:59 AM"
+    },
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Hopefully this PR should either help with or resolve the issue:</p>\n\n<p><a href=\"https://github.com/fcrepo/fcrepo/pull/2093\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo/fcrepo/pull/2093</a> </p>\n\n<p>The expiration times of transactions were having the timeout period added to them every request rather than being set to the now+timeout. The result was that if you made a lot of requests in a transaction, each one would add 3 minutes to the expiration time. For example, making 100 requests (read or write) gives you an expiration time 300min after the transaction was started. So it could effectively produce transactions that never seem to timeout.</p>",
+     "created": "23/Sep/24 4:05 PM",
+     "id": "23482",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23482",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "23/Sep/24 4:05 PM"
+    },
+    {
+     "author": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Resolved with <a href=\"https://github.com/fcrepo/fcrepo/commit/dc4040691a3540ba8d997cf66a798b6ad3ac96bf\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo/fcrepo/commit/dc4040691a3540ba8d997cf66a798b6ad3ac96bf</a></p>",
+     "created": "27/Sep/24 4:47 PM",
+     "id": "23548",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment/23548",
+     "updateAuthor": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "27/Sep/24 4:47 PM"
+    }
+   ],
+   "maxResults": 4,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858/comment",
+   "startAt": 0,
+   "total": 4
+  },
+  "components": null,
+  "created": "26/Jul/24 7:58 PM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "06/Sep/24 4:22 PM",
+  "customfield_10025": null,
+  "customfield_10026": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p>During testing, we encounter the problem that the automatic transaction rollback (<a href=\"https://wiki.lyrasis.org/display/FEDORA6x/Transactions\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://wiki.lyrasis.org/display/FEDORA6x/Transactions</a>) is not applied if at least one reuqest has been sent to the transaction. In this case, the transaction remains uncommitted until the manual rollback is performed. If transaction is empty it is correctly rolled back after the period set in the config file.</p>",
+  "duedate": null,
+  "environment": "",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "27/Sep/24 4:47 PM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": "27/Sep/24 4:47 PM",
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "27/Sep/24 4:47 PM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13858"
+}

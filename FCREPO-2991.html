@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2991 Cannot create resources with most identifiers containing :&#x27;s</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2991</span> Cannot create resources with most identifiers containing :&#x27;s</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2019-03-28 15:37 UTC</td></tr><tr><th>Updated</th><td>2019-05-16 13:34 UTC</td></tr><tr><th>Resolved</th><td>2019-05-09 19:37 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.1.0</td></tr></table>
+<h2>Description</h2>
+<p>In Fedora 5 (as well as 4) when attempting to create a resource with a prefix containing ":", Fedora fails to create the resource if the prefix is not already known to the internal namespace registry. Including the prefix in the namespace prefix config file does not make a difference.</p>
+
+<p>This seems counter to the intent of Fedora 5 to no longer use the internal Fedora/modeshape namespace registry in client interactions. Ideally, you would be able to create resources with prefixes, so long as they were not reserved, such as "fcr:".</p>
+
+<p> </p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -XPOST http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/ -H<span class="code-quote">"Slug: abc:123"</span>
+</span>&lt; HTTP/1.1 400 Bad Request
+Prefix abc has not been registered
+</pre>
+</div></div>
+<p> </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20657"><div class="by">Jared Whiklo, 2019-04-04 16:18 UTC</div><div class="text"><p>Discussion at the Tech call was that this should be allowed.</p>
+
+<p>But I am wondering if this violates RFC-3986 as colon is a gen-delim reserved character?</p>
+
+<p><a href="https://tools.ietf.org/html/rfc3986#section-2.2" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc3986#section-2.2</a></p>
+
+<p>I am not positive it is not allowed, but my interpretation is that we should be encoding it.</p></div></div>
+<div class="comment" id="comment-20658"><div class="by">Jared Whiklo, 2019-04-04 16:20 UTC</div><div class="text"><p>I am realizing we do this for fcr:versions and fcr:acl already so I guess we just encode these into Modeshape and decode them when we pull it back out.</p></div></div>
+<div class="comment" id="comment-20659"><div class="by">Danny Bernstein, 2019-04-17 22:20 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1520" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1520</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20677"><div class="by">Peter Matthew Eichman, 2019-05-09 19:36 UTC</div><div class="text"><p>Merged: <a href="https://github.com/fcrepo4/fcrepo4/commit/42964d4978202cf44bb6c43c249af99dc68bfe20" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/42964d4978202cf44bb6c43c249af99dc68bfe20</a></p></div></div>
+<p><a href="data/FCREPO-2991.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

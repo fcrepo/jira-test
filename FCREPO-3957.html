@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3957 Range requests in OCFL java layer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3957</span> Range requests in OCFL java layer</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2024-09-12 16:32 UTC</td></tr><tr><th>Updated</th><td>2024-10-25 15:12 UTC</td></tr><tr><th>Resolved</th><td>2024-10-25 15:12 UTC</td></tr><tr><th>Fix versions</th><td>fcrepo 6.6.0</td></tr></table>
+<h2>Description</h2>
+<p>ocfl-java-client v2.2.1 supports range requests at the ocfl level. Once fcrepo us updated to this version, we should see if we can make use of this in fedora in order to only retrieve the parts of the file that a user is requesting, then they make a request with an HTTP Range header.</p>
+
+
+
+<p><a href="https://github.com/OCFL/ocfl-java/issues/118" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/OCFL/ocfl-java/issues/118</a> </p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-23746"><div class="by">Ben Pennell, 2024-10-23 21:40 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo-storage-ocfl/pull/61" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/pull/61</a> </p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/pull/2099" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2099</a> </p>
+
+<p>I’ve tried the PR with local filesystem binaries, and with fedora using s3 as its storage. There was a very significant performance improvement with s3 when dealing with a 100mb TIFF file and requesting the last 10 bytes of the file. There was no noticeable difference when requesting the first part of the file, or downloading the whole file of course:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># Against aws 100mb file, download whole thing
+time curl http://localhost:8080/rest/large_tiff -v -o /dev/null  -ufedoraAdmin:fedoraAdmin 
+
+100 96.2M  100 96.2M    0     0  12.4M      0  0:00:07  0:00:07 --:--:-- 14.2M
+curl http://localhost:8080/rest/large_tiff -v -o /dev/null   0.06s user 0.14s system 2% cpu 7.738 total
+
+# Without range updates, get last 10bytes
+time curl http://localhost:8080/rest/large_tiff -H"Range: bytes=100924970-100924980" -v -o /dev/null  -ufedoraAdmin:fedoraAdmin
+
+100    10  100    10    0     0      1      0  0:00:10  0:00:08  0:00:02     2
+curl http://localhost:8080/rest/large_tiff  -v -o /dev/null   0.01s user 0.01s system 0% cpu 8.058 total
+
+# WITH range updates, get last 10bytes
+time curl http://localhost:8080/rest/large_tiff -H"Range: bytes=100924970-100924980" -v -o /dev/null  -ufedoraAdmin:fedoraAdmin
+
+100    10  100    10    0     0     31      0 --:--:-- --:--:-- --:--:--    31
+curl http://localhost:8080/rest/large_tiff  -v -o /dev/null   0.01s user 0.01s system 4% cpu 0.333 total</pre>
+</div></div>
+
+<p>With local storage, the retrieval times are already very short on my personal laptop, but there is some difference when getting the last 10 bytes. Without these changes it took 0.108s, and with these changes it took 0.030s. Getting the first 10 bytes took around 0.030 either way.</p></div></div>
+<div class="comment" id="comment-23812"><div class="by">Dan Field, 2024-10-25 15:12 UTC</div><div class="text"><p>PRs merged </p></div></div>
+<p><a href="data/FCREPO-3957.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1167 Inclusion of &quot;datatype&quot; in addRelationship request causing fatal Tomcat error</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1167</span> Inclusion of &quot;datatype&quot; in addRelationship request causing fatal Tomcat error</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stuart Chalk</td></tr><tr><th>Created</th><td>2012-11-03 19:29 UTC</td></tr><tr><th>Updated</th><td>2012-11-16 01:19 UTC</td></tr><tr><th>Resolved</th><td>2012-11-16 00:58 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6</td></tr></table>
+<h2>Environment</h2>OSX 10.8.2
+<h2>Description</h2>
+<p>Including the datatype POST variable with an addRelationship request causes the following tomcat error.<br/>
+Are there URI definitions of the datatypes that exist somewhere?</p>
+
+<p>INFO 2012-11-03 09:31:54.303 <span class="error">&#91;http-8080-1&#93;</span> (DefaultManagement) Completed addRelationship(pid: sjrda:20, relationship: info:fedora/fedora-system:def/relations-external#hasPart, object: Testing, isLiteral: true, datatype: string)<br/>
+WARN 2012-11-03 09:31:54.305 <span class="error">&#91;http-8080-1&#93;</span> (PhaseInterceptorChain) Application </p>
+{http://www.springframework.org/schema/beans}
+<p>objectsService has thrown exception, unwinding now<br/>
+org.apache.cxf.interceptor.Fault: Not a valid (absolute) URI: string</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-12491"><div class="by">A. Soroka, 2012-11-15 21:16 UTC</div><div class="text"><p>Stuart--</p>
+
+<p>Two things:</p>
+
+<p>1) The error message as returned does seem to offer you a pointer in the right direction: indeed, datatype must be an URI, not a plain string.</p>
+
+<p>2) Do you really mean that this causes a fatal Tomcat error in the sense that the Tomcat process actually stops running? (That would be a very surprising occurrence.)</p></div></div>
+<div class="comment" id="comment-12492"><div class="by">Stuart Chalk, 2012-11-15 23:54 UTC</div><div class="text"><p>No, Tomcat does not have a fatal error - my mistake (is there a way I can fix that?).</p>
+
+<p>OK, I understand that I cant use the string 'string' as the entry for the datatype but then I don't know what I should put as a URI for the datatype.  There is no information on <a href="https://wiki.duraspace.org/display/FEDORA36/REST+API#RESTAPI-addRelationship" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA36/REST+API#RESTAPI-addRelationship</a> about the list of acceptable datatype values and/or what their URIs are.  So, I don't know the right way to indicate that the literal is a string.</p>
+
+<p>Stuart</p></div></div>
+<div class="comment" id="comment-12493"><div class="by">A. Soroka, 2012-11-16 00:57 UTC</div><div class="text"><p>Basically, it's the RDF notion of a datatype with which we're concerned:</p>
+
+<p><a href="http://www.w3.org/TR/rdf-primer/#typedliterals" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/rdf-primer/#typedliterals</a></p>
+
+<p>Remember, the relationships in a Fedora repository <em>are</em> RDF. Fedora has no special notion of its own, but it should make available the XML Schema built-in datatypes for convenient use, as per:</p>
+
+<p><a href="http://www.w3.org/TR/swbp-xsch-datatypes/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/swbp-xsch-datatypes/</a></p>
+
+<p>You'll want to look at:</p>
+
+<p><a href="http://www.w3.org/TR/xmlschema-2/#built-in-datatypes" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/xmlschema-2/#built-in-datatypes</a></p>
+
+<p>for a discussion of the XSD built-in types and what their URIs are. I <em>think</em> that Fedora by default allows the use of the prefix xs: for convenience, so you might try xs:string, but you might have to use the full unabbreviated URI <a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>.</p>
+
+<p>Let me know if that helps. You'll want to take this to the users' email list so anyone else having this problem can benefit from what you learn, because I'm going to close this issue (since it's not actually a problem with Fedora).</p></div></div>
+<div class="comment" id="comment-12494"><div class="by">A. Soroka, 2012-11-16 00:58 UTC</div><div class="text"><p>Not actually a problem with Fedora.</p></div></div>
+<div class="comment" id="comment-12495"><div class="by">Stuart Chalk, 2012-11-16 01:04 UTC</div><div class="text"><p>I can take it to the list but wouldn't it be better to update the REST documentation to point out that the URI's are from the RDF specification?  It was not obviously related to RDF as I was not thinking about the relationships from an RDF perspective.</p></div></div>
+<div class="comment" id="comment-12496"><div class="by">A. Soroka, 2012-11-16 01:19 UTC</div><div class="text"><p>When you think of Fedora relationships, think RDF. </p>
+{grin}
+
+<p>Certainly the documentation could be more helpful, but we try to keep the core API docs very sparse and clean. How about putting a question and answer in the usage FAQ?</p>
+
+<p><a href="https://wiki.duraspace.org/display/FEDORA36/Usage+FAQ" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA36/Usage+FAQ</a></p></div></div>
+<p><a href="data/FCREPO-1167.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

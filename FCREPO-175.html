@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-175 Installer fails if FEDORA_HOME contains a space</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-175</span> Installer fails if FEDORA_HOME contains a space</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2007-12-19 13:30 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr></table>
+<h2>Description</h2>
+<p>On Windows, the installer fails if FEDORA_HOME contains a space, e.g. FEDORA_HOME=C:\Program Files\fedora</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-175/10020_sf-1853905-FedoraUsers.java.patch">sf-1853905-FedoraUsers.java.patch</a>, 1642 bytes, added by Chris Wilper on 2007-12-19</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-10362"><div class="by">eddie, 2007-12-19 13:31 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: YES</p>
+
+<p>Partial stacktrace, as reported on fedora-users by Jaeque Koeman:</p>
+
+<p>java.net.MalformedURLException: unknown protocol: c<br/>
+              at java.net.URL.&lt;init&gt;(Unknown Source)<br/>
+              at java.net.URL.&lt;init&gt;(Unknown Source)<br/>
+              at java.net.URL.&lt;init&gt;(Unknown Source)<br/>
+              at com.sun.org.apache.xerces.internal.impl.XMLEntityManager.setupCurrent<br/>
+      Entity(Unknown Source)<br/>
+              at com.sun.org.apache.xerces.internal.impl.XMLVersionDetector.determineD<br/>
+      ocVersion(Unknown Source)<br/>
+              at com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(U<br/>
+      nknown Source)<br/>
+              at com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(U<br/>
+      nknown Source)<br/>
+              at com.sun.org.apache.xerces.internal.parsers.XMLParser.parse(Unknown So<br/>
+      urce)<br/>
+              at com.sun.org.apache.xerces.internal.parsers.AbstractSAXParser.parse(Un<br/>
+      known Source)<br/>
+              at com.sun.org.apache.xerces.internal.jaxp.SAXParserImpl$JAXPSAXParser.p<br/>
+      arse(Unknown Source)<br/>
+              at org.apache.commons.digester.Digester.parse(Digester.java:1704)<br/>
+              at fedora.server.security.servletfilters.xmluserfile.FedoraUsers.getInst<br/>
+      ance(FedoraUsers.java:44)<br/>
+              at fedora.server.security.servletfilters.xmluserfile.FedoraUsers.getInst<br/>
+      ance(FedoraUsers.java:33)<br/>
+              at fedora.utilities.install.FedoraHome.configureFedoraUsers(FedoraHome.j<br/>
+      ava:147)</p></div></div>
+<div class="comment" id="comment-10363"><div class="by">eddie, 2007-12-19 13:41 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: YES</p>
+
+<p>The problem is in fedora.server.security.servletfilters.xmluserfile.FedoraUsers.</p>
+
+<p>This bug also applies to 3.0b1 &amp; trunk.</p>
+
+<p>It's a straightforward fix, but I think this will wait till after the 3.0b1 release.</p></div></div>
+<div class="comment" id="comment-10364"><div class="by">eddie, 2007-12-19 15:49 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: YES</p>
+
+<p>File Added: FedoraUsers.java.patch</p></div></div>
+<div class="comment" id="comment-10365"><div class="by">eddie, 2008-01-23 02:29 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: YES</p>
+
+<p>Fixed in dev-145635 r6516 (2.2.x) and dev-145636 r6518 (3.0b1).</p>
+
+<p>Leaving this open till fixes get merged into trunk and maintenance-2.2</p></div></div>
+<div class="comment" id="comment-10366"><div class="by">Chris Wilper, 2008-02-04 23:03 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>After the last fix, when I try to install with FEDORA_HOME containing a space, I get the following, similar error (notice this time it's caused by WebXML instead of FedoraUsers).</p>
+
+<p>I've applied the fixes thus far to maintenance-2.2 and trunk, but I'm leaving this one open 'till it's fully addressed.  If the WebXML fix is as simple as the FedoraUsers one, after testing locally you can just make the change to maintenance-2.2 and trunk directly.  After doing this please note the revs here.</p>
+
+<ul class="alternate" type="square">
+	<li>Chris</li>
+</ul>
+
+
+<p>Processing web.xml<br/>
+java.net.MalformedURLException: unknown protocol: c<br/>
+        at java.net.URL.&lt;init&gt;(Unknown Source)<br/>
+        at java.net.URL.&lt;init&gt;(Unknown Source)<br/>
+        at java.net.URL.&lt;init&gt;(Unknown Source)<br/>
+        at com.sun.org.apache.xerces.internal.impl.XMLEntityManager.setupCurrent<br/>
+Entity(Unknown Source)<br/>
+        at com.sun.org.apache.xerces.internal.impl.XMLVersionDetector.determineD<br/>
+ocVersion(Unknown Source)<br/>
+        at com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(U<br/>
+nknown Source)<br/>
+        at com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(U<br/>
+nknown Source)<br/>
+        at com.sun.org.apache.xerces.internal.parsers.XMLParser.parse(Unknown So<br/>
+urce)<br/>
+        at com.sun.org.apache.xerces.internal.parsers.AbstractSAXParser.parse(Un<br/>
+known Source)<br/>
+        at com.sun.org.apache.xerces.internal.jaxp.SAXParserImpl$JAXPSAXParser.p<br/>
+arse(Unknown Source)<br/>
+        at org.apache.commons.digester.Digester.parse(Digester.java:1704)<br/>
+        at fedora.server.config.webxml.WebXML.getInstance(WebXML.java:54)<br/>
+        at fedora.utilities.install.container.FedoraWebXML.&lt;init&gt;(FedoraWebXML.j<br/>
+ava:82)<br/>
+        at fedora.utilities.install.container.FedoraWebXML.&lt;init&gt;(FedoraWebXML.j<br/>
+ava:77)<br/>
+        at fedora.utilities.install.Installer.buildWAR(Installer.java:124)<br/>
+        at fedora.utilities.install.Installer.install(Installer.java:76)<br/>
+        at fedora.utilities.install.Installer.main(Installer.java:244)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)<br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)<br/>
+        at java.lang.reflect.Method.invoke(Unknown Source)<br/>
+        at com.simontuffs.onejar.Boot.run(Boot.java:246)<br/>
+        at com.simontuffs.onejar.Boot.main(Boot.java:105)<br/>
+ERROR: Unexpected error; installation aborted.<br/>
+java.lang.NullPointerException<br/>
+        at fedora.utilities.install.container.FedoraWebXML.setFedoraHome(FedoraW<br/>
+ebXML.java:257)<br/>
+        at fedora.utilities.install.container.FedoraWebXML.&lt;init&gt;(FedoraWebXML.j<br/>
+ava:84)<br/>
+        at fedora.utilities.install.container.FedoraWebXML.&lt;init&gt;(FedoraWebXML.j<br/>
+ava:77)<br/>
+        at fedora.utilities.install.Installer.buildWAR(Installer.java:124)<br/>
+        at fedora.utilities.install.Installer.install(Installer.java:76)<br/>
+        at fedora.utilities.install.Installer.main(Installer.java:244)<br/>
+...</p></div></div>
+<div class="comment" id="comment-10367"><div class="by">eddie, 2008-02-22 11:47 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: YES</p>
+
+<p>fixes to WebXML in trunk (r6639) and maintenance-2.2 (r6638)</p></div></div>
+<div class="comment" id="comment-10368"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: pangloss<br/>
+Item #: 1853905<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1853905" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1853905</a><br/>
+Closed On: 2008-02-22 05:47:12<br/>
+Closed By: pangloss</p></div></div>
+<p><a href="data/FCREPO-175.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

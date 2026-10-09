@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1812 OOM when migrating many objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1812</span> OOM when migrating many objects</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Doron Shalvi</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2015-11-02 20:12 UTC</td></tr><tr><th>Updated</th><td>2016-05-16 22:51 UTC</td></tr><tr><th>Resolved</th><td>2016-04-20 14:13 UTC</td></tr><tr><th>Components</th><td>legacy - community extensions</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>client</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1815.html">FCREPO-1815</a> Extract fedora 4 client code from fcrepo-camel project.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2002.html">FCREPO-2002</a> Investigate Memory Consumption over Time</td></tr></table>
+<h2>Description</h2>
+<p>We have started running migration tests using migration-utils, and are receiving an out of memory (OOM) error after migrating a few thousand objects, with heap sizes tested between 1-5 GB.  The OOM is observed in the migration-utils JVM.</p>
+
+<p>For example, for one test we specified a max heap of 2 GB.  After 25 min the JVM started running full GCs; after 40 min the JVM was spending most of its time in full GC, and an OOM was thrown at 50 min after 1533 Fedora 3 objects were migrated.  The gc and migration-utils logs from this run are attached.</p>
+
+<p>Similar results were experienced with max heaps specified in the range of 1-5 GB, see table below.  It appears that the heap usage grows linearly with the number of objects migrated to the max available, and some objects in the heap are never garbage collected.</p>
+
+<p>On one of these runs I took a snapshot of the heap and looked at it through jvisualvm.  A fair amount of memory is consumed by char arrays and Strings, whose values appear to be triples.  Perhaps these triples are not garbage collected?</p>
+
+<p>Max heap		  # objects		Time to OOM<br/>
+1 GB		  1262			25 mins<br/>
+2 GB		  1533			50 mins<br/>
+4 GB		  3145			1 hr 41 mins<br/>
+5 GB		  4032			2 hr 8 mins</p>
+
+<p>Environment:<br/>
+migration-utils-4.3.1-SNAPSHOT, running on the same CentOS server as the destination Fedora.<br/>
+Source data is from Fedora 3.8.1 legacy-fs format.<br/>
+Target is Fedora 4.3, running with 5 GB max heap.</p>
+
+<p>Eventually we would like to use this utility to migrate two different Fedora repos, each with approx. 3.5M objects.</p>
+
+<p>Thanks!</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1812/10248_fedoraMigration_2G_fix.log.gz">fedoraMigration_2G_fix.log.gz</a>, 3822233 bytes, added by Doron Shalvi on 2015-11-06</li>
+<li><a href="attachments/FCREPO-1812/10245_fedoraMigration_2G.log">fedoraMigration_2G.log</a>, 2975200 bytes, added by Doron Shalvi on 2015-11-02</li>
+<li><a href="attachments/FCREPO-1812/10249_gc_fedoraMigration_2G_fix.log">gc_fedoraMigration_2G_fix.log</a>, 4026786 bytes, added by Doron Shalvi on 2015-11-06</li>
+<li><a href="attachments/FCREPO-1812/10246_gc_fedoraMigration_2G.log">gc_fedoraMigration_2G.log</a>, 83484 bytes, added by Doron Shalvi on 2015-11-02</li>
+</ul>
+<h2>Comments (25)</h2>
+<div class="comment" id="comment-15722"><div class="by">A. Soroka, 2015-11-04 14:40 UTC</div><div class="text"><p>If an in-memory index of triples is being used, a move to use Jena TDB (or some other disk-resident store) is indicated.</p></div></div>
+<div class="comment" id="comment-15724"><div class="by">Michael Durbin, 2015-11-04 14:45 UTC</div><div class="text"><p>There's no intentional in-memory index of triples.  That said, I think jena code that parses triples in fcrepo4-client results in the leak. </p>
+
+<p>Since there's no reason this application has to parse triples.  My proposed fix is actually to eliminate the use of the fcrepo4-client code entirely which apparently eliminates this memory leak and significantly improves throughput.  I'll have a fix to test shortly.</p>
+
+<p>That said, we should fix or officially deprecate the fcrepo4-client code.</p></div></div>
+<div class="comment" id="comment-15726"><div class="by">A. Soroka, 2015-11-04 14:51 UTC</div><div class="text"><p>That sounds marvelous. No code is good code.</p>
+
+<p>Is there some official stance on the future of that client code?</p></div></div>
+<div class="comment" id="comment-15728"><div class="by">Andrew Woods, 2015-11-04 15:21 UTC</div><div class="text"><p>fcrepo4-client is a "labs" project, with no official support.<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-client" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-client</a></p></div></div>
+<div class="comment" id="comment-15729"><div class="by">A. Soroka, 2015-11-04 15:41 UTC</div><div class="text"><p>And <tt>migration-utils</tt> is in <tt>-exts</tt>, right? So that's another reason not to use <tt>fcrepo-client</tt>.</p></div></div>
+<div class="comment" id="comment-15739"><div class="by">Andrew Woods, 2015-11-04 18:21 UTC</div><div class="text"><p>A. Soroka +1</p></div></div>
+<div class="comment" id="comment-15741"><div class="by">Michael Durbin, 2015-11-04 19:24 UTC</div><div class="text"><p>Doron Shalvi, I've got a version that I believe fixes the OOM error (and improves processing speed).  Could you give it a try?</p>
+
+<p><a href="https://github.com/mikedurbin/migration-utils/tree/FCREPO-1812" class="external-link" rel="nofollow noreferrer">https://github.com/mikedurbin/migration-utils/tree/FCREPO-1812</a></p>
+
+<p>It doesn't work with basic authentication at this point, but I'm working on that.</p>
+</div></div>
+<div class="comment" id="comment-15742"><div class="by">Doron Shalvi, 2015-11-04 19:33 UTC</div><div class="text"><p>Will check it out, thanks!</p></div></div>
+<div class="comment" id="comment-15781"><div class="by">Doron Shalvi, 2015-11-06 17:16 UTC</div><div class="text"><p>The fix appears to have largely resolved the OOM error.</p>
+
+<p>I have been running the migration process for over 20 hours, and migrated 32K objects so far, without problems.  Memory usage is down significantly.  Total heap size is steady state at 120 MB, essentially unchanged from JVM startup.  A quick minor gc occurs every few seconds, and about 34 MB is collected off the heap.  See attached _fix logs for details.</p>
+
+<p>There does still appear to be a very slow leak which perhaps could be problematic at large scale.  Uncollected heap usage does seem to grow at about 1.6 KB per object.  This could be problematic if attempting to migrate millions of objects within a single migration process - if this rate holds, 1M objects migrated would consume 1.6 GB heap in the migration JVM.</p>
+
+<p>In terms of processing speed, I am seeing a rate of approx. 1600 objects migrated per hour, or about 2.2 seconds per object.  This works out to perhaps 40K objects per day.  One of our F3 repos contains 3M objects which would take 2-3 months to migrate at this rate.</p>
+
+<p>In these tests, we are running F4.3 and the migration tool on the same box.  This box is a virtual Linux box running CentOS6 with one CPU at 3 GHz and 8 GB RAM.  During this test, steady state CPU consumption is 70% for F4 and 2% for the migration tool.  Possibly, we have specified checksums to be computed on more files than really need it, which could slow performance.</p>
+
+<p>We will keep this test running to see how things shake out.</p>
+
+<p>Overall this OOM fix seems fine and our setup seems OK for migrations up to maybe a few hundred thousand objects.  Beyond that we would run into time, memory and process issues.  We still need to design a solution for migrating a repo with 3M objects, which is out of scope for this particular ticket.</p>
+
+<p>Thanks!</p></div></div>
+<div class="comment" id="comment-15782"><div class="by">Doron Shalvi, 2015-11-06 21:59 UTC</div><div class="text"><p>Update: long-term heap usage looks stable.  Every few seconds, there is a minor gc of 34K from the young generation:<br/>
+87562.133: [GC (Allocation Failure) 87562.133: <span class="error">&#91;DefNew: 35718K-&gt;1799K(38144K), 0.0080969 secs&#93;</span> 120363K-&gt;86448K(122816K), 0.0081820 secs] <span class="error">&#91;Times: user=0.01 sys=0.00, real=0.01 secs&#93;</span></p>
+
+<p>After 24 hours, there was finally a gc of 72K from the old generation:<br/>
+87568.734: [GC (Allocation Failure) 87568.734: <span class="error">&#91;DefNew: 35719K-&gt;1696K(38144K), 0.0066833 secs&#93;</span>87568.740: <span class="error">&#91;Tenured: 84784K-&gt;12771K(84864K), 2.9956143 secs&#93;</span> 120368K-&gt;12771K(123008K), <span class="error">&#91;Metaspace: 30548K-&gt;30548K(1077248K)&#93;</span>, 3.0025340 secs] <span class="error">&#91;Times: user=0.11 sys=0.21, real=3.00 secs&#93;</span><br/>
+87578.408: [GC (Allocation Failure) 87578.408: <span class="error">&#91;DefNew: 33920K-&gt;1662K(38144K), 0.0081324 secs&#93;</span> 46691K-&gt;14434K(122816K), 0.0082113 secs] <span class="error">&#91;Times: user=0.01 sys=0.00, real=0.00 secs&#93;</span></p>
+
+<p>Long term memory management seems stable through 25 hours so far.</p></div></div>
+<div class="comment" id="comment-15784"><div class="by">Andrew Woods, 2015-11-09 15:15 UTC</div><div class="text"><p>Doron Shalvi, you are not running these tests in a Vagrant environment, correct? I ask because I see very slow network I/O with Vagrant and even local clients.</p>
+
+<p>You mention that 2-3months is too long for a large migration. Let's work backwards from what would be an acceptable migration timeframe, and refine the tooling to target that ingest rate.</p></div></div>
+<div class="comment" id="comment-15797"><div class="by">Doron Shalvi, 2015-11-10 20:08 UTC</div><div class="text"><p>We are using VMware for virtualization.  The migration tool is running on the same VM as the target Fedora 4.3 and connecting to it over localhost.  In this test we are not migrating type E/R binaries (just the link), so I would imagine there would be no network traffic, unless F4 is performing content lookups on ingest to run checksums.</p>
+
+<p>Migration test update: After 4 days of running continuously and migrating 73K objects, we are running into some odd behavior.  The migration tool is still running but not migrating any more objects.  It's heap usage had stabilized at about 120 MB.  The migration process is still running, but not producing any log output, and not chewing up any CPU, for two days now.  </p>
+
+<p>Fedora 4, on the other hand, seems to be stuck on something.  It has pegged CPU at 100%, and is up to the specified max heap allocation of 5 GB.  It is running a minor gc and collecting 250 MB every few seconds, with an occasional major gc down to 4 GB heap used.  It is still properly responding to GET requests, albeit slowly.  This has been going on for two days now.  Perhaps it is getting ready to OOM.  I will keep it running and keep an eye on it.</p>
+
+<p>I agree that it would be helpful to define an acceptable migration timeframe and proceed from there.  We should move such a conversation elsewhere.</p>
+
+<p>Thanks</p></div></div>
+<div class="comment" id="comment-15798"><div class="by">Andrew Woods, 2015-11-10 21:12 UTC</div><div class="text"><p>The "stuck F4" is troubling. </p>
+<ul>
+	<li>Are you out of disk space?</li>
+	<li>Can you share your JAVA_OPTS values?</li>
+	<li>Would it be possible to cycle F4 and resume the migration where it last succeeded?</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15799"><div class="by">Michael Durbin, 2015-11-10 21:15 UTC</div><div class="text"><p>migration-utils doesn't exactly resume, but it does skip already-processed objects.  </p>
+
+<p><a href="https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/handlers/BasicObjectVersionHandler.java#L184-L188" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/blob/master/src/main/java/org/fcrepo/migration/handlers/BasicObjectVersionHandler.java#L184-L188</a></p>
+
+<p>I'm not sure how long it would take to make the two http requests it makes to determine that it can skip an object for each item processed so far, but I'd imagine it would be measured in minutes not days.</p></div></div>
+<div class="comment" id="comment-15822"><div class="by">Doron Shalvi, 2015-11-12 18:13 UTC</div><div class="text"><p>Disk space seems fine.</p>
+
+<p>Runtime parameters:<br/>
+-Djava.util.logging.config.file=/somedir/tomcat/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager -Dfcrepo.home=/somedir/fedora-data -Xms2560m -Xmx5120m -XX:NewSize=256m -XX:MaxNewSize=356m -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:/somedir/gc.log -Djava.endorsed.dirs=/somedir/tomcat/endorsed -classpath /somedir/tomcat/bin/bootstrap.jar:/somedir/tomcat/bin/tomcat-juli.jar -Dcatalina.base=/somedir/tomcat -Dcatalina.home=/somedir/tomcat -Djava.io.tmpdir=/somedir/tomcat/temp</p>
+
+<p>Unfortunately this server was restarted by routine maintenance this morning, so I have no updates to report regarding how this current migration test ended.</p>
+
+<p>I will restart the test since we have a clean F4 at this point.  In our experience the migration tool has skipped already-processed objects pretty quickly.</p></div></div>
+<div class="comment" id="comment-15844"><div class="by">Michael Durbin, 2015-11-16 13:17 UTC</div><div class="text"><p>There are a few easy ways to improve performance and some harder ones.  This is said without having profiled a long-running ingest operation.</p>
+
+<p>The first, is to perform all the updates issued for a resource version as a transaction.  This would be a general improvement and has no real downsides.</p>
+
+<p>Some performance gains may be achieved in changing the way metadata is mapped.  Right now certain metadata is maintained in blank nodes.  While it's not well established that node and link creation represents a significant amount of time, this may be a target for general improvement.</p>
+
+<p>Other gains may be achieved by tuning/customizing the migration for your own use case.  For instance, depending on your migration needs, you may choose only to migrate the latest version of versioned resources.  In other cases it would seem conceivable that you wanted to preserve the fedora 3 information but only needed access to a subset moving forward.  In such cases, I could see a dramatically faster migration, possibly involving the archival of the fedora 3 data store unmodified and just extracting the current working subset into RDF in fedora 4.</p></div></div>
+<div class="comment" id="comment-15848"><div class="by">Doron Shalvi, 2015-11-17 20:51 UTC</div><div class="text"><p>Migration update:  migration restarted on Nov. 11 at 1:15 PM EST.  73280 existing objects were skipped in 2 hr 14 min, a skip rate of 33K objects per hour.  Since then 46K additional objects were migrated over the course of 6 days, an ingest rate of about 7500 objects per day.</p>
+
+<p>Migration tool memory usage is stable at 30-70 MB with regular gc.  F4 memory usage is growing over time at perhaps a few hundred MB per day, even with regular gc. Currently the F4 JVM is starting to spend a lot of time in gc, and with a max heap specified of 5 GB, it is likely that this JVM will OOM soon.  I will keep an eye on it.  </p></div></div>
+<div class="comment" id="comment-15866"><div class="by">Doron Shalvi, 2015-11-23 17:48 UTC</div><div class="text"><p>Migration update: the migration process started on Nov. 11 is still proceeding as of today, Nov. 23.  Since the last update on Nov. 17, six days ago, an additional 34K objects have been migrated, an ingest rate of about 5700 objects per day.  This is lower than the previously reported rate of 7500 objects per day, so the migration rate is slowing.  F4 is still up and running, but the F4 JVM is spending 1/3 of its time in major gc.  A total of 153K objects have been migrated thus far.</p></div></div>
+<div class="comment" id="comment-15868"><div class="by">Andrew Woods, 2015-11-24 13:41 UTC</div><div class="text"><p>It would be helpful to know what is causing the F4 memory build-up. Doron Shalvi, do you have access to tooling such as YourKit to help dig into the running JVM?<br/>
+I can get you a free license, if not.</p></div></div>
+<div class="comment" id="comment-16388"><div class="by">Michael Durbin, 2016-03-23 18:52 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-exts/migration-utils/pull/44" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/pull/44</a></p>
+
+<p>The release of fcrepo-java-client added the preemptive auth I needed to allow this code to still work against the default vagrant installs.  There's still one feature that, in an ideal world, should be implemented in fcrepo-java-client rather than in this code, (the ability to add arbitrary headers to requests, like the "Slug" necessary to create versions) but if that's not a showstopper for you, I don't want to sit on the improvements of this ticket any longer than I already have.</p></div></div>
+<div class="comment" id="comment-16415"><div class="by">Doron Shalvi, 2016-03-25 21:08 UTC</div><div class="text"><p>The fix looks and works fine for us in our testing against Fedora 4.3 back in November, which showed stable memory usage in the migration tool after the fix was applied.  We will test again against Fedora 4.5, but it may be a few weeks before we can get to this.  Based on our November results, I think this ticket can be closed.</p>
+
+<p>The F4 OOM noted in later comments does still need to be separately investigated and addressed, but is out of scope for this ticket.</p>
+
+<p>Thanks for your work on this item!</p></div></div>
+<div class="comment" id="comment-16432"><div class="by">Andrew Woods, 2016-03-30 17:56 UTC</div><div class="text"><p>This is in the queue for code-review and merge.</p></div></div>
+<div class="comment" id="comment-16553"><div class="by">Andrew Woods, 2016-04-20 14:13 UTC</div><div class="text"><p>Follow-on performance investigation will be worked under:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-2002" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2002</a></p></div></div>
+<div class="comment" id="comment-16560"><div class="by">Michael Durbin, 2016-04-20 16:31 UTC</div><div class="text"><p>The PR was never merged... do I need to make more changes?</p>
+
+<p><a href="https://github.com/fcrepo4-exts/migration-utils/pull/44" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/pull/44</a></p></div></div>
+<div class="comment" id="comment-16562"><div class="by">Andrew Woods, 2016-04-20 17:28 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/migration-utils/commit/8b84f5488807f810569d34ed07bde2892ac6d1de" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/commit/8b84f5488807f810569d34ed07bde2892ac6d1de</a></p></div></div>
+<p><a href="data/FCREPO-1812.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

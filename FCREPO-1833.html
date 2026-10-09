@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1833 ISPN JDBC: Investigate functionality of a LevelDB alternative</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1833</span> ISPN JDBC: Investigate functionality of a LevelDB alternative</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-11-10 21:14 UTC</td></tr><tr><th>Updated</th><td>2016-02-10 15:43 UTC</td></tr><tr><th>Resolved</th><td>2016-02-10 15:39 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>preservation</td></tr></table>
+<h2>Description</h2>
+<p>This task is to configure an alternative ISPN backend (JDBC?) and test for basic functionality.</p>
+
+<p>If an alternative backend works, create a follow-on ticket for investigating the performance relative to the current LevelDB backend.<br/>
+If performance is promising, create a follow-on-follow-on ticket for investigating a LevelDB-to-JDBC (or other) backend migration.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-16072"><div class="by">Andrew Woods, 2016-02-05 14:06 UTC</div><div class="text"><p>Potentially helpful references:</p>
+<ul>
+	<li><a href="https://docs.jboss.org/author/display/MODE40/Binary+values#Binaryvalues-ConfiguringBinaryStores" class="external-link" rel="nofollow noreferrer">https://docs.jboss.org/author/display/MODE40/Binary+values#Binaryvalues-ConfiguringBinaryStores</a></li>
+	<li><a href="https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/resources/org/modeshape/jcr/repository-config-schema.json" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/master/modeshape-jcr/src/main/resources/org/modeshape/jcr/repository-config-schema.json</a> (search: "database")</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-16082"><div class="by">Andrew Woods, 2016-02-09 00:55 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/978" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/978</a></p>
+
+<p>As of this update, the default backend is still LevelDB.<br/>
+To use the MySQL object store, you need to:<br/>
+1. Install an instance of MySQL<br/>
+2. Run Fedora with the following JAVA_OPTS:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.modeshape.configuration=classpath:/config/jdbc-mysql/repository.json"
+JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.ispn.mysql.username=&lt;username&gt;"
+JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.ispn.mysql.password=&lt;password&gt;"
+JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.ispn.mysql.host=&lt;default=localhost&gt;"
+JAVA_OPTS="${JAVA_OPTS} -Dfcrepo.ispn.mysql.port=&lt;default=3306&gt;"
+</pre>
+</div></div>
+
+<p>Note, the database and table used by ISPN are auto-created.</p></div></div>
+<div class="comment" id="comment-16084"><div class="by">Esmé Cowles, 2016-02-09 20:56 UTC</div><div class="text"><p>I was able to get this working, but had to update my.cnf to require latin1:</p>
+
+<p><span class="error">&#91;client&#93;</span><br/>
+default-character-set=latin1</p>
+
+<p><span class="error">&#91;mysql&#93;</span><br/>
+default-character-set=latin1</p>
+
+<p><span class="error">&#91;mysqld&#93;</span><br/>
+collation-server = latin1_general_cs<br/>
+init-connect="SET NAMES latin1'<br/>
+character-set-server = latin1</p></div></div>
+<div class="comment" id="comment-16102"><div class="by">Esmé Cowles, 2016-02-10 15:39 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/f805f67e859be90d9c4fecaeff7cfcd0bb70fdc3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f805f67e859be90d9c4fecaeff7cfcd0bb70fdc3</a></p></div></div>
+<div class="comment" id="comment-16103"><div class="by">Esmé Cowles, 2016-02-10 15:43 UTC</div><div class="text"><p>I've created two tickets for testing the MySQL support:</p>
+
+<ul>
+	<li>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1904" >
+                <a href="FCREPO-1904.html" class="jira-issue-macro-key issue-link"  title="Compare MySQL and LevelDB performance" >
+            
+            FCREPO-1904
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ (performance)</li>
+	<li>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1905" >
+                <a href="FCREPO-1905.html" class="jira-issue-macro-key issue-link"  title="Compare MySQL and LevelDB reliability" >
+            
+            FCREPO-1905
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ (durability)</li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-1833.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

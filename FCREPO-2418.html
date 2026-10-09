@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2418 Import of Bags should verify binary digest</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2418</span> Import of Bags should verify binary digest</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2017-03-17 18:04 UTC</td></tr><tr><th>Updated</th><td>2017-05-25 02:44 UTC</td></tr><tr><th>Resolved</th><td>2017-05-23 23:25 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Affects versions</th><td>fcrepo-importexport-0.1.0</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to ensure that the digests listed in the manifest-sha1.txt (or relevant manifest file) are used when importing binary resources.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-18823"><div class="by">Situ, Longshou, 2017-05-22 16:57 UTC</div><div class="text"><p>Andrew Woods, Esmé Cowles: I've added a test to verify that a corrupted binary will be rejected with status 409 from Fedora in BagIt import. What's the scope of this ticket, just to add tests to verify that the binary digest is used for binaries in BagIt import, or we need to verify all the binary digests before import any records?</p>
+
+<p>Here are the logging message I got when importing a corrupted binary: <br/>
+ERROR 08:29:29.663 (Importer) Error while importing .../sample/bag/data/fcrepo/rest/bad_image.binary (409): Checksum Mismatch of urn:sha1:64c3f4a7d664d9a91351c731c5e3ff0bea874a60 and urn:sha1:c537ab534deef7493140106c2151eccf2a219b8e<br/>
+WARN 08:29:29.663 (Importer) Failed to import .../sample/bag/data/fcrepo/rest/bad_image/fcr%3Ametadata.ttl</p>
+</div></div>
+<div class="comment" id="comment-18824"><div class="by">Esmé Cowles, 2017-05-22 17:00 UTC</div><div class="text"><p>Situ, Longshou, I think the key thing here is that the Bag checksum (from manifest-sha1.txt) should be used, and if that doesn't match the file on disk, then it should fail.</p>
+
+<p>Is the client getting the checksum from manifest-sha1.txt, or from the fcr:metadata.ttl for the file?</p></div></div>
+<div class="comment" id="comment-18826"><div class="by">Situ, Longshou, 2017-05-22 17:39 UTC</div><div class="text"><p>Esmé Cowles The log showing that chechsum from manifest-sha1.txt is used by the client (<a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/importer/Importer.java#L377-L378" class="external-link" rel="nofollow noreferrer">Importer.java#L377-L378</a>):</p>
+
+<p>INFO 08:29:29.598 (Importer) Importing binary fcrepo/rest/bad_image/fcr%3Ametadata.ttl<br/>
+DEBUG 08:29:29.599 (Importer) Using Bagit checksum (c537ab534deef7493140106c2151eccf2a219b8e) for file (.../fcrepo-import-export/target/test-classes/sample/bag/data/fcrepo/rest/bad_image.binary)<br/>
+ERROR 08:29:29.663 (Importer) Error while importing .../fedora/fcrepo-import-export/target/test-classes/sample/bag/data/fcrepo/rest/bad_image.binary (409): Checksum Mismatch of urn:sha1:64c3f4a7d664d9a91351c731c5e3ff0bea874a60 and urn:sha1:c537ab534deef7493140106c2151eccf2a219b8e<br/>
+...</p></div></div>
+<div class="comment" id="comment-18839"><div class="by">Andrew Woods, 2017-05-22 22:09 UTC</div><div class="text"><p>It appears that the manifest-sha1.txt is being used:</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/importer/Importer.java#L454-L456" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/importer/Importer.java#L454-L456</a></p>
+
+<p>If you can add an integration test that demonstrates the behavior you are seeing, that should be sufficient for this ticket... since the behavior appears to be correct.</p></div></div>
+<div class="comment" id="comment-18841"><div class="by">Situ, Longshou, 2017-05-22 23:21 UTC</div><div class="text"><p>Andrew Woods, Esmé Cowles: It seems like there's a potential bug with the File as the key to retrieve the checksums from the sha1FileMap in <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/importer/Importer.java#L454-L456" class="external-link" rel="nofollow noreferrer">Importer.java#L454-L456</a>. The integration test are working as expected as we discussed, however the unite test failed. I've created a PR to fix it:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/87" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/87</a>.</p></div></div>
+<div class="comment" id="comment-18852"><div class="by">Andrew Woods, 2017-05-23 14:58 UTC</div><div class="text"><p>I have not dug deeply into this, but in testing it does not appear that the manifest-sha1.txt is being used to validate imports.</p>
+
+<p>Here are my steps:</p>
+<ol>
+	<li>Set up two Fedoras and load data per: <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Initialization" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+A+Woods#Sprint3Feedback-AWoods-Initialization</a></li>
+	<li>&gt; java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -m export -b -d data -g default -G metadata.yml -r <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a></li>
+	<li>&gt; vi data/manifest-sha1.txt ...changing sha1 values of every entry in the manifest</li>
+	<li>&gt; java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -m import -b -d data -g default -G metadata.yml -r <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a> -M <a href="http://localhost:8686/f4/rest,http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest,http://localhost:8080/fcrepo/rest</a></li>
+	<li>...import succeeds ??</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-18862"><div class="by">Situ, Longshou, 2017-05-23 17:28 UTC</div><div class="text"><p>Andrew Woods I got it imported successfully! When running the importer in debug mode, I see that "checksum (null)" is used for BagIt import. This is inline with the result from the unite test in PR <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/87" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/87</a>. I think the problem is in constructing File objects as the key for the sha1FileMap, which could have different object references. I'll rebase the PR for you to review. Here is the logging message I see:<br/>
+INFO 10:11:05.195 (Importer) Importing binary f4/rest/image0/fcr%3Ametadata.ttl<br/>
+DEBUG 10:11:05.196 (Importer) Using Bagit checksum (null) for file (data/data/f4/rest/image0.binary)<br/>
+INFO 10:11:05.209 (Importer) Imported binary: <a href="http://localhost:8080/fcrepo/rest/image0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/image0</a><br/>
+INFO 10:11:05.222 (Importer) Imported .../data/data/f4/rest/image0/fcr%3Ametadata.ttl: <a href="http://localhost:8080/fcrepo/rest/image0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/image0</a></p></div></div>
+<div class="comment" id="comment-18868"><div class="by">Situ, Longshou, 2017-05-23 23:30 UTC</div><div class="text"><p>Andrew Woods I've rebased the PR and fixed the inconsistent manifest delimiter issue. I think binaries with bad checksum should be rejected with status 409 now:<br/>
+ERROR 15:52:46.589 (Importer) Error while importing .../data/data/f4/rest/image2.binary (409): Checksum Mismatch of urn:sha1:da39a3ee5e6b4b0d3255bfef95601890afd80719 and urn:sha1:da39a3ee5e6b4b0d3255bfef95601890afd80709</p></div></div>
+<div class="comment" id="comment-18873"><div class="by">Andrew Woods, 2017-05-24 01:46 UTC</div><div class="text"><p>The functionality in <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/87" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/87</a> works as desired. Since the previous commit introduced a bug <span class="error">&#91;1&#93;</span>, I will wait for a fix to go in before adding this new functionality.</p>
+
+<p> </p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://jira.duraspace.org/browse/FCREPO-2474" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2474</a></p></div></div>
+<div class="comment" id="comment-18923"><div class="by">Andrew Woods, 2017-05-25 02:44 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5993e64afaa54cfdc393d78618cefd96b150f7ef" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5993e64afaa54cfdc393d78618cefd96b150f7ef</a></p></div></div>
+<p><a href="data/FCREPO-2418.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

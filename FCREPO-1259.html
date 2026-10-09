@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1259 Creating a node in the web application through a proxy causes the baseURL to be set incorrectly.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1259</span> Creating a node in the web application through a proxy causes the baseURL to be set incorrectly.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Kevin Bowrin</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2014-12-15 16:50 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-21 04:56 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr></table>
+<h2>Description</h2>
+<p>See: <a href="https://github.com/fcrepo4/fcrepo4/issues/677" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/677</a></p>
+<h2>Comments (30)</h2>
+<div class="comment" id="comment-14001"><div class="by">Jared Whiklo, 2015-04-14 17:15 UTC</div><div class="text"><p>To confirm:<br/>
+1) the issue is that when creating a container or binary resource using the Web UI the baseUrl is set incorrectly<br/>
+2) this issue is with Fcrepo or fcrepo-message-consumer</p>
+
+<p>Because the IndexerGroup messages in the provided logs are from fcrepo-message-consumer. (see <a href="https://github.com/fcrepo4/fcrepo-message-consumer/blob/master/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/blob/master/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java</a>)</p>
+
+<p>Also my understanding was that the baseUrl was the application base, everything after that is an id to some resource.</p>
+
+<p>So in <a href="http://localhost:8080/fcrepo/rest/mommy/kissing/santa_claus" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/mommy/kissing/santa_claus</a></p>
+
+<p><a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a> is always the baseUrl </p>
+
+<p>while<br/>
+<b>/mommy</b><br/>
+<b>/mommy/kissing</b><br/>
+<b>/mommy/kissing/santa_claus</b> are all ids depending on the resource you are acting on. </p>
+
+<p>I feel like I may have misunderstood the issue?</p></div></div>
+<div class="comment" id="comment-14002"><div class="by">Andrew Woods, 2015-04-14 17:39 UTC</div><div class="text"><p>Kevin Bowrin, thoughts on the above?</p></div></div>
+<div class="comment" id="comment-14003"><div class="by">Kevin Bowrin, 2015-04-14 17:51 UTC</div><div class="text"><p>Hello, original big reporter here. </p>
+
+<p>Question 2: As far as I remember, the result of this bug causes an error in fcrepo-message-consumer, causing resources to not be indexed by the RDF indexer and likely the full text indexer, but I didn't get that far. This might be a bug in fcrepo-message-consumer or fcrepo. </p>
+
+<p>Question 1: Yes, the baseUrl for the resource is set incorrectly when you create a resource using the WebUI... through a proxy. This might happen in a port-forwarding scenario, or when one is using a proxy server. </p>
+
+<p>More details:  I was creating a virtual machine in Virtualbox. That virtual machine's fcrepo was available to the host at <a href="http://localhost:38080" class="external-link" rel="nofollow noreferrer">http://localhost:38080</a>. Virtualbox would take any requests to that port on the host machine and forward them to port 8080 on the guest machine. </p>
+
+<p>To reproduce: </p>
+<ul>
+	<li>Create a virtual machine in Virtualbox with port forwarding from a host port (like 38080) to the Fcrepo port (default is 8080, I think).</li>
+	<li>Install Fcrepo on the guest.</li>
+	<li>Install the RDF indexer and fcrepo-message-consumer.</li>
+	<li>Access the WebUI through the forwarded port.</li>
+	<li>Add a resource in the WebUI.</li>
+</ul>
+
+
+<p>If the bug is reproducible in the latest version of Fcrepo: The indexer will not have statements for the newly created resource. </p>
+
+<p>I think creating a resource in the WebUI set the baseURL of the resource to localhost:38080 (what's in the address bar) and not the baseURL of the server (localhost:8080). This causes the error in fcrepo-message-consumer. <br/>
+It also means, depending on how you 'got to' the REST API, different resources would have different baseURLs. (localhost:8080/fcrepo/rest vs mydomain.net/fcrepo/rest) That's just speculation, though. </p>
+
+<p>Let me know if you need any help. Thanks for looking at this. </p></div></div>
+<div class="comment" id="comment-14005"><div class="by">Kevin Bowrin, 2015-04-14 18:06 UTC</div><div class="text"><p>Another quick comment: my interim fix for this issue was to create a resource on the guest machine locally using curl before making any resources in the WebUI through the forwarded port. If you only interact with the Fcrepo on the guest through the forwarded port on the host, you should be able to reproduce the issue. </p>
+
+<p>Weirdly, creating even one resource on the guest locally fixes the issue. Maybe that 'sets' the baseURL for resources created in the future?</p>
+</div></div>
+<div class="comment" id="comment-14007"><div class="by">Kevin Bowrin, 2015-04-14 18:33 UTC</div><div class="text"><p>Looking at the source, it's weird that the baseURL sent to the message-consumer isn't always localhost:8080, since it's set by getBaseUri() on the injected UriInfo object. </p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/ceacc9832890906c8dee8f4533f5b33679d9b875/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraBaseResource.java#L83" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/ceacc9832890906c8dee8f4533f5b33679d9b875/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraBaseResource.java#L83</a></p>
+
+<p>So why did the indexer see the incorrect baseURL?</p>
+
+<p>    DEBUG 23:06:05.296 (IndexerGroup) Discovered baseURL: <a href="http://localhost:38080/fcrepo/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:38080/fcrepo/rest/</a> in message.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo-message-consumer/issues/65" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/issues/65</a></p></div></div>
+<div class="comment" id="comment-14008"><div class="by">Andrew Woods, 2015-04-14 18:38 UTC</div><div class="text"><p>Have you tried to reproduce this on the most recent fcrepo4-vagrant?<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-vagrant" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-vagrant</a></p></div></div>
+<div class="comment" id="comment-14009"><div class="by">Kevin Bowrin, 2015-04-14 18:40 UTC</div><div class="text"><p>No, I'll try that now. </p></div></div>
+<div class="comment" id="comment-14015"><div class="by">Kevin Bowrin, 2015-04-14 19:35 UTC</div><div class="text"><p>The error is reproducible in the latest fcrepo4-vagrant, if you change the host ports to something other than the defaults. </p>
+
+<p>Pretty obvious why the ConnectException is thrown. localhost:38080 doesn't make sense in the guest. Seems it's not a problem with fcrepo-message-consumer, but with fcrepo.</p>
+
+<hr />
+<p><tt>git clone <a href="https://github.com/fcrepo4-labs/fcrepo4-vagrant.git" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-vagrant.git</a></tt><br/>
+<tt>cd fcrepo4-vagrant</tt><br/>
+Changes to Vagrantfile:</p>
+<blockquote>
+<p>config.vm.network :forwarded_port, guest: 8080, host: 38080<br/>
+config.vm.network :forwarded_port, guest: 3030, host: 33030 </p></blockquote>
+<p><tt>dos2unix * # Grumble, only required on Windows hosts.</tt><br/>
+<tt>vagrant up</tt><br/>
+Coffee break</p>
+
+<p>Visited <a href="http://localhost:38080/fcrepo/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:38080/fcrepo/rest/</a> and created a resource with identifier 'test'.</p>
+
+<p>Run this in the WebUI at <a href="http://localhost:38080/fcrepo/rest/test:" class="external-link" rel="nofollow noreferrer">http://localhost:38080/fcrepo/rest/test:</a></p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PREFIX rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
+PREFIX indexing: &lt;http://fedora.info/definitions/v4/indexing#&gt;
+
+DELETE { }
+INSERT {
+  &lt;&gt; indexing:hasIndexingTransformation "default";
+  rdf:type indexing:indexable .}
+WHERE { }
+</pre>
+</div></div>
+
+<p>Then add a title:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PREFIX dc: &lt;http://purl.org/dc/elements/1.1/&gt;
+
+DELETE { }
+INSERT {
+  &lt;&gt; dc:title "Test Title" .}
+WHERE { }
+</pre>
+</div></div>
+
+<p>Visited this url in the host, with no results:</p>
+
+<p><a href="http://localhost:33030/test/query?query=SELECT+%3Fs+%3Fp+%3Fo+WHERE+%7B%0D%0A%3Fs+%3Fp+%3Fo.%0D%0A%7D%0D%0A%0D%0A&amp;output=xml&amp;stylesheet=%2Fxml-to-html.xsl" class="external-link" rel="nofollow noreferrer">http://localhost:33030/test/query?query=SELECT+%3Fs+%3Fp+%3Fo+WHERE+%7B%0D%0A%3Fs+%3Fp+%3Fo.%0D%0A%7D%0D%0A%0D%0A&amp;output=xml&amp;stylesheet=%2Fxml-to-html.xsl</a> </p>
+
+<p>I then added a dc:creator to the test resource, here's the tail of the log:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>INFO 19:27:11.534 (FedoraLdp) PATCH for 'test'
+DEBUG 19:27:11.579 (IndexerGroup) Received message: ID:fedora4-37720-1429038664816-3:1:1:1:8
+DEBUG 19:27:11.580 (IndexerGroup) Discovered id: /test in message.
+DEBUG 19:27:11.581 (IndexerGroup) Discovered event type: http://fedora.info/definitions/v4/repository#PROPERTY_ADDED,http://fedora.info/definitions/v4/repository#PROPERTY_CHANGED in message.
+DEBUG 19:27:11.581 (IndexerGroup) Discovered baseURL: http://localhost:38080/fcrepo/rest in message.
+DEBUG 19:27:11.581 (IndexerGroup) Discovered properties: http://fedora.info/definitions/v4/repository#lastModified,http://fedora.info/definitions/v4/repository#lastModifiedBy,http://purl.org/dc/elements/1.1/creator in message.
+DEBUG 19:27:11.582 (IndexerGroup) It is false that this is a removal operation.
+WARN 19:27:11.584 (DefaultMessageListenerContainer) Execution of JMS message listener failed, and no ErrorHandler has been set.
+java.lang.RuntimeException: java.net.ConnectException: Connection refused at com.google.common.base.Throwables.propagate(Throwables.java:160) ~[guava-18.0.jar:na]
+        at org.fcrepo.indexer.RdfRetriever.get(RdfRetriever.java:107) ~[fcrepo-message-consumer-core-4.1.1.jar:na]
+        at org.fcrepo.indexer.RdfRetriever.get(RdfRetriever.java:51) ~[fcrepo-message-consumer-core-4.1.1.jar:na]
+        at com.google.common.base.Suppliers$MemoizingSupplier.get(Suppliers.java:125) ~[guava-18.0.jar:na]
+        at org.fcrepo.indexer.IndexerGroup.index(IndexerGroup.java:284) ~[fcrepo-message-consumer-core-4.1.1.jar:na]
+        at org.fcrepo.indexer.IndexerGroup.onMessage(IndexerGroup.java:260) ~[fcrepo-message-consumer-core-4.1.1.jar:na]
+...
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-14016"><div class="by">Jared Whiklo, 2015-04-14 19:43 UTC</div><div class="text"><p>Ok, I see the problem.</p>
+
+<p>When coming through a proxy the resource is set with the outside port number (ie. 38080), but fcrepo-message-consumer uses the information from the JMS message to connect to fcrepo and get the resource.<br/>
+<a href="https://github.com/fcrepo4/fcrepo-message-consumer/blob/3f5f08f374b7b354021f0272a1e3266cf423e3ff/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java#L248" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/blob/3f5f08f374b7b354021f0272a1e3266cf423e3ff/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java#L248</a><br/>
+and<br/>
+<a href="https://github.com/fcrepo4/fcrepo-message-consumer/blob/3f5f08f374b7b354021f0272a1e3266cf423e3ff/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java#L260" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/blob/3f5f08f374b7b354021f0272a1e3266cf423e3ff/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java#L260</a></p>
+
+<p>Internal to the VM, there is nothing at 38080, so it fails.</p>
+
+<p>Not sure if this is expected behaviour or if fcrepo should generate all JMS messages using the server defined baseUrl?</p></div></div>
+<div class="comment" id="comment-14017"><div class="by">Jared Whiklo, 2015-04-14 19:48 UTC</div><div class="text"><p>I tested this using the latest fedora4_vm and it is reproducible. </p>
+
+<p>However I got the same error when PUTting a new resource using Curl from the host side too. So it is definitely not the Web UI it is about how the baseUrl is set for the JMS message. </p>
+
+<p>Not sure if you want to change this as if your JMS consumer was also outside the VM, then this is desirable functionality.</p></div></div>
+<div class="comment" id="comment-14018"><div class="by">Kevin Bowrin, 2015-04-14 20:13 UTC</div><div class="text"><p>We get the baseURL from the userdata of the jcrEvent.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/43baef2b15829164584a33a5e13b2fa22d9f4d5b/fcrepo-jms/src/main/java/org/fcrepo/jms/headers/DefaultMessageFactory.java#L89" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/43baef2b15829164584a33a5e13b2fa22d9f4d5b/fcrepo-jms/src/main/java/org/fcrepo/jms/headers/DefaultMessageFactory.java#L89</a></p>
+
+<p>That's set here, from uriInfo.getBaseUri(), I think:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/ceacc9832890906c8dee8f4533f5b33679d9b875/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraBaseResource.java#L83" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/ceacc9832890906c8dee8f4533f5b33679d9b875/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraBaseResource.java#L83</a></p>
+
+<p>getBaseUri() should get the baseURI of the application, not the request. I haven't figured that out. </p>
+</div></div>
+<div class="comment" id="comment-14022"><div class="by">Jared Whiklo, 2015-04-14 20:41 UTC</div><div class="text"><p>I may be in over my head, but I think it is in the HttpResourceConverter. </p>
+
+<p>The <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L148-L150" class="external-link" rel="nofollow noreferrer">doBackward</a> refers to a <b>toDomain(doBackwardsPathOnly(resource))</b> which reverses the path and then builds a full URI for it. </p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L159-L183" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L159-L183</a></p>
+
+<p>I don't know much about JAX-RS but I am guessing it is still working with the session that is creating that node, and it passed it as <b>localhost:38080</b></p></div></div>
+<div class="comment" id="comment-14025"><div class="by">Jared Whiklo, 2015-04-14 20:59 UTC</div><div class="text"><p>The HttpResourceConverter uses a translator initialized in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraBaseResource.java#L53-L54" class="external-link" rel="nofollow noreferrer">FedoraBaseResource</a>, that is initialized using the FedoraLdp.class.</p>
+
+<p>That uses a javax.ws.rs.core.UriInfo in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/AbstractResource.java#L58" class="external-link" rel="nofollow noreferrer">AbstractResource</a>, which from documentation allows you to rebuild the Uri for a request without having it hard-coded. So the URI is based on the URI the request was sent to. </p>
+
+<p>Probably because the VM doesn't touch the traffic it just re-directs it, hence the baseUri is built using the external facing port instead of the correct internal one.</p>
+</div></div>
+<div class="comment" id="comment-14030"><div class="by">Jared Whiklo, 2015-04-15 15:07 UTC</div><div class="text"><p>Ok Andrew Woods probably need a decision from a higher power here.</p>
+
+<p>Best I can think we could compare the URI built from the request to the server configuration and if they are different send two JMS messages (or maybe add an alternate address to the first message). \</p>
+
+<p>That would allow internal consumers and external consumers to both work with one and fail with one. </p>
+
+<p>But this is still a question of whether it is operating as designed?</p></div></div>
+<div class="comment" id="comment-14076"><div class="by">Jared Whiklo, 2015-04-16 16:12 UTC</div><div class="text"><p>Okay, further investigation reveals a little more.</p>
+
+<p>This issue and Kevin's fix was due to the <a href="https://github.com/fcrepo4/fcrepo4/commit/ae12d0308a721e51e3e3a1b050978b901eb3fd3c" class="external-link" rel="nofollow noreferrer">this commit</a> with the addition of setBaseUrl to DefaultMessageFactory.</p>
+
+<p>It was then removed 16 days ago (<a href="https://github.com/fcrepo4/fcrepo4/commit/1227c6107ac929fcb94d44ae0ae43f37fc9cf042" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1227c6107ac929fcb94d44ae0ae43f37fc9cf042</a>).</p>
+
+<p>Building with the 4.1.2-SNAPSHOT each request has a baseUrl built off of the request Url. So if I request from outside the VM the JMS message get the baseUrl of localhost:38080, if I request from inside it uses localhost:8080 and so on.</p>
+
+<p>This is more of an expected behaviour (IMHO).</p>
+
+<p>As Former user authored both of these commits I wonder if he could share some of the back story. Also he has done alot of work in here and might have some thoughts based on experience?</p>
+
+<p>Specifically, why the baseUrl is now being set for each request instead of using either a) the baseUrl coming from the first request (which looked like their might be a memory leak) or b) using the container address instead (which I'm not sure if or how you might do that).</p></div></div>
+<div class="comment" id="comment-14077"><div class="by">Former user, 2015-04-16 16:19 UTC</div><div class="text"><p>Jared Whiklo: the initial approach was setting the baseURL only once, to avoid problems with ObservationManager opening too many threads.  That bug was fixed, and a new requirement was added (tracking the userAgent which would vary between requests).  So we switched to setting the baseURL and userAgent with each request, and that seems to solve the other problem too.</p></div></div>
+<div class="comment" id="comment-14078"><div class="by">Andrew Woods, 2015-04-16 16:34 UTC</div><div class="text"><p>Jared Whiklo, Kevin Bowrin: Is the issue identified in this ticket resolved as of 16 days ago?</p></div></div>
+<div class="comment" id="comment-14079"><div class="by">Kevin Bowrin, 2015-04-16 19:09 UTC</div><div class="text"><p>If you're going to make the assumption that all clients (users, applications, indexers) will access the repository using the same address, that should be indicated in the setup documentation.</p>
+
+<p>IMHO, an Indexer shouldn't ignore messages produced by a client that happens to use port forwarding or a proxy or an altered hosts file. The repository doesn't ignore those clients, so you'll get inconsistent data. </p></div></div>
+<div class="comment" id="comment-14080"><div class="by">Kevin Bowrin, 2015-04-16 19:11 UTC</div><div class="text"><p>This issue could be closed as 'Won't Fix'.</p></div></div>
+<div class="comment" id="comment-14081"><div class="by">Jared Whiklo, 2015-04-16 19:45 UTC</div><div class="text"><p>I agree with Kevin that an assumption has been made when dealing with Fedora instances behind a NAT firewall. So I'd say no, it's not resolved by that commit.</p>
+
+<p>It makes sense that the UriBuilder uses the request to generate the URLs it sends back, but for JMS messages it becomes more complicated.</p>
+
+<p>I think I mentioned this before, but I feel we can either:</p>
+
+<p>a) leave it as is and document this behaviour.</p>
+
+<p>b) determine the web-app container server name and port and add those to the JMS Message as alternate baseUrls. This requires a change to the fcrepo-message-consumer, possibly fcrepo-camel?</p>
+
+<p>c) some hybrid version, where you configure your Fedora instance if you are behind a NAT firewall and your JMS message consumer are as well.</p></div></div>
+<div class="comment" id="comment-14082"><div class="by">Former user, 2015-04-16 19:54 UTC</div><div class="text"><p>I think a variant of c would be to have a system property (e.g. fcrepo.jms.baseUrl) that would override the default behavior and be used instead of getting the baseURL from the request.  If you are running your repository behind a proxy and want the message-consumer to use a different URL than what outside clients are using, then you'd set that property.</p></div></div>
+<div class="comment" id="comment-14083"><div class="by">Jared Whiklo, 2015-04-16 19:57 UTC</div><div class="text"><p>Former user++</p></div></div>
+<div class="comment" id="comment-14086"><div class="by">Andrew Woods, 2015-04-16 20:56 UTC</div><div class="text"><p>Former user, sounds like a reasonable approach. Jared Whiklo, are you available to implement it?</p></div></div>
+<div class="comment" id="comment-14088"><div class="by">Jared Whiklo, 2015-04-16 23:48 UTC</div><div class="text"><p>If this sounds acceptable to Kevin Bowrin, I can give it a go.</p>
+
+<p>Could someone point to a previous example of using a system property. So I have a quasi-best practice to follow? </p></div></div>
+<div class="comment" id="comment-14089"><div class="by">Andrew Woods, 2015-04-17 00:01 UTC</div><div class="text"><p>Jared Whiklo<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/spring/DefaultPropertiesLoader.java#L86-L100" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/spring/DefaultPropertiesLoader.java#L86-L100</a></p></div></div>
+<div class="comment" id="comment-14095"><div class="by">Jared Whiklo, 2015-04-17 14:54 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/774" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/774</a></p></div></div>
+<div class="comment" id="comment-14104"><div class="by">Andrew Woods, 2015-04-17 23:20 UTC</div><div class="text"><p>This looks good, Jared Whiklo. Thanks.<br/>
+Would you also please document the configuration of this feature as a new line item here:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/Application+Configuration#ApplicationConfiguration-configelements" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Application+Configuration#ApplicationConfiguration-configelements</a></p></div></div>
+<div class="comment" id="comment-14105"><div class="by">Andrew Woods, 2015-04-17 23:25 UTC</div><div class="text"><p>PR has been squashed and merged into the master branch with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/8779cf0581cbd4f7fb07e741bf7a8ac27af1b68d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8779cf0581cbd4f7fb07e741bf7a8ac27af1b68d</a></p>
+
+<p>Pending response to documentation comment above.</p></div></div>
+<div class="comment" id="comment-14108"><div class="by">Jared Whiklo, 2015-04-20 15:38 UTC</div><div class="text"><p>Added documentation. Could use a second look as I'm not sure I was clear (or perhaps too clear) that you can specify a host/port or full url. <br/>
+Or if that level of documentation is just making murky that which would otherwise be clear.</p></div></div>
+<div class="comment" id="comment-14113"><div class="by">Andrew Woods, 2015-04-21 04:56 UTC</div><div class="text"><p>Looks good. Thanks, Jared Whiklo.</p></div></div>
+<p><a href="data/FCREPO-1259.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

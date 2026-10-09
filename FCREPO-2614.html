@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2614 Add versioning headers for LDPRm HEAD/GET responses</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2614</span> Add versioning headers for LDPRm HEAD/GET responses</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2017-09-22 18:12 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-04-18 21:07 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>medium, versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2617.html">FCREPO-2617</a> POST request to LDPCv to create LDPRm</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2719.html">FCREPO-2719</a> Paths for children of Timemap don&#x27;t get their paths transformed correctly.</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2709.html">FCREPO-2709</a> Create binary description mementos</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2708.html">FCREPO-2708</a> Create historical binary mementos</td></tr></table>
+<h2>Description</h2>
+<p>Responses to LDPRm HEAD and GET requests must include headers as outlined below.  These headers should be returned both when the LDPRm is retrieved via timegate datetime negotiation or directly by URI.</p>
+
+<ul>
+	<li>link rel="timegate" must point to  the LDPRv: e.g.  <a href="http://localhost:8080/rest/versioned_container1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioned_container1</a></li>
+	<li>link rel="timemap" must point to  the LDPCv:  e.g.  <a href="http://localhost:8080/rest/versioned_container1/fedora:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioned_container1/fedora:versions</a></li>
+	<li>link rel="original" must point to  the LDPRv :  e.g. <a href="http://localhost:8080/rest/versioned_container1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioned_container1</a></li>
+	<li>link    &lt;<a href="http://mementoweb.org/ns#Memento" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#Memento</a>&gt;; rel="type"</li>
+</ul>
+
+
+
+<p>Remove the following headers: <br/>
+&lt; Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+&lt; Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"</p>
+
+<p>For reference: the current (and incorrect) the output is as follows on an LDPm</p>
+
+<p>curl -v <a href="http://localhost:8080/rest/versioned_container1/fedora:timemap/20180312182935" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioned_container1/fedora:timemap/20180312182935</a></p>
+<ul>
+	<li>Trying 127.0.0.1...</li>
+	<li>Connected to localhost (127.0.0.1) port 8080 (#0)<br/>
+&gt; GET /rest/versioned_container1/fedora:timemap/20180312182935 HTTP/1.1<br/>
+&gt; Host: localhost:8080<br/>
+&gt; User-Agent: curl/7.43.0<br/>
+&gt; Accept: <b>/</b><br/>
+&gt; <br/>
+&lt; HTTP/1.1 200 OK<br/>
+&lt; Date: Mon, 12 Mar 2018 22:44:56 GMT<br/>
+&lt; ETag: W/"516c14a81d5179ddae4e9e96ba1dd3dcb11ec9bd"<br/>
+&lt; Last-Modified: Mon, 12 Mar 2018 18:29:28 GMT<br/>
+&lt; Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+&lt; Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+&lt; Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+&lt; Memento-Datetime: Mon, 12 Mar 2018 18:29:35 GMT<br/>
+&lt; Link: &lt;<a href="http://localhost:8080/static/constraints/ContainerConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ContainerConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+&lt; Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+&lt; Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"<br/>
+&lt; Link: &lt;<a href="http://localhost:8080/rest/versioned_container1/fedora:timemap/20180312182935" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioned_container1/fedora:timemap/20180312182935</a>&gt;; rel="timegate"<br/>
+&lt; Link: &lt;<a href="http://localhost:8080/rest/versioned_container1/fedora:timemap/20180312182935/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioned_container1/fedora:timemap/20180312182935/fcr:versions</a>&gt;; rel="timemap"<br/>
+&lt; Accept-Patch: application/sparql-update<br/>
+&lt; Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,application/ld+json,multipart/form-data,application/sparql-update,message/external-body; access-type=URL<br/>
+&lt; Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS<br/>
+&lt; Preference-Applied: return=representation<br/>
+&lt; Vary: Prefer<br/>
+&lt; Vary: Accept<br/>
+&lt; Vary: Range<br/>
+&lt; Vary: Accept-Encoding<br/>
+&lt; Vary: Accept-Language<br/>
+&lt; Vary: Accept-Datetime<br/>
+&lt; Content-Type: text/turtle;charset=utf-8</li>
+</ul>
+
+
+
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-19389"><div class="by">Jared Whiklo, 2017-09-27 16:43 UTC</div><div class="text"><p>I think that the LDPRm should <b>not</b> be returning the <tt>Content-Location</tt> header.</p>
+
+<p>This header should be returned by the LDPRv when receiving a HEAD/GET request with a <tt>Memento-Datetime</tt> header. The <tt>Content-Location</tt> header would point to the appropriate LDPRm for that Datetime. </p>
+
+<p>I got this off the pattern in section <a href="https://tools.ietf.org/html/rfc7089#section-4.1.2" class="external-link" rel="nofollow noreferrer">4.1.2</a> of the Memento spec.</p></div></div>
+<div class="comment" id="comment-19396"><div class="by">Ben Pennell, 2017-09-27 18:48 UTC</div><div class="text"><p>Jared Whiklo</p>
+
+<p>You are correct that the response from HEAD/GET to LDPRv should return Content-Location, since the response is a memento (although I will mention that Accept-Datetime is the header which requests should include for negotiation, Memento-Datetime is included in responses).  This ticket describes the headers that should be included in any response for an LDPRm, retrieved via either datetime negotiation or direct ldprm uri.</p>
+
+<p>I agree that the Content-Location header is of questionable value when directly requesting a LDPRm's uri.  But 4.1.2 does explicitly say that a memento response should include the Content-Location header, so we had left it included for both responses.  This might be a good question to ask the memento people though, to see if they feel like it is required in both methods of retrieving the LDPRm.</p></div></div>
+<div class="comment" id="comment-19400"><div class="by">Jared Whiklo, 2017-09-27 18:59 UTC</div><div class="text"><p>Ben Pennell perhaps I am reading this wrong but 4.1.2 says </p>
+<blockquote>
+<p> In this case, the response to the user agent's request of Figure 4<br/>
+ has a "200 OK" HTTP status code, and the "Content-Location" header<br/>
+ conveys the URI-M of the selected Memento.</p></blockquote>
+<p>But in Figure 4, we are performing a HEAD request against the LDPRv not the LDPRm. </p>
+<blockquote><p>Figure 4 shows a user agent that attempts to datetime negotiate with<br/>
+ the Original Resource <a href="http://a.example.org/" class="external-link" rel="nofollow noreferrer">http://a.example.org/</a> by including an "Accept-<br/>
+ Datetime" header in its HTTP HEAD request. This initiating request<br/>
+ is the same for Pattern 1 (Section 4.1) through Pattern 3 (Section 4.3).</p></blockquote>
+<blockquote><p>HEAD / HTTP/1.1<br/>
+ Host: a.example.org<br/>
+ Accept-Datetime: Tue, 20 Mar 2001 20:35:00 GMT<br/>
+ Connection: close<br/>
+  </p></blockquote></div></div>
+<div class="comment" id="comment-19401"><div class="by">Jared Whiklo, 2017-09-27 19:01 UTC</div><div class="text"><p>Sorry formatting here is not great, but the second entry is on Page 15, just above <a href="https://tools.ietf.org/html/rfc7089#section-4.1" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7089#section-4.1</a></p></div></div>
+<div class="comment" id="comment-19403"><div class="by">Ben Pennell, 2017-09-27 19:24 UTC</div><div class="text"><p>The specification is clear about the Content-Location being used during datetime negotiation.  It also states the the GET response during date time negotiation is a representation of the memento at the end of section 4.1.2:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>   In a subsequent request, which is the same as Figure 4 but with HTTP
+   GET instead of HEAD, the user agent can obtain the representation of
+   the selected Memento.</pre>
+</div></div>
+<p>What it is not clear on is if the fact that a memento has a distinct URI means that accessing the memento in different ways can produce different responses.  My interpretation was that you were effectively accessing the same resource whether it was direct or negotiated because of this language, but I think it would be useful ask.</p></div></div>
+<div class="comment" id="comment-19404"><div class="by">Jared Whiklo, 2017-09-27 19:32 UTC</div><div class="text"><p>Because of this and the issues we are going to run into around external content, perhaps we should switch focus from the datetime negotiation pattern in 4.1.2 to the one in 4.1.1?</p>
+<blockquote><p>In this case, the response to the user agent's request of Figure 4<br/>
+ has a "302 Found" HTTP status code, and the "Location" header conveys<br/>
+ the URI-M of the selected Memento.</p></blockquote></div></div>
+<div class="comment" id="comment-19844"><div class="by">Danny Bernstein, 2018-04-12 21:47 UTC</div><div class="text"><p>After the above issues are resolved,  this issue may no longer be an issue.  Please test before delving in.</p></div></div>
+<div class="comment" id="comment-19878"><div class="by">Jared Whiklo, 2018-04-18 20:17 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1327" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1327</a></p></div></div>
+<div class="comment" id="comment-19882"><div class="by">Danny Bernstein, 2018-04-18 21:07 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/09e64143baa24ba6c6bd014b0eb76417219f1c93" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/09e64143baa24ba6c6bd014b0eb76417219f1c93</a></p></div></div>
+<p><a href="data/FCREPO-2614.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

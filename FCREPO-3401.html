@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3401 fedora6 with remote mysql 8 timeout </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3401</span> fedora6 with remote mysql 8 timeout </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Calvin Xu</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2020-08-27 15:56 UTC</td></tr><tr><th>Updated</th><td>2020-10-08 05:35 UTC</td></tr><tr><th>Resolved</th><td>2020-09-10 16:21 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3447.html">FCREPO-3447</a> Document configurable database properties</td></tr></table>
+<h2>Description</h2>
+<p>In the Tomcat fedora6main build with a remote mysql 8 I am running into errors seems to be due to db inactivity after x amount of time, the below  error message will appears on the UI, goes away after UI refresh twice or restarting tomcat. So far I have setup the jdbc url as "-Dfcrepo.db.url=jdbc:mysql://servername:3306/fcrepo?serverTimezone=UTC&amp;autoReconnect=true&amp;tcpKeepAlive=true, </p>
+
+<p>here's the full error message:<br/>
+ org.springframework.dao.RecoverableDataAccessException: PreparedStatementCallback; SQL <span class="error">&#91;SELECT x.fedora_root_id, x.ocfl_id FROM (SELECT fedora_root_id, ocfl_id FROM ocfl_id_map WHERE fedora_id = ? UNION SELECT fedora_root_id, ocfl_id FROM ocfl_id_map_session_operations WHERE fedora_id = ? AND session_id = ? AND operation = &#39;add&#39;) x&#93;</span>; The last packet successfully received from the server was 2,760,089 milliseconds ago. The last packet sent successfully to the server was 2,760,092 milliseconds ago. is longer than the server configured value of 'wait_timeout'. You should consider either expiring and/or testing connection validity before use in your application, increasing the server configured values for client timeouts, or using the Connector/J connection property 'autoReconnect=true' to avoid this problem.; nested exception is com.mysql.cj.jdbc.exceptions.CommunicationsException: The last packet successfully received from the server was 2,760,089 milliseconds ago. The last packet sent successfully to the server was 2,760,092 milliseconds ago. is longer than the server configured value of 'wait_timeout'. You should consider either expiring and/or testing connection validity before use in your application, increasing the server configured values for client timeouts, or using the Connector/J connection property 'autoReconnect=true' to avoid this problem.org.springframework.dao.RecoverableDataAccessException: PreparedStatementCallback; SQL <span class="error">&#91;SELECT x.fedora_root_id, x.ocfl_id FROM (SELECT fedora_root_id, ocfl_id FROM ocfl_id_map WHERE fedora_id = ? UNION SELECT fedora_root_id, ocfl_id FROM ocfl_id_map_session_operations WHERE fedora_id = ? AND session_id = ? AND operation = &#39;add&#39;) x&#93;</span>; The last packet successfully received from the server was 2,760,089 milliseconds ago. The last packet sent successfully to the server was 2,760,092 milliseconds ago. is longer than the server configured value of 'wait_timeout'. You should consider either expiring and/or testing connection validity before use in your application, increasing the server configured values for client timeouts, or using the Connector/J connection property 'autoReconnect=true' to avoid this problem.; nested exception is com.mysql.cj.jdbc.exceptions.CommunicationsException: The last packet successfully received from the server was 2,760,089 milliseconds ago. The last packet sent successfully to the server was 2,760,092 milliseconds ago. is longer than the server configured value of 'wait_timeout'. You should consider either expiring and/or testing connection validity before use in your application, increasing the server configured values for client timeouts, or using the Connector/J connection property 'autoReconnect=true' to avoid this problem. at org.springframework.jdbc.support.SQLExceptionSubclassTranslator.doTranslate(SQLExceptionSubclassTranslator.java:100) at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:72) at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:81) at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1443) at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:633) at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:669) at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:694) at org.springframework.jdbc.core.JdbcTemplate.query(JdbcTemplate.java:748) at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.queryForObject(NamedParameterJdbcTemplate.java:236) at org.fcrepo.persistence.ocfl.impl.DbFedoraToOcflObjectIndex.getMapping(DbFedoraToOcflObjectIndex.java:232) at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.getFedoraOcflMapping(OcflPersistentStorageSession.java:209) at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.getHeaders(OcflPersistentStorageSession.java:191) at org.fcrepo.kernel.impl.models.ResourceFactoryImpl.instantiateResource(ResourceFactoryImpl.java:182) at org.fcrepo.kernel.impl.models.ResourceFactoryImpl.getResource(ResourceFactoryImpl.java:75) at org.fcrepo.http.api.ContentExposingResource.getResourceFromPath(ContentExposingResource.java:1024) at org.fcrepo.http.api.ContentExposingResource.resource(ContentExposingResource.java:419) at org.fcrepo.http.api.FedoraLdp.getResource(FedoraLdp.java:252) at jdk.internal.reflect.GeneratedMethodAccessor69.invoke(Unknown Source) at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) at java.base/java.lang.reflect.Method.invoke(Method.java:566) at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52) at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:124) at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:167) at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176) at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:79) at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:469) at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:391) at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:80) at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:253) at org.glassfish.jersey.internal.Errors$1.call(Errors.java:248) at org.glassfish.jersey.internal.Errors$1.call(Errors.java:244) at org.glassfish.jersey.internal.Errors.process(Errors.java:292) at org.glassfish.jersey.internal.Errors.process(Errors.java:274) at org.glassfish.jersey.internal.Errors.process(Errors.java:244) at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265) at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:232) at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:680) at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:392) at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346) at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:365) at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:318) at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205) at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231) at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166) at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193) at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166) at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:61) at org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:244) at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119) at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:86) at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38) at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89) at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449) at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365) at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90) at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83) at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387) at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362) at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125) at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358) at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271) at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193) at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166) at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:202) at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96) at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:666) at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:139) at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92) at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:688) at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:343) at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:373) at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:65) at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:868) at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1594) at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49) at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128) at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628) at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) at java.base/java.lang.Thread.run(Thread.java:834)Caused by: com.mysql.cj.jdbc.exceptions.CommunicationsException: The last packet successfully received from the server was 2,760,089 milliseconds ago. The last packet sent successfully to the server was 2,760,092 milliseconds ago. is longer than the server configured value of 'wait_timeout'. You should consider either expiring and/or testing connection validity before use in your application, increasing the server configured values for client timeouts, or using the Connector/J connection property 'autoReconnect=true' to avoid this problem. at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:953) at com.mysql.cj.jdbc.ClientPreparedStatement.executeQuery(ClientPreparedStatement.java:1003) at com.mchange.v2.c3p0.impl.NewProxyPreparedStatement.executeQuery(NewProxyPreparedStatement.java:1471) at org.springframework.jdbc.core.JdbcTemplate$1.doInPreparedStatement(JdbcTemplate.java:678) at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:617) ... 79 moreCaused by: com.mysql.cj.exceptions.CJCommunicationsException: The last packet successfully received from the server was 2,760,089 milliseconds ago. The last packet sent successfully to the server was 2,760,092 milliseconds ago. is longer than the server configured value of 'wait_timeout'. You should consider either expiring and/or testing connection validity before use in your application, increasing the server configured values for client timeouts, or using the Connector/J connection property 'autoReconnect=true' to avoid this problem. at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62) at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:490) at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:105) at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:151) at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:167) at com.mysql.cj.protocol.a.NativeProtocol.readMessage(NativeProtocol.java:538) at com.mysql.cj.protocol.a.NativeProtocol.checkErrorMessage(NativeProtocol.java:702) at com.mysql.cj.protocol.a.NativeProtocol.sendCommand(NativeProtocol.java:641) at com.mysql.cj.protocol.a.NativeProtocol.sendQueryPacket(NativeProtocol.java:940) at com.mysql.cj.NativeSession.execSQL(NativeSession.java:1075) at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:930) ... 83 moreCaused by: java.io.EOFException: Can not read response from server. Expected to read 4 bytes, read 0 bytes before connection was unexpectedly lost. at com.mysql.cj.protocol.FullReadInputStream.readFully(FullReadInputStream.java:67) at com.mysql.cj.protocol.a.SimplePacketReader.readHeader(SimplePacketReader.java:63) at com.mysql.cj.protocol.a.SimplePacketReader.readHeader(SimplePacketReader.java:45) at com.mysql.cj.protocol.a.TimeTrackingPacketReader.readHeader(TimeTrackingPacketReader.java:52) at com.mysql.cj.protocol.a.TimeTrackingPacketReader.readHeader(TimeTrackingPacketReader.java:41) at com.mysql.cj.protocol.a.MultiPacketReader.readHeader(MultiPacketReader.java:54) at com.mysql.cj.protocol.a.MultiPacketReader.readHeader(MultiPacketReader.java:44) at com.mysql.cj.protocol.a.NativeProtocol.readMessage(NativeProtocol.java:532) ... 88 more</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-21397"><div class="by">Peter Winckles, 2020-08-27 16:24 UTC</div><div class="text"><p>This problem is because MySQL is closing connections that connection pool still believes are open. Tweaking c3p0's connection testing will address the problem: <a href="https://www.mchange.com/projects/c3p0/#configuring_connection_testing" class="external-link" rel="nofollow noreferrer">https://www.mchange.com/projects/c3p0/#configuring_connection_testing</a></p></div></div>
+<div class="comment" id="comment-21423"><div class="by">Danny Bernstein, 2020-09-10 16:21 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1750" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1750</a></p></div></div>
+<div class="comment" id="comment-21430"><div class="by">Calvin Xu, 2020-09-10 23:56 UTC</div><div class="text"><p>Tested the new build, ran into issue during tomcat startup, catalina,out as below:</p>
+
+<p>10-Sep-2020 19:47:48.122 INFO <span class="error">&#91;main&#93;</span> org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive <span class="error">&#91;/mydirectory/tomcat/webapps/fcrepo-webapp-6.0.0-SNAPSHOT.war&#93;</span><br/>
+ 10-Sep-2020 19:47:53.755 WARNING <span class="error">&#91;main&#93;</span> org.apache.catalina.startup.ContextConfig.validateSecurityRoles Security role name <span class="error">&#91;fedoraUser&#93;</span> used in an &lt;auth-constraint&gt; without being defined in a &lt;security-role&gt;<br/>
+ 10-Sep-2020 19:47:53.755 WARNING <span class="error">&#91;main&#93;</span> org.apache.catalina.startup.ContextConfig.validateSecurityRoles Security role name <span class="error">&#91;fedoraAdmin&#93;</span> used in an &lt;auth-constraint&gt; without being defined in a &lt;security-role&gt;<br/>
+ 10-Sep-2020 19:47:53.807 INFO <span class="error">&#91;main&#93;</span> org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.<br/>
+ INFO 19:47:56.126 (FedoraPropsConfig) Fedora home: /.stagedata/fedora6<br/>
+ INFO 19:47:56.268 (OcflPropsConfig) Fedora staging: /.stagedata/fedora6/data/staging<br/>
+ INFO 19:47:56.269 (OcflPropsConfig) Fedora OCFL root: /.migration/coll/qa0727/ocfl<br/>
+ INFO 19:47:56.269 (OcflPropsConfig) Fedora OCFL temp: /.stagedata/fedora6/data/ocfl-temp<br/>
+ INFO 19:47:57.917 (DbFedoraToOcflObjectIndex) Applying ddl: sql/mysql-ocfl-index.sql<br/>
+ INFO 19:47:58.106 (ContainmentIndexImpl) Applying ddl: sql/mysql-containment.sql<br/>
+ INFO 19:47:58.691 (IndexBuilderImpl) Initiating index rebuild.<br/>
+ WARN 19:48:07.050 (XmlWebApplicationContext) Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'repositoryInitializer': Invocation of init method failed; nested exception is org.fcrepo.kernel.api.exception.RepositoryRuntimeException: Failed add/updated the search index for : info:fedora/nlm:nlmuid-101584571X1-img/THUMB<br/>
+ ERROR 19:48:07.081 (ContextLoader) Context initialization failed<br/>
+ org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'repositoryInitializer': Invocation of init method failed; nested exception is org.fcrepo.kernel.api.exception.RepositoryRuntimeException: Failed add/updated the search index for : info:fedora/nlm:nlmuid-101584571X1-img/THUMB<br/>
+ at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:160)<br/>
+ at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:416)<br/>
+ at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1788)<br/>
+ at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:595)<br/>
+ at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:517)<br/>
+ at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:323)<br/>
+ at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:226)<br/>
+ at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:321)<br/>
+ at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202)<br/>
+ at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:893)<br/>
+ at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:879)<br/>
+ at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:551)<br/>
+ at org.springframework.web.context.ContextLoader.configureAndRefreshWebApplicationContext(ContextLoader.java:401)<br/>
+ at org.springframework.web.context.ContextLoader.initWebApplicationContext(ContextLoader.java:292)<br/>
+ at org.springframework.web.context.ContextLoaderListener.contextInitialized(ContextLoaderListener.java:103)<br/>
+ at org.fcrepo.http.commons.FedoraContextLoaderListener.contextInitialized(FedoraContextLoaderListener.java:40)<br/>
+ at org.apache.catalina.core.StandardContext.listenerStart(StandardContext.java:4690)<br/>
+ at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:5151)<br/>
+ at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:183)<br/>
+ at org.apache.catalina.core.ContainerBase.addChildInternal(ContainerBase.java:717)<br/>
+ at org.apache.catalina.core.ContainerBase.addChild(ContainerBase.java:690)<br/>
+ at org.apache.catalina.core.StandardHost.addChild(StandardHost.java:705)<br/>
+ at org.apache.catalina.startup.HostConfig.deployWAR(HostConfig.java:978)<br/>
+ at org.apache.catalina.startup.HostConfig$DeployWar.run(HostConfig.java:1849)<br/>
+ at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)<br/>
+ at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)<br/>
+ at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75)<br/>
+ at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:118)<br/>
+ at org.apache.catalina.startup.HostConfig.deployWARs(HostConfig.java:773)<br/>
+ at org.apache.catalina.startup.HostConfig.deployApps(HostConfig.java:427)<br/>
+ at org.apache.catalina.startup.HostConfig.start(HostConfig.java:1576)<br/>
+ at org.apache.catalina.startup.HostConfig.lifecycleEvent(HostConfig.java:309)<br/>
+ at org.apache.catalina.util.LifecycleBase.fireLifecycleEvent(LifecycleBase.java:123)<br/>
+ at org.apache.catalina.util.LifecycleBase.setStateInternal(LifecycleBase.java:423)<br/>
+ at org.apache.catalina.util.LifecycleBase.setState(LifecycleBase.java:366)<br/>
+ at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:936)<br/>
+ at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:841)<br/>
+ at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:183)<br/>
+ at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1384)<br/>
+ at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1374)<br/>
+ at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)<br/>
+ at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75)<br/>
+ at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:140)<br/>
+ at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:909)<br/>
+ at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:262)<br/>
+ at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:183)<br/>
+ at org.apache.catalina.core.StandardService.startInternal(StandardService.java:421)<br/>
+ at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:183)<br/>
+ at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:930)<br/>
+ at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:183)<br/>
+ at org.apache.catalina.startup.Catalina.start(Catalina.java:633)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+ at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:343)<br/>
+ at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:474)<br/>
+ Caused by: org.fcrepo.kernel.api.exception.RepositoryRuntimeException: Failed add/updated the search index for : info:fedora/nlm:nlmuid-101584571X1-img/THUMB<br/>
+ at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:325)<br/>
+ at jdk.internal.reflect.GeneratedMethodAccessor46.invoke(Unknown Source)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+ at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:344)<br/>
+ at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:198)<br/>
+ at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)<br/>
+ at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:367)<br/>
+ at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:118)<br/>
+ at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)<br/>
+ at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:212)<br/>
+ at com.sun.proxy.$Proxy38.addUpdateIndex(Unknown Source)<br/>
+ at org.fcrepo.persistence.ocfl.impl.IndexBuilderImpl.lambda$indexOcflObject$6(IndexBuilderImpl.java:168)<br/>
+ at java.base/java.util.ArrayList.forEach(ArrayList.java:1541)<br/>
+ at org.fcrepo.persistence.ocfl.impl.IndexBuilderImpl.indexOcflObject(IndexBuilderImpl.java:167)<br/>
+ at org.fcrepo.persistence.ocfl.impl.IndexBuilderImpl.lambda$rebuild$0(IndexBuilderImpl.java:94)<br/>
+ at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183)<br/>
+ at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:195)<br/>
+ at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:195)<br/>
+ at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)<br/>
+ at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1801)<br/>
+ at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:484)<br/>
+ at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:474)<br/>
+ at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)<br/>
+ at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)<br/>
+ at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)<br/>
+ at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:497)<br/>
+ at org.fcrepo.persistence.ocfl.impl.IndexBuilderImpl.rebuild(IndexBuilderImpl.java:91)<br/>
+ at org.fcrepo.persistence.ocfl.impl.IndexBuilderImpl.rebuildIfNecessary(IndexBuilderImpl.java:72)<br/>
+ at org.fcrepo.persistence.ocfl.RepositoryInitializer.initialize(RepositoryInitializer.java:74)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+ at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleElement.invoke(InitDestroyAnnotationBeanPostProcessor.java:389)<br/>
+ at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:333)<br/>
+ at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:157)<br/>
+ ... 56 common frames omitted<br/>
+ Caused by: org.fcrepo.kernel.api.exception.PathNotFoundRuntimeException: org.fcrepo.kernel.api.exception.PathNotFoundException: org.fcrepo.persistence.api.exceptions.PersistentItemNotFoundException: No OCFL mapping found for info:fedora/nlm:nlmuid-101584571X1-img/THUMB/fcr:metadata<br/>
+ at org.fcrepo.kernel.impl.models.BinaryImpl.getDescription(BinaryImpl.java:139)<br/>
+ at org.fcrepo.kernel.impl.models.FedoraResourceImpl.getUserTypes(FedoraResourceImpl.java:260)<br/>
+ at org.fcrepo.kernel.impl.models.FedoraResourceImpl.getTypes(FedoraResourceImpl.java:225)<br/>
+ at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:300)<br/>
+ ... 92 common frames omitted<br/>
+ Caused by: org.fcrepo.kernel.api.exception.PathNotFoundException: org.fcrepo.persistence.api.exceptions.PersistentItemNotFoundException: No OCFL mapping found for info:fedora/nlm:nlmuid-101584571X1-img/THUMB/fcr:metadata<br/>
+ at org.fcrepo.kernel.impl.models.ResourceFactoryImpl.instantiateResource(ResourceFactoryImpl.java:225)<br/>
+ at org.fcrepo.kernel.impl.models.ResourceFactoryImpl.getResource(ResourceFactoryImpl.java:82)<br/>
+ at org.fcrepo.kernel.impl.models.BinaryImpl.getDescription(BinaryImpl.java:137)<br/>
+ ... 95 common frames omitted<br/>
+ Caused by: org.fcrepo.persistence.api.exceptions.PersistentItemNotFoundException: No OCFL mapping found for info:fedora/nlm:nlmuid-101584571X1-img/THUMB/fcr:metadata<br/>
+ at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.getFedoraOcflMapping(OcflPersistentStorageSession.java:200)<br/>
+ at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.getHeaders(OcflPersistentStorageSession.java:187)<br/>
+ at org.fcrepo.kernel.impl.models.ResourceFactoryImpl.instantiateResource(ResourceFactoryImpl.java:191)<br/>
+ ... 97 common frames omitted<br/>
+ 10-Sep-2020 19:48:07.083 SEVERE <span class="error">&#91;main&#93;</span> org.apache.catalina.core.StandardContext.startInternal One or more listeners failed to start. Full details will be found in the appropriate container log file<br/>
+ 10-Sep-2020 19:48:07.087 SEVERE <span class="error">&#91;main&#93;</span> org.apache.catalina.core.StandardContext.startInternal Context <span class="error">&#91;/fcrepo-webapp-6.0.0-SNAPSHOT&#93;</span> startup failed due to previous errors<br/>
+ 10-Sep-2020 19:48:07.145 WARNING <span class="error">&#91;main&#93;</span> org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesJdbc The web application <span class="error">&#91;fcrepo-webapp-6.0.0-SNAPSHOT&#93;</span> registered the JDBC driver <span class="error">&#91;com.mysql.cj.jdbc.Driver&#93;</span> but failed to unregister it when the web application was stopped. To prevent a memory leak, the JDBC Driver has been forcibly unregistered.<br/>
+ 10-Sep-2020 19:48:07.147 WARNING <span class="error">&#91;main&#93;</span> org.apache.catalina.loader.WebappClassLoaderBase.clearReferencesThreads The web application <span class="error">&#91;fcrepo-webapp-6.0.0-SNAPSHOT&#93;</span> appears to have started a thread named <span class="error">&#91;mysql-cj-abandoned-connection-cleanup&#93;</span> but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:<br/>
+ java.base@11.0.8/java.lang.Object.wait(Native Method)<br/>
+ java.base@11.0.8/java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:155)<br/>
+ com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.run(AbandonedConnectionCleanupThread.java:85)<br/>
+ java.base@11.0.8/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)<br/>
+ java.base@11.0.8/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)<br/>
+ java.base@11.0.8/java.lang.Thread.run(Thread.java:834)<br/>
+ 10-Sep-2020 19:48:07.158 INFO <span class="error">&#91;main&#93;</span> org.apache.catalina.startup.HostConfig.deployWAR Deployment of web application archive <span class="error">&#91;/mydirectory/tomcat/webapps/fcrepo-webapp-6.0.0-SNAPSHOT.war&#93;</span> has finished in <span class="error">&#91;19,035&#93;</span> ms<br/>
+ 10-Sep-2020 19:48:07.164 INFO <span class="error">&#91;main&#93;</span> org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler <span class="error">&#91;&quot;http-nio-8080&quot;&#93;</span><br/>
+ 10-Sep-2020 19:48:07.188 INFO <span class="error">&#91;main&#93;</span> org.apache.catalina.startup.Catalina.start Server startup in <span class="error">&#91;19,648&#93;</span> milliseconds<br/>
+ 10-Sep-2020 19:48:07.621 INFO <span class="error">&#91;mysql-cj-abandoned-connection-cleanup&#93;</span> org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading Illegal access: this web application instance has been stopped already. Could not load []. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.<br/>
+ java.lang.IllegalStateException: Illegal access: this web application instance has been stopped already. Could not load []. The following stack trace is thrown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access.<br/>
+ at org.apache.catalina.loader.WebappClassLoaderBase.checkStateForResourceLoading(WebappClassLoaderBase.java:1385)<br/>
+ at org.apache.catalina.loader.WebappClassLoaderBase.getResource(WebappClassLoaderBase.java:1038)<br/>
+ at com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.checkThreadContextClassLoader(AbandonedConnectionCleanupThread.java:117)<br/>
+ at com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.run(AbandonedConnectionCleanupThread.java:84)<br/>
+ at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)<br/>
+ at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)<br/>
+ at java.base/java.lang.Thread.run(Thread.java:834)</p>
+
+<p>I have tried to drop all the db tables and killed all the mysql threads, as well as wiping the fedora /data directory but did not seem to solve the issue, in my setenv.sh for tomcat I have the following configuration:</p>
+
+<p>JAVA_OPTS="-Dfcrepo.home=/mydirectory/fedora6 -Dfcrepo.activemq.directory=/mydirectory/activemq -Dfcrepo.ocfl.root=/.migration/coll/qa0727/ocfl -Dfcrepo.db.url='jdbc:mysql://myserver:3306/fcrepo?serverTimezone=UTC&amp;autoReconnect=true&amp;tcpKeepAlive=true&amp;clearReferencesStopThreads=true' -Dfcrepo.db.user=fedora6 -Dfcrepo.db.password="password"<br/>
+ export CATALINA_OPTS="$CATALINA_OPTS -Xms512m"</p></div></div>
+<div class="comment" id="comment-21457"><div class="by">Peter Winckles, 2020-10-01 18:09 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/662ab703a1fa2ad2e32995ae4b376079d6384917" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/662ab703a1fa2ad2e32995ae4b376079d6384917</a></p></div></div>
+<p><a href="data/FCREPO-3401.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

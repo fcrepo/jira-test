@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4032 False positives in ghost nodes detection</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4032</span> False positives in ghost nodes detection</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Béranger Enselme</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2025-08-25 19:11 UTC</td></tr><tr><th>Updated</th><td>2025-10-23 15:35 UTC</td></tr><tr><th>Resolved</th><td>2025-10-23 15:35 UTC</td></tr><tr><th>Affects versions</th><td>fcrepo 6.6.0</td></tr><tr><th>Fix versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Environment</h2>Docker 
+<h2>Description</h2>
+<p>There is a bug in the way ghost nodes are detected which leads us to get  <tt>409 Resource path xxx is an immutable resource.</tt> errors. </p>
+
+<p>For example, if <tt>fcrepo/rest/erudit:unb.jcim1499352.jcim13_1</tt> exists, we get the error when trying to create <tt>fcrepo/rest/erudit:unb.jcim1499352.jcim_3_1</tt>. </p>
+
+<p>My colleague Maxime Turcotte traced it to the way ghost nodes are detected, using the <tt>LIKE</tt> SQL operator, which interprets {<em>} as a wildcard for any single character. Since fcrepo does not escape {</em>} nor <tt>%</tt>,  it detects that <tt>erudit:unb.jcim1499352.jcim_3_1</tt> is actually a ghost node for <tt>fcrepo/rest/erudit:unb.jcim1499352.jcim13_1</tt>. </p>
+
+<p>This makes it impossible to migrate our data to Fedora 6 for now.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-26320"><div class="by">Jared Whiklo, 2025-08-27 20:13 UTC</div><div class="text"><p>I was unable to duplicate this with curl, so I am guessing it is an encoding issue. Could you provide some more details about the process you are using to create these objects.</p>
+
+<p>My test output - <a href="https://gist.github.com/whikloj/5340d8feeefb10793095e5f8ed5b74ee" title="smart-link" class="external-link" rel="nofollow noreferrer">https://gist.github.com/whikloj/5340d8feeefb10793095e5f8ed5b74ee</a> </p></div></div>
+<div class="comment" id="comment-26716"><div class="by">Basil Marti, 2025-10-10 15:24 UTC</div><div class="text"><p>The current implementation (underscores and percent signs are not escaped in the LIKE query) also creates another problem:</p>
+
+<p>We have significant performance issues in installations with a large number of resources (20 million or more), where the creation of new resources takes longer and longer, the more resources you have in the Fedora DB containment table.</p>
+
+<p>If you have an URI with underscores (in our case all URIs have at least 2 underscores, and some even more than that), a LIKE query like <tt>LIKE "abc_123_235/%"</tt> is very expensive to execute, as there are multiple wildcards in the query and the current DB indexes only help if there is a single wildcard at the end of the string. Correctly escaping the underlines (e.g. {{LIKE "abc&#95;123&#95;235/%")}}can reduce the time needed to execute the query from a few seconds to a few milliseconds, solving our performance issues. </p>
+
+<p>I created a fork of the Fedora code and solved this issue there (including some tests which will fail if underscores and percent signs are not escaped). I will create a PR and hope this can be added to the next release of Fedora. </p></div></div>
+<div class="comment" id="comment-26749"><div class="by">Béranger Enselme, 2025-10-15 12:20 UTC</div><div class="text"><p>Basil Marti Thank you Basil! It looks like a really serious bug for many of us, let’s hope your fix gets added soon.</p></div></div>
+<div class="comment" id="comment-26782"><div class="by">Jared Whiklo, 2025-10-15 15:52 UTC</div><div class="text"><p>Thank you for the PR Basil Marti , I am still unable to duplicate this problem. You have a unit test but that is working directly against the DB via the containment index. What I can’t get is. I have an object &lt;<a href="http://localhost:8080/rest/abc/123" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/abc/123</a>&gt; so if I try to add, “_bc/123” then it should fail because underscore should match…correct? I really just need a reproducable test case.</p></div></div>
+<div class="comment" id="comment-26783"><div class="by">Béranger Enselme, 2025-10-15 16:56 UTC</div><div class="text"><p>Jared Whiklo My colleague Maxime came up with this: <a href="https://gist.github.com/maxocub/46a145c0b5d214d9a1b25a993ecac669" title="smart-link" class="external-link" rel="nofollow noreferrer">https://gist.github.com/maxocub/46a145c0b5d214d9a1b25a993ecac669</a> </p></div></div>
+<div class="comment" id="comment-26784"><div class="by">Jared Whiklo, 2025-10-15 17:14 UTC</div><div class="text"><p>Béranger Enselme Right… thank you. It’s the children that cause the issue. Copying that gist here for posterity. </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># PUT to jcim13_1
+
+❯ curl -ufedoraAdmin:fedoraAdmin -XPUT -i http://localhost:8080/rest/erudit:unb.jcim1499352.jcim13_1 -H"Content-type: text/turtle" -d " &lt;&gt; &lt;http://purl.org/dc/elements/1.1/title&gt; \"jcim13_1\" . "
+HTTP/1.1 201
+Cache-Control: private
+Set-Cookie: JSESSIONID=DB600ECC872BEF68E192AA1CBE1C909E; Path=/fcrepo; HttpOnly
+Set-Cookie: rememberMe=deleteMe; Path=/fcrepo; Max-Age=0; Expires=Mon, 01-Sep-2025 21:41:49 GMT; SameSite=lax
+ETag: W/"460AC954A099732D02C5B7E3ADE38227"
+X-State-Token: 2DEBAFCF9B1370C6D52E6108FCC32507
+Last-Modified: Tue, 02 Sep 2025 21:41:49 GMT
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1&gt;; rel="timegate"
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1&gt;; rel="original"
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/fcr:versions&gt;; rel="timemap"
+Link: &lt;http://www.w3.org/ns/ldp#BasicContainer&gt;; rel="type"
+Link: &lt;http://www.w3.org/ns/ldp#Resource&gt;; rel="type"
+Link: &lt;http://fedora.info/definitions/v4/repository#Resource&gt;; rel="type"
+Link: &lt;http://mementoweb.org/ns#OriginalResource&gt;; rel="type"
+Link: &lt;http://mementoweb.org/ns#TimeGate&gt;; rel="type"
+Link: &lt;http://www.w3.org/ns/ldp#RDFSource&gt;; rel="type"
+Link: &lt;http://www.w3.org/ns/ldp#Container&gt;; rel="type"
+Link: &lt;http://fedora.info/definitions/v4/repository#Container&gt;; rel="type"
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/fcr:acl&gt;; rel="acl"
+Location: http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1
+Content-Type: text/plain
+Content-Length: 65
+Date: Tue, 02 Sep 2025 21:41:49 GMT
+
+http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1
+
+
+# Add a children to jcim13_1
+
+❯ curl -ufedoraAdmin:fedoraAdmin -XPUT -i http://localhost:8080/rest/erudit:unb.jcim1499352.jcim13_1/test.xml -H"Content-type: application/xml" -d "&lt;xml/&gt;"
+HTTP/1.1 201
+Cache-Control: private
+Set-Cookie: JSESSIONID=2EE55CD9FE12A5A95EF3EB03F57D6825; Path=/fcrepo; HttpOnly
+Set-Cookie: rememberMe=deleteMe; Path=/fcrepo; Max-Age=0; Expires=Mon, 01-Sep-2025 21:42:41 GMT; SameSite=lax
+ETag: "887F6F9FAC8FEB48613CD6A1FB0F311D"
+X-State-Token: 887F6F9FAC8FEB48613CD6A1FB0F311D
+Last-Modified: Tue, 02 Sep 2025 21:42:41 GMT
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml/fcr:metadata&gt;; rel="describedby"; anchor="http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml"
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml&gt;; rel="timegate"
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml&gt;; rel="original"
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml/fcr:versions&gt;; rel="timemap"
+Link: &lt;http://www.w3.org/ns/ldp#NonRDFSource&gt;; rel="type"
+Link: &lt;http://www.w3.org/ns/ldp#Resource&gt;; rel="type"
+Link: &lt;http://fedora.info/definitions/v4/repository#Resource&gt;; rel="type"
+Link: &lt;http://mementoweb.org/ns#OriginalResource&gt;; rel="type"
+Link: &lt;http://mementoweb.org/ns#TimeGate&gt;; rel="type"
+Link: &lt;http://fedora.info/definitions/v4/repository#Binary&gt;; rel="type"
+Link: &lt;http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml/fcr:acl&gt;; rel="acl"
+Location: http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml
+Content-Type: text/plain
+Content-Length: 74
+Date: Tue, 02 Sep 2025 21:42:41 GMT
+
+http://localhost:8080/fcrepo/rest/erudit:unb.jcim1499352.jcim13_1/test.xml
+
+
+# Try to PUT to jcim_3_1
+
+❯ curl -ufedoraAdmin:fedoraAdmin -XPUT -i http://localhost:8080/rest/erudit:unb.jcim1499352.jcim_3_1 -H"Content-type: text/turtle" -d " &lt;&gt; &lt;http://purl.org/dc/elements/1.1/title&gt; \"jcim_3_1\" . "
+HTTP/1.1 409
+Cache-Control: private
+Set-Cookie: JSESSIONID=BF42B6FC4CAE45C07885DEB0A96F3D56; Path=/fcrepo; HttpOnly
+Set-Cookie: rememberMe=deleteMe; Path=/fcrepo; Max-Age=0; Expires=Mon, 01-Sep-2025 21:42:54 GMT; SameSite=lax
+Content-Type: text/plain;charset=utf-8
+Content-Length: 71
+Date: Tue, 02 Sep 2025 21:42:54 GMT
+
+Resource path erudit:unb.jcim1499352.jcim_3_1 is an immutable resource.</pre>
+</div></div></div></div>
+<div class="comment" id="comment-26815"><div class="by">Ben Pennell, 2025-10-15 19:00 UTC</div><div class="text"><p>Since this case is tricky, but relatively easy to replicate with the right setup, it would be good to add a integration test to verify it works. The following could be added to FedoraLdpIT, you’re welcome to do so since I can’t update the PR:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    // Replicates FCREPO-4032
+    @Test
+    public void testPutParentWithUnderscores() throws IOException {
+        final String subjectURI1 = serverAddress + getRandomUniqueId() + "/te_st";
+        final HttpPut putMethod = new HttpPut(subjectURI1);
+        try (final CloseableHttpResponse response = execute(putMethod)) {
+            assertEquals(CREATED.getStatusCode(), getStatus(response));
+        }
+        final String subjectURI2 = serverAddress + getRandomUniqueId() + "/te_st/child";
+        final HttpPut putMethod2 = new HttpPut(subjectURI2);
+        try (final CloseableHttpResponse response = execute(putMethod2)) {
+            assertEquals(CREATED.getStatusCode(), getStatus(response));
+        }
+        final String subjectURI3 = serverAddress + getRandomUniqueId() + "/t__st";
+        final HttpPut putMethod3 = new HttpPut(subjectURI3);
+        try (final CloseableHttpResponse response = execute(putMethod3)) {
+            assertEquals(CREATED.getStatusCode(), getStatus(response));
+        }
+    }</pre>
+</div></div>
+
+
+
+<p>I also tried doing a simple performance test with the branch and without it, creating 50k children nodes in the same ghost node containing underscores and percent signs. The updated branch slightly out performed the original version, but not by a significant margin.</p>
+
+<p>It may be that a different setup would have demonstrated the difference better. Also, looking at the queries, I suspect it’d have a larger impact if I’d been using transactions, since that version of the query repeats the LIKE clause three times. It may also have a bigger impact for larger repos, or when using a database other than H2. Regardless, I did see the time required to create new resources gradually increase, from about 8ms to a consistent 120+ms at the end.</p>
+
+<p>Did it improve the performance issue you were seeing? This change seems good either way, I’m just curious</p></div></div>
+<div class="comment" id="comment-26848"><div class="by">Basil Marti, 2025-10-16 09:37 UTC</div><div class="text"><p>Hi Ben Pennell : Thanks a lot for the integration test! I added it to the PR. <br/>
+About the performance changes: I can confirm that it makes a big difference if you have a lot of entries in the containment table of the Fedora DB. I did some tests with an installation containing 26 million entries, here are some logs of our application sending data to Fedora 6 via the Rest API (all the URIs contain at least 2 underscores, some even more):</p>
+
+<p>With Fedora 6.5.0</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[23:57:22.242] INFO (11228): Inserted 5 subjects / 0.02 MB of data in 43.652 seconds. Progress: 5 / 5 (100%)
+[23:57:22.242] INFO (11228): Start inserting level 3, amount of subjects: 2
+[23:58:40.306] INFO (11228): Inserted 2 subjects / 0.01 MB of data in 78.055 seconds. Progress: 2 / 2 (100%)
+[23:58:40.306] INFO (11228): Start inserting level 4, amount of subjects: 2
+[00:00:45.779] INFO (11228): Inserted 2 subjects / 3.19 MB of data in 125.466 seconds. Progress: 2 / 2 (100%)</pre>
+</div></div>
+
+<p>After installing the snapshot with the fix</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[00:00:47.816] INFO (3536): Inserted 5 subjects / 0.02 MB of data in 0.099 seconds. Progress: 5 / 5 (100%)
+[00:00:47.816] INFO (3536): Start inserting level 3, amount of subjects: 2
+[00:00:47.847] INFO (3536): Inserted 2 subjects / 0.02 MB of data in 0.031 seconds. Progress: 2 / 2 (100%)
+[00:00:47.847] INFO (3536): Start inserting level 4, amount of subjects: 2
+[00:00:47.911] INFO (3536): Inserted 2 subjects / 1.52 MB of data in 0.064 seconds. Progress: 2 / 2 (100%)</pre>
+</div></div></div></div>
+<div class="comment" id="comment-26881"><div class="by">Ben Pennell, 2025-10-16 13:58 UTC</div><div class="text"><p>Thanks for sharing thatBasil Marti and for opening this PR, that’s a huge difference. I’ve also checked for other uses of the LIKE operator, and the only place I see them is in the simple search, and it probably makes sense in that context to allow users to include wildcards</p></div></div>
+<p><a href="data/FCREPO-4032.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

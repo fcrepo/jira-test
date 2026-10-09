@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1746 unknown predicate used in Fixity docs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1746</span> unknown predicate used in Fixity docs</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>justin</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-09-24 19:12 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-10-01 16:10 UTC</td></tr><tr><th>Components</th><td>f4-core, f4-ontology</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>On this page: <a href="https://wiki.duraspace.org/display/FEDORA43/RESTful+HTTP+API" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA43/RESTful+HTTP+API</a></p>
+
+<p>It has a sample response that shows:</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/path/to/some/resource#fixity/1400589459772" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/path/to/some/resource#fixity/1400589459772</a>&gt; &lt;<a href="http://fedora.info/definitions/v4/repository#status" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#status</a>&gt; "BAD_CHECKSUM"^<sup>&lt;<a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>&gt; , "BAD_SIZE"</sup>^&lt;<a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>&gt; ;</p>
+
+
+<p>But this status predicate doesn't exist in <a href="http://fedora.info/definitions/v4/repository" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository</a></p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-15307"><div class="by">Unknown, 2015-09-24 19:37 UTC</div><div class="text"><p>The <tt>fedora:status</tt> predicate was moved to the objState vocabulary as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1363" >
+                <a href="FCREPO-1363.html" class="jira-issue-macro-key issue-link"  title="The fedora:status property cannot be modified " >
+            
+            FCREPO-1363
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, which AFAIK remains unpublished.</p>
+
+<p>A. Soroka should the fixity response use this external vocab for status values, or should the status predicate be restored to the main ontology? Or, better yet, is there another vocabulary better suited for describing these sorts of values?</p></div></div>
+<div class="comment" id="comment-15308"><div class="by">Unknown, 2015-09-24 19:50 UTC</div><div class="text"><p>Seems to me that <tt>premis:hasEventOutcome</tt> would be a good fit for this: <a href="http://id.loc.gov/ontologies/premis.html#hasEventOutcome" class="external-link" rel="nofollow noreferrer">http://id.loc.gov/ontologies/premis.html#hasEventOutcome</a></p></div></div>
+<div class="comment" id="comment-15310"><div class="by">A. Soroka, 2015-09-24 19:58 UTC</div><div class="text"><p>Wasn't there some kind of problem with using <tt>premis</tt> this way? Like it made it impossible for other people to us that predicate for their own purposes or something like that?</p></div></div>
+<div class="comment" id="comment-15313"><div class="by">Unknown, 2015-09-24 20:10 UTC</div><div class="text"><p>A. Soroka good point. The current code adds this predicate to the set of immutable properties that cannot be changed. See: <a href="http://git.io/vnQSA" class="external-link" rel="nofollow noreferrer">http://git.io/vnQSA</a> and <a href="http://git.io/vnQSm" class="external-link" rel="nofollow noreferrer">http://git.io/vnQSm</a></p>
+
+<p>We could simply not add that particular predicate to that set. Given that the predicate is only ever used inside a dynamically generated <tt>fedora:Fixity</tt> hashURI, making the predicate mutable shouldn't present a problem.</p></div></div>
+<div class="comment" id="comment-15314"><div class="by">Unknown, 2015-09-24 20:40 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/912" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/912</a></p></div></div>
+<div class="comment" id="comment-15315"><div class="by">Unknown, 2015-09-24 20:43 UTC</div><div class="text"><p>Note: a follow-on ticket to correct any documentation on the duraspace wiki should happen if this PR is merged.</p></div></div>
+<div class="comment" id="comment-15321"><div class="by">Unknown, 2015-09-25 04:20 UTC</div><div class="text"><p>A follow-on PR for fcrepo-camel-toolbox: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/57" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/57</a></p></div></div>
+<div class="comment" id="comment-15364"><div class="by">Andrew Woods, 2015-09-30 21:05 UTC</div><div class="text"><p>PRs have been merged:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/912" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/912</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/57" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/57</a></p>
+
+<p>Documentation updated:<br/>
+<a href="https://wiki.duraspace.org/pages/diffpagesbyversion.action?pageId=67242878&amp;selectedPageVersions=2&amp;selectedPageVersions=3" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/pages/diffpagesbyversion.action?pageId=67242878&amp;selectedPageVersions=2&amp;selectedPageVersions=3</a></p></div></div>
+<div class="comment" id="comment-15379"><div class="by">Andrew Woods, 2015-10-01 14:22 UTC</div><div class="text"><p>One more commit:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel/pull/96" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/pull/96</a></p>
+
+<p>Please give a look, Unknown.</p></div></div>
+<div class="comment" id="comment-15382"><div class="by">Unknown, 2015-10-01 16:10 UTC</div><div class="text"><p>fcrepo-camel PR merged via <a href="https://github.com/fcrepo4-exts/fcrepo-camel/commit/6b161c28eb6f5e51554523bf5f59f1a5b87ebbc7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/commit/6b161c28eb6f5e51554523bf5f59f1a5b87ebbc7</a></p></div></div>
+<p><a href="data/FCREPO-1746.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

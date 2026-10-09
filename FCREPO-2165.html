@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2165 Export w/ binary fails if descDir and binDir are the same path</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2165</span> Export w/ binary fails if descDir and binDir are the same path</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2016-09-02 17:49 UTC</td></tr><tr><th>Updated</th><td>2016-09-07 18:33 UTC</td></tr><tr><th>Resolved</th><td>2016-09-07 18:08 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr></table>
+<h2>Description</h2>
+<p>If you run with the description dir and binary dir being the same path, there is a collision on file name (and directory) for binaries.  </p>
+
+<p>This is a normal run, where `goats` is the binary: </p>
+
+<p>├── bin_dir<br/>
+│   └── fcrepo_4.6_rc<br/>
+│       └── rest<br/>
+│           └── goats<br/>
+└── desc_dir<br/>
+    └── fcrepo_4.6_rc<br/>
+        ├── rest<br/>
+        │   ├── asc<br/>
+        │   │   ├── 336<br/>
+        │   │   │   └── members.ttl<br/>
+        │   │   └── 336.ttl<br/>
+        │   ├── asc.ttl<br/>
+        │   └── goats<br/>
+        │       └── fcr_metadata.ttl<br/>
+        └── rest.ttl</p>
+
+<p>But if I use the same dir for both I get an error that I believe to be cause by a name collision: <br/>
+BuckyKatt:/Users/bseeger/Projects/fedora/fcrepo4-labs/fcrepo-import-export/fcrepo-import-export-driver/target&gt;java -jar fcrepo-import-export-driver-0.0.1-SNAPSHOT.jar -m export  --binDir ../../../../backup/export/bin_dir --descDir ../../../../backup/export/bin_dir --resource <a href="http://localhost:8080/fcrepo_4.6_rc/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo_4.6_rc/rest</a><br/>
+Exporting!<br/>
+java.io.FileNotFoundException: ../../../../backup/export/bin_dir/fcrepo_4.6_rc/rest/goats/fcr_metadata.ttl (Not a directory)<br/>
+	at java.io.FileOutputStream.open0(Native Method)<br/>
+	at java.io.FileOutputStream.open(FileOutputStream.java:270)<br/>
+	at java.io.FileOutputStream.&lt;init&gt;(FileOutputStream.java:213)<br/>
+	at java.io.FileOutputStream.&lt;init&gt;(FileOutputStream.java:162)<br/>
+	at java.io.FileWriter.&lt;init&gt;(FileWriter.java:90)<br/>
+	at org.fcrepo.exporter.Exporter.writeResponse(Exporter.java:143)<br/>
+	at org.fcrepo.exporter.Exporter.exportDescription(Exporter.java:119)<br/>
+	at org.fcrepo.exporter.Exporter.writeResponse(Exporter.java:151)<br/>
+	at org.fcrepo.exporter.Exporter.exportBinary(Exporter.java:107)<br/>
+	at org.fcrepo.exporter.Exporter.export(Exporter.java:85)<br/>
+	at org.fcrepo.exporter.Exporter.exportMembers(Exporter.java:130)<br/>
+	at org.fcrepo.exporter.Exporter.exportDescription(Exporter.java:124)<br/>
+	at org.fcrepo.exporter.Exporter.export(Exporter.java:87)<br/>
+	at org.fcrepo.exporter.Exporter.run(Exporter.java:79)<br/>
+	at org.fcrepo.importexport.ImportExportDriver.run(ImportExportDriver.java:52)<br/>
+	at org.fcrepo.importexport.ImportExportDriver.main(ImportExportDriver.java:41)</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-17361"><div class="by">Andrew Woods, 2016-09-02 19:09 UTC</div><div class="text"><p>Is a reasonable solution to disallow both -d and -b being the same?<br/>
+Or does something else make more sense?</p></div></div>
+<div class="comment" id="comment-17369"><div class="by">Michael Durbin, 2016-09-05 18:08 UTC</div><div class="text"><p>The camel serialization module exports the RDF from the "resource" at the described-by header to a filename based on the URL of the described resource.  ("/test/fcr:metadata" --&gt; test.ttl)  This implies the assumption that fedora will only ever have one describes/describesBy link per binary.  The currently implemented approach serializes "fcr:metadata" in a folder named after the binary. </p>
+
+<p>I would advocate (and will soon issue a PR to the effect) that we follow the camel convention for the following reasons:<br/>
+1.  Including fcr:metadata in our serialization format ties us to that contentious and ugly hack and its naming convention.   (I think the assumption that we'll have only one describes/describedBy link will holder longer and between implementations better than the use of the constant "fcr:metadata")<br/>
+2.  Mapping LDP containers to directories seems more logical... having our only non-container resources (binaries) actually result in a directory in the RDF export is non-intuative.<br/>
+3.  Maintaining compatibility between the serializer and export as long as possible seems ideal.</p></div></div>
+<div class="comment" id="comment-17371"><div class="by">Michael Durbin, 2016-09-06 02:57 UTC</div><div class="text"><p>PR is here: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/17" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/17</a></p></div></div>
+<div class="comment" id="comment-17392"><div class="by">Andrew Woods, 2016-09-06 22:18 UTC</div><div class="text"><p>This looks good, pending response to minor code review comments.</p></div></div>
+<div class="comment" id="comment-17406"><div class="by">Michael Durbin, 2016-09-07 16:38 UTC</div><div class="text"><p>Lets try this again...</p></div></div>
+<div class="comment" id="comment-17408"><div class="by">Andrew Woods, 2016-09-07 17:58 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-17409"><div class="by">Nick Ruest, 2016-09-07 18:33 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/47f1113a2bacbeb13c33ef45f5a3db71ed224315" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/47f1113a2bacbeb13c33ef45f5a3db71ed224315</a></p></div></div>
+<p><a href="data/FCREPO-2165.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

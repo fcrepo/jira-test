@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3971 database connection timeout when creating or replacing a NonRDFSource in Fedora</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3971</span> database connection timeout when creating or replacing a NonRDFSource in Fedora</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Received</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Thomas Bernhart</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2025-01-24 12:47 UTC</td></tr><tr><th>Updated</th><td>2026-04-09 15:50 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.5.0, fcrepo 6.5.1</td></tr><tr><th>Fix versions</th><td>fcrepo 7.0.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3970.html">FCREPO-3970</a> database connection timeout when committing a long running Fedora transaction</td></tr></table>
+<h2>Environment</h2>Our cloud setup:<br/>
+<br/>
+Fedora<br/>
+- Version: 6.5.0<br/>
+- keepaliveTime=30sec<br/>
+<br/>
+Postgres:<br/>
+- Version: 12.16<br/>
+- Custom settings: idle_in_transaction_session_timeout=180 minutes<br/>
+<br/>
+Deployed as a docker stack. The database container is in endpoint_mode: dnsrr and the port is in mode: host<br/>
+<br/>
+Our customers environments can differ and our mostly running on Windows servers.
+<h2>Description</h2>
+<p>When creating or replacing a NonRDFSource in Fedora (<a href="https://github.com/fcrepo/fcrepo/blob/a2ec2ac5b273670c421b74df1ad9174b3289f663/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L440C21-L440C45" class="external-link" rel="nofollow noreferrer">fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L440C21-L440C45</a>),  the database connections needs to stay open for a long time without any activity because the binary stream (more than 100 gigabytes) is being read within the database transaction (<a href="https://github.com/fcrepo/fcrepo/blob/a2ec2ac5b273670c421b74df1ad9174b3289f663/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L560C1-L560C48" class="external-link" rel="nofollow noreferrer">fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L560C1-L560C48</a>). The largest files we can ingest is thus proportional to the time the database transaction can be kept open.</p>
+
+<p>A stack trace of the problem can be found here: <span class="nobr"><a href="attachments/FCREPO-3971/10418_Fedora_timeout_large_file.txt" title="Fedora_timeout_large_file.txt attached to FCREPO-3971" data-attachment-type="file" data-attachment-name="Fedora_timeout_large_file.txt" data-media-services-type="file" data-media-services-id="d7de4591-47b1-4fb3-99ab-7f805b6042b3" rel="noreferrer">Fedora_timeout_large_file.txt</a></span> </p>
+
+
+
+<p>Code location where the binary stream is actually read:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-persistence-ocfl/src/main/java/org/fcrepo/persistence/ocfl/impl/AbstractNonRdfSourcePersister.java#L89" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-persistence-ocfl/src/main/java/org/fcrepo/persistence/ocfl/impl/AbstractNonRdfSourcePersister.java#L89</a> </p>
+
+<p>Wich is called in these 2 locations:</p>
+
+<ol>
+	<li><a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-persistence-ocfl/src/main/java/org/fcrepo/persistence/ocfl/impl/CreateNonRdfSourcePersister.java#L46" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-persistence-ocfl/src/main/java/org/fcrepo/persistence/ocfl/impl/CreateNonRdfSourcePersister.java#L46</a></li>
+	<li><a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-persistence-ocfl/src/main/java/org/fcrepo/persistence/ocfl/impl/UpdateNonRdfSourcePersister.java#L59" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-persistence-ocfl/src/main/java/org/fcrepo/persistence/ocfl/impl/UpdateNonRdfSourcePersister.java#L59</a></li>
+</ol>
+
+
+
+
+<p>Proposal: Make the database transactions shorter by fetching the binaries content outside of the transaction.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3971/10418_Fedora_timeout_large_file.txt">Fedora_timeout_large_file.txt</a>, 35794 bytes, added by Thomas Bernhart on 2025-01-24</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-24572"><div class="by">Jared Whiklo, 2025-01-30 16:36 UTC</div><div class="text"><p>Discussed at 2025-01-30 tech meeting, needs some review of whether we could separate the database actions from the OCFL actions while allowing some handling of failures.</p></div></div>
+<div class="comment" id="comment-28583"><div class="by">yuri.carrer, 2026-04-03 10:16 UTC</div><div class="text"><p>Timeouts are setup to manage not responding operation, but read is responding here. So a solution can be to read the file in batches (we already use java.io.BufferedInputStream here), and at every batch we extend the timeout using the Fedora internal API on transaction timeout (by using the transaction ID). Deleting the transaction will also have the benefit to stop the long running transaction, giving the repository manager full control over it.</p></div></div>
+<div class="comment" id="comment-28716"><div class="by">Thomas Bernhart, 2026-04-09 15:48 UTC</div><div class="text"><p>Summary of the discussion in today’s Tech Meeting:</p>
+
+<p>We agreed to perform OCFL operations first. If they succeed, we execute all database operations within a single transaction. If the database transaction fails, OCFL serves as the single source of truth: after multiple failures, the transaction will roll back, and database entries will be recreated or updated by reindexing the OCFL object.</p>
+
+<p>The consensus was that if OCFL operations succeed but Fedora fails to reindex the OCFL object, this likely indicates a Fedora bug: Fedora created an OCFL object on disk that it cannot read later.</p>
+
+
+
+<p>Note: Fedora currently does not support reindexing an OCFL object,  which already is in the database. Only indexing OCFL object not yet present in the database is supported at the moment.</p></div></div>
+<p><a href="data/FCREPO-3971.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

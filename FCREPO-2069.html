@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2069 Restoring backup of a 4.5.1 repository into Modeshape 5 branch</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2069</span> Restoring backup of a 4.5.1 repository into Modeshape 5 branch</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-07-04 10:04 UTC</td></tr><tr><th>Updated</th><td>2016-11-12 14:56 UTC</td></tr><tr><th>Resolved</th><td>2016-10-31 14:36 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr><tr><th>Labels</th><td>preservation</td></tr><tr><th>Addresses</th><td><a href="FCREPO-2246.html">FCREPO-2246</a> Fedora 4.7.0-RC-1 cannot restore certain backup files from 4.6.x.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2283.html">FCREPO-2283</a> Update README: 4.7 Upgrade Utility</td></tr></table>
+<h2>Description</h2>
+<p>When restoring a backup from a 4.5.1 repository, I often see this error and the restore fails:</p>
+
+<p>ERROR 08:42:50.311 (FedoraRepositoryRestore) Problems restoring up the repository:<br/>
+java.sql.BatchUpdateException: Batch entry 615 INSERT INTO MODESHAPE_REPOSITORY (ID, CONTENT) VALUES ('87a0a8c317f1e7jcr:system/mode:metadata', ?) was aborted.  Call getNextException to see the cause.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2069/10277_backup-fixer.jar">backup-fixer.jar</a>, 284814 bytes, added by Michael Durbin on 2016-09-27</li>
+<li><a href="attachments/FCREPO-2069/10264_BackupFixer.java">BackupFixer.java</a>, 3187 bytes, added by Esmé Cowles on 2016-07-04</li>
+<li><a href="attachments/FCREPO-2069/10265_pop.sh">pop.sh</a>, 1978 bytes, added by Esmé Cowles on 2016-07-04</li>
+</ul>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-16948"><div class="by">Esmé Cowles, 2016-07-04 10:12 UTC</div><div class="text"><p>After some digging, it looks like the problem is that the metadata backup contains duplicate entries that all look like this:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+{ <span class="code-quote">"metadata"</span> : { <span class="code-quote">"id"</span> : <span class="code-quote">"87a0a8c317f1e7jcr:system/mode:metadata"</span> } , <span class="code-quote">"content"</span> : { <span class="code-quote">"key"</span> : <span class="code-quote">"87a0a8c317f1e7jcr:system/mode:metadata"</span> , <span class="code-quote">"properties"</span> : { <span class="code-quote">"" : { "</span>workspaces<span class="code-quote">" : [ "</span><span class="code-keyword">default</span><span class="code-quote">" ] , "</span>accessControl" : <span class="code-keyword">false</span> } } } }
+</pre>
+</div></div>
+
+<p>Removing the duplicate entry is not hard to do with a text editor, and I've created a prototype of a Java utility to automate this process:  <span class="nobr"><a href="attachments/FCREPO-2069/10264_BackupFixer.java" title="BackupFixer.java attached to FCREPO-2069" data-attachment-type="file" data-attachment-name="BackupFixer.java" data-media-services-type="file" data-media-services-id="b76bb9d3-5f73-455d-bdd4-f880aabaebcb" rel="noreferrer">BackupFixer.java</a></span> .  After removing the duplicate entry, I've been able to restore backups successfully.</p></div></div>
+<div class="comment" id="comment-16952"><div class="by">Andrew Woods, 2016-07-04 16:32 UTC</div><div class="text"><p>Ultimately, we will want to rely on import/export functionality that is based on the Fedora RESTful API, transacting in RDF and binaries.<br/>
+However, if the current /fcr:backup and /fcr:restore endpoints work (with the help of your "BackupFixer"), it may be a way to get the community to ModeShape5 sooner.</p>
+
+<p>At this point, we just need more testing. </p>
+<ul class="alternate" type="square">
+	<li>Can you describe the size of the repository that your migrated?</li>
+	<li>Did your repository contain both binaries and objects?</li>
+	<li>David Chandek-Stark (old account), would you be able to test this (recognizing that it is not your preferred migration approach)?</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-16954"><div class="by">Esmé Cowles, 2016-07-04 17:09 UTC</div><div class="text"><p>I created sample content using the <span class="nobr"><a href="attachments/FCREPO-2069/10265_pop.sh" title="pop.sh attached to FCREPO-2069" data-attachment-type="file" data-attachment-name="pop.sh" data-media-services-type="file" data-media-services-id="ebba3808-d332-48aa-896a-092aa46bd3f7" rel="noreferrer">pop.sh</a></span> script, which uses the same TTL file I added to the JMeter testing (<a href="https://github.com/fcrepo4-labs/fcrepo4-jmeter/blob/master/sample.ttl" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-jmeter/blob/master/sample.ttl</a>) to create PCDM objects with attached files (100 MB each, I used actual TIFFs we are staging for ingest, or randomly-generated files when testing locally).  I tried a range of sizes, with the largest being 200GB of randomly-generated files.</p></div></div>
+<div class="comment" id="comment-17057"><div class="by">Michael Durbin, 2016-07-15 17:41 UTC</div><div class="text"><p>I performed a basic test migration on an extremely small repository (305M backup directory with 147 files) without issue.</p>
+
+
+
+
+</div></div>
+<div class="comment" id="comment-17651"><div class="by">Andrew Woods, 2016-09-27 18:42 UTC</div><div class="text"><p>Esmé Cowles or Michael Durbin: would one of you be willing to create an executable jar out of BackupFixer.java for us to distribute to anyone else who runs into this issue?<br/>
+Once that is done, I think we can close this ticket.</p></div></div>
+<div class="comment" id="comment-17654"><div class="by">Michael Durbin, 2016-09-27 19:19 UTC</div><div class="text"><p>Alright, I attached a jar.  <span class="nobr"><a href="attachments/FCREPO-2069/10277_backup-fixer.jar" title="backup-fixer.jar attached to FCREPO-2069" data-attachment-type="file" data-attachment-name="backup-fixer.jar" data-media-services-type="file" data-media-services-id="7dfa3b1f-36fc-4246-8f5f-188ceab757f8" rel="noreferrer">backup-fixer.jar</a></span> We should warn people that it's destructive (but likely not in a bad way), and should be run against a copy of the backup if the backup is irreplaceable.</p></div></div>
+<div class="comment" id="comment-17919"><div class="by">Andrew Woods, 2016-10-29 00:46 UTC</div><div class="text"><p>Michael Durbin Esmé Cowles see: <a href="https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/pull/12" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/pull/12</a></p></div></div>
+<div class="comment" id="comment-17923"><div class="by">Andrew Woods, 2016-10-31 14:36 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/commit/ff42ba3f459a368fb48abbaabb45e444a66a5b39" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/commit/ff42ba3f459a368fb48abbaabb45e444a66a5b39</a></p></div></div>
+<div class="comment" id="comment-17940"><div class="by">Andrew Woods, 2016-11-02 16:41 UTC</div><div class="text"><p>Related issue: <a href="https://issues.jboss.org/browse/MODE-2611" class="external-link" rel="nofollow noreferrer">https://issues.jboss.org/browse/MODE-2611</a></p></div></div>
+<p><a href="data/FCREPO-2069.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

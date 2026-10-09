@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2117 Older versions are having pointers to newer versions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2117</span> Older versions are having pointers to newer versions</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Harshakumar Ummerpillai</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2016-08-11 12:07 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:38 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:38 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr></table>
+<h2>Description</h2>
+<p>Create a container structure like this<br/>
+/rest/project/inner1/inner2/inner3</p>
+
+<ul>
+	<li>Create a version V1 for /rest/project/inner1/inner2/inner3</li>
+	<li>Create a version V2 for /rest/project/inner1/inner2</li>
+	<li>Create a version V3 for /rest/project/inner1</li>
+	<li>Create a version V4 for /rest/project</li>
+	<li>Create a version V5 for /rest/project/inner1/inner2/inner3</li>
+</ul>
+
+
+<p>Now traverse the fcr:versions path from /project/fcr:versions/V4<br/>
+You will eventually get to /rest/project/inner1/inner2/fcr:versions/V2</p>
+
+<p>And if you review the contents within this path it will show<br/>
+ldp: contains<br/>
+<a href="http://fedoradev0.icpsr.umich.edu:8097/fedora/rest/project/inner1/inner2/inner3/fcr:versions/V5" class="external-link" rel="nofollow noreferrer">http://fedoradev0.icpsr.umich.edu:8097/fedora/rest/project/inner1/inner2/inner3/fcr:versions/V5</a></p>
+
+<p>Correct value should have been the version V1.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2117/10271_versions-error.gif">versions-error.gif</a>, 128089 bytes, added by Harshakumar Ummerpillai on 2016-08-11</li>
+</ul>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-17221"><div class="by">Andrew Woods, 2016-08-11 14:03 UTC</div><div class="text"><p>To be clear, is the following description what you are expecting, Harshakumar Ummerpillai?<br/>
+If you have two resources:<br/>
+/parent/child</p>
+
+<p>..and you are making updates to both /parent and /parent/child between each of the following version snapshots,</p>
+
+<p>..and you create a version of /parent(v0),<br/>
+followed by a version of /parent/child(v1),<br/>
+followed by a version of /parent(v2),<br/>
+followed by /parent/child(v3),</p>
+
+<p>that the version trees would look like:<br/>
+/parent(v0)/child(state when v0 was created)<br/>
+/parent(v2)/child(v1)</p>
+
+<p>Is that what you are asking for?</p></div></div>
+<div class="comment" id="comment-17222"><div class="by">Benjamin Armintor, 2016-08-11 15:09 UTC</div><div class="text"><p>In this example there is no named version V1 of /project; that subtree only has one named version: V4.</p>
+
+<p>In V4, the content of /project/inner1/inner2/inner3 is whatever the canonical content was at the time V4 was minted- not necessarily any named version of the /project/inner1/inner2/inner3 subtree. I think it is a bug to present named versions in those subtrees at all: they should simply list /project/fcr:versions/V4/inner1/inner2/inner3</p></div></div>
+<div class="comment" id="comment-17223"><div class="by">Harshakumar Ummerpillai, 2016-08-11 16:22 UTC</div><div class="text"><p>Hi Andrew,<br/>
+   In this scenario, start creating versions from the last leaf node and go backwards to the parent. We can do a google hangout and show you the steps if that helps.</p>
+
+<p>Thanks<br/>
+Harsha</p></div></div>
+<div class="comment" id="comment-17251"><div class="by">A. Soroka, 2016-08-17 13:13 UTC</div><div class="text"><p>Please see Benjamin Armintor's comment. This is not a bug in the versioning model, it is a bug in the API. You should not ever have received a triple with that URI in it.</p></div></div>
+<div class="comment" id="comment-17260"><div class="by">Andrew Woods, 2016-08-24 19:54 UTC</div><div class="text"><p>Aaron Birkland, when you get a chance to look into this ticket, here are two integration tests that define the expected behavior:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1091" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1091</a></p></div></div>
+<div class="comment" id="comment-17864"><div class="by">Harshakumar Ummerpillai, 2016-10-19 11:21 UTC</div><div class="text"><p>Any estimates on which release these might get fixed? I would like to try if I can fix it locally and contribute back if possible. Any hints on which module/class I should be looking at?</p></div></div>
+<div class="comment" id="comment-17875"><div class="by">Andrew Woods, 2016-10-25 14:45 UTC</div><div class="text"><p>Harshakumar Ummerpillai, I expect the ultimate resolution to this issue will come with the API specification for versioning, and the implementation that aligns with that specification.<br/>
+In the meantime, however, the primary classes currently in-play are:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java</a><br/>
+and<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/services/VersionServiceImpl.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/services/VersionServiceImpl.java</a></p></div></div>
+<div class="comment" id="comment-22439"><div class="by">Danny Bernstein, 2021-09-17 17:38 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2117.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

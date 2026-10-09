@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-296 Bug fix: HTTP Requests include bad HTTP basic Auth</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-296</span> Bug fix: HTTP Requests include bad HTTP basic Auth</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Wayland, Rosser L (rlw)</td></tr><tr><th>Assignee</th><td>Wayland, Rosser L (rlw)</td></tr><tr><th>Created</th><td>2007-10-30 06:00 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2008-10-01 17:34 UTC</td></tr></table>
+<h2>Description</h2>
+<p>Bug fix for:</p>
+
+<p>[ 1710801 ] HTTP Requests include bad HTTP basic Auth</p>
+
+<p>Apply fix to both maintenance-2.2 branch and to trunk</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10584"><div class="by">Wayland, Rosser L (rlw), 2007-10-31 19:57 UTC</div><div class="text"><p><span class="error">&#91;Comment from Sourceforge Task&#93;</span><br/>
+Comment Submitter: rwayland3<br/>
+Followed Chris' suggestion to fix this in fedora.common.http.WebClient by checking for case where Credentials are null or Username is null or empty string and calling appropriate get method.</p>
+
+<p>For the use case mentioned in bug report, the error originated in fedora.server.storage.DefaultExternalContentManager when it accesses get method of WebClient passing username and password. In cases where username is null or empty string this was resulting in WebClient treating connection as authenticated which resulting in bogus authentication in http header.</p>
+
+<p>Also updated fedora.server.access.disseminaton.DisseminationService. It was checking for username=null and calling appropriate WebClient get method, but was not checking for empty string. This conditional code was replaced with single call to WebClient get method that passes username/password thereby letting WebClient resolve whether username=null or username is empty string.</p>
+
+<p>Committed to both maintenance-2.2 branch and to trunk.</p></div></div>
+<div class="comment" id="comment-10585"><div class="by">Bill Branan, 2008-10-01 17:34 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Task&#93;</span><br/>
+Task Submitter: rwayland3<br/>
+Task #: 143684<br/>
+SF URL: <a href="http://sourceforge.net/pm/task.php?func=detailtask&amp;group_id=177054&amp;group_project_id=53865&amp;project_task_id=143684" class="external-link" rel="nofollow noreferrer">http://sourceforge.net/pm/task.php?func=detailtask&amp;group_id=177054&amp;group_project_id=53865&amp;project_task_id=143684</a><br/>
+Closed On: 2007-11-01 01:00:00</p></div></div>
+<p><a href="data/FCREPO-296.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

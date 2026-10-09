@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-349 Pre-populate repository with system objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-349</span> Pre-populate repository with system objects</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2008-06-22 06:00 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2008-10-01 17:34 UTC</td></tr></table>
+<h2>Description</h2>
+<p>Design, implement, and test a solution for pre-populating the repository with the system objects.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10717"><div class="by">Chris Wilper, 2008-06-30 15:31 UTC</div><div class="text"><p><span class="error">&#91;Comment from Sourceforge Task&#93;</span><br/>
+Comment Submitter: cwilper<br/>
+Also auto-generates non-FOXML format demo objects as part of build.<br/>
+Also fixes bug #2006837: Inconsistent use of none vs. DISABLED for ds checksums</p></div></div>
+<div class="comment" id="comment-10718"><div class="by">Chris Wilper, 2008-07-16 08:52 UTC</div><div class="text"><p><span class="error">&#91;Comment from Sourceforge Task&#93;</span><br/>
+Comment Submitter: cwilper<br/>
+Merged into trunk r7522.  Changelog below:</p>
+
+<p>Auto-ingesting system content model objects<br/>
+(which are read-only) and use standard FORMAT_URIs and<br/>
+MIMETYPEs for system content model-defined datastreams.<br/>
+As of this checkin, the validation utility correctly validates all<br/>
+demo objects.</p>
+
+<p>Full log for this changeset:</p>
+
+<p>Formats:<br/>
+ Added appropriate format objects (and schemas where<br/>
+ appropriate) for all fedora-defined special datastreams.<br/>
+ This includes RELS-EXT, RELS-INT, METHODMAPs, etc.<br/>
+Demo object updates:<br/>
+ Consistency (also done for system objects):</p>
+<ul class="alternate" type="square">
+	<li>all special datastream now assert an appropriate FORMAT_URI.</li>
+	<li>formatting (pretty-printed w/2-space indents, 80 column wrap)</li>
+	<li>ordering (DC, then RELS-EXT, then cmodel-specific)</li>
+	<li>object labels (indicates kind of object and demo it's a part of)</li>
+	<li>datastream labels (for all special datastreams)</li>
+	<li>SIZE attribute removed from all demo foxml datastreams</li>
+	<li>VERSIONABLE=true for all RELS-EXT (was mixed)</li>
+	<li>Removed DISABLED/none checksum info for system + demo objects<br/>
+   (when the element is absent, it has the same meaning)<br/>
+ Other cleanup:</li>
+	<li>Demo DS-COMPOSITE-MODELs no longer state that DC<br/>
+    and RELS-EXT are required (this is done by the<br/>
+    FedoraObject-3.0 content model)...unless the content model<br/>
+    in question specifically requires the existence of one of those<br/>
+    datastreams (as is the case with the smiley demo)</li>
+	<li>Removed one demo object's AUDIT datastream<br/>
+    (was side effect of demo obj creation)</li>
+	<li>Removed special datastreams formerly created by bdef/mech builders:<br/>
+    (SERVICE-PROFILE and DS1 "programmer documentation")</li>
+	<li>Removed a RELS-INT (was side effect of former METS serialization,<br/>
+    but don't want to highlight RELS-INT in any demos 'till refactoring<br/>
+    #1814088 is resolved)</li>
+	<li>removed unused test objects</li>
+	<li>fixed remainder of test/doc objects (in code and otherwise)<br/>
+   to use format uris and consistent labels for DC, RELS-EXT,<br/>
+   METHODMAP, DSINPUTSPEC, and WSDL datastreams.</li>
+	<li>Made sure example POLICY datastreams use the XACML_POLICY1_0<br/>
+   FORMAT_URI.<br/>
+Deserializer changes:</li>
+	<li>When deserializing legacy format objects, consistently<br/>
+  puts the old fedora-model:cModel and rdf:type attributes<br/>
+  into the DigitalObject's extProperties.<br/>
+Serializer changes:</li>
+	<li>Optional SIZE attribute not serialized when = 0</li>
+	<li>Fixed bug #2006837: Inconsistent use of none vs. DISABLED<br/>
+  for ds checksums.</li>
+	<li>Optional CHECKSUM and CHECKSUMTYPE not serialized<br/>
+  when not present (or "none"/"DISABLED", as this means the<br/>
+  same thing)</li>
+	<li>METS Ser/Deser no longer attempts to "take over" FORMAT_URI<br/>
+  if it's already defined.</li>
+	<li>Made sure AUDIT datastreams are written with the POLICY1_0<br/>
+  FORMAT_URI and a consistent label.<br/>
+Demo object conversion:</li>
+	<li>generates pretty-printed mets, atom, and atom-zip formats at build<br/>
+   time (tests updated accordingly)</li>
+	<li>added -Ddemo.format=atom-zip option for tests<br/>
+Admin GUI:</li>
+	<li>Updated client-created datastreams and default DC with<br/>
+   standard format uris and labels.</li>
+	<li>Made client-created DS-COMPOSITE-MODEL not use DC as<br/>
+   example.<br/>
+Misc other cleanup:</li>
+	<li>When ingesting legacy format objects, automatically<br/>
+  updates any system-defined datastreams with the<br/>
+  appropriate MIMETYPE and FORMAT_URI.</li>
+	<li>Replaced occurances of CMDA with CMA</li>
+	<li>Relaxed RELSExtValidator so that it allows self-referential<br/>
+  relationships (necessary because ContentModel-3.0<br/>
+  has itself as a content model).  There has never been<br/>
+  a danger to having self-referential relationships, so this<br/>
+  was kind of a bogus rule anyway.</li>
+	<li>Removed requirement in BatchModifyParser that inline XML<br/>
+   has text/xml MIMETYPE.</li>
+	<li>Fixes DOTranslationUtility's static initializer so that it<br/>
+ gets configuration from Server.getConfig(), which doesn't<br/>
+ require a server instance to be running.</li>
+	<li>Removed <b>most</b> occurances of SERVICE-PROFILE</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-10719"><div class="by">Bill Branan, 2008-10-01 17:34 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Task&#93;</span><br/>
+Task Submitter: cwilper<br/>
+Task #: 149377<br/>
+SF URL: <a href="http://sourceforge.net/pm/task.php?func=detailtask&amp;group_id=177054&amp;group_project_id=53865&amp;project_task_id=149377" class="external-link" rel="nofollow noreferrer">http://sourceforge.net/pm/task.php?func=detailtask&amp;group_id=177054&amp;group_project_id=53865&amp;project_task_id=149377</a><br/>
+Closed On: 2008-06-30 01:00:00</p></div></div>
+<p><a href="data/FCREPO-349.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

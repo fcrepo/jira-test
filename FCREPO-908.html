@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-908 Failure to use https protocol when datastream points to local URL</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-908</span> Failure to use https protocol when datastream points to local URL</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Swithun Crowe</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2011-04-14 00:00 UTC</td></tr><tr><th>Updated</th><td>2011-04-14 00:54 UTC</td></tr><tr><th>Resolved</th><td>2011-04-14 00:54 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr></table>
+<h2>Description</h2>
+<p>As reported by Swithun Crowe on April 13th 2011:</p>
+
+<p>I was having trouble with the demo objects - everything seemed to work,<br/>
+apart from being able to view the list of objects in the demo SmileyStuff<br/>
+collection. Looking at the list with URL</p>
+
+<p>/fedora/get/demo:SmileyStuff/demo:Collection/list</p>
+
+<p>worked, but</p>
+
+<p>/fedora/objects/demo:SmileyStuff/datastreams/LIST/content</p>
+
+<p>didn't. It gave this error:</p>
+
+<p>Error getting<br/>
+<a href="http://itspc-cs2.st-andrews.ac.uk:443/fedora/get/demo:SmileyStuff/demo:Collection/list" class="external-link" rel="nofollow noreferrer">http://itspc-cs2.st-andrews.ac.uk:443/fedora/get/demo:SmileyStuff/demo:Collection/list</a></p>
+
+<p>It is using a secure port, but the protocol is still http, with no s.</p>
+
+<p>I traced this back to<br/>
+fcrepo/fcrepo-server/src/main/java/org/fcrepo/server/storage/DefaultExternalContentManager.java,<br/>
+in method getFromWeb, where there is a colon where there shouldn't be one.<br/>
+The protocol string returned by params.getProtocol doesn't include the :<br/>
+after the protocol, so the comparison fails when it should succeed.</p>
+
+<p>This is a patch for it:</p>
+
+<p>&#8212; DefaultExternalContentManager.java.orig     2011-04-13 10:42:07.000000000 +0100<br/>
++++ DefaultExternalContentManager.java  2011-04-13 10:42:19.000000000 +0100<br/>
+@@ -313,7 +313,7 @@<br/>
+                     new Boolean(beHash.get("callSSL"))<br/>
+                             .booleanValue();<br/>
+             if (backendSSL) {</p>
+<ul class="alternate" type="square">
+	<li>if (params.getProtocol().equals("http:")) {<br/>
++                if (params.getProtocol().equals("http")) 
+{
+                     url = url.replaceFirst("http:", "https:");
+                 }
+<p>                 url =</p></li>
+</ul>
+
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-11913"><div class="by">Chris Wilper, 2011-04-14 00:54 UTC</div><div class="text"><p>Fixed in master. Thanks for the report + patch.</p></div></div>
+<p><a href="data/FCREPO-908.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

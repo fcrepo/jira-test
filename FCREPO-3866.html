@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3866 PUT-DEL-PUT objects in an Archival group</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3866</span> PUT-DEL-PUT objects in an Archival group</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Quinn Hart</td></tr><tr><th>Created</th><td>2022-11-30 22:07 UTC</td></tr><tr><th>Updated</th><td>2023-02-27 20:49 UTC</td></tr></table>
+<h2>Environment</h2>docker 6.3.0-RC1
+<h2>Description</h2>
+<p>Apologies for the issue length: I have a number of questions regarding the same example</p>
+
+<h2><a name="Example"></a>Example</h2>
+
+<p>An achivalgroup can have objects within the group that are created, deleted, and recreated.  This process can have a number of effects on the objects, and the archival groups version history.  Below is a simple example of an archival group with such a history:</p>
+
+<p> This is the docker startup we used.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>     version=6.3.0-SNAPSHOT
+     docker image pull fcrepo/fcrepo:$version
+     docker run --rm --name=fcrepo --publish 8666:8080 fcrepo/fcrepo:${version} 2&gt;fcrepo.err &gt;fcrepo.log &amp;
+     sleep 5
+     docker exec fcrepo bash -c "{ apt-get update; apt-get -y install tree; }"</pre>
+</div></div>
+
+<p>This example writes a few files, deletes an image file and recreates it.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>     info_fedora="http://localhost:8666/fcrepo/rest"
+     curl="curl -u fedoraAdmin:fedoraAdmin"
+     put_art="$curl -XPUT -u fedoraAdmin:fedoraAdmin -H'Content-type:text/x-ascii-art; charset=utf-8' --data-binary @-"
+
+     $curl -XPUT -HLink:'&lt;http://fedora.info/definitions/v4/repository#ArchivalGroup&gt;;rel="type"' ${info_fedora}/pet:/99/ashley
+     echo -e "  ∧_∧\n ̳o.o̳\n  |♡\\ \n" | $put_art $info_fedora/pet:/99/ashley/image.art &gt;/dev/null
+     sleep 2
+     echo  "YUM YUMs" | $curl -XPUT ${info_fedora}/pet:/99/ashley/snacks.txt
+     sleep 2
+
+     $curl -XDELETE $info_fedora/pet:/99/ashley/image.art &gt;/dev/null
+     sleep 2
+     $curl -XDELETE $info_fedora/pet:/99/ashley/image.art/fcr:tombstone &gt;/dev/null
+     sleep 2
+     echo -e "\\    /\\ \n )  ( \`)\n(  /  ) \n \\(__)|" | $put_art $info_fedora/pet:/99/ashley/image.art &gt;/dev/null
+     sleep 2
+</pre>
+</div></div>
+
+<p>And here are a number of questions about the above example:</p>
+
+<h2><a name="BUG%3Afcr%3Aversionsforthe%22phoenix%22objectbroken"></a>BUG:  fcr:versions for the "phoenix" object broken</h2>
+
+<p>The versions for the object contain it's entire history.  This seems correct to me, but some of the formats result in errors in the server, and the timegate doesn't work.  See below for the versions of the deleted image.art object.  The format and timegate fail with null pointer exceptions</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>      versions=$($curl $info_fedora/pet:/99/ashley/image.art/fcr:versions \
+                   -H'Accept:application/ld+json' |\
+                     jq -r '.[]["http://www.w3.org/ns/ldp#contains"][]["@id"]' | sort)
+
+      for i in $versions; do
+          echo "=== ashley/image.art version $i ==="
+          $curl $i;
+          echo ''
+      done
+
+       echo "=== fcr:versions ==="
+       $curl $info_fedora/pet:/99/ashley/image.art/fcr:versions
+       echo "=== fcr:versions application/link-format ==="
+       $curl -i -H "Accept:application/link-format" $info_fedora/pet:/99/ashley/image.art/fcr:versions
+       echo -e "\n=== timegate ==="
+       $curl -i -H "Accept-Datetime:$(date -R)" $info_fedora/pet:/99/ashley/image.art
+</pre>
+</div></div>
+
+<p>Results in</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>     === ashley/image.art version http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art/fcr:versions/20221130214345 ===
+       ∧_∧
+      ̳o.o̳
+       |♡\ 
+
+
+     === ashley/image.art version http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art/fcr:versions/20221130214349 ===
+     Discovered tombstone resource at /pet:/99/ashley/image.art/fcr:versions/20221130214349, departed at: 2022-11-30T21:43:49.808177Z
+     === ashley/image.art version http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art/fcr:versions/20221130214353 ===
+     \    /\ 
+      )  ( `)
+     (  /  ) 
+      \(__)|
+
+     === fcr:versions ===
+     @prefix memento: &lt;http://mementoweb.org/ns#&gt; .
+     @prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+     @prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+     @prefix ldp: &lt;http://www.w3.org/ns/ldp#&gt; .
+
+     &lt;http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art/fcr:versions&gt;
+             ldp:contains           &lt;http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art/fcr:versions/20221130214353&gt; ;
+             ldp:contains           &lt;http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art/fcr:versions/20221130214349&gt; ;
+             ldp:contains           &lt;http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art/fcr:versions/20221130214345&gt; ;
+             memento:original       &lt;http://localhost:8666/fcrepo/rest/pet:/99/ashley/image.art&gt; ;
+             fedora:created         "2022-11-30T21:43:53.937354Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+             fedora:lastModified    "2022-11-30T21:43:53.937354Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+             fedora:createdBy       "fedoraAdmin" ;
+             fedora:lastModifiedBy  "fedoraAdmin" ;
+             rdf:type               ldp:Resource ;
+             rdf:type               ldp:Container ;
+             rdf:type               ldp:RDFSource .
+     === fcr:versions application/link-format ===
+     HTTP/1.1 500 
+      === timegate ===
+     HTTP/1.1 500 
+ </pre>
+</div></div>
+
+<h2><a name="BUG%3FArchivalGroupVersion"></a>BUG? Archival Group Version</h2>
+
+<p>Previous versions of the archival group don't have their contemporaneous image.art object files.  In the example below the 1st version of the image.art object is gone, even though it's a accessible via the objects version history.  It also doesn't exist in the version with <tt>snacks.txt</tt></p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>      versions=$($curl $info_fedora/pet:/99/ashley/fcr:versions \
+                      -H'Accept:application/ld+json' |\
+                    jq -r '.[]["http://www.w3.org/ns/ldp#contains"][]["@id"]' | sort)
+
+     for i in $versions; do
+         echo "=== ASHLEY VERSION $i ===="
+         $curl $i;
+         echo ''
+     done
+</pre>
+</div></div>
+
+<h2><a name="Feature%3FObjectVersionsshareArchivalGroupversion"></a>Feature? - Object Versions share ArchivalGroup version</h2>
+
+
+<p>     It seems to me that it'd be better to have every object in an archival<br/>
+     group share the same versions and they match the filesystem versions.  This<br/>
+     seems more consistant with some of the documentation of the archival<br/>
+     groups.  In addition, in the current method you can only find the objects<br/>
+     for a particular archivalgroup version using a timegate.</p>
+
+<h2><a name="Feature%3Ffcr%3Atombstone"></a>Feature? - fcr:tombstone</h2>
+
+
+<p>     I don't know this history of fcr:tombstones in F4, but in F6 I think of<br/>
+     them as removal from the filesystem.  If if were possible to re-PUT a<br/>
+     deleted object without deleting the tombstone, I'd suggest that objects in<br/>
+     an archival group just don't have tombstones.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-22770"><div class="by">Danny Bernstein, 2022-12-01 00:02 UTC</div><div class="text"><p>Thanks Quinn Hart .  We’ll take a look.</p></div></div>
+<div class="comment" id="comment-22806"><div class="by">Michael Ritter, 2023-02-24 23:12 UTC</div><div class="text"><p>Hi Quinn,</p>
+
+<p>After discussing this among the tech team, we’ve decided there are two actions to take on this. </p>
+
+<p>The first is to fix the NullPointerExceptions which are occurring and causing the HTTP 500s to be returned, as the server should be returning a correct response. </p>
+
+<p>The second is to better document Archive Groups and their use cases, in addition to considerations around them such as the workflow you’ve run into. Fedora isn’t able to keep all context around resources in Archive Groups, and as such when they get purged information is lost from the containment index and we end up with a limited view compared to OCFL because of OCFL’s immutable nature. In general we recommend atomic resources to be used to avoid any complications such as the above, unless an Archive Group really is required. </p>
+
+<p>I’ve created tickets for both of these if you’d like to watch them:</p>
+
+<ul>
+	<li><a href="FCREPO-3875.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3875</a></li>
+	<li><a href="FCREPO-3876.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3876</a></li>
+</ul>
+
+
+<p>I believe this ticket can be closed, but I’m going to leave it open until at least the NPE has a fix in.</p>
+
+<p>-Mike</p></div></div>
+<div class="comment" id="comment-22807"><div class="by">Quinn Hart, 2023-02-27 20:49 UTC</div><div class="text"><p>Hi Michael,</p>
+
+<p>Okay, this is actually pretty concerning since we’ve kinda gone all in on archive groups.  Were the feature requests to be discussed anywhere moving forward, I kinda feel like they’d satisfy some of the issues that you say are problematic.</p></div></div>
+<p><a href="data/FCREPO-3866.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

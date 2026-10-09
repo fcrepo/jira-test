@@ -1,0 +1,73 @@
+diff --git a/fcrepo-integrationtest/fcrepo-integrationtest-core/src/main/java/org/fcrepo/test/api/TestRESTAPI.java b/fcrepo-integrationtest/fcrepo-integrationtest-core/src/main/java/org/fcrepo/test/api/TestRESTAPI.java
+index dc26c6a..dcfc1eb 100644
+--- a/fcrepo-integrationtest/fcrepo-integrationtest-core/src/main/java/org/fcrepo/test/api/TestRESTAPI.java
++++ b/fcrepo-integrationtest/fcrepo-integrationtest-core/src/main/java/org/fcrepo/test/api/TestRESTAPI.java
+@@ -687,6 +687,44 @@ public class TestRESTAPI
+         assertEquals(SC_OK, get(getAuthAccess(), false).getStatusCode());
+     }
+ 
++    public void testFindObjectsForTermWithApostrophe() throws Exception {
++        String term = URLEncoder.encode("haven't", "UTF-8");
++        url =
++                String
++                        .format("/objects?pid=true&terms=%s&query=&resultFormat=xml",
++                                term);
++        if (this.getAuthAccess()) {
++            assertEquals(SC_UNAUTHORIZED, get(false).getStatusCode());
++        }
++        // FIXME: findObjects should have a schema?  remove "false" to enable validation
++        HttpResponse resp=get(getAuthAccess(), false);
++        String xmlResult=new String(resp.getResponseBody());
++        assertEquals(SC_OK, resp.getStatusCode());
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyBeerGlass</pid>") > 0);
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyPens</pid>") > 0);
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyPens_M</pid>") > 0);
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyBeerGlass_M</pid>") > 0);
++    }
++
++    public void testFindObjectsForQueryWithApostrophe() throws Exception {
++        String query = URLEncoder.encode("description~haven\\'t", "UTF-8");
++        url =
++                String
++                        .format("/objects?pid=true&terms=&query=%s&resultFormat=xml",
++                                query);
++        if (this.getAuthAccess()) {
++            assertEquals(SC_UNAUTHORIZED, get(false).getStatusCode());
++        }
++        // FIXME: findObjects should have a schema?  remove "false" to enable validation
++        HttpResponse resp=get(getAuthAccess(), false);
++        String xmlResult=new String(resp.getResponseBody());
++        assertEquals(SC_OK, resp.getStatusCode());
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyBeerGlass</pid>") > 0);
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyPens</pid>") > 0);
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyPens_M</pid>") > 0);
++        assertTrue(xmlResult.indexOf("<pid>demo:SmileyBeerGlass_M</pid>") > 0);
++    }
++
+     /**
+      * test case for FCREPO-867. Since all SQL statements have been switched to
+      * PreparedStatement it's safe to use a singlequote in a search query.
+diff --git a/fcrepo-server/src/main/java/org/fcrepo/server/search/Condition.java b/fcrepo-server/src/main/java/org/fcrepo/server/search/Condition.java
+index 447ac2c..e73fd8a 100755
+--- a/fcrepo-server/src/main/java/org/fcrepo/server/search/Condition.java
++++ b/fcrepo-server/src/main/java/org/fcrepo/server/search/Condition.java
+@@ -26,9 +26,6 @@ public class Condition {
+             throws QueryParseException {
+         m_property = property;
+         m_operator = operator;
+-        if (value.indexOf("'") != -1) {
+-            throw new QueryParseException("Query cannot contain the ' character.");
+-        }
+         m_value = value;
+     }
+ 
+@@ -36,9 +33,6 @@ public class Condition {
+             throws InvalidOperatorException, QueryParseException {
+         m_property = property;
+         m_operator = Operator.fromAbbreviation(operator);
+-        if (value.indexOf("'") != -1) {
+-            throw new QueryParseException("Query cannot contain the ' character.");
+-        }
+         m_value = value;
+     }
+ 

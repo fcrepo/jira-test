@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1554 Add auditTrail mappings to migration-utils</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1554</span> Add auditTrail mappings to migration-utils</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Nick Ruest</td></tr><tr><th>Created</th><td>2015-05-22 12:28 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:49 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:49 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr><tr><th>Labels</th><td>fedora-3-to-4-migration</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1391.html">FCREPO-1391</a> Design and implement migration of the fedora 3 audit datastream</td></tr></table>
+<h2>Description</h2>
+<p>Add the following auditTrail mappings to migration-utils:</p>
+
+<p>addDatastream -&gt; premis:ing</p>
+
+<p>modifyDatastreamByReference -&gt; audit:contentModification/metadataModification</p>
+
+<p>modifyObject -&gt; audit:resourceModification</p>
+
+<p>modifyObject (checksum validation) -&gt; premis:validation</p>
+
+<p>modifyDatastreamByValue -&gt; audit:contentModification/metadataModification</p>
+
+<p>purgeDatastream -&gt; audit:contentRemoval</p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-14315"><div class="by">Nick Ruest, 2015-05-22 12:29 UTC</div><div class="text"><p>Former user would you mind checking out the proposed mappings one last time?</p></div></div>
+<div class="comment" id="comment-14330"><div class="by">Former user, 2015-05-26 13:06 UTC</div><div class="text"><p>Nick Ruest, these look good except the audit module is using premis:ing (ingest) for addDatastream (and using premis:cre for creating an object).</p></div></div>
+<div class="comment" id="comment-14341"><div class="by">Nick Ruest, 2015-05-26 14:30 UTC</div><div class="text"><p>Former user perfect!</p>
+
+<p>Also, do you have an example crytographicHashFunction? I figure I should switch that over in our <a href="https://github.com/fcrepo4-labs/migration-utils#fcrepo3-datastream-properties-to-fcrepo4" class="external-link" rel="nofollow noreferrer">table of mappings</a> as well.</p></div></div>
+<div class="comment" id="comment-14342"><div class="by">Former user, 2015-05-26 14:33 UTC</div><div class="text"><p>That makes sense.  The URI for MD5 is: <a href="http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions/md5" class="external-link" rel="nofollow noreferrer">http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions/md5</a></p></div></div>
+<div class="comment" id="comment-14343"><div class="by">Nick Ruest, 2015-05-26 14:56 UTC</div><div class="text"><p>If I'm understanding this right then, premis:hasMessageDigestAlgorithm would just have the associated URI for cryptographicHashFunctions? So, in the example it would be </p>
+
+<p>premis:hasMessageDigestAlgorithm <a href="http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions/sha1" class="external-link" rel="nofollow noreferrer">http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions/sha1</a><br/>
+premis:hasMessageDigest c91342b705b15cb4f6ac5362cc6a47d9425aec86</p>
+
+<p>Do I need a predicated to relate those two values together? Or a blank node? Just thinking back to our technical metadata subgroup call, and I thought we had done it without the need for blank nodes.</p></div></div>
+<div class="comment" id="comment-14344"><div class="by">Former user, 2015-05-26 15:07 UTC</div><div class="text"><p>The cryptographicHash terms are defined as both skos:Concept and owl:AnnotationProperty.</p>
+
+<p>So I think it's fine to use them with the PREMIS predicates, and you'd need to have some kind of container if you had more than one of them.  But you could also just use the cryptographicHash terms as predicates:</p>
+
+<p>&lt;object1&gt; cryptofunc:sha1 "c91342b705b15cb4f6ac5362cc6a47d9425aec86"</p>
+
+<p>IMHO, that's a lot simpler and allows you to have as many different checksums as you want without having to have a blanknode or other container to keep the algorithms and checksums matched up.</p></div></div>
+<div class="comment" id="comment-14345"><div class="by">Nick Ruest, 2015-05-26 15:10 UTC</div><div class="text"><p>OH! I see now. Just needed that example </p>
+
+<p>Thank you very much Former user!!!</p></div></div>
+<div class="comment" id="comment-14346"><div class="by">Nick Ruest, 2015-05-26 16:13 UTC</div><div class="text"><p>Pull request to update README based on this thread: <a href="https://github.com/fcrepo4-labs/migration-utils/pull/20" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/pull/20</a></p></div></div>
+<div class="comment" id="comment-15693"><div class="by">Andrew Woods, 2015-11-02 01:16 UTC</div><div class="text"><p>Nick Ruest? Esmé Cowles? What is the status of this ticket?</p></div></div>
+<div class="comment" id="comment-15695"><div class="by">Nick Ruest, 2015-11-02 01:21 UTC</div><div class="text"><p>It still needs to be done. I should be able to get to this after the Islandora release, and 7.x-2.x sprint. Hopefully, soon, we'll (Islandora) be paying a lot more attention to this </p></div></div>
+<div class="comment" id="comment-22455"><div class="by">Danny Bernstein, 2021-09-17 17:49 UTC</div><div class="text"><p>Closing as part of a jira repository effort.  It is being closed for one of the following reasons:  1) it is no longer applicable,  2) it has been fixed in future version or 3) no one seems to be interested in it .</p></div></div>
+<p><a href="data/FCREPO-1554.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

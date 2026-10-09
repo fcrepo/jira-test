@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1712 Uploading Ogg Files Fails</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1712</span> Uploading Ogg Files Fails</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-08-28 12:10 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-08-28 20:42 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>Uploading an Ogg Vorbis file to fcrepo4 results in a stacktrace (see <a href="https://github.com/fcrepo4/fcrepo4/issues/893" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/893</a>).</p>
+
+<p>This may be related to this dependency and exclusion: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-boms/fcrepo-jcr-bom/pom.xml#L24" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-boms/fcrepo-jcr-bom/pom.xml#L24</a> &#8211; we're excluding some of the vorbis-java components because they require an older version of Tika than we're using.  The versions mentioned in the comments are much older than the current requirements of the vorbis-java package, so this may be as simple as updating the pom.xml to use current versions of the related packages.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-15132"><div class="by">Former user, 2015-08-28 17:58 UTC</div><div class="text"><p>As it turns out, just uploading the content "OggS" is enough to trigger this bug:</p>
+
+<p>curl -X PUT --data-binary OggS <a href="http://localhost:8080/rest/$RANDOM" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/$RANDOM</a></p>
+
+<p>Luckily, the fix is just as easy: we have some exclusions for the vorbis-java-tika package (because an old version was pulling in an old version of tika).  But removing those exclusions and bringing in the current versions of those packaged used by Modeshape fixes this bug.  I've pushed an IT to demonstrate this (see <a href="https://travis-ci.org/fcrepo4/fcrepo4/builds/77721025" class="external-link" rel="nofollow noreferrer">https://travis-ci.org/fcrepo4/fcrepo4/builds/77721025</a>).   I've updated the PR with a second commit that removes the vorbis-java-tika exclusions: <a href="https://github.com/fcrepo4/fcrepo4/pull/894" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/894</a></p></div></div>
+<div class="comment" id="comment-15136"><div class="by">Andrew Woods, 2015-08-28 20:42 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/b53c841ff52129d34ab8caaadece73956a6a30a0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/b53c841ff52129d34ab8caaadece73956a6a30a0</a></p></div></div>
+<p><a href="data/FCREPO-1712.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

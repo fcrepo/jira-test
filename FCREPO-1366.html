@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1366 fcrepo4-release-tests port conflict</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1366</span> fcrepo4-release-tests port conflict</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Yinlin Chen</td></tr><tr><th>Created</th><td>2015-02-17 00:25 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-03-13 14:50 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>With recent updates, now fcrepo4-release-tests has a port conflict with 3030.<br/>
+<a href="http://jenkins.fcrepo.org/job/fcrepo4-release-tests/115/console" class="external-link" rel="nofollow noreferrer">http://jenkins.fcrepo.org/job/fcrepo4-release-tests/115/console</a></p>
+
+<p>This issue will be resolved with a local instance of Fuseki can be running on the default port 3030 and fcrepo4-release-tests pass when running:<br/>
+mvn clean install</p>
+<h2>Comments (17)</h2>
+<div class="comment" id="comment-13429"><div class="by">Andrew Woods, 2015-02-17 00:59 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-message-consumer/commit/6d6a9ef11330f246e00b69e0e1020c2b1b8b6934" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/commit/6d6a9ef11330f246e00b69e0e1020c2b1b8b6934</a><br/>
+and<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-release-tests/commit/2aa16b4465e254356f9f1f18c5443a0f0bf69ee5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-release-tests/commit/2aa16b4465e254356f9f1f18c5443a0f0bf69ee5</a></p></div></div>
+<div class="comment" id="comment-13474"><div class="by">Andrew Woods, 2015-02-18 17:28 UTC</div><div class="text"><p>There appears to be port conflicts when running fcrepo4-release-tests while fcrepo4 is also running.</p></div></div>
+<div class="comment" id="comment-13636"><div class="by">Andrew Woods, 2015-03-06 16:44 UTC</div><div class="text"><p>The resolution of this ticket will be limited to updating pom.xml/maven build-time configuration.</p></div></div>
+<div class="comment" id="comment-13639"><div class="by">Yinlin Chen, 2015-03-06 20:23 UTC</div><div class="text"><p>which pom.xml file? <a href="https://github.com/fcrepo4/fcrepo-message-consumer/blob/master/fcrepo-message-consumer-core/pom.xml" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/blob/master/fcrepo-message-consumer-core/pom.xml</a> this one?</p>
+</div></div>
+<div class="comment" id="comment-13643"><div class="by">Andrew Woods, 2015-03-07 01:14 UTC</div><div class="text"><p>Possibly the fcrepo-message-consumer-core/pom.xml <br/>
+...and/or the fcrepo4-release-tests/pom.xml</p>
+
+<p>Part of this ticket is to figure out where the fix should be made.</p></div></div>
+<div class="comment" id="comment-13682"><div class="by">Yinlin Chen, 2015-03-10 15:55 UTC</div><div class="text"><p>Try to reproduce this ticket. My understandings is:</p>
+
+<p>1. Fuseki running 3030<br/>
+2. Fcrepo4 master branch running in tomcat 8080<br/>
+ 2.1 install <a href="https://github.com/fcrepo4/fcrepo-message-consumer" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer</a><br/>
+3. git clone <a href="https://github.com/mikedurbin/fcrepo4-release-tests" class="external-link" rel="nofollow noreferrer">https://github.com/mikedurbin/fcrepo4-release-tests</a><br/>
+4. cd fcrepo4-release-tests<br/>
+5. mvn clean install </p>
+
+<p>Any thing missing? </p></div></div>
+<div class="comment" id="comment-13687"><div class="by">Andrew Woods, 2015-03-10 16:17 UTC</div><div class="text"><ul class="alternate" type="square">
+	<li>Step 2.1 should not be necessary.</li>
+	<li>Step 3 should be:<br/>
+git clone <a href="https://github.com/fcrepo4-labs/fcrepo4-release-tests" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-release-tests</a></li>
+</ul>
+
+
+<p>Otherwise, this looks good.</p></div></div>
+<div class="comment" id="comment-13708"><div class="by">Yinlin Chen, 2015-03-11 14:42 UTC</div><div class="text"><p>I got different error:</p>
+
+<p>Fedora: <a href="http://52.1.250.209:8080/fcrepo/" class="external-link" rel="nofollow noreferrer">http://52.1.250.209:8080/fcrepo/</a><br/>
+Fuseki: <a href="http://52.1.250.209:3030/" class="external-link" rel="nofollow noreferrer">http://52.1.250.209:3030/</a><br/>
+mvn clean install error:<br/>
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 11.308 sec &lt;&lt;&lt; FAILURE! - in org.fcrepo.it.SparqlRecipesIT<br/>
+org.fcrepo.it.SparqlRecipesIT  Time elapsed: 11.307 sec  &lt;&lt;&lt; FAILURE!<br/>
+java.lang.AssertionError: expected:&lt;201&gt; but was:&lt;503&gt;<br/>
+    at org.junit.Assert.fail(Assert.java:88)<br/>
+    at org.junit.Assert.failNotEquals(Assert.java:743)<br/>
+    at org.junit.Assert.assertEquals(Assert.java:118)<br/>
+    at org.junit.Assert.assertEquals(Assert.java:555)<br/>
+    at org.junit.Assert.assertEquals(Assert.java:542)<br/>
+    at org.fcrepo.it.SparqlRecipesIT.putObject(SparqlRecipesIT.java:322)<br/>
+    at org.fcrepo.it.SparqlRecipesIT.setUpTestObjects(SparqlRecipesIT.java:164)<br/>
+    at org.fcrepo.it.SparqlRecipesIT.startFuseki(SparqlRecipesIT.java:118)</p>
+
+
+<p>Results :</p>
+
+<p>Failed tests:<br/>
+  SparqlRecipesIT.startFuseki:118-&gt;setUpTestObjects:164-&gt;putObject:322 expected:&lt;201&gt; but was:&lt;503&gt;</p>
+
+<p>Tests run: 1, Failures: 1, Errors: 0, Skipped: 0</p>
+</div></div>
+<div class="comment" id="comment-13709"><div class="by">Andrew Woods, 2015-03-11 14:47 UTC</div><div class="text"><p>Yinlin Chen, the 5xx is almost certainly due to the server not coming up correctly... port conflict.</p></div></div>
+<div class="comment" id="comment-13711"><div class="by">Yinlin Chen, 2015-03-11 14:57 UTC</div><div class="text"><p>@awoods. Yes, I know, just wonder why Mike see the port conflict in his error message but no mine.</p></div></div>
+<div class="comment" id="comment-13713"><div class="by">Andrew Woods, 2015-03-11 15:04 UTC</div><div class="text"><p>I suspect Michael Durbin's error was found higher in the output log.</p></div></div>
+<div class="comment" id="comment-13714"><div class="by">Yinlin Chen, 2015-03-11 15:07 UTC</div><div class="text"><p>@awoods are you able to see the #duraspace-ff now, or please check the chat log if you have time.</p></div></div>
+<div class="comment" id="comment-13715"><div class="by">Michael Durbin, 2015-03-11 15:07 UTC</div><div class="text"><p>In reference to a since deleted comment by myself indicating a different error:</p>
+
+<p>My error was apparently not on the latest version... I apologize for wasting your time.  My local copy was before the repo moved and my "git pull" didn't report any changes so I assumed I was up to date.</p></div></div>
+<div class="comment" id="comment-13716"><div class="by">Michael Durbin, 2015-03-11 15:24 UTC</div><div class="text"><p>With the latest version:</p>
+
+<p>1.  Started fedora4 webapp elsewhere<br/>
+2.  Ran mvn clean install for fcrepo-release-tests<br/>
+3.  Errors:<br/>
+Failed tests: <br/>
+  SparqlRecipesIT.startFuseki:118-&gt;setUpTestObjects:164-&gt;putObject:322 expected:&lt;201&gt; but was:&lt;503&gt;</p>
+
+<p>Cargo log file includes:<br/>
+ERROR 11:23:03.650 (BrokerService) Failed to start Apache ActiveMQ (<span class="error">&#91;localhost, ID:localhost.localdomain-49653-1426087383504-0:1&#93;</span>, {})<br/>
+java.io.IOException: Transport Connector could not be registered in JMX: Failed to bind to server socket: tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireformat.maxFrameSize=104857600 due to: java.net.BindException: Address already in use</p>
+
+<p>I suppose we need to use a free random port for that too?</p>
+</div></div>
+<div class="comment" id="comment-13722"><div class="by">Yinlin Chen, 2015-03-12 18:03 UTC</div><div class="text"><p>Like this PR? </p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo4-release-tests/pull/8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-release-tests/pull/8</a></p></div></div>
+<div class="comment" id="comment-13723"><div class="by">Yinlin Chen, 2015-03-12 18:04 UTC</div><div class="text"><p>Try to add activemq dynamic port in pom.xml. </p></div></div>
+<div class="comment" id="comment-13729"><div class="by">Andrew Woods, 2015-03-13 14:50 UTC</div><div class="text"><p>PR-8 has been merged with the master branch.</p></div></div>
+<p><a href="data/FCREPO-1366.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

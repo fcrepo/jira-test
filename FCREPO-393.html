@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-393 Authentication caching intermittently fails</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-393</span> Authentication caching intermittently fails</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-01-14 18:18 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:22 UTC</td></tr><tr><th>Resolved</th><td>2009-01-31 16:08 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.2</td></tr></table>
+<h2>Description</h2>
+<p>Kai Strnad reported (and others have reported similar problems on the mailing list):</p>
+
+<p>&gt; Symptoms<br/>
+&gt; We've been experiencing occasional losses of connections to fedora<br/>
+&gt; during mass ingests. Ingests of seemingly random digital objects would<br/>
+&gt; fail with a FilterEnforceAuthn Servlet throwing a 401 despite providing<br/>
+&gt; the right credentials. After some debugging it dawned on me that there<br/>
+&gt; might be a problem with the authentication and caching mechanism used by<br/>
+&gt; Fedora.<br/>
+&gt;<br/>
+&gt; Findings<br/>
+&gt; Thanks to the extensive logging capabilities I was able to trace down<br/>
+&gt; this problem to the following situation:<br/>
+&gt; The CacheEntry (expires every 10 minutes) is very close to expiration<br/>
+&gt; and expires somewhere between the call to CacheElement.authenticate()<br/>
+&gt; and the call to CacheElement.getNamedValues(). The CacheElement will be<br/>
+&gt; repopulated as intended, but without the password. Now there is a new<br/>
+&gt; CacheElement with everything populated but the password. Subsequent<br/>
+&gt; calls don't set the password either, so it won't get set for the rest of<br/>
+&gt; the authentication process which doesn't matter at this point because<br/>
+&gt; the user has already been authenticated.<br/>
+&gt; Subsequent authentications however will fail because the next call to<br/>
+&gt; CacheEntry.authenticate() will compare the given password with the<br/>
+&gt; password of the cache which will effectively compare the password with<br/>
+&gt; null, resulting in the termination of the filter chain and the 401.<br/>
+&gt; The bug will only appear if the EnforceAuthnFilter is part of the filter<br/>
+&gt; chain (eg axis calls).<br/>
+&gt;<br/>
+&gt;<br/>
+&gt; Possible Solution<br/>
+&gt; The most obvious solution would be to supply the given password to the<br/>
+&gt; new CacheEntry the same way it is done in CacheEntry.authenticate().<br/>
+&gt; However, I don't know if there are side effects and I'm not that<br/>
+&gt; familiar with the code...</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-393/10038_CacheElement.class">CacheElement.class</a>, 15518 bytes, added by Chris Wilper on 2009-01-21</li>
+<li><a href="attachments/FCREPO-393/10037_CacheElement.java">CacheElement.java</a>, 22226 bytes, added by Chris Wilper on 2009-01-21</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-10821"><div class="by">Chris Wilper, 2009-01-21 01:16 UTC</div><div class="text"><p>Source for fix vs Fedora 3.1.  The fix was as Kai suggested (to set the password on expiration in getNamedValues, as is done in authenticate).  This also refactors the class a bit to aid in future maintenance.</p></div></div>
+<p><a href="data/FCREPO-393.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

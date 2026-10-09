@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-793 FieldSearch implementation does not handle utc correctly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-793</span> FieldSearch implementation does not handle utc correctly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Steen Manniche</td></tr><tr><th>Created</th><td>2010-09-02 01:04 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>When foxml is ingested, and the `update` method called on FieldSearchSQLImpl, dates registered with the Digital Object are treated differently from dates listed in the DublinCore metadata stream.</p>
+
+<p>If the client supplies identical dates in respectively the DigitalObject created_date field and in a dublin core datastream, the dublin core date will be parsed as a UTC timestamp and the created date will not. This will result in the same timestamp being represented as two different epoch timestamps in the database tables:</p>
+
+<p>dc:date      2010-09-02T02:20:20.202 <del>utc</del>&gt; 2010-09-02T04:20:20.202 <del>getTime()</del>&gt; 1283394020202<br/>
+cDate        2010-09-02T02:20:20.202           2010-09-02T02:20:20.202 <del>getTime()</del>&gt; 1283386820202</p>
+
+<p>Upon searching for dates (ranges or equality) the `findObjects` method in FieldSearchResultSQLImpl will convert all search term values for dates given in Conditions, to UTC:<br/>
+date  EQUALS 2010-09-02T02:20:20.202 <del>utc</del>&gt; 2010-09-02T04:20:20.202  <del>toSQL</del>&gt; SELECT ... WHERE dcDates.dcDate = 1283394020202<br/>
+cDate EQUALS 2010-09-02T02:20:20.202 <del>utc</del>&gt; 2010-09-02T04:20:20.202 <del>toSQL</del>&gt; SELECT ... WHERE doFields.cDate = 1283394020202</p>
+
+<p>The attached java file demonstrates the FieldSearchSQLImpl use of DateUtility#parseDateStrict( java.lang.String )</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-793/10100_DateUtilityDemo.java">DateUtilityDemo.java</a>, 4349 bytes, added by Steen Manniche on 2010-09-02</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12960"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-793.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-731 TestZip tmp files are not deleted and not unique</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-731</span> TestZip tmp files are not deleted and not unique</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Martin</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2010-06-23 14:45 UTC</td></tr><tr><th>Updated</th><td>2012-08-24 11:11 UTC</td></tr><tr><th>Resolved</th><td>2012-08-22 12:11 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2.1, Fedora 3.3, Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.6.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-723.html">FCREPO-723</a> Journaling unit tests cannot handle multiple instances of repo on same server</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1025.html">FCREPO-1025</a> Let the test-framework create and delete temporary directories (update JUnit from 4.5 to 4.10)</td></tr></table>
+<h2>Description</h2>
+<p>Temporary files and folders in fcrepo-server/src/test/java/fedora/utilities/TestZip.java package fedora.utilities have hard coded names and are not deleted upon exit. </p>
+
+<p>I suggest a complete rewrite using File.createTempFile with System.nanoTime(). As is now the this class is not particularly easy to maintain or patch.</p>
+
+<p>For now I've patched it as follows:</p>
+
+<p>&lt;snippet&gt;<br/>
+        private final String TMP_DIR = System.getProperty("java.io.tmpdir");</p>
+
+<p>        private final String ZIP_FILE = TMP_DIR + File.separator + "test" + System.nanoTime() + ".zip";</p>
+
+<p>        private final String TEST_DIR = TMP_DIR + File.separator + "test" + System.nanoTime();<br/>
+        ...<br/>
+        File foo = new File(testDir, "foo");<br/>
+        File bar = new File(testDir, "bar");<br/>
+        File baz = new File(bar, "baz");<br/>
+&lt;/snippet&gt;</p>
+
+<p>and that's not very pretty! Something like this might be better:</p>
+
+<p>&lt;snippet&gt;<br/>
+        //private final String TMP_DIR = System.getProperty("java.io.tmpdir");</p>
+
+<p>        private final String ZIP_FILE = File.separator + "test.zip";</p>
+
+<p>        private final String TEST_DIR = File.separator + "test";<br/>
+        ...<br/>
+        File foo = File directory = File.createTempFile("foo", System.nanoTime(), System.getProperty("java.io.tmpdir") ); <br/>
+        File bar = File directory = File.createTempFile("bar", System.nanoTime(), System.getProperty("java.io.tmpdir") ); <br/>
+        File baz = File directory = File.createTempFile("baz", System.nanoTime(), System.getProperty("java.io.tmpdir") ); <br/>
+&lt;/snippet&gt;</p>
+
+<p>though a more extensive rewrite would be preferable.</p>
+
+<p>Please refer to <a href="http://fedora-commons.org/jira/browse/FCREPO-723" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/jira/browse/FCREPO-723</a> for a similiar issue.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-731/10103_FCREPO-731.patch">FCREPO-731.patch</a>, 1079 bytes, added by Martin on 2010-09-14</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11442"><div class="by">Martin, 2010-06-23 16:24 UTC</div><div class="text"><p>Oops, missed that "test" is used in two places! (Bad smell? ). Anyhow, here's a quick fix:</p>
+
+<p>    private final String ZIP_FILE = TMP_DIR + File.separator + "test" + System.nanoTime() + ".zip";<br/>
+    private final String TEST_STR = "test" + System.nanoTime();<br/>
+    private final String TEST_DIR = TMP_DIR + File.separator + TEST_STR;</p></div></div>
+<div class="comment" id="comment-11606"><div class="by">Martin, 2010-09-14 17:31 UTC</div><div class="text"><p>New patch. TestZip -&gt; testUnzip uses file name from TestZip -&gt; testZip, which does not work when one adds a radom part to file name. The attached patch resolves this.</p></div></div>
+<div class="comment" id="comment-12381"><div class="by">eddie, 2012-08-16 07:59 UTC</div><div class="text"><p>flagging this against 3.6 for review</p></div></div>
+<div class="comment" id="comment-12400"><div class="by">eddie, 2012-08-22 12:11 UTC</div><div class="text"><p>Fixed in ab23a8624b79be75abf24d7450d29bdd6ed2d005.</p>
+
+<p>Thanks for the report, Martin.</p></div></div>
+<p><a href="data/FCREPO-731.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

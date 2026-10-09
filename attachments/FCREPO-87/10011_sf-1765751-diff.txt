@@ -1,0 +1,28 @@
+--- src/java/fedora/server/security/AttributeFinderModule.java	2007-08-01 17:11:20.000000000 -0400
++++ src/java/fedora/server/security/AttributeFinderModule.java	2007-08-01 17:10:54.000000000 -0400
+@@ -14,6 +14,7 @@
+ import javax.servlet.ServletContext;
+ 
+ import com.sun.xacml.EvaluationCtx;
++import com.sun.xacml.attr.AnyURIAttribute;
+ import com.sun.xacml.attr.AttributeValue;
+ import com.sun.xacml.attr.BagAttribute;
+ import com.sun.xacml.attr.IntegerAttribute;
+@@ -345,6 +346,15 @@
+ 						set.add(tempIntegerAttribute); 
+ 					} catch (Throwable t) {
+ 					}					
++				} else if (attributeType.toString().equals(AnyURIAttribute.identifier)) {
++					LOG.debug("USING AS URI:" + ((String[])temp)[i]);
++					AnyURIAttribute tempURIAttribute;
++					try {
++						tempURIAttribute = AnyURIAttribute.getInstance(((String[])temp)[i]);
++						set.add(tempURIAttribute); 
++					} catch (URISyntaxException e) {
++				      LOG.error("The value '" + ((String[])temp)[i] + "' cannot be parsed as a valid URI.", e);
++					}					
+ 				}
+ 			}
+ 		} 
+
+ 	  	 

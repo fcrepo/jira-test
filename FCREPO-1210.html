@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1210 Implement HTTP 1.1 Features for Conditional GET of Datastream Disseminations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1210</span> Implement HTTP 1.1 Features for Conditional GET of Datastream Disseminations</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Benjamin Armintor</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2014-06-07 01:49 UTC</td></tr><tr><th>Updated</th><td>2014-08-15 00:18 UTC</td></tr><tr><th>Resolved</th><td>2014-08-15 00:18 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.0</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1149.html">FCREPO-1149</a> Implement proper HEAD request handling in REST API for Datastream Dissemination</td></tr><tr><th>Is related to</th><td><a href="FCREPO-182.html">FCREPO-182</a> Improved HTTP 1.1 support (Content-Length and Content-Range)</td></tr><tr><th>Is related to</th><td><a href="FCREPO-438.html">FCREPO-438</a> Improved HTTP 1.1 support  (ETag/Last-Modified)</td></tr></table>
+<h2>Description</h2>
+<p>Managed/Inline Datastreams should support ETag/If-None-Match, Last-Modified/If-Modified-Since, and Content-Length/Range.<br/>
+E Datastreams that point to file URIs should support  ETag/If-None-Match, Last-Modified/If-Modified-Since, and Content-Length/Range.<br/>
+E Datastreams that point to http<span class="error">&#91;s&#93;</span> URIs should pass If-None-Match,If-Modified-Since and Range headers to the external service.<br/>
+In all cases, HTTP 304 should be respected and passed back to the client where appropriate.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-12593"><div class="by">Benjamin Armintor, 2014-06-10 09:22 UTC</div><div class="text"><p>First pass in 3.7.2-SNAPSHOT at <a href="https://github.com/fcrepo3/fcrepo/commit/2e6e0a64a9a97252691712ef31fca95b9ae4bd64" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/2e6e0a64a9a97252691712ef31fca95b9ae4bd64</a></p>
+<ul>
+	<li>adds HTTP request headers to the request context</li>
+	<li>uses datastream checksums as ETag when available</li>
+	<li>calculates default ETags fo control group X and M datastreams, and E with file URI dsLocations</li>
+	<li>passes "If-None-Match", "If-Modified-Since", and "Range" request headers through to content service for control groups E and R</li>
+</ul>
+
+
+<p>This commit is incomplete: it only has system tests for If-None-Match and If-Modified-Since.</p></div></div>
+<div class="comment" id="comment-12595"><div class="by">Benjamin Armintor, 2014-06-11 17:42 UTC</div><div class="text"><p>Just to clarify Range requests requirements:<br/>
+For control group X/M/E(file) datastreams:<br/>
+1. They  should include "Accept-Ranges: bytes" as a response header for their contents dissemination <br/>
+2. They should accept "Range: X <span class="error">&#91;- Y&#93;</span>" request headers for their content dissemination <br/>
+3. If "Range" is in the request headers, they should return a "Content Range: bytes X-Y/LENGTH" response header <br/>
+4. Bad "Range" requests should result in a 416 response status - and because this feature is built into the existing infrastructure of a single response stream, this will include all multipart range requests</p>
+
+<p>For control group E(http) datastreams:<br/>
+5. they should pass Range request headers through to backend, and Accept-Ranges/Content-Range back to clients.<br/>
+And type E(http) datastreams should pass Range request headers through to backend, and Accept-Range/Content-Range back to clients.</p></div></div>
+<div class="comment" id="comment-12596"><div class="by">Benjamin Armintor, 2014-06-13 06:09 UTC</div><div class="text"><p>First pass for Range requests in 3.7.2-SNAPSHOT at <a href="https://github.com/fcrepo3/fcrepo/commit/162ff3cc25d236a96c1fa9b4a4b45afaed2bf7ef" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/162ff3cc25d236a96c1fa9b4a4b45afaed2bf7ef</a></p>
+<ul>
+	<li>adds "Accepts-Range: bytes" to datastream disseminations for X/M/E(file) datastreams</li>
+	<li>accepts "Range: bytes=XXX" request headers for X/M/E(file) datastream disseminations</li>
+	<li>returns 206 (Partial Response) for Range-delimited  X/M/E(file) datastream disseminations</li>
+	<li>returns 416 when requested Range is unsatisfiable (start position exceeds content length)</li>
+	<li>returns "Content-Range" response header for X/M/E(file) datastream disseminations</li>
+</ul>
+
+
+<p>This commit is incomplete: it only has system tests for Range/Content-Range requests to inline XML datastreams.</p></div></div>
+<div class="comment" id="comment-12597"><div class="by">Benjamin Armintor, 2014-07-04 02:26 UTC</div><div class="text"><p>Unit testing conditional GET on DefaultAccess and DefaultExternalContentManager is in 3.7.2-SNAPSHOT:<br/>
+<a href="https://github.com/fcrepo3/fcrepo/commit/d3a1501a255cefb088a7b20dd0e6a546a5da4d91" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/d3a1501a255cefb088a7b20dd0e6a546a5da4d91</a></p>
+
+<p>I think this ticket can be closed pending some review.</p></div></div>
+<div class="comment" id="comment-12627"><div class="by">Benjamin Armintor, 2014-08-15 00:18 UTC</div><div class="text"><p><a href="https://github.com/fcrepo3/fcrepo/commit/2e6e0a64a9a97252691712ef31fca95b9ae4bd64" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/2e6e0a64a9a97252691712ef31fca95b9ae4bd64</a><br/>
+<a href="https://github.com/fcrepo3/fcrepo/commit/162ff3cc25d236a96c1fa9b4a4b45afaed2bf7ef" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/162ff3cc25d236a96c1fa9b4a4b45afaed2bf7ef</a><br/>
+<a href="https://github.com/fcrepo3/fcrepo/commit/d3a1501a255cefb088a7b20dd0e6a546a5da4d91" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/d3a1501a255cefb088a7b20dd0e6a546a5da4d91</a></p></div></div>
+<p><a href="data/FCREPO-1210.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

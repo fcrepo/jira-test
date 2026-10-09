@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1290 Subset of child nonRdfSource properties not found in responses</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1290</span> Subset of child nonRdfSource properties not found in responses</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Yinlin Chen</td></tr><tr><th>Created</th><td>2015-01-15 23:10 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-03-10 19:56 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>If a resource "parent" has a child resource "child", where the child has a property of dc:title, the following request will correctly include the child's title:<br/>
+curl -i  -H"Prefer: return=representation; include=\"http://fedora.info/definitions/v4/repository#EmbedResources\"" <a href="http://localhost:8080/rest/parent" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/parent</a></p>
+
+<p>However, if the child is instead a nonRdfSource (an image, for example) with a dc:title, then the above request does not include the child's title.</p>
+
+<p>This is likely due to the logic in PropertiesRdfContext.java not currently also including the nonRdfSourceDescription properties.</p>
+<h2>Comments (18)</h2>
+<div class="comment" id="comment-13232"><div class="by">Yinlin Chen, 2015-01-27 19:26 UTC</div><div class="text"><p>Now the DC info is shown in nonRdfSource child. The result of mvn test verify all passed. </p></div></div>
+<div class="comment" id="comment-13233"><div class="by">Andrew Woods, 2015-01-27 19:33 UTC</div><div class="text"><p>Please add an integration test to: FedoraResourceImplIT.java </p>
+
+<p>and a new unit tests here: <a href="https://github.com/fcrepo4/fcrepo4/tree/master/fcrepo-kernel-impl/src/test/java/org/fcrepo/kernel/impl/rdf/impl" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/tree/master/fcrepo-kernel-impl/src/test/java/org/fcrepo/kernel/impl/rdf/impl</a></p></div></div>
+<div class="comment" id="comment-13234"><div class="by">Andrew Woods, 2015-01-27 19:34 UTC</div><div class="text"><p>When done, please add a link to your pull-request in this JIRA ticket.</p></div></div>
+<div class="comment" id="comment-13295"><div class="by">Andrew Woods, 2015-01-30 21:11 UTC</div><div class="text"><p>I saw a new PR go by referencing this ticket. Is this ticket ready for review?</p></div></div>
+<div class="comment" id="comment-13409"><div class="by">Yinlin Chen, 2015-02-13 21:58 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/723" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/723</a></p>
+
+<p>Fix the formatting first, so I can use the Eclipse automatic format.</p></div></div>
+<div class="comment" id="comment-13420"><div class="by">Andrew Woods, 2015-02-16 21:21 UTC</div><div class="text"><p>PR-723 includes formatting updates, but where is the PR for the functional updates required by this ticket?</p></div></div>
+<div class="comment" id="comment-13437"><div class="by">Yinlin Chen, 2015-02-17 15:24 UTC</div><div class="text"><p>Since that PR was mixed with function &amp; formatting update so I closed it. Please check the PR-723 then I will add function code after that. </p></div></div>
+<div class="comment" id="comment-13438"><div class="by">Yinlin Chen, 2015-02-17 15:25 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/723" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/723</a></p>
+
+<p>Please see me latest comments. Thanks.</p></div></div>
+<div class="comment" id="comment-13442"><div class="by">Andrew Woods, 2015-02-17 15:41 UTC</div><div class="text"><p>Alphabetizing the imports is arguably useful, but the other formatting is not.<br/>
+Have you configured your eclipse per these instructions: <a href="https://github.com/fcrepo4/fcrepo4/tree/master/src/site/eclipse" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/tree/master/src/site/eclipse</a></p></div></div>
+<div class="comment" id="comment-13448"><div class="by">Yinlin Chen, 2015-02-17 16:49 UTC</div><div class="text"><p>Yes. I configured my eclipse using these instructions and these files (<a href="https://github.com/fcrepo4/fcrepo4/tree/master/src/site/eclipse" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/tree/master/src/site/eclipse</a>) are not changed in the past 9 months...</p>
+
+<p>The formatted is changed when I simply click "save file" in Eclipse. I didn't do any formatting myself.</p></div></div>
+<div class="comment" id="comment-13471"><div class="by">Yinlin Chen, 2015-02-18 16:13 UTC</div><div class="text"><p>restart</p></div></div>
+<div class="comment" id="comment-13500"><div class="by">Yinlin Chen, 2015-02-19 19:47 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/732" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/732</a></p></div></div>
+<div class="comment" id="comment-13558"><div class="by">Andrew Woods, 2015-02-25 00:28 UTC</div><div class="text"><p>This ticket should be completed in the sprint starting March 2nd.<br/>
+Unit and Integration tests required.</p></div></div>
+<div class="comment" id="comment-13645"><div class="by">Andrew Woods, 2015-03-08 15:03 UTC</div><div class="text"><p>I have provided a unit test with this PR:<br/>
+<a href="https://github.com/yinlinchen/fcrepo4/pull/3" class="external-link" rel="nofollow noreferrer">https://github.com/yinlinchen/fcrepo4/pull/3</a></p>
+
+<p>Please add an integration test to: FedoraResourceImplIT.java</p></div></div>
+<div class="comment" id="comment-13656"><div class="by">Yinlin Chen, 2015-03-09 15:31 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/741" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/741</a></p>
+
+<p>IT test added, also asked ajs6f to take a look on it. </p></div></div>
+<div class="comment" id="comment-13699"><div class="by">Andrew Woods, 2015-03-10 18:43 UTC</div><div class="text"><p>See code review comments...<br/>
+including <a href="https://github.com/yinlinchen/fcrepo4/pull/4" class="external-link" rel="nofollow noreferrer">https://github.com/yinlinchen/fcrepo4/pull/4</a></p></div></div>
+<div class="comment" id="comment-13703"><div class="by">Yinlin Chen, 2015-03-10 19:56 UTC</div><div class="text"><p>Merge your pull in PR</p></div></div>
+<div class="comment" id="comment-13734"><div class="by">Andrew Woods, 2015-03-13 21:33 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/b94778562793ea0163a6f7aeab66d6544766b08b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/b94778562793ea0163a6f7aeab66d6544766b08b</a><br/>
+and<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/bea17d0c1f950dc6892bb33476acbc6fe92e15dd" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/bea17d0c1f950dc6892bb33476acbc6fe92e15dd</a></p></div></div>
+<p><a href="data/FCREPO-1290.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

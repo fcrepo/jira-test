@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-753 Credentials not passed through for API-A REST calls when FeSL AuthN enabled</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-753</span> Credentials not passed through for API-A REST calls when FeSL AuthN enabled</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-08-05 13:50 UTC</td></tr><tr><th>Updated</th><td>2010-08-05 22:16 UTC</td></tr><tr><th>Resolved</th><td>2010-08-05 22:15 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 4, Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-754.html">FCREPO-754</a> No authentication for UserServlet with FeSL AuthN and API-A auth turned off</td></tr><tr><th>Is related to</th><td><a href="FCREPO-615.html">FCREPO-615</a> With FeSL enabled, authentication is required for every resource</td></tr></table>
+<h2>Environment</h2>ConfigC, with FeSL AuthN enabled, but with API-A auth turned off
+<h2>Description</h2>
+<p>With FeSL AuthN enabled and API-A auth required turned off, it is not possible to authenticate for API-A REST calls.  </p>
+
+<p>Tested by supplying pre-emptive auth credentials (BASIC, DIGEST) using WizTools.org RESTClient - Fedora is not picking up the supplied login ID.</p>
+
+<p>One impact of this is that if an object is deleted, access is (correctly) restricted by a XACML policy for unauthenticated users, however it is not possible to authenticate (eg as administrator) to view the object profile.  Thus once an object is deleted in the web admin client, the client can no longer retrieve the resource.</p>
+
+<p>It would seem that the fix for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-615" >
+                <a href="FCREPO-615.html" class="jira-issue-macro-key issue-link"  title="With FeSL enabled, authentication is required for every resource" >
+            
+            FCREPO-615
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, <a href="http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons?revision=8467&amp;view=revision" class="external-link" rel="nofollow noreferrer">http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons?revision=8467&amp;view=revision</a>, results in skipping retrieving preemptively-supplied credentials.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11497"><div class="by">Stephen Bayliss, 2010-08-05 14:00 UTC</div><div class="text"><p>We should include a test for this - accessing deleted objects when auth is supplied (administrator) with API-A auth required = false - probably in TestRESTAPI.</p></div></div>
+<div class="comment" id="comment-11499"><div class="by">Stephen Bayliss, 2010-08-05 22:14 UTC</div><div class="text"><p>Test added in TestRESTAPI.</p>
+
+<p>Issue resolved - preemptive authentication credentials are now picked up for REST API-A when api-a auth required is false (AuthFilterJAAS).</p></div></div>
+<p><a href="data/FCREPO-753.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

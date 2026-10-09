@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3921 One-Click not working</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3921</span> One-Click not working</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Arran Griffith</td></tr><tr><th>Created</th><td>2024-02-21 19:15 UTC</td></tr><tr><th>Updated</th><td>2024-09-02 12:20 UTC</td></tr><tr><th>Resolved</th><td>2024-03-14 15:20 UTC</td></tr></table>
+<h2>Description</h2>
+<p>One-click needs to be launched via running it with the command <tt>java -jar path/to/fcrepo-webapp-6.5.0-RC-1-jetty-console.jar</tt> but not by "one-clicking" the .jar file, which runs but continues to have the "503 Service Unavailable" error. </p>
+
+<p>Josh’s assumption is that the issue with that is that the java launcher that is triggered by clicking the .jar file is still pointing to an older Java.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3921/10381_Screenshot_2024-02-21_at_3.11.33_PM.png">Screenshot 2024-02-21 at 3.11.33 PM.png</a>, 27552 bytes, added by Arran Griffith on 2024-02-21</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22980"><div class="by">Dan Field, 2024-02-22 14:23 UTC</div><div class="text"><p>I think what’s happening here is that OS X still packages Java 8 as the default and the One Click interface is running with the system java and throwing the following:</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>] INFO org.eclipse.jetty.util.log - Logging initialized @14399ms to org.eclipse.jetty.util.log.Slf4jLog
+[Thread-2] INFO org.simplericity.jettyconsole.DefaultJettyManager - Added web application on path / from war /Users/dof/Downloads/fcrepo-webapp-6.5.0-SNAPSHOT-jetty-console.jar
+[Thread-2] INFO org.simplericity.jettyconsole.DefaultJettyManager - Starting web application on port 8654
+[Thread-2] INFO org.eclipse.jetty.server.Server - jetty-9.4.44.v20210927; built: 2021-09-27T23:02:44.612Z; git: 8da83308eeca865e495e53ef315a249d63ba9332; jvm 1.8.0_392-b08
+[Thread-2] INFO org.eclipse.jetty.annotations.AnnotationConfiguration - Scanning elapsed time=631ms
+[Thread-2] INFO org.eclipse.jetty.webapp.StandardDescriptorProcessor - NO JSP Support for /, did not find org.eclipse.jetty.jsp.JettyJspServlet
+[Thread-2] INFO org.eclipse.jetty.server.handler.ContextHandler.ROOT - 1 Spring WebApplicationInitializers detected on classpath
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/private/var/folders/vr/sw9vz89s36g26qfwg52ly6sh0000gn/T/fcrepo-webapp-6.5.0-SNAPSHOT-jetty-console.jar_8080/webapp/WEB-INF/lib/logback-classic-1.2.13.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/var/folders/vr/sw9vz89s36g26qfwg52ly6sh0000gn/T/fcrepo-webapp-6.5.0-SNAPSHOT-jetty-console.jar_8080/condi/slf4j-simple-1.7.32.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings  for an explanation.
+SLF4J: Actual binding is of type [ch.qos.logback.classic.util.ContextSelectorStaticBinder]
+[Thread-2] WARN org.eclipse.jetty.webapp.WebAppContext - Failed startup of context o.s.j.JettyConsoleWebappContext@6f59962b{Fedora Repository,/,file:///private/var/folders/vr/sw9vz89s36g26qfwg52ly6sh0000gn/T/fcrepo-webapp-6.5.0-SNAPSHOT-jetty-console.jar_8080/webapp/,UNAVAILABLE}{/Users/dof/Downloads/fcrepo-webapp-6.5.0-SNAPSHOT-jetty-console.jar}
+java.lang.UnsupportedClassVersionError: org/fcrepo/http/commons/FedoraContextLoaderListener has been compiled by a more recent version of the Java Runtime (class file version 55.0), this version of the Java Runtime only recognizes class file versions up to 52.0
+	at java.lang.ClassLoader.defineClass1(Native Method)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:757)
+	at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+	at java.net.URLClassLoader.defineClass(URLClassLoader.java:473)
+	at java.net.URLClassLoader.access$100(URLClassLoader.java:74)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:369)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:363)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:362)
+	at org.eclipse.jetty.webapp.WebAppClassLoader.foundClass(WebAppClassLoader.java:642)
+	at org.eclipse.jetty.webapp.WebAppClassLoader.loadAsResource(WebAppClassLoader.java:615)
+	at org.eclipse.jetty.webapp.WebAppClassLoader.loadClass(WebAppClassLoader.java:529)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:352)
+	at org.eclipse.jetty.util.Loader.loadClass(Loader.java:64)
+	at org.eclipse.jetty.servlet.BaseHolder.doStart(BaseHolder.java:89)
+	at org.eclipse.jetty.servlet.ListenerHolder.doStart(ListenerHolder.java:72)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:73)
+	at org.eclipse.jetty.servlet.ServletContextHandler.startContext(ServletContextHandler.java:369)
+	at org.eclipse.jetty.webapp.WebAppContext.startWebapp(WebAppContext.java:1449)
+	at org.eclipse.jetty.webapp.WebAppContext.startContext(WebAppContext.java:1414)
+	at org.eclipse.jetty.server.handler.ContextHandler.doStart(ContextHandler.java:910)
+	at org.eclipse.jetty.servlet.ServletContextHandler.doStart(ServletContextHandler.java:288)
+	at org.eclipse.jetty.webapp.WebAppContext.doStart(WebAppContext.java:524)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:73)
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:169)
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:117)
+	at org.eclipse.jetty.server.handler.AbstractHandler.doStart(AbstractHandler.java:97)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:73)
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:169)
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:117)
+	at org.eclipse.jetty.server.handler.AbstractHandler.doStart(AbstractHandler.java:97)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:73)
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:169)
+	at org.eclipse.jetty.server.Server.start(Server.java:423)
+	at org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:110)
+	at org.eclipse.jetty.server.handler.AbstractHandler.doStart(AbstractHandler.java:97)
+	at org.eclipse.jetty.server.Server.doStart(Server.java:387)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:73)
+	at org.simplericity.jettyconsole.DefaultJettyManager.startServer(DefaultJettyManager.java:130)
+	at org.simplericity.jettyconsole.JettyConsole$5$1.run(JettyConsole.java:219)
+[Thread-2] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@59912eed{HTTP/1.1, (http/1.1)}{0.0.0.0:8654}
+[Thread-2] INFO org.eclipse.jetty.server.Server - Started @15513ms</pre>
+</div></div></div></div>
+<div class="comment" id="comment-23005"><div class="by">Dan Field, 2024-03-14 15:24 UTC</div><div class="text"><p>Agreed to remove one-click functionality so this won’t be looked at</p></div></div>
+<p><a href="data/FCREPO-3921.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

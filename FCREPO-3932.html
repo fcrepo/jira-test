@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3932 Camel toolbox does not correctly update triplestore data when using hash URIs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3932</span> Camel toolbox does not correctly update triplestore data when using hash URIs</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Basil Marti</td></tr><tr><th>Assignee</th><td>Basil Marti</td></tr><tr><th>Created</th><td>2024-04-08 15:08 UTC</td></tr><tr><th>Updated</th><td>2024-11-22 12:02 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.4.0</td></tr></table>
+<h2>Description</h2>
+<p>In docuteam’s data model, we store all metadata as RDF data in Fedora 6. For the URIs of many metadata subjects, we use hash URIs. This leads to problems when updating our triplestore using camel-toolbox, as deleted or updated triples are not indexed correctly.</p>
+
+<p>Example:</p>
+
+<p>The Fedora container <a href="https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928" class="external-link" rel="nofollow noreferrer">https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928</a> contains metadata of a "Record Resource", some of it created by Fedora, some by our application (using the rico vocabulary)</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928&gt; rdf:type &lt;http://fedora.info/definitions/v4/repository#Container&gt; 
+&lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928&gt; rdf:type &lt;https://www.ica.org/standards/RiC/ontology#RecordResource &gt; 
+&lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928&gt; fedora:created "2023-11-28T11:02:37.048271600Z"
+&lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928&gt; rico:type "Folder"</pre>
+</div></div>
+
+<p>However most descriptive metadata, for example the title of the Record Resource, is stored using a separate RDF subject:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928#unittitle&gt; rico:isOrWasTitleof &lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928&gt;
+&lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928#unittitle&gt; rico:textualValue "Title"
+&lt;https://repository2-onsitedemo.docuteam.ch/fcrepo/rest/mandant1/rr_20231128120036928#unittitle&gt; rdf:type &lt;https://www.ica.org/standards/RiC/ontology#Title &gt;</pre>
+</div></div>
+
+<p>This second RDF subject has a hash URI, so from point of view of Fedora and OCFL it is stored together with the main Record Resource. We do this so we don't need to create a large number of Fedora objects just to store metadata (first tests where we stored all the metadata elements in separate OCFL objects we encountered preformance problems).</p>
+
+
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3932/10382_grafik-20240408-150306.png" alt="grafik-20240408-150306.png" height="806" width="866" style="border: 0px solid black" /></span></p>
+
+<p>This works fine when creating and indexing new resources, however we encounter problems when indexing changed or deleted metadata in our Fuseki triplestore (using Camel toolbox). In order to update metadata, we send a PUT request to Fedora containing the new version of the metadata. This request contains both the new version of the data for the main Record Resource and the data for the additional metadata elements stored using hash uris. Data in F6 is correctly updated, however the indexing by fcrepo-camel is incomplete.</p>
+
+<p>When fcrepo-camel sends updates to a triplestore like Fuski, the update request contains both a DELETE statement (deleting the existing triples belonging to the Fedora object) and an INSERT statement (adding the new triples to the triplestore), see <a href="https://github.com/fcrepo-exts/fcrepo-camel/blob/main/src/main/java/org/fcrepo/camel/processor/SparqlUpdateProcessor.java#L57" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel/blob/main/src/main/java/org/fcrepo/camel/processor/SparqlUpdateProcessor.java#L57</a></p>
+
+<p>However, the code to construct the DELETE statement (see <a href="https://github.com/fcrepo-exts/fcrepo-camel/blob/main/src/main/java/org/fcrepo/camel/processor/ProcessorUtils.java#L72)" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel/blob/main/src/main/java/org/fcrepo/camel/processor/ProcessorUtils.java#L72)</a>) deletes only the triples of the main Record Resource (which have the URI of the Fedora objects as their subject) and not the triples belonging to the additional metadata subjects.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>        final StringBuilder stmt = new StringBuilder("DELETE WHERE { ");
+
+        if (!namedGraph.isEmpty()) {
+            stmt.append("GRAPH ");
+            stmt.append("&lt;" + encode(namedGraph) + "&gt;");
+            stmt.append(" { ");
+        }
+
+        stmt.append("&lt;" + encode(subject) + "&gt;");
+        stmt.append(" ?p ?o ");
+
+        if (!namedGraph.isEmpty()) {
+            stmt.append("} ");
+        }
+
+        stmt.append("}");
+        return stmt.toString();</pre>
+</div></div>
+
+<p>On the other hand, the INSERT statement works correctly, as it sends all RDF metadata stored in the Fedora object, which includesthe hash-uri triples. This leads to the following behavior:</p>
+
+<ul>
+	<li>Additional metadata stored using hash-uris is correctly added to the triplestore</li>
+	<li>Deleting metadata has no effect in the triplestore (as the delete statement does not catch the triples belonging to the hash-uri subject)</li>
+	<li>Changing metadata will add the new metadata, but not delete the old version</li>
+</ul>
+
+
+<p>Are there any recommendations or best-practives from other organisations using hash-uris in F6 how to best solve this issue? We thought of multiple ways to fix this:</p>
+
+<h2><a name="WhenconstructingtheDELETEstatementinfcrepocamel%2CsearchanddeletealltripleswherethesubjectURIincludedtheURIoftheFedoraobjectwhichisupdate."></a>When constructing the DELETE statement in fcrepo-camel, search and delete all triples where the subject URI included the URI of the Fedora object which is update.</h2>
+
+<p>Such a query could looks as follows:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>DELETE { ?s ?p ?o }
+WHERE {
+  {
+    &lt;fedora-object-uri&gt; ?p ?o .
+    BIND (&lt;fedora-object-uri&gt; as ?s)
+  } UNION {
+    ?s ?p ?o
+    FILTER (strstarts(str(?s), 'fedora-object-uri#'))   
+  }
+}</pre>
+</div></div>
+
+<p>As this solution uses string matching, we fear that it will negatively impact performance.</p>
+
+<h2><a name="ConstructDELETEstatementbasedonourdatamodel"></a>Construct DELETE statement based on our data model</h2>
+
+<p>If we don't want to use string matching, we could construct the DELETE query based on our data model. As we know which RDF subjects are stored using hash uri and which as separate Fedora objects, we could construct a query deleting all triples belonging to hash-uri which are stored as part of the main record resource.<br/>
+However such a solution would of course not work for any other Fedora users with a different data model.</p>
+
+<h2><a name="Findoutthehashurisfromthenewdatatobeinsertedinthetriplestore"></a>Find out the hash-uris from the new data to be inserted in the triplestore</h2>
+
+<p>This will not work when metadata elements are deleted in the new version of the data. In this case the RDF data sent from Fedora to camel-toolbox will not contain the hash uris of the deleted metadata. In order to find out the hash-uris we need to delete, we would need to query the old version in Fedora (assuming automatic versioning is used).</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3932/10382_grafik-20240408-150306.png">grafik-20240408-150306.png</a>, 76485 bytes, added by Basil Marti on 2024-04-08</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-23023"><div class="by">Thomas Bernhart, 2024-04-18 15:38 UTC</div><div class="text"><p>Basil Marti We discussed this in the Tech Meeting today. We can go ahead and solve the problem with the <tt>FILTER (strstarts(str(?s), 'fedora-object-uri#'))</tt> statement that matches on the Fedora URI</p></div></div>
+<div class="comment" id="comment-23713"><div class="by">Basil Marti, 2024-10-23 12:58 UTC</div><div class="text"><p>Thomas Bernhart : I finally had some time to try to implement this, however the suggested query which uses string matching to find the URI (<tt>FILTER (strstarts(str(?s), ‘fedora-object-uri#'))</tt> will cause massive performance problems when indexing. With a large triplestore (around 130 million triples) it can take up to 5 minutes to execute the DELETE query.</p>
+
+<p>Important to know: This will not only affect updates of existing RDF metadata, but also creation of new Fedora objects. The camel toolbox currently doesn’t distinguish between the two, so the DELETE command is also sent for each newly created object.</p>
+
+<p>I have a working POC which is much faster, but only works for the docuteam data model (which would mean creating a fork of camel-toolbox). </p></div></div>
+<div class="comment" id="comment-23944"><div class="by">Thomas Bernhart, 2024-11-22 11:57 UTC</div><div class="text"><p>Basil Marti I think we are looking at this from the wrong perspective. A proper generic solution probably requires adding a additional triple to these resources with hash-URIs that links back to the Fedora resource to which they belong. Then the delete statement can search for all those when a resource with such hash-URIs is updated.</p>
+
+<p>In yesterdays Tech Meeting the predicate <tt>fedora:hasParent</tt> was suggested (which is considered to be added here: <a href="FCREPO-3959.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3959</a>). But it might even better to use a specific predicate to handle such hash-URIs.</p>
+
+<p>The current Fedora Commons Repository Ontology can be found here: <a href="https://fedora.info/definitions/v4/2016/10/18/repository" class="external-link" rel="nofollow noreferrer">https://fedora.info/definitions/v4/2016/10/18/repository</a></p>
+
+<p>Although it looks to me like a lot of the classes are no longer used by Fedora 6.</p></div></div>
+<p><a href="data/FCREPO-3932.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

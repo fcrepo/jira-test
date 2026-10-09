@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2171 HTML interface issues in Safari</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2171</span> HTML interface issues in Safari</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>David Wilcox</td></tr><tr><th>Created</th><td>2016-09-02 20:16 UTC</td></tr><tr><th>Updated</th><td>2018-09-27 03:46 UTC</td></tr><tr><th>Resolved</th><td>2018-09-27 03:46 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr></table>
+<h2>Environment</h2>Safari on OSX 10.11.6
+<h2>Description</h2>
+<p>There are a few issues with the HTML interface in Safari on OSX. Whenever I click the Add button to create a new container I see a blank screen with only the URL of the new container (the container does get created). If I try to provide an identifier I get the same result, except my provided identifier is not used and a new container is created using the default path minter.</p>
+<h2>Comments (22)</h2>
+<div class="comment" id="comment-17645"><div class="by">Diego Pino Navarro, 2016-09-27 16:01 UTC</div><div class="text"><p>I can confirm. Content negotiation (HTML) fails on Safari. Basically it acts as you were interacting via CURL, downloading resources on get, etc. POST also fails, so slug is not being respected</p></div></div>
+<div class="comment" id="comment-17646"><div class="by">Jared Whiklo, 2016-09-27 16:49 UTC</div><div class="text"><p>Ok, so Unknown is using strict mode with ECMA script.</p>
+
+<p>But Safari &lt; 10 only supports the <tt>const</tt> keyword if you are <b>NOT</b> using strict mode. This is causing the javascript to fail.</p>
+
+<p>Solution are:</p>
+<ul>
+	<li>Vary ECMA script based on browser type and version</li>
+	<li>Disable strict mode</li>
+	<li>Suggest upgrading to all users of Safari version &lt; 10, IE version &lt; 11, Mini Opera any version, Android browser &lt; 5</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17647"><div class="by">Unknown, 2016-09-27 16:53 UTC</div><div class="text"><p>I can confirm that Safari 10.0 works. I have no problem asking users to upgrade to use a "modern" browser, but that's just me.</p></div></div>
+<div class="comment" id="comment-17648"><div class="by">Jared Whiklo, 2016-09-27 16:57 UTC</div><div class="text"><p>I think this is probably the best bet long term, however we are going to have a lot of users that will still have Safari 9. Me for example.</p>
+
+<p>Is it wrong to add an alert box to display if using an older browser? If this error is catchable in a way we can use to our advantage?</p></div></div>
+<div class="comment" id="comment-17649"><div class="by">Unknown, 2016-09-27 16:59 UTC</div><div class="text"><p>IMO, Safari is the new IE. Designing for it is a losing battle.</p></div></div>
+<div class="comment" id="comment-17656"><div class="by">Jared Whiklo, 2016-09-27 20:27 UTC</div><div class="text"><p>Do we have a policy on browser support? <br/>
+Do we need one? <br/>
+Should we just say "upgrade to a ECMA 5 compliant browser" and close "won't fix" this?</p></div></div>
+<div class="comment" id="comment-17673"><div class="by">Jared Whiklo, 2016-09-29 13:03 UTC</div><div class="text"><p>David Wilcox &amp; Diego Pino Navarro can you upgrade to Safari 10 and see if that resolves problems with the HTML UI?</p>
+
+<p>Andrew Woods do you have any objection to "Close Won't Fix"?</p></div></div>
+<div class="comment" id="comment-17674"><div class="by">Andrew Woods, 2016-09-29 13:12 UTC</div><div class="text"><p>Jared Whiklo, As you suggested, an alert when one of the known, unsupported browsers is being used would be much better than having inexplicably odd behavior... which is what I had to explain recently at the Penn State event.<br/>
+Is that feasible?</p></div></div>
+<div class="comment" id="comment-17675"><div class="by">David Wilcox, 2016-09-29 13:14 UTC</div><div class="text"><p>Jared Whiklo I can confirm that this is resolved in Safari 10.</p></div></div>
+<div class="comment" id="comment-17688"><div class="by">Jared Whiklo, 2016-09-30 00:36 UTC</div><div class="text"><p>Andrew Woods, The trouble is that you cannot have any javascript with the offending code or it immediately fails in the browser. So you need to test for compatibility and if you're okay then load the code, otherwise you show your error.</p>
+
+<p>I did up an example of the type of fix that would be required.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/compare/master...whikloj:fcrepo-2171?expand=1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/compare/master...whikloj:fcrepo-2171?expand=1</a></p>
+
+<p>This does not currently pass the fcrepo-webapp integration tests because the gargoylesoftware htmlunit browser seems to fail like Safari does. But I skipped over those tests and running the webapp with maven I could see it work in Chrome and fail in Safari 9.</p>
+
+<p>If you want to explore this option I can look at newer versions of the gargoylesoftware that might support this test, or perhaps someway  to skip this test if you are in an integration test.</p></div></div>
+<div class="comment" id="comment-17691"><div class="by">Andrew Woods, 2016-09-30 14:28 UTC</div><div class="text"><p>Thanks, Jared Whiklo. I think this approach is very helpful, and will avoid confusion. We can work on the right text for the alert box... the current text is a little technical.<br/>
+Danny Bernstein, would you mind giving this JS work a quick look?</p></div></div>
+<div class="comment" id="comment-17692"><div class="by">Jared Whiklo, 2016-09-30 16:15 UTC</div><div class="text"><p>Andrew Woods, so do you want me to continue working on this or will Danny Bernstein be carrying it across the finish line? </p>
+
+<p>I'm good either way as now we are into the joys of Maven and you know how I love to spend time with Maven.</p></div></div>
+<div class="comment" id="comment-17693"><div class="by">Andrew Woods, 2016-09-30 16:33 UTC</div><div class="text"><p>Sorry for the confusion, Jared Whiklo. I certainly am hoping you will continue on your path and bring it to conclusion.<br/>
+I was just bringing Danny Bernstein into the loop as another pair of eyes once we get to the review.</p></div></div>
+<div class="comment" id="comment-17694"><div class="by">Danny Bernstein, 2016-09-30 16:54 UTC</div><div class="text"><p>I'll take a look at this one Jared Whiklo</p></div></div>
+<div class="comment" id="comment-17695"><div class="by">Danny Bernstein, 2016-09-30 16:56 UTC</div><div class="text"><p>Jared Whiklo and awoods - sorry -  I missed the comments below the fold.  I'll take a look, but you still own it Jared.</p></div></div>
+<div class="comment" id="comment-17756"><div class="by">Jared Whiklo, 2016-10-07 21:40 UTC</div><div class="text"><p>Andrew Woods I have done some research and I can't find a simple way to subvert this test. The problem seems to come down to one of Htmlunit's Rhino Javascript Engine is really old. They are not really updating it, and the wait is on for Nashorn from Oracle (or maybe Sun). But that seems to be a way's off.</p>
+
+<p>The test that is failing seems to be html unit integration tests, which I didn't even know we had. But with my change the problem is reported as</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ERROR 15:53:24.760 (StrictErrorReporter) runtimeError: message=[TypeError: redeclaration of var testC.] sourceName=[http://localhost:58244/rest/fcr:assets/ecmacheck.js#16(eval)] line=[1] lineSource=[null] lineOffset=[0]
+</pre>
+</div></div>
+
+<p>I'm not redeclaring anything but who knows if that is the actual problem. Rhino seems good with super basic Javascript, so the ECMA 5/6 stuff Unknown did is probably too fancy for it. Which means all of those tests will experience failure now that we don't load the Javascript until the browser can support "use strict" and "const".</p>
+
+<p>So people have spoken about replacing Rhino something like PhantomJS. This seem interesting, but I have no idea where to start.</p>
+
+<p>So long story short, I'm looking for some options/direction.</p></div></div>
+<div class="comment" id="comment-17757"><div class="by">Unknown, 2016-10-07 21:54 UTC</div><div class="text"><p>PhantomJS is great. I don't know what would be involved in integrating it with Maven, though.<br/>
+Alternately, we can revert the use of const and go back to using plain old var. Or, we don't worry about it, which is my inclination, given that this works for the current version of Safari.</p>
+
+<p>I definitely don't think we should spend our time supporting anything that smacks of a "legacy browser".</p></div></div>
+<div class="comment" id="comment-17802"><div class="by">Andrew Woods, 2016-10-12 19:20 UTC</div><div class="text"><p>I agree that we do not want to be putting energy into legacy browser support, but the direction of this ticket to at least flag to the user why the browser interaction is not behaving as expected is valuable.</p>
+
+<p>I am not clear on if there are deeper trade-offs to consider between the use of <tt>const</tt> vs <tt>var</tt> beyond clarity and enforcement of immutability. </p>
+
+<p>If the current blocker is integration tests, it seems like there are Maven options with PhantomJS:</p>
+<ul>
+	<li><a href="https://github.com/klieber/phantomjs-maven-plugin" class="external-link" rel="nofollow noreferrer">https://github.com/klieber/phantomjs-maven-plugin</a></li>
+	<li><a href="http://stackoverflow.com/questions/32678881/better-way-to-add-phantomjs-binary-to-a-maven-project" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/32678881/better-way-to-add-phantomjs-binary-to-a-maven-project</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17833"><div class="by">Jared Whiklo, 2016-10-14 19:57 UTC</div><div class="text"><p>So the real issue is around how we swap out the default Rhino for PhantomJS inside the htmlunit testing apparatus.</p>
+
+<p>I'll take a look and see if I can figure it out, but if anyone has a suggestion/idea/good help page I'll take it.</p></div></div>
+<div class="comment" id="comment-17867"><div class="by">Jared Whiklo, 2016-10-22 02:20 UTC</div><div class="text"><p>Alright I replaced htmlunit with Selenium and PhantomJS. Sadly as a headless test it has the exact same problem as Rhino. If I switch to using Chrome as the browser it works great... Not sure what to suggest at this point.</p>
+
+<p>My code so far: <a href="https://github.com/whikloj/fcrepo4/tree/fcrepo-2171" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/tree/fcrepo-2171</a></p></div></div>
+<div class="comment" id="comment-18579"><div class="by">Jared Whiklo, 2017-02-23 16:06 UTC</div><div class="text"><p>I  am stopping work on this, I don't know that they effort required for this and the payoff is worth while. But I'll leave my branch up incase someone wants to tackle it in future.</p></div></div>
+<div class="comment" id="comment-20295"><div class="by">Danny Bernstein, 2018-09-27 03:46 UTC</div><div class="text"><p>I tested this - it seems to work now on Version 11.1 (13605.1.33.1.2) on OSX 10.13.4</p></div></div>
+<p><a href="data/FCREPO-2171.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

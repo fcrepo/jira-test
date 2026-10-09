@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2207 Remove the ability to delete tombstone references</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2207</span> Remove the ability to delete tombstone references</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-09-13 15:42 UTC</td></tr><tr><th>Updated</th><td>2016-09-15 15:31 UTC</td></tr><tr><th>Resolved</th><td>2016-09-15 15:31 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr></table>
+<h2>Description</h2>
+<p>The LDP specification contains a non-normative section describing how LDP servers should not reuse URIs: <a href="https://www.w3.org/TR/ldp/#h-ldp-webarch-uri-reuse" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldp-webarch-uri-reuse</a></p>
+
+<p>The Fedora implementation includes a mechanism to prevent re-use of URIs via a tombstone artifact. While that tombstone prevents the re-creation of a resource at a given URI, it is also possible to circumvent that by deleting the tombstone and then creating a resource in the old location.</p>
+
+<p>This is a ticket to discuss and track the elimination of the ability to remove tombstones from a Fedora repository.</p>
+
+<p>For example:</p>
+
+<p>(current behavior)<br/>
+PUT /rest/resource 201<br/>
+GET /rest/resource 200<br/>
+DELETE /rest/resource 204<br/>
+GET /rest/resource 410<br/>
+DELETE /rest/resource/fcr:tombstone 204<br/>
+GET /rest/resource 404<br/>
+PUT /rest/resource 201</p>
+
+<p>(possible future behavior)<br/>
+PUT /rest/resource 201<br/>
+GET /rest/resource 200<br/>
+DELETE /rest/resource 204<br/>
+GET /rest/resource 410<br/>
+DELETE /rest/resource/fcr:tombstone 400<br/>
+GET /rest/resource 410<br/>
+PUT /rest/resource 409</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-17509"><div class="by">Andrew Woods, 2016-09-13 22:01 UTC</div><div class="text"><p>There would seem to be three options here:<br/>
+1. Allow deleting resources, period. No tombstones<br/>
+2. Allow deleting resources, but leave a tombstone behind - current behavior<br/>
+3. Do not allow deleting resources</p>
+
+<p>In terms of the LDP non-normative note, Fedora's current behavior seems to offer the appropriate middle-ground. Fedora makes it clear that URIs should not be reused by leaving a tombstone behind, but leaves it to the application layer to potentially override that recommendation.</p>
+
+<p>Forcing the permanence of repository URIs would seem to represent an overly restrictive policy on a non-normative note.</p></div></div>
+<div class="comment" id="comment-17531"><div class="by">Unknown, 2016-09-15 15:31 UTC</div><div class="text"><p>From a <a href="https://wiki.duraspace.org/display/FF/2016-09-15+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">Tech Call discussion</a>, it was decided to keep the current behavior. </p></div></div>
+<p><a href="data/FCREPO-2207.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

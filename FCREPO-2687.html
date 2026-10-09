@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2687 Restrict Cross Domain ACLs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2687</span> Restrict Cross Domain ACLs</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Yinlin Chen</td></tr><tr><th>Created</th><td>2018-03-02 20:49 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-03-20 20:03 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>2018-spring-api-alignment-sprint, webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Per section 5.5 of the spec: <a href="https://fcrepo.github.io/fcrepo-specification/#cross-domain-acls:" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#cross-domain-acls:</a></p>
+<ul>
+	<li>MUST respond with a 4xx range status code</li>
+	<li>and MUST advertise the restriction with a rel="http://www.w3.org/ns/ldp#constrainedBy" link in the Link response header.</li>
+</ul>
+
+
+<p>As a follow-on to: <a href="https://jira.duraspace.org/browse/FCREPO-2688" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2688</a> </p>
+
+<p>It should not be allowed to create a link to an ACL resource that is outside of the repository. </p>
+
+<p>For example, the following should not be allowed: </p>
+<ol>
+	<li>create rdf resource with acl on POST<br/>
+curl -v -XPUT -H "Link: &lt;<a href="http://google.com&amp;gt" class="external-link" rel="nofollow noreferrer">http://google.com&amp;gt</a>;; rel=\"acl\"" "http://localhost:8080/rest/test" </li>
+</ol>
+
+
+<p>Note, the above currently works but explodes on subsequent GET.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-19695"><div class="by">Danny Bernstein, 2018-03-08 15:36 UTC</div><div class="text"><p>Yinlin Chen: I assigned this one to you.  Let me know if this one is suitable to you.</p></div></div>
+<div class="comment" id="comment-19712"><div class="by">Yinlin Chen, 2018-03-12 13:47 UTC</div><div class="text"><p>Danny Bernstein which 4xx code to return?</p>
+
+<p>406 (Unacceptable)</p>
+
+<p>409</p>
+
+<p>400 (Bad Request)</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19727"><div class="by">Danny Bernstein, 2018-03-12 21:29 UTC</div><div class="text"><p>Yinlin Chen:  I would say 409 Conflict would probably be the best way to go here. </p></div></div>
+<div class="comment" id="comment-19728"><div class="by">Danny Bernstein, 2018-03-12 21:29 UTC</div><div class="text"><p>Yinlin Chen: also, let me know if you're not actively working this issue in case someone else is free to work it. </p></div></div>
+<div class="comment" id="comment-19778"><div class="by">Yinlin Chen, 2018-03-16 19:13 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1308" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1308</a></p></div></div>
+<div class="comment" id="comment-19786"><div class="by">Andrew Woods, 2018-03-16 23:48 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19791"><div class="by">Yinlin Chen, 2018-03-19 14:23 UTC</div><div class="text"><p>Andrew Woods Danny Bernstein</p>
+
+<p>After PR <a href="https://github.com/fcrepo4/fcrepo4/pull/1310" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1310</a> is merged, the issue of this ticket is changed. </p>
+
+<p>If you supply the command: curl -v -XPUT -H "Link: &lt;<a href="http://google.com%3E%3B/" class="external-link" rel="nofollow noreferrer">http://google.com&gt;;</a> rel=\"acl\"" "<a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a>"  </p>
+
+<p>Fedora server return "The ACL URI in link header does not have the correct type, must have rdf:type of webac:Acl"</p>
+
+<p>Is this ticket still an issue and need to be fixed?</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19792"><div class="by">Yinlin Chen, 2018-03-19 14:29 UTC</div><div class="text"><p>HTTP/1.1 409 Conflict</p>
+
+<p>Date: Mon, 19 Mar 2018 14:20:57 GMT</p>
+
+<p>Link: &lt;<a href="http://localhost:8080/static/constraints/InvalidACLException.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/InvalidACLException.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"</p>
+
+<p>Content-Type: text/plain;charset=utf-8</p>
+
+<p>Content-Length: 91</p>
+
+<p>Server: Jetty(9.2.3.v20140905)</p>
+
+<p> </p>
+
+<p>The ACL URI in link header does not have the correct type, must have rdf:type of webac:Acl</p></div></div>
+<div class="comment" id="comment-19800"><div class="by">Yinlin Chen, 2018-03-20 20:03 UTC</div><div class="text"><p>Andrew Woods Danny Bernstein PR update: <a href="https://github.com/fcrepo4/fcrepo4/pull/1308" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1308</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19801"><div class="by">Andrew Woods, 2018-03-21 23:30 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/8778b01963442ab9b304111be5954544255d3f74" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8778b01963442ab9b304111be5954544255d3f74</a></p></div></div>
+<p><a href="data/FCREPO-2687.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

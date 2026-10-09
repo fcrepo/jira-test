@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2504 Import fails: Could not persist triple containing predicate http://fedora.info/definitions/v4/repository#lastModifiedBy to node /test/binary1/jcr:content</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2504</span> Import fails: Could not persist triple containing predicate http://fedora.info/definitions/v4/repository#lastModifiedBy to node /test/binary1/jcr:content</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2017-05-26 22:38 UTC</td></tr><tr><th>Updated</th><td>2017-06-07 15:50 UTC</td></tr><tr><th>Resolved</th><td>2017-06-07 15:50 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Affects versions</th><td>fcrepo-importexport-0.2.0</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>(using fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar)</p>
+
+<p>fcrepo-import-export: commit 7f0d7</p>
+
+<p>1. create a container and add a binary.</p>
+
+<p>2. export:</p>
+
+<p>java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -d export  -a -m export  -r <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a> -b --writeConfig export/config.yml</p>
+
+<p>3. import </p>
+
+<p>java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -d export  -a -m import -r <a href="http://localhost:8687/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8687/f4/rest</a> -b --writeConfig export/import-config.yml -M <a href="http://localhost:8686/f4/rest,http://localhost:8687/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest,http://localhost:8687/f4/rest</a></p>
+
+<p>4. verify importer reports: </p>
+
+<p>ERROR 15:26:06.561 (Importer) Error while importing /Users/danny/import-export-sprint-3/data-export-versioned-binaries/f4/rest/test/binary1/fcr%3Ametadata.ttl (409): Could not persist triple containing predicate <a href="http://fedora.info/definitions/v4/repository#lastModifiedBy" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModifiedBy</a> to node /test/binary1/jcr:content</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-19030"><div class="by">Andrew Woods, 2017-05-26 23:49 UTC</div><div class="text"><p>Danny Bernstein: I am not able to reproduce this error using the same versions of the Fedora server and Import/Export utility. The only difference in my setup is that I am not using the "–writeConfig" option.</p>
+
+<p>Also, I see that your error message indicates a data directory (data-export-versioned-binaries) which is different from the data directory listed in your import command (export).</p></div></div>
+<div class="comment" id="comment-19063"><div class="by">Danny Bernstein, 2017-06-01 21:25 UTC</div><div class="text"><p>Andrew Woods:  hmmm,  interesting.  I'll try it again.  The data direct is not an issue.  I forgot to  update the data directory in the error message to reflect the "export" dir I used in the command.  In fact I used /Users/danny/import-export-sprint-3/data-export-versioned-binaries for invoking the command, but I changed it in the example to simplify.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19065"><div class="by">Andrew Woods, 2017-06-01 21:39 UTC</div><div class="text"><p>Danny Bernstein, I was just noting the discrepancy in data directories as a possible indication that the test documented in the ticket description may have been run in an inconsistent environment.</p></div></div>
+<div class="comment" id="comment-19066"><div class="by">Danny Bernstein, 2017-06-01 22:18 UTC</div><div class="text"><p>In using the latest on the master branch of the import export tool ( ie  4a97b2) </p>
+
+<p>I'm still seeing the same error on the import side, but the import appears to have succeeded.  The import did not report a failure:  only two errors:</p>
+
+<p> </p>
+
+<p>ERROR 14:58:12.670 (Importer) Error while importing /Users/danny/import-export-sprint-3/fcrepo-2504/f4/rest/test.ttl (409): Could not persist triple containing predicate <a href="http://fedora.info/definitions/v4/repository#lastModifiedBy" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModifiedBy</a> to node /test<br/>
+ERROR 14:58:13.075 (Importer) Error while importing /Users/danny/import-export-sprint-3/fcrepo-2504/f4/rest/test/90/2a/c8/ef/902ac8ef-3ebe-4b00-ab05-87e54d2db0e8/fcr%3Ametadata.ttl (409): Could not persist triple containing predicate <a href="http://fedora.info/definitions/v4/repository#lastModifiedBy" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModifiedBy</a> to node /test/90/2a/c8/ef/902ac8ef-3ebe-4b00-ab05-87e54d2db0e8/jcr:content</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19072"><div class="by">Andrew Woods, 2017-06-02 19:40 UTC</div><div class="text"><p>Danny Bernstein: are you running your fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar with the <tt>-Dfcrepo.properties.management="relaxed"</tt> option?</p>
+
+<p>That option allows for overwriting some of the server-managed triples... include <tt>lastModifiedBy</tt>.</p></div></div>
+<div class="comment" id="comment-19088"><div class="by">Danny Bernstein, 2017-06-06 19:01 UTC</div><div class="text"><p>Andrew Woods:  I will try it with the relax option enabled.</p></div></div>
+<div class="comment" id="comment-19089"><div class="by">Danny Bernstein, 2017-06-07 15:48 UTC</div><div class="text"><p>With relaxed option enabled, I don't see the error.  I will close the issue.</p></div></div>
+<div class="comment" id="comment-19090"><div class="by">Danny Bernstein, 2017-06-07 15:50 UTC</div><div class="text"><p>Not a bug.</p></div></div>
+<p><a href="data/FCREPO-2504.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

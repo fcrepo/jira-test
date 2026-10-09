@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-818 DbXmlPolicyIndex query is not built for XACML-2.0 </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-818</span> DbXmlPolicyIndex query is not built for XACML-2.0 </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Mark Roy</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-11-11 06:19 UTC</td></tr><tr><th>Updated</th><td>2011-04-09 21:58 UTC</td></tr><tr><th>Resolved</th><td>2011-03-31 22:59 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-902.html">FCREPO-902</a> FeSL policy finder xpath is incorrect/restrictive</td></tr></table>
+<h2>Description</h2>
+<p>The XACML elements "AnySubject", "AnyResource" and "AnyAction" have been removed from the XACML schema.    The DbXMLPolicyIndex is still building the query looking for the "any" elements in the policy to determine if it is a match.  The end result is that policies with no subjects, resources or actions elements in the target are not found by DbXMLPolicyIndex when they should be matched.  </p>
+
+<p>Also, it would be beneficial to make the distinction in the XACML Policy Writing guide <a href="https://wiki.duraspace.org/display/FCR30/Fedora+XACML+Policy+Writing+Guide" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FCR30/Fedora+XACML+Policy+Writing+Guide</a> that the guide is meant for XACML 1.0 while FeSL uses XACML 2.0 so that people are not confused when the policies they write using the guide dont also work for FeSL.   </p>
+
+<p>Attached is a patch to DBXmlPolicyIndex.java that seems to fix the problem.   The main change is in the createQuery function.   I also added a debug log entry for one of the context attributes that was not sent to the logs that I used when debugging the query.   I've also attached a sample policy that recreates the problem.  It is based on the access-public.xml sample provided but is modified to allow read access to any resource in the repository except for the datastreams listed in the condition.   Since there is no "Resources" section,  the previous query could never return this policy.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-818/10109_access-public.xml">access-public.xml</a>, 2785 bytes, added by Mark Roy on 2010-11-11</li>
+<li><a href="attachments/FCREPO-818/10108_DBXmlPolicyIndex.patch">DBXmlPolicyIndex.patch</a>, 599 bytes, added by Mark Roy on 2010-11-11</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-11680"><div class="by">Stephen Bayliss, 2010-11-12 14:18 UTC</div><div class="text"><p>Agree this is a bug, the policy query does appear to be based on XACML 1.0 not 2.0 in this respect.</p>
+
+<p>Maybe we should support both - ie empty Resources = all resources as well as AnyResource, so that anyone who has existing policies with AnyResource (ie they've created their policy to work with the current code) still works.</p>
+
+<p>Thanks for the patch on this.</p></div></div>
+<div class="comment" id="comment-11689"><div class="by">Mark Roy, 2010-11-17 00:37 UTC</div><div class="text"><p>Not sure if both can be supported.  The policies are validated somewhere along the line and I dont think it will allow policies with the "any" elements.</p></div></div>
+<div class="comment" id="comment-11690"><div class="by">Stephen Bayliss, 2010-11-17 01:13 UTC</div><div class="text"><p>That's a good point.  The validation is specified in the config files, and is XACML 2.0 - as this comment related to backwards-compatibility in case people had created XACML 1.0 policies then maybe we don't need backwards-compatibility; since the policies would have failed validation unless people had turned validation off.  Would be good to verify that policies with the "any" elements do in fact fail validation.</p></div></div>
+<div class="comment" id="comment-11890"><div class="by">Stephen Bayliss, 2011-03-27 16:58 UTC</div><div class="text"><p>Based on work done as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-576" >
+                <a href="FCREPO-576.html" class="jira-issue-macro-key issue-link"  title="Remove dbxml or make it an optional dependency" >
+            
+            FCREPO-576
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ in making the XPath query construction code generic, added changes based on Mark's patch to test for absence of the Target section (which means "any").  Also added test for the XACML 1.0-style AnyResource etc (though if validation is enabled this would mean the policy would not have been accepted).  Query now based purely on the policy document and ignores the dbxml metadata.</p></div></div>
+<div class="comment" id="comment-11891"><div class="by">Stephen Bayliss, 2011-03-28 19:58 UTC</div><div class="text"><p>Fixed in branch fcrepo-576</p></div></div>
+<div class="comment" id="comment-11896"><div class="by">Stephen Bayliss, 2011-03-31 22:59 UTC</div><div class="text"><p>Merged into master</p></div></div>
+<div class="comment" id="comment-11905"><div class="by">Stephen Bayliss, 2011-04-09 21:58 UTC</div><div class="text"><p>See also 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-902" >
+                <a href="FCREPO-902.html" class="jira-issue-macro-key issue-link"  title="FeSL policy finder xpath is incorrect/restrictive" >
+            
+            FCREPO-902
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, there are further problems with the current xpath logic resulting in some policies incorrectly not being located by the policy finder.</p></div></div>
+<p><a href="data/FCREPO-818.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

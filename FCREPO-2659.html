@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2659 Maven Enforcer Plugin `bannedDependencies` rule failes to resolve dependencies correctly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2659</span> Maven Enforcer Plugin `bannedDependencies` rule failes to resolve dependencies correctly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Assignee</th><td>Ralf Claussnitzer</td></tr><tr><th>Created</th><td>2017-12-05 17:30 UTC</td></tr><tr><th>Updated</th><td>2018-11-16 11:01 UTC</td></tr><tr><th>Components</th><td>f4-build-tools</td></tr></table>
+<h2>Environment</h2>Linux xps13 4.4.0-101-generic #124-Ubuntu SMP x86_64 x86_64 x86_64 GNU/Linux
+<h2>Description</h2>
+<p>Fedora sub-modules cannot be build/verified/tested before their module dependencies are not installed in the local Maven repository. This exposes resolving dependencies and individual module testing to dependency errors (e.g. building against invalid Kernel API).</p>
+
+<p>A "clean machine" that has never seen Fedora before should be able to execute `mvn validate` and `mvn dependency:resolve` successful. When purging all Fedora related artifacts from the local Maven repository (or starting on a new machine) this is not possible anymore (see attached build report).</p>
+
+<p>Using `mvn install` every time changes have been made to separate modules not only takes too long, but also introduces the problem of "out-dated snaphots" in the local repository if dependencies have not been installed in the right order previously. It further corrupts IDE integration (as I noticed using IntelliJ) and seems to raise a problem for individual module testing.</p>
+
+<p><b>UPDATE</b></p>
+
+<p>Running `mvn -am -pl fcrepo-kernel-modeshape validate` the build fails as soon as &lt;bannedDependencies/&gt; is added to the enforcer plugin configuration, even without any exclusions configured.</p>
+
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2659/10320_mvn_dependency_resolve.txt">mvn_dependency_resolve.txt</a>, 10761 bytes, added by Ralf Claussnitzer on 2017-12-05</li>
+</ul>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-19577"><div class="by">Andrew Woods, 2017-12-07 14:25 UTC</div><div class="text"><p>Ralf Claussnitzer: would you be interested in taking a look at resolving this?</p></div></div>
+<div class="comment" id="comment-19581"><div class="by">Ralf Claussnitzer, 2017-12-08 14:27 UTC</div><div class="text"><p>Sure, I can do that.</p>
+
+<p>Does anyone else ever had this kind of problem with Fedora builds?</p>
+
+<p>What IDEs are common around the developers?</p></div></div>
+<div class="comment" id="comment-19582"><div class="by">Andrew Woods, 2017-12-08 19:04 UTC</div><div class="text"><p>I think folks either use:</p>
+<ul>
+	<li>Intellij</li>
+	<li>Eclipse</li>
+	<li>vi/emacs/atom</li>
+</ul>
+
+
+<p>I am not sure if anyone builds in their IDE, however.</p></div></div>
+<div class="comment" id="comment-19586"><div class="by">Ralf Claussnitzer, 2017-12-22 13:41 UTC</div><div class="text"><p>Notes:</p>
+<ul>
+	<li>The failing module is `Fedora Repository Kernel Implementation (ModeShape)`</li>
+	<li>It's failing with `org.eclipse.aether.transfer.ArtifactNotFoundException: Could not find artifact org.fcrepo:fcrepo-kernel-api:jar:5.0.0-SNAPSHOT`</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19587"><div class="by">Ralf Claussnitzer, 2018-01-04 11:59 UTC</div><div class="text"><p>Observation:</p>
+<ul>
+	<li>Everything goes smoothly with: <tt>mvn validate -Denforcer.skip=true</tt></li>
+	<li>It seems the enforcer plugin triggers the problem</li>
+	<li>...especially the &lt;bannedDependencies&gt; section</li>
+</ul>
+
+
+<p>The build fails as soon as <font color="#e8bf6a"><font color="#333333"></font>&lt;bannedDependencies/&gt; is added</font> <font color="#333333">to the enforcer plugin configuration, even without any exclusions configured.</font><br/>
+<font color=""></font></p></div></div>
+<div class="comment" id="comment-19588"><div class="by">Ralf Claussnitzer, 2018-01-04 15:41 UTC</div><div class="text"><p>Upgrading the Enforcer plugin to version 3.0.0-M1 (Released July 2017) doesn't help.</p>
+
+<p>It seems the plugins dependency scanning cannot handle this complex dependency setup. I'm stuck here...</p></div></div>
+<div class="comment" id="comment-20092"><div class="by">Ralf Claussnitzer, 2018-07-26 15:59 UTC</div><div class="text"><p>Might be related to <a href="https://issues.apache.org/jira/browse/MNG-3283" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/jira/browse/MNG-3283</a> and <a href="https://issues.apache.org/jira/browse/MENFORCER-304" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/jira/browse/MENFORCER-304</a>:</p>
+<blockquote>
+<p>Plugins that require dependency resolution in early phases cause dependency resolution issue</p></blockquote>
+
+<blockquote>
+<p>In a multiple modules project,  some enforcer rule can not get sufficient dependency info with default phase validate, causing issues...</p></blockquote></div></div>
+<div class="comment" id="comment-20330"><div class="by">Ralf Claussnitzer, 2018-10-04 06:15 UTC</div><div class="text"><p>Andrew Woods: looks like this is a build system issue. What can we do about it? Can we find another way to ban certain dependencies?</p></div></div>
+<div class="comment" id="comment-20529"><div class="by">Andrew Woods, 2018-11-15 15:06 UTC</div><div class="text"><p>Ralf Claussnitzer: I agree, it seems to be related to the build system, and this issue in particular:<br/>
+<a href="https://issues.apache.org/jira/browse/MENFORCER-304" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/jira/browse/MENFORCER-304</a></p>
+
+<p>Yes, we can explore a different plugin than 'maven-enforcer-plugin' for detecting banned dependencies.<br/>
+I also note that the following commands work without issue:<br/>
+&gt; rm -rf ~/.m2/repository/org/fcrepo/*<br/>
+&gt; mvn -am -pl fcrepo-kernel-modeshape/ clean</p>
+
+<p>And...<br/>
+&gt; rm -rf ~/.m2/repository/org/fcrepo/*<br/>
+&gt; mvn -am -pl fcrepo-kernel-modeshape/ install</p>
+
+<p>Is there a use case for needing to execute either:<br/>
+&gt; mvn -am -pl fcrepo-kernel-modeshape/ validate<br/>
+..or<br/>
+&gt; mvn -am -pl fcrepo-kernel-modeshape/ dependency:resolve</p>
+
+<p>..without having built the full application prior?</p>
+</div></div>
+<div class="comment" id="comment-20535"><div class="by">Ralf Claussnitzer, 2018-11-16 11:01 UTC</div><div class="text"><p>I'm quoting myself (see the issue description):</p>
+<blockquote>
+<p>Using `mvn install` every time changes have been made to separate modules not only takes too long, but also introduces the problem of "out-dated snaphots" in the local repository if dependencies have not been installed in the right order previously.</p></blockquote>
+<p>Most importantly:</p>
+<blockquote>
+<p>It further corrupts IDE integration (as I noticed using IntelliJ) and seems to raise a problem for individual module testing.</p></blockquote></div></div>
+<p><a href="data/FCREPO-2659.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

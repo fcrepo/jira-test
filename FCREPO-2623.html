@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2623 Support HEAD / GET on LDPCv</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2623</span> Support HEAD / GET on LDPCv</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2017-09-22 18:31 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2017-11-03 00:02 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2639.html">FCREPO-2639</a> Create LDPCv resource</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2617.html">FCREPO-2617</a> POST request to LDPCv to create LDPRm</td></tr><tr><th>Addresses</th><td><a href="FCREPO-2622.html">FCREPO-2622</a> Support application/link-format content type for TimeMaps</td></tr></table>
+<h2>Description</h2>
+<ul>
+	<li>Must indicate TimeMap in the same way it indicates the Container interaction model of the resource via HTTP headers.  See: <a href="https://fcrepo.github.io/fcrepo-specification/#general-3" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#general-3</a></li>
+	<li>Must return Vary-Post and Vary-Put with value 'Memento-Datetime'.</li>
+	<li>The returned body must list the "original" resource, the "timegate" resource (same as original) and any known Mementos.</li>
+</ul>
+
+
+<p>Example response from Memento spec:</p>
+
+<p>HTTP/1.1 200 OK<br/>
+Date: Thu, 21 Jan 2010 00:06:50 GMT<br/>
+Server: Apache<br/>
+Content-Length: 4883<br/>
+Content-Type: application/link-format<br/>
+Connection: close</p>
+
+<p>&lt;<a href="http://a.example.org" class="external-link" rel="nofollow noreferrer">http://a.example.org</a>&gt;;rel="original",<br/>
+&lt;<a href="http://arxiv.example.net/timemap/http://a.example.org" class="external-link" rel="nofollow noreferrer">http://arxiv.example.net/timemap/http://a.example.org</a>&gt;<br/>
+      ; rel="self";type="application/link-format"<br/>
+      ; from="Tue, 20 Jun 2000 18:02:59 GMT"<br/>
+      ; until="Wed, 09 Apr 2008 20:30:51 GMT",<br/>
+&lt;<a href="http://arxiv.example.net/timegate/http://a.example.org" class="external-link" rel="nofollow noreferrer">http://arxiv.example.net/timegate/http://a.example.org</a>&gt;<br/>
+      ; rel="timegate",<br/>
+&lt;<a href="http://arxiv.example.net/web/20000620180259/http://a.example.org" class="external-link" rel="nofollow noreferrer">http://arxiv.example.net/web/20000620180259/http://a.example.org</a>&gt;<br/>
+      ; rel="first memento";datetime="Tue, 20 Jun 2000 18:02:59 GMT"<br/>
+      ; license="http://creativecommons.org/publicdomain/zero/1.0/",<br/>
+&lt;<a href="http://arxiv.example.net/web/20091027204954/http://a.example.org" class="external-link" rel="nofollow noreferrer">http://arxiv.example.net/web/20091027204954/http://a.example.org</a>&gt;<br/>
+       ; rel="last memento";datetime="Tue, 27 Oct 2009 20:49:54 GMT"<br/>
+       ; license="http://creativecommons.org/publicdomain/zero/1.0/",<br/>
+&lt;<a href="http://arxiv.example.net/web/20000621011731/http://a.example.org" class="external-link" rel="nofollow noreferrer">http://arxiv.example.net/web/20000621011731/http://a.example.org</a>&gt;<br/>
+      ; rel="memento";datetime="Wed, 21 Jun 2000 01:17:31 GMT"<br/>
+      ; license="http://creativecommons.org/publicdomain/zero/1.0/",<br/>
+&lt;<a href="http://arxiv.example.net/web/20000621044156/http://a.example.org" class="external-link" rel="nofollow noreferrer">http://arxiv.example.net/web/20000621044156/http://a.example.org</a>&gt;<br/>
+      ; rel="memento";datetime="Wed, 21 Jun 2000 04:41:56 GMT"<br/>
+      ; license="http://creativecommons.org/publicdomain/zero/1.0/"</p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-19465"><div class="by">Jared Whiklo, 2017-10-05 17:42 UTC</div><div class="text"><p>Creating the body of all Mementos will depend on having Mementos.</p></div></div>
+<div class="comment" id="comment-19516"><div class="by">Jared Whiklo, 2017-10-24 02:53 UTC</div><div class="text"><p>I'm wondering about this point<br/>
+"* Must indicate TimeMap in the same way it indicates the Container interaction model of the resource via HTTP headers. See: <a href="https://fcrepo.github.io/fcrepo-specification/#general-3" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#general-3</a> "</p>
+
+<p>So my reading of that means that I need to include a Link header of rel="type" with a URI of the TimeMap. But there is no ontology for Memento, so what URI are we wanting?</p></div></div>
+<div class="comment" id="comment-19517"><div class="by">Esmé Cowles, 2017-10-24 11:10 UTC</div><div class="text"><p>Jared Whiklo — there are no official URIs yet (there is some discussion in this ticket: <a href="https://github.com/fcrepo/fcrepo-specification/issues/245)" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-specification/issues/245)</a> — so I would either make up a URI or just use "memento:TimeMap" as a placeholder for the URI for now.</p></div></div>
+<div class="comment" id="comment-19518"><div class="by">Jared Whiklo, 2017-10-24 14:14 UTC</div><div class="text"><p>This does not fulfill the entire ticket, but this PR can be separate from the RDF entity body work.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1263" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1263</a></p></div></div>
+<div class="comment" id="comment-19520"><div class="by">Jared Whiklo, 2017-10-25 02:48 UTC</div><div class="text"><p>Forget that PR, I was building Link headers. We need to create new Contexts for generating Links. I'm not sure if the existing `getTriples()` stuff can be repurposed to generate Links? </p>
+
+<p>I'm now staring up at a large wall, if anyone has a suggestion I'll take it. Otherwise, I'm dropping this ticket for now.</p></div></div>
+<div class="comment" id="comment-19521"><div class="by">Andrew Woods, 2017-10-25 03:54 UTC</div><div class="text"><p>You can still use the <tt>Link</tt> class to build the body, no?</p>
+
+<p>Basically, we just need the children of the LDPCv rendered as {{Link}}s, no?</p></div></div>
+<div class="comment" id="comment-19525"><div class="by">Jared Whiklo, 2017-10-26 15:07 UTC</div><div class="text"><p>New PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1264" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1264</a></p>
+
+<p>Its not read to merge, I need to add some test for the body. Just not sure what the best way is to do that. Any suggestions on the PR are appreciated.</p></div></div>
+<div class="comment" id="comment-19526"><div class="by">Jared Whiklo, 2017-10-26 21:44 UTC</div><div class="text"><p>Ok, I added a test for the response body. Ready for review.</p></div></div>
+<div class="comment" id="comment-19529"><div class="by">Andrew Woods, 2017-10-29 15:38 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19534"><div class="by">Jared Whiklo, 2017-10-31 03:24 UTC</div><div class="text"><p>PR updated, I'll repeat my comments here.</p>
+
+<p>This allows standard RDF responses, however the subject is <tt>fedora:timemap</tt>, instead of <tt>fcr:versions</tt>. I'm guessing that we need that HttpResourceConverter now...not sure.</p>
+
+<p>Also I didn't add a test yet as it seemed to make more sense to wait until we have some Mementos and test ldp:contains as both <tt>application/link-format</tt> and <tt>text/turtle</tt> together.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19543"><div class="by">Aaron Birkland, 2017-11-03 00:02 UTC</div><div class="text"><p>Resolved with commit:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/f8bcecb5b3202a1b99da12f0cb549804ed04e5c1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f8bcecb5b3202a1b99da12f0cb549804ed04e5c1</a></p></div></div>
+<p><a href="data/FCREPO-2623.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

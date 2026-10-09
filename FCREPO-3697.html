@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3697 Multi-request transactions can be put in a bad state</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3697</span> Multi-request transactions can be put in a bad state</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2021-04-14 14:55 UTC</td></tr><tr><th>Updated</th><td>2021-06-03 18:53 UTC</td></tr><tr><th>Resolved</th><td>2021-05-06 14:39 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>6.0.0-rc1</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>If a request that's part of a multi-request transaction fails, it's possible for it to leave the transaction in a bad state. However, the transaction may still be committed, potentially putting Fedora in a bad state.</p>
+
+<p>For example: <a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/services/CreateResourceServiceImpl.java#L136" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/services/CreateResourceServiceImpl.java#L136</a></p>
+
+<p>That code writes to OCFL staging and makes a number of updates in the database. If any of those fail, the prior changes remain, which means the incomplete updates will be persisted if the transaction is committed.</p>
+
+<p>It is easy to solve the database rollback by adding @Transactional to the service API. This is also required for <a href="https://jira.lyrasis.org/browse/FCREPO-3695" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3695</a>.</p>
+
+<p>However, it's not possible to rollback the staged OCFL changes because you can't distinguish between staged changes from the current request and those from previous requests. The OCFL changes should be made last to reduce, but not eliminate, the chance of there being an issue here.</p>
+
+<p>Another approach would be to mark a transaction as failed when an exception is encountered and not allow failed transactions to be committed.</p>
+
+<p>It's difficult to create a manual test case that demonstrates this bug because the most likely failure case here is an intermittent connectivity issue with the database.</p>
+
+<p>Note, this problem is not limited to the CreateResourceServiceImpl. It was just given as an example.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-22177"><div class="by">Peter Winckles, 2021-04-15 16:16 UTC</div><div class="text"><p>Discussed on the tech call and decided to try the approach of marking the transaction as failed and not allowing it to be committed.</p></div></div>
+<div class="comment" id="comment-22195"><div class="by">Peter Winckles, 2021-05-04 20:17 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1901" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1901</a></p></div></div>
+<div class="comment" id="comment-22208"><div class="by">Danny Bernstein, 2021-05-06 14:38 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo/fcrepo/commit/120703eb2f3cf84413a9a6acb460934bdbda57cb" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/120703eb2f3cf84413a9a6acb460934bdbda57cb</a></p></div></div>
+<p><a href="data/FCREPO-3697.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

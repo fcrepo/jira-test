@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1467 fcrepo4-vagrant: Move Fuseki install from stand alone server to deployable war</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1467</span> fcrepo4-vagrant: Move Fuseki install from stand alone server to deployable war</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Nick Ruest</td></tr><tr><th>Assignee</th><td>Nick Ruest</td></tr><tr><th>Created</th><td>2015-04-15 14:34 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-08-27 13:28 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>...this also updates us to Fuseki 2.</p>
+<h2>Comments (19)</h2>
+<div class="comment" id="comment-14031"><div class="by">Nick Ruest, 2015-04-15 15:14 UTC</div><div class="text"><p>Pull request: <a href="https://github.com/fcrepo4-labs/fcrepo4-vagrant/pull/7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-vagrant/pull/7</a></p></div></div>
+<div class="comment" id="comment-14047"><div class="by">Andrew Woods, 2015-04-15 19:04 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-14068"><div class="by">Nick Ruest, 2015-04-16 11:27 UTC</div><div class="text"><p>Responded </p></div></div>
+<div class="comment" id="comment-14107"><div class="by">Former user, 2015-04-20 12:44 UTC</div><div class="text"><p>This is on hold pending an update to Jena to fix an issue with loading the Fuseki config file.  See <a href="https://issues.apache.org/jira/browse/JENA-915" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/jira/browse/JENA-915</a> &#8211; there is a commit addressing this problem, so we'll need to wait for the next release to proceed.</p></div></div>
+<div class="comment" id="comment-14324"><div class="by">Nick Ruest, 2015-05-24 13:49 UTC</div><div class="text"><p>JENA-915 has been resolved. Now waiting on a 2.0.1 release.</p></div></div>
+<div class="comment" id="comment-15075"><div class="by">Nick Ruest, 2015-08-24 11:12 UTC</div><div class="text"><p>Since we are slowly moving away from Tomcat, does this matter any more? I'm more than happy to have it closed if others feel the same way.</p></div></div>
+<div class="comment" id="comment-15076"><div class="by">Former user, 2015-08-24 13:22 UTC</div><div class="text"><p>Are we moving away from Tomcat?  To Jetty?  I believe part of the motivation for this ticket was to allow access control via the servlet container (which isn't supported in standalone mode), so I still think it's worth switching from standalone to war-based deployment for that.</p></div></div>
+<div class="comment" id="comment-15077"><div class="by">Andrew Woods, 2015-08-24 13:24 UTC</div><div class="text"><p>Former user +1</p></div></div>
+<div class="comment" id="comment-15078"><div class="by">Nick Ruest, 2015-08-24 13:28 UTC</div><div class="text"><p>Good point Former user!</p>
+
+<p>I was referring to OSGi'fying most of the stack. Good to know that this is still relevant than. </p>
+
+<p>Fuseki 2.3.0 is out, so I can try and tackle it later on this week if y'all want.</p></div></div>
+<div class="comment" id="comment-15079"><div class="by">Andrew Woods, 2015-08-24 13:30 UTC</div><div class="text"><p>Nick Ruest +1</p></div></div>
+<div class="comment" id="comment-15080"><div class="by">Nick Ruest, 2015-08-24 19:20 UTC</div><div class="text"><p>Second pull request: <a href="https://github.com/fcrepo4-labs/fcrepo4-vagrant/pull/18" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-vagrant/pull/18</a></p>
+
+<p>Needs review, and testing. One note, you have to wait about 20-30 seconds for the test dataset to get itself loaded and setup after Tomcat starts.</p></div></div>
+<div class="comment" id="comment-15082"><div class="by">Andrew Woods, 2015-08-24 22:52 UTC</div><div class="text"><p>Fuseki deploys, which is great. However, the camel-toolbox needs to be configured to talk to the new Fuseki location.<br/>
+See: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/master/fcrepo-indexing-triplestore#configuration" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/master/fcrepo-indexing-triplestore#configuration</a><br/>
+and<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/master/fcrepo-audit-triplestore#configuration" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/master/fcrepo-audit-triplestore#configuration</a></p>
+
+<p>You can verify that your update works or not by adding a resource to F4 and querying Fuseki. You should see both the new resource as well as the audit entry.</p></div></div>
+<div class="comment" id="comment-15084"><div class="by">Nick Ruest, 2015-08-25 02:58 UTC</div><div class="text"><p>Yeah, we need to update the ports to 3030 at minimum. I'll configure that locally after vagrant builds, and verify. If that does the job, shall I do a pull request for fcrepo-camel-toolbox as well, since they'll need to be changed at the same time for the issue?</p></div></div>
+<div class="comment" id="comment-15085"><div class="by">Nick Ruest, 2015-08-25 11:29 UTC</div><div class="text"><p>Updated fcrepo-camel-toolbox, built, and deployed artifact on vagrant VM. I added a new object and was successful.</p>
+
+<p>DEBUG 11:25:24.899 (InternalAuditor) Event detected: &lt;anonymous&gt; /audit/4f/b0/a3/4f/4fb0a34f-eda7-45b9-9186-8e0716d9fa85<br/>
+DEBUG 11:25:24.899 (AuditUtils) Constructed event type URIs: <a href="http://fedora.info/definitions/v4/repository#NODE_ADDED,http://fedora.info/definitions/v4/repository#PROPERTY_ADDED" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#NODE_ADDED,http://fedora.info/definitions/v4/repository#PROPERTY_ADDED</a><br/>
+INFO 11:25:25.281 (FedoraLdp) HEAD for: 4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64<br/>
+INFO 11:25:25.304 (FedoraLdp) HEAD for: 4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64<br/>
+WARN 11:25:25.347 (RDFLanguages) java-jsonld classes not on the classpath - JSON-LD input-output not available.<br/>
+WARN 11:25:25.367 (RDFLanguages) Minimum jarfiles are jsonld-java, jackson-core, jackson-annotations<br/>
+WARN 11:25:25.368 (RDFLanguages) If using a Jena distribution, put all jars in the lib/ directory on the classpath<br/>
+INFO 11:25:25.441 (FedoraLdp) GET resource '4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64'<br/>
+INFO 11:25:25.484 (FedoraLdp) GET resource '4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64'<br/>
+INFO 11:25:26.353 (SolrRouter) Indexing Solr Object  /4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64<br/>
+INFO 11:25:26.509 (FedoraTransform) GET transform, 'default', for '4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64'<br/>
+INFO 11:25:26.967 (audit) Audit Event: /4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64 :: &lt;<a href="http://example.com/event/4f/b0/a3/4f/4fb0a34f-eda7-45b9-9186-8e0716d9fa85" class="external-link" rel="nofollow noreferrer">http://example.com/event/4f/b0/a3/4f/4fb0a34f-eda7-45b9-9186-8e0716d9fa85</a>&gt;<br/>
+<span class="error">&#91;2015-08-25 11:25:27&#93;</span> Fuseki     INFO  <span class="error">&#91;11&#93;</span> POST <a href="http://localhost:8080/fuseki/test/update" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fuseki/test/update</a><br/>
+<span class="error">&#91;2015-08-25 11:25:27&#93;</span> Fuseki     INFO  <span class="error">&#91;11&#93;</span> POST /test :: 'update' :: <span class="error">&#91;application/x-www-form-urlencoded&#93;</span> ? <br/>
+INFO 11:25:27.665 (TriplestoreRouter) Indexing Triplestore Object  /4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64<br/>
+INFO 11:25:27.716 (FedoraTransform) GET transform, 'default', for '4e/20/c6/f3/4e20c6f3-2605-4107-a14b-a6f491a73d64'<br/>
+<span class="error">&#91;2015-08-25 11:25:27&#93;</span> Fuseki     INFO  <span class="error">&#91;12&#93;</span> POST <a href="http://localhost:8080/fuseki/test/update" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fuseki/test/update</a><br/>
+<span class="error">&#91;2015-08-25 11:25:27&#93;</span> Fuseki     INFO  <span class="error">&#91;12&#93;</span> POST /test :: 'update' :: <span class="error">&#91;application/x-www-form-urlencoded&#93;</span> ? <br/>
+<span class="error">&#91;2015-08-25 11:25:27&#93;</span> Fuseki     INFO  <span class="error">&#91;11&#93;</span> 200 OK (732 ms)<br/>
+<span class="error">&#91;2015-08-25 11:25:28&#93;</span> Fuseki     INFO  <span class="error">&#91;12&#93;</span> 200 OK (293 ms)</p>
+
+<p>Pull request: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/50" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/50</a></p></div></div>
+<div class="comment" id="comment-15087"><div class="by">Andrew Woods, 2015-08-25 14:03 UTC</div><div class="text"><p>Please push the "Start Review" button when you are ready, Nick Ruest.</p></div></div>
+<div class="comment" id="comment-15100"><div class="by">Andrew Woods, 2015-08-27 00:45 UTC</div><div class="text"><p>Looks good, pending response to minor code review comments.</p></div></div>
+<div class="comment" id="comment-15102"><div class="by">Nick Ruest, 2015-08-27 13:06 UTC</div><div class="text"><p>Updated!</p></div></div>
+<div class="comment" id="comment-15103"><div class="by">Andrew Woods, 2015-08-27 13:28 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo4-vagrant/commit/51f04d0da0e48438c13f9646554a4eecda8a3a96" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-vagrant/commit/51f04d0da0e48438c13f9646554a4eecda8a3a96</a> and<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/c3223b81717ea6c83435f69ea235d0dd6abee073" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/c3223b81717ea6c83435f69ea235d0dd6abee073</a></p></div></div>
+<div class="comment" id="comment-15121"><div class="by">Unknown, 2015-08-28 10:27 UTC</div><div class="text"><p>Not sure how this got assigned to me &#8211; Nick did all the work for it</p></div></div>
+<p><a href="data/FCREPO-1467.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-576 Remove dbxml or make it an optional dependency</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-576</span> Remove dbxml or make it an optional dependency</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-11-08 02:22 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2011-03-31 22:59 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-848.html">FCREPO-848</a> Tidy-up FeSL policy validation</td></tr></table>
+<h2>Description</h2>
+<p>This has been discussed before, just making a note of it here. This should go hand-in-hand with the move to make policies first-class objects in the Fedora repository. Ideally, we'd give the repository manager the option to cache policies in memory or use dbxml for repositories with a lot of policies.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-11475"><div class="by">Stephen Bayliss, 2010-07-13 16:04 UTC</div><div class="text"><p>An alternative to DBXML (and to a memory-based or simple file-based policy indexing/caching mechanism) could be exist - <a href="http://exist.sourceforge.net" class="external-link" rel="nofollow noreferrer">http://exist.sourceforge.net</a>.</p>
+
+<p>Benefits over DBXML</p>
+<ul class="alternate" type="square">
+	<li>written in Java</li>
+	<li>deployable either as a servlet in the same container as Fedora, or separate (comes with Jetty to do this)</li>
+</ul>
+
+
+<p>It is LGPL, therefore there should be no licensing issues distributing with Fedora and linking to it.</p></div></div>
+<div class="comment" id="comment-11693"><div class="by">A. Soroka, 2010-11-17 23:28 UTC</div><div class="text"><p>I'm not sure where thinking now is on this issue, but I'd like to +1 Steve's suggestion of eXist. It's a strong product that could be integrated either as Steve imagines or as an internal dependency inside Fedora, for an even smaller install footprint. Of course, it is nice to be able to separate the policy store fro the main webapp, as well.</p></div></div>
+<div class="comment" id="comment-11694"><div class="by">Stephen Bayliss, 2010-11-18 01:14 UTC</div><div class="text"><p>Other options could be BaseX<span class="error">&#91;1&#93;</span> or Qizx <span class="error">&#91;2&#93;</span>, or Qizx/open <span class="error">&#91;3&#93;</span> with something behind it.  The requirements are fairly low, we just need to provide indexed-access to policies based on certain policy elements.  Other suggestions, experiences, welcomed!</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://www.inf.uni-konstanz.de/dbis/basex/" class="external-link" rel="nofollow noreferrer">http://www.inf.uni-konstanz.de/dbis/basex/</a><br/>
+<span class="error">&#91;2&#93;</span> <a href="http://www.xmlmind.com/qizx/" class="external-link" rel="nofollow noreferrer">http://www.xmlmind.com/qizx/</a><br/>
+<span class="error">&#91;3&#93;</span> <a href="http://www.xmlmind.com/qizxopen/" class="external-link" rel="nofollow noreferrer">http://www.xmlmind.com/qizxopen/</a></p></div></div>
+<div class="comment" id="comment-11695"><div class="by">Frank Feng, 2010-11-18 16:09 UTC</div><div class="text"><p>Regarding eXist DB, which is integrated within Orbeon xforms engine. I'd like to say it might not be as stable as you expect. In our system, it crashed a few times and made orbeon stopping working. We didn't investigate whether it's an issue with Orbeon or with eXist itself.</p></div></div>
+<div class="comment" id="comment-11706"><div class="by">A. Soroka, 2010-11-26 22:26 UTC</div><div class="text"><p>Another point: it would be well to choose a database offering some common (Java) API to provide for migration from one store to another as users find that appropriate. I suspect that XQJ might be the right API to which to program. XML:DB is another candidate. Of course, support for these APIs varies from product to product.</p></div></div>
+<div class="comment" id="comment-11713"><div class="by">Stephen Bayliss, 2010-11-30 22:57 UTC</div><div class="text"><p>We should also consider a non XML database option.  The XPath queries to be executed are not free-form, and are well-known (selecting a set of policies based on an essentially fixed set of XACML values).  We could potentially move to a higher-level abstraction, ie the interface doesn't receive XPath queries but a data structure specifying the XACML values (and beneath this, where the implementation is an XML database, the XPath queries would get built).</p>
+
+<p>So, index up front (in memory, SQL, etc) based on the known locations of the XACML values that will be searched upon.</p></div></div>
+<div class="comment" id="comment-11762"><div class="by">Nigel Thomas, 2011-01-11 21:55 UTC</div><div class="text"><p>I think it might be worth re factoring the code to use Xaj - "a small Java API for accessing XML-enabled databases" - it support Berkeley DB XML, Exist, DB2 et al. <br/>
+<a href="http://xaj.sourceforge.net/" class="external-link" rel="nofollow noreferrer">http://xaj.sourceforge.net/</a><br/>
+It also seems to support deadlock detection for DB XML, which can cause corruptions in the database if not properly handled, as raised in the related JIRA - 846<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-846" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-846</a></p></div></div>
+<div class="comment" id="comment-11764"><div class="by">Stephen Bayliss, 2011-01-12 03:57 UTC</div><div class="text"><p>Thanks Nigel, I will take a look at xaj</p></div></div>
+<div class="comment" id="comment-11765"><div class="by">Stephen Bayliss, 2011-01-12 04:00 UTC</div><div class="text"><p>As part of this issue:</p>
+<ul>
+	<li>refactor the PolicyIndex API - there are many unused methods.  Review the methods actually needed that are relevant to a policy cache (rather than necessarily a full ACID transactional database).</li>
+	<li>review the locking/read-error code in the DBXML policy index to see if we can come up with a generic solution if appropriate</li>
+	<li>review where validation takes place (see also 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-770" >
+                <a href="FCREPO-770.html" class="jira-issue-macro-key issue-link"  title="FeSL invalid XACML results in changes to FESLPOLICY datastream even though API call fails" >
+            
+            FCREPO-770
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) - this should be at a higher level than the policy index (and we should also check for well-formed-ness)</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11835"><div class="by">Stephen Bayliss, 2011-03-11 16:56 UTC</div><div class="text"><p>Part 1: Simple in-memory PolicyIndex added.  This maintains a local cache directory of policies which is cached in memory when the server starts.  The index does not in fact do any indexing - queries for matching policies will return all policies for evaluation (similar to what the legacy XACML implementation does).  Probably suitable where there is a small number of policies.  Could be enhanced to do indexing.</p></div></div>
+<div class="comment" id="comment-11889"><div class="by">Stephen Bayliss, 2011-03-27 15:10 UTC</div><div class="text"><p>Adding eXist support requires adding the XML:DB API to the distribution.  xmldb.jar added to local repo, this needs adding to a maven repo.  Currently added to pom as xmldb/xmldb-api/1.4</p>
+
+<p>Source of this is from the eXist software distribution (but covered by XML:DB licence).  XML:DB API licence added to Fedora licence directory.</p>
+
+<p>eXist client files required (to make the XML:DB API work) are (from eXist distribution)</p>
+<ul class="alternate" type="square">
+	<li>exist.jar (contains more than client classes, but there is no separate client jar)</li>
+	<li>xmlrpc-client-3.1.2.jar</li>
+	<li>xmlrpc-common-3.1.2.jar</li>
+	<li>ws-commons-utils-1.0.2.jar</li>
+</ul>
+
+
+<p>Setup instructions need to reflect this (ie adding the above to the classpath, either Fedora's lib or some common location)</p></div></div>
+<div class="comment" id="comment-11897"><div class="by">Stephen Bayliss, 2011-03-31 22:59 UTC</div><div class="text"><p>Merged into master</p></div></div>
+<p><a href="data/FCREPO-576.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

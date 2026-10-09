@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2741 Automatic detection of repository root during export times out with large containers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2741</span> Automatic detection of repository root during export times out with large containers</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2018-03-30 17:36 UTC</td></tr><tr><th>Updated</th><td>2018-04-04 18:27 UTC</td></tr><tr><th>Resolved</th><td>2018-03-30 20:19 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Affects versions</th><td>fcrepo-importexport-0.2.0</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.3.0</td></tr></table>
+<h2>Description</h2>
+<p>During the export process, the exporter attempts to automatically determine the repository root by traversing the path hierarchy of the given endpoint URL and checking each resource for the presence of a &lt;&gt; rdf:type fedora:RepositoryRoot triple. In cases where there is a container with many children, the request for the container can time out before the response can be generated (in our case at UMD, we have a 10 minute request timeout on our Apache frontend).</p>
+
+<p>Solutions would include:</p>
+
+<ul>
+	<li>Allowing the user to explicitly specify the repository root, and thus skip the automatic detection process.</li>
+	<li>If automatic detection is still required, request the container representations as N-Triples, so the response begins streaming immediately.</li>
+</ul>
+
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-19809"><div class="by">Peter Matthew Eichman, 2018-03-30 17:37 UTC</div><div class="text"><p>Cross-filed as <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/issues/114" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/issues/114</a></p></div></div>
+<div class="comment" id="comment-19810"><div class="by">Peter Matthew Eichman, 2018-03-30 20:19 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/115" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/115</a></p></div></div>
+<div class="comment" id="comment-19816"><div class="by">Danny Bernstein, 2018-04-04 16:28 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/98d3702e385a2685214b33a1d932d5eaf954a792" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/98d3702e385a2685214b33a1d932d5eaf954a792</a></p></div></div>
+<div class="comment" id="comment-19820"><div class="by">Andrew Woods, 2018-04-04 17:55 UTC</div><div class="text"><p>Peter Matthew Eichman: I am not seeing the N-triples `Accept` header in your pull-request. Am I missing it? or is that a follow-on pull-request?</p></div></div>
+<div class="comment" id="comment-19821"><div class="by">Peter Matthew Eichman, 2018-04-04 17:59 UTC</div><div class="text"><p>Andrew Woods, I had some trouble getting the application/n-triples request to work quite right (I couldn't confirm that Jena was able to start parsing the stream immediately), so I decided to leave that for later, if it is still a desired feature.</p></div></div>
+<div class="comment" id="comment-19822"><div class="by">Andrew Woods, 2018-04-04 18:23 UTC</div><div class="text"><p>Peter Matthew Eichman: interesting. I wonder if the fcrepo-client needs a look. Anyways, thanks for the background. We can probably punt until a user wants the feature.</p></div></div>
+<div class="comment" id="comment-19823"><div class="by">Peter Matthew Eichman, 2018-04-04 18:27 UTC</div><div class="text"><p>Andrew Woods, I can't say that it wasn't working, I just wasn't sure how to check.</p></div></div>
+<p><a href="data/FCREPO-2741.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

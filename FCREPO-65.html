@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-65 XACML IdReference support</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-65</span> XACML IdReference support</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-03-08 03:45 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-02-23 03:30 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>Blair has suggested that, by providing support for resolving XACML IdReferences, more flexible AuthZ can be achieved in Fedora.  This is an enhancement to existing functionality.</p>
+
+<p>On Nov. 13, 2006, Blair wrote:</p>
+
+<p>I'm fairly certain that the idea I'm working on for the ARROW project will provide a more flexible and efficient authz solution.  It will hopefully only require a simple addition to fedora.server.security.PolicyFinderModule to add support for finding policies based on idReference.  The idea is to make PolicySets that support the intuitive notion of letting more specific controls take precedence in authz evaluation.  For example; A Policy denying read access to a particular DO with PID 123 would take precedence over a Policy allowing access to a class of objects that the DO with PID 123<br/>
+happens to be in (this class would be defined by metadata attributes such as the Dublin Core type).</p>
+
+<p>The plan is to use the reserved POLICY datastream in every DO to hold the top level PolicySet passed to the PDP from the PolicyFinderModule.  This would be the PolicySet used for any authz evaluation pertaining<br/>
+to an action associated with a particular PID - almost all APIA and APIM operations.  Any authz controls required on actions that do not have a specific PID associated with them (such as ingest, describeRepository, findObjects) could have policies placed in the default repository wide policy directory, which would otherwise be empty.</p>
+
+<p>The new top level PolicySet would comprise of a set of other PolicySets combined using the FirstApplicablePolicyAlg.  Therefore if a match were encountered early in the evaluation the result would be<br/>
+returned and evaluation finished; other irrelevant policies would not need to be evaluated.  The component PolicySets would be ordered from most to least specific with regard to their component Policy's Resource and Subject Targets, thus achieving the desired most specific overrides functionality.  See the attached layout for an example; note that this is illustrative of only one possible top level PolicySet structure, different combinations of referencing, in lining and<br/>
+further nesting could be used.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-65/10000_sf-1676246-PolicySets.png">sf-1676246-PolicySets.png</a>, 48353 bytes, added by Chris Wilper on 2007-03-08</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10111"><div class="by">Chris Wilper, 2007-03-08 03:51 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>Blair has submitted the necessary changes to PolicyEnforcementPoint.java and PolicyFinderModule.java</p>
+
+<p>On Feb. 5, 2007, Blair wrote:</p>
+
+<p>The major additions are in the PolicyFinderModule where the cache<br/>
+operations code lives.  The reason for changing the<br/>
+PolicyEnforcementPoint too is that PolicyFinderModule initialisation<br/>
+had to be reworked to load the repository wide policies when the init<br/>
+method is called (this is done by sunxacml when the PDP is created).<br/>
+Because the init method is declared in the sun code it couldn't throw<br/>
+an exception if loading of repo wide policies failed, thus I had to<br/>
+add a check that is called after the PDP is constructed.</p>
+
+<p>There are several customisable parameters that might be worth exposing<br/>
+in fedora.fcfg:</p>
+<ul class="alternate" type="square">
+	<li>the max cache sizes (that is the number of AbstractPolicies of each<br/>
+type, Policy or PolicySet, that can be cached at any time), currently<br/>
+100 of each;</li>
+	<li>the referenced policies directory, currently this is set to be<br/>
+"referenced-policies" at the same directory tree level as the<br/>
+"repository-policies" directory (currently if the directory does not<br/>
+exist it will NOT be created);</li>
+	<li>the cache decay rate, this is the time in milliseconds it takes to<br/>
+reduce an inactive cache entry's weight by 1 (currently 1 minute).<br/>
+The weight is used to select a row to replace on a cache miss when the<br/>
+cache is already full.</li>
+</ul>
+
+
+<p>During testing I came across a rather strange behaviour which I think<br/>
+may be a bug in the javax.xml.parsers.DocumentBuilder.  When a<br/>
+reference is included in a repo wide policy or another referenced<br/>
+policy like so:<br/>
+&lt;PolicyIdReference&gt;<br/>
+   policy.xml<br/>
+&lt;/PolicyIdReference&gt;<br/>
+it works fine.  However when the same lines are included in a FOXML<br/>
+object's POLICY datastream they cause an invalid URI exception on any<br/>
+access attempt (making the object unreadable), this seems to be due to<br/>
+the new line after the opening element.  Removing the formatting makes<br/>
+the problem go away:<br/>
+&lt;PolicyIdReference&gt;policy.xml&lt;/PolicyIdReference&gt;</p>
+
+<p>Certainly the new line is invalid in a URI however it doesn't seem to<br/>
+be passed along when read from a file, the only difference being which<br/>
+DocumentBuilder.parse method is called.  Just something to be aware of<br/>
+if/when idreference examples make it into the system documentation.</p></div></div>
+<div class="comment" id="comment-10112"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1676246<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1676246" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1676246</a></p></div></div>
+<div class="comment" id="comment-10848"><div class="by">Chris Wilper, 2009-02-23 03:30 UTC</div><div class="text"><p>This feature was never merged in, and Fedora's code has changed significantly since.  There is also an effort underway to re-work Fedora's XACML implmentation based on the work done in the Muradora project.  See 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-451" >
+                <a href="FCREPO-451.html" class="jira-issue-macro-key issue-link"  title="Fedora Enhanced Security Layer (FeSL) Integration" >
+            
+            FCREPO-451
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for more on that.  I'm closing this feature request for now in order to reduce confusion.  If anyone still wants IdReference support against the new XACML impl, please check whether it was done by FCREPO-451or submit as a new feature request.</p></div></div>
+<p><a href="data/FCREPO-65.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

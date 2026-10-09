@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2610 Properly manage ebucore:fileName property, or stop</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2610</span> Properly manage ebucore:fileName property, or stop</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-09-15 15:53 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2017-09-18 13:56 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>It used to be the case that if a user provided a filename in a Content-Disposition header, fedora would populate a ebucore:filename property.  Responses would have a Content-Disposition containing a matching filename</p>
+
+<p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2584" >
+                <a href="FCREPO-2584.html" class="jira-issue-macro-key issue-link"  title="NonRDFSource link header must be supported, regardless of Content-Type" >
+            
+            FCREPO-2584
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ eliminated handling of Content-Disposition in requests<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-2584" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2584</a></p>
+
+<p>As a result, ebucore:filename is always "".</p>
+
+<p>The resolution to this ticket should remove the default population of ebucore:filename, and consider whether or not Content-Disposition should be returned in responses at all.  If it is, then should it have a filename value?  Is this still determined by ebucore:filename (if a user explicitly adds such a triple?)  </p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-19350"><div class="by">Esmé Cowles, 2017-09-18 13:45 UTC</div><div class="text"><p>I believe this is still working correctly, and that this IT would fail if it wasn't: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L1561" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L1561</a> — and I just tested a fresh build of master and found that I could populate the filename using Content-Disposition, e.g.:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -X PUT -H <span class="code-quote">"Content-Disposition: inline; filename=\"</span>foo.txt\<span class="code-quote">"" -d "</span>foo<span class="code-quote">" -H "</span>Content-type: text/plain<span class="code-quote">" -H "</span>Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#NonRDFSource&gt;; rel=\<span class="code-quote">"type\"</span>" http://localhost:8080/<span class="code-keyword">rest</span>/file2</span>
+</pre>
+</div></div>
+<p>Are you seeing something different? Is the issue that if no Content-Disposition header is supplied, that there is a blank filename?</p></div></div>
+<div class="comment" id="comment-19351"><div class="by">Aaron Birkland, 2017-09-18 13:52 UTC</div><div class="text"><p>Ah, I didn't know it still worked.  Creating NonRDFSources "by the book" (strictly following the specs) results in a filename of "".  If that is OK, then I suppose that means this is one of those "clean up" issues to consider if/when we decide to remove non-specified behaviour from the API.  </p></div></div>
+<div class="comment" id="comment-19352"><div class="by">Esmé Cowles, 2017-09-18 13:56 UTC</div><div class="text"><p>OK, I'm closing this issue, and we can revisit whether we want to keep the Content-Disposition header support or just have clients manage the filename using the binary description.</p></div></div>
+<p><a href="data/FCREPO-2610.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

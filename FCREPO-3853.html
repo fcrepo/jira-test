@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3853 PUT returning 404</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3853</span> PUT returning 404</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Justin Merz</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2022-10-05 20:13 UTC</td></tr><tr><th>Updated</th><td>2022-10-31 18:31 UTC</td></tr></table>
+<h2>Environment</h2>Docker Image: fcrepo/fcrepo:6.2.0. Running with `docker compose` with PostgreSQL and a volume mount at `/usr/local/tomcat/fcrepo-home/data`
+<h2>Description</h2>
+<p>Running a PUT statement returns a 404</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -i -X PUT -u "fedoraAdmin:fedoraAdmin" "http://localhost:8080/fcrepo/rest/collection/ex1-pets"
+HTTP/1.1 404 
+Cache-Control: private
+Set-Cookie: JSESSIONID=988F55C3692B7ACFC1E4A01745768DF0; Path=/fcrepo; HttpOnly
+Set-Cookie: rememberMe=deleteMe; Path=/fcrepo; Max-Age=0; Expires=Tue, 04-Oct-2022 20:01:43 GMT; SameSite=lax
+Content-Type: text/plain
+Content-Length: 46
+Date: Wed, 05 Oct 2022 20:01:43 GMT</pre>
+</div></div>
+
+<p>Note the container does not exist:</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -I -u "fedoraAdmin:fedoraAdmin" "http://localhost:8080/fcrepo/rest/collection/ex1-pets"
+HTTP/1.1 404 
+Cache-Control: private
+Set-Cookie: JSESSIONID=1444107CB07FD66C23F7B6D826A7C335; Path=/fcrepo; HttpOnly
+Set-Cookie: rememberMe=deleteMe; Path=/fcrepo; Max-Age=0; Expires=Tue, 04-Oct-2022 20:07:26 GMT; SameSite=lax
+Content-Type: text/turtle;charset=utf-8
+Content-Length: 46
+Date: Wed, 05 Oct 2022 20:07:26 GMT</pre>
+</div></div>
+
+<p>To create issue.  I have been testing adding and removing a container at <tt>/fcrepo/rest/collection/ex1-pets</tt> (Including the fcr:tombstone).   Eventually I get a 404 on the PUT statement.</p>
+
+
+
+<p>Additionally I have verified the <tt>/fcrepo/rest/collection/ex1-pets</tt> doesn’t exist in the ocfl filesystem.</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>root@3cab64094c7b:/usr/local/tomcat/fcrepo-home/data/ocfl-root# echo -n "info:fedora/collection/ex1-pets" | shasum -a 256 
+7dd5bc9f8bc855938666cf69713aa5fce182e674cc0a4c1ca8d45897bc346126  -
+root@3cab64094c7b:/usr/local/tomcat/fcrepo-home/data/ocfl-root# cd 7
+755/ 773/ 7ef/ </pre>
+</div></div>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-22714"><div class="by">Danny Bernstein, 2022-10-06 15:33 UTC</div><div class="text"><p>Hi Justin Merz :  thanks for the bug report.  Can you specify the precise steps you took to reproduce the issue.  Please include the docker command you used to bring up the container and the curl commands you made in the order you made them.   That will help us troubleshoot. </p></div></div>
+<div class="comment" id="comment-22715"><div class="by">Justin Merz, 2022-10-06 16:33 UTC</div><div class="text"><p>I use the default docker image/start command with the following additions:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>FROM fcrepo/fcrepo:6.2.0
+
+RUN mkdir -p /etc/fin
+COPY fcrepo.properties /etc/fin/fcrepo.properties
+COPY root-authorization.ttl /etc/fin/root-authorization.ttl
+
+COPY tomcat-users.xml $CATALINA_HOME/conf/tomcat-users.xml
+ENV FEDORA_USER_USERNAME=fedoraUser
+ENV FEDORA_USER_PASSWORD=fedoraUser
+
+COPY activemq.xml $CATALINA_HOME/webapps/fcrepo/WEB-INF/classes/activemq.xml
+
+ENV CATALINA_OPTS="-Dfcrepo.config.file=/etc/fin/fcrepo.properties"</pre>
+</div></div>
+
+<p>Running via a docker compose file with the following mount:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    volumes:
+      - fedora-data:/usr/local/tomcat/fcrepo-home/data</pre>
+</div></div>
+
+
+
+<p>How I create/delete this example container:</p>
+
+<p>I have a wrapper CLI (node) that uses a POST command to create the container with a SLUG header wrapped in a transaction.  The transaction is rolled back if the container fails to be created at the requested slug.</p>
+
+<p>Create Commands:</p>
+
+<ul>
+	<li>POST to /fcr:tx</li>
+	<li>POST to path with slug header.</li>
+	<li>Either PUT to /fcr:tx/[id] or DELETE /fcr:tx/[id] depending if the POST was created at requested path</li>
+</ul>
+
+
+<p>Delete Commands</p>
+
+<ul>
+	<li>DELETE path/to/container</li>
+	<li>DELETE path/to/container/fcr:tombstone</li>
+</ul>
+
+
+
+
+<p>I was trying to migrate to the PUT command instead of the POST command to create LDP containers, when the POST command stoped returning the request slug in the path.  When I tried the PUT command via curl, the 404 was returned. </p></div></div>
+<div class="comment" id="comment-22720"><div class="by">Michael Ritter, 2022-10-11 22:55 UTC</div><div class="text"><p>Hi Justin, <br/>
+I’ve been trying to reproduce this using both the POST with the slug header and a PUT to the container id but have not been successful. Here’s what I’ve tried:</p>
+
+<ol>
+	<li>Created a Dockerfile in a similar nature to yours (minus the root-auth and activemq config) + docker compose file for connecting to a postgres db</li>
+	<li>Created a minimal fcrepo.properties specifying fcrepo.home and fcrepo.db configuration properties</li>
+	<li>Start up docker</li>
+	<li>Create an initial <tt>collection</tt> container</li>
+	<li>Execute the following (roughly):</li>
+</ol>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tx=$(curl -s -I -X POST -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx | grep Link | cut -c 8-84)
+curl -H "Atomic-ID: ${tx}" -H "Slug: ex1-pets" -X POST -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/
+curl -X PUT -u "fedoraAdmin:fedoraAdmin" ${tx}
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets
+
+curl -s -o /dev/null -X DELETE -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets
+curl -s -o /dev/null -X DELETE -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets/fcr:tombstone</pre>
+</div></div>
+
+<p>I have these running in a loop so that I can break if I get a non-200 back from the POST or GET. For the PUT I remove the Slug header and add <tt>ex1-pets</tt> to the url. I also tried building the one-click jar and was able to run without seeing any errant 404s.</p>
+
+<p>I’m trying to think of anything else to try to see if I’ve missed something while trying to replicate this. Potentially something with the activemq config if anything was changed there? Though I’m not sure how that could impact it, but I want to make sure I haven’t overlooked anything. </p></div></div>
+<div class="comment" id="comment-22725"><div class="by">Justin Merz, 2022-10-13 15:05 UTC</div><div class="text"><p>Thanks for looking into this.  It seems to happen sporadically, every 1-2 days of development adding/removing same collection.  Let me see if I can come up with a script that reliably reproduces issue for you and send it over.</p></div></div>
+<div class="comment" id="comment-22737"><div class="by">Justin Merz, 2022-10-20 20:37 UTC</div><div class="text"><p>So this bug is proving very hard to reproduce in a reliably scriptable manor.  I have my wrapper cli writing HTTP requests as curl commands for debugging here.  The summary of what’s happening here is; </p>
+
+<ul>
+	<li>create collection (with child containers)</li>
+	<li>kill (ctrl+c) in middle of script (while transaction is open)</li>
+	<li>delete collection root container (and tombstone), both commands fail, expected.</li>
+	<li>create collection (dies on container with open transaction, expected)</li>
+	<li>create collection (dies with 404 on put)</li>
+</ul>
+
+
+<p>If you inspect the ocfl-root, the child containers for the collection still exist but collection container is gone.</p>
+
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>jrmerz ex1-pets $ FCREPO_DIRECT_ACCESS=true FCREPO_SUPERUSER=true fin io import ex1-pets22 .
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+404
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection
+200
+curl -X PUT -H "Content-Type: text/turtle" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+201
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+200
+curl -X PUT -H "content-type: text/turtle" -H "Prefer: return=\"minimal\"" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/fcr:acl
+201
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets
+404
+curl -I -H "content-type: text/turtle" -H "Prefer: handling=lenient" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets
+404
+curl -X POST -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx
+201
+curl -X POST -H "content-type: text/turtle" -H "Prefer: handling=lenient" -H "Slug: pets" -u "fedoraAdmin:fedoraAdmin" -H "Atomic-ID: b8f133ea-5b0e-43ad-9fb5-e5f27e681cbd" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/
+201
+curl -X PUT -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx/b8f133ea-5b0e-43ad-9fb5-e5f27e681cbd
+204
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/ashley.jpg
+404
+curl -I -H "content-type: image/jpeg" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/ashley.jpg
+404
+curl -X POST -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx
+201
+curl -X POST -H "content-type: image/jpeg" -H "Slug: pets/ashley.jpg" -H "digest: sha256=1b006f88ad153955353e5921efaf84640f13fd7a0f1f7e45d53053ef7d7ddd00" -H "Content-Disposition: attachment; filename=\"ashley.jpg\"" -u "fedoraAdmin:fedoraAdmin" -H "Atomic-ID: cb3749d9-79ae-492d-a2c7-f06fa774006d" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/
+201
+curl -X PUT -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx/cb3749d9-79ae-492d-a2c7-f06fa774006d
+204
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/bb.jpg
+404
+curl -I -H "content-type: image/jpeg" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/bb.jpg
+404
+curl -X POST -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx
+201
+curl -X POST -H "content-type: image/jpeg" -H "Slug: pets/bb.jpg" -H "digest: sha256=81dd98c70e583799a67cb1969e69221d5976b9f540c2097a7fd086c6c20344e3" -H "Content-Disposition: attachment; filename=\"bb.jpg\"" -u "fedoraAdmin:fedoraAdmin" -H "Atomic-ID: c2e039fa-daf1-4f28-9d60-91b31cf4fbb7" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/
+201
+curl -X PUT -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx/c2e039fa-daf1-4f28-9d60-91b31cf4fbb7
+204
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/chester.jpg
+404
+curl -I -H "content-type: image/jpeg" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/chester.jpg
+404
+curl -X POST -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx
+201
+curl -X POST -H "content-type: image/jpeg" -H "Slug: pets/chester.jpg" -H "digest: sha256=626d253f7710ea1e0605df55a338fc8b9fc7c41dc42b7257410f11b754bbb862" -H "Content-Disposition: attachment; filename=\"chester.jpg\"" -u "fedoraAdmin:fedoraAdmin" -H "Atomic-ID: b5708cea-5e94-4205-afcc-8c580abecaa8" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/
+^C
+
+
+jrmerz ex1-pets $ FCREPO_DIRECT_ACCESS=true FCREPO_SUPERUSER=true fin collection delete -f ex1-pets22
+curl -X DELETE -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+409
+curl -X DELETE -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/fcr:tombstone
+404
+
+
+
+jrmerz ex1-pets $ FCREPO_DIRECT_ACCESS=true FCREPO_SUPERUSER=true fin io import ex1-pets22 .
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+200
+curl -X PUT -H "content-type: text/turtle" -H "Prefer: return=\"minimal\"" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/fcr:acl
+204
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets
+200
+curl -X PUT -H "content-type: text/turtle" -H "Prefer: return=\"minimal\"" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets
+409
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/ashley.jpg
+200
+curl -X GET -H "accept: application/ld+json" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/ashley.jpg/fcr:metadata
+200
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/bb.jpg
+200
+curl -X GET -H "accept: application/ld+json" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/bb.jpg/fcr:metadata
+200
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/chester.jpg
+404
+curl -I -H "content-type: image/jpeg" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/pets/chester.jpg
+404
+curl -X POST -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx
+201
+curl -X POST -H "content-type: image/jpeg" -H "Slug: pets/chester.jpg" -H "digest: sha256=626d253f7710ea1e0605df55a338fc8b9fc7c41dc42b7257410f11b754bbb862" -H "Content-Disposition: attachment; filename=\"chester.jpg\"" -u "fedoraAdmin:fedoraAdmin" -H "Atomic-ID: ecaa2bd9-4877-40c3-93c2-5d12e369f517" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/
+409
+curl -X DELETE -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/fcr:tx/ecaa2bd9-4877-40c3-93c2-5d12e369f517
+204
+Error: Error: Failed to create container: 409, Cannot update info:fedora/collection/ex1-pets22/pets because it is being updated by another transaction.
+    at ImportCollection.putContainers (/Users/jrmerz/dev/library/dams/fin-server/fin-api/lib/io/import.js:595:17)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+    at async ImportCollection.putContainers (/Users/jrmerz/dev/library/dams/fin-server/fin-api/lib/io/import.js:627:7)
+    at async ImportCollection.run (/Users/jrmerz/dev/library/dams/fin-server/fin-api/lib/io/import.js:164:7)
+    at async FileIOCli.import (/Users/jrmerz/dev/library/dams/fin-server/fin-api/cli/lib/cli/FileIOCli.js:44:5)
+
+
+
+jrmerz ex1-pets $ FCREPO_DIRECT_ACCESS=true FCREPO_SUPERUSER=true fin io import ex1-pets22 .
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+410
+curl -X DELETE -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+410
+curl -X DELETE -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22/fcr:tombstone
+204
+curl -I -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection
+200
+curl -X PUT -H "Content-Type: text/turtle" -u "fedoraAdmin:fedoraAdmin" http://localhost:8080/fcrepo/rest/collection/ex1-pets22
+404</pre>
+</div></div></div></div>
+<div class="comment" id="comment-22746"><div class="by">Michael Ritter, 2022-10-31 18:31 UTC</div><div class="text"><p>Hi Justin,</p>
+
+<p>Thanks for the update the other week, knowing that it can take up to 1-2 days is good to know. I’m planning on giving this another shot later in the week and have the tests run a bit longer this time. In the meantime if it does happen again if you can pull the logs from Tomcat that could also help track down what’s going on. You should be able to see the output from the compose logs, otherwise they should be <tt>/usr/local/tomcat/catalina.*.log</tt> in the container. </p></div></div>
+<p><a href="data/FCREPO-3853.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

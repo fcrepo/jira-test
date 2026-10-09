@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-229 Improve Validator performance by cacheing Content Models</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-229</span> Improve Validator performance by cacheing Content Models</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jim Blake</td></tr><tr><th>Created</th><td>2008-07-15 15:30 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>As currently implemented, each call to RemoteObjectSource.getContentModelInfo() makes fresh network calls to the server. Since content models tend to be frequently re-used, it would be worth the effort to create a cache in RemoteObjectSource.</p>
+
+<p>Execution time might well be reduced by 50% or more, depending on the structure of the repository.</p>
+
+<p>Major question: how to guard against running out of memory? Can we simply assume that no repository will have more than 1 million content models, ergo the cache will use less than 1 gigabyte? Or perhaps we establish a maximum size and stop caching after that is reached? Is there an open source class that does LRU caching?</p>
+
+<p>Since this seems to be useful for all sorts of ObjectSource, perhaps the best approach is to create a class:<br/>
+AbstractObjectSource implements ObjectSource</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10479"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: j2blake<br/>
+Item #: 2018705<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=2018705" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=2018705</a></p></div></div>
+<div class="comment" id="comment-11040"><div class="by">Asger Askov Blekinge, 2009-10-26 17:36 UTC</div><div class="text"><p><a href="http://java.sun.com/javase/6/docs/api/java/lang/ref/SoftReference.html" class="external-link" rel="nofollow noreferrer">http://java.sun.com/javase/6/docs/api/java/lang/ref/SoftReference.html</a> should be the kind of thing that is needed</p></div></div>
+<div class="comment" id="comment-13010"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-229.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

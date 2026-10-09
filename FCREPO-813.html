@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-813 Integrate fedora-client with Jira</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-813</span> Integrate fedora-client with Jira</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-11-02 20:29 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-11-11 11:35 UTC</td></tr><tr><th>Components</th><td>legacy - java-client</td></tr><tr><th>Is related to</th><td><a href="FCREPO-810.html">FCREPO-810</a> FedoraClient.listDatastreams method not working</td></tr></table>
+<h2>Description</h2>
+<p>Install the beta Jira Git plugin</p>
+
+<p><a href="https://studio.plugins.atlassian.com/wiki/display/JGIT/JIRA+Git+Plugin" class="external-link" rel="nofollow noreferrer">https://studio.plugins.atlassian.com/wiki/display/JGIT/JIRA+Git+Plugin</a></p>
+
+<p>Also see: <a href="https://studio.plugins.atlassian.com/browse/JGIT-24" class="external-link" rel="nofollow noreferrer">https://studio.plugins.atlassian.com/browse/JGIT-24</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-813/10110_jira4-git-plugin-0.5.1.jar">jira4-git-plugin-0.5.1.jar</a>, 1259525 bytes, added by Chris Wilper on 2010-11-11</li>
+<li><a href="attachments/FCREPO-813/10112_jira4-git-plugin-0.5.1-master-only.jar">jira4-git-plugin-0.5.1-master-only.jar</a>, 1259564 bytes, added by Chris Wilper on 2010-11-11</li>
+<li><a href="attachments/FCREPO-813/10111_org.eclipse.jgit-0.9.3.jar">org.eclipse.jgit-0.9.3.jar</a>, 1091125 bytes, added by Chris Wilper on 2010-11-11</li>
+<li><a href="attachments/FCREPO-813/10113_RevisionIndexer.java">RevisionIndexer.java</a>, 31185 bytes, added by Chris Wilper on 2010-11-11</li>
+</ul>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-11653"><div class="by">eddie, 2010-11-02 21:37 UTC</div><div class="text"><p>Looks like the snapshot of the plugin should work: <a href="http://old.nabble.com/-DG%3A-User-Experience--Jira-upgrade%3A-3.13.2--%3E-4.1.2-td29731070.html" class="external-link" rel="nofollow noreferrer">http://old.nabble.com/-DG%3A-User-Experience--Jira-upgrade%3A-3.13.2--%3E-4.1.2-td29731070.html</a></p></div></div>
+<div class="comment" id="comment-11654"><div class="by">eddie, 2010-11-02 21:40 UTC</div><div class="text"><p>chris, we talked testing the jira-git integration using the fedora-client project. Would you be able to install the beta/snapshot of the jira git plugin?</p></div></div>
+<div class="comment" id="comment-11671"><div class="by">Chris Wilper, 2010-11-11 08:25 UTC</div><div class="text"><p>I found a slightly newer fork, with a tagged version from a few days ago on github: <a href="https://github.com/abelaska/jira4-git-plugin/tree/0.5.1" class="external-link" rel="nofollow noreferrer">https://github.com/abelaska/jira4-git-plugin/tree/0.5.1</a>  Attaching the built jar and supporting jar, which have now been installed into the JIRA's installation's WEB-INF/lib directory.  Note: in order to successfully build the plugin, I had to modify the pom to add the atlassian-public m2 repository as a pluginRepository.</p></div></div>
+<div class="comment" id="comment-11672"><div class="by">Chris Wilper, 2010-11-11 09:44 UTC</div><div class="text"><p>Unfortunately, I couldn't get this working...the indexing process failed with a NPE.  </p>
+
+<p>The plugin installed ok, I cloned the fedora-client git repository, and configured the plugin to point at that local copy + the origin URL.  This caused a "Git commits" tab to show up under every issue, but a nasty error message showed up in the server logs.  I enabled debug log messages for the plugin, but that didn't shed much light on the problem.  It seems to be having an issue when looking at the branches for the project (note: the plugin doesn't allow you to choose which branches to watch, so I guess it's watching them all...)</p>
+
+<p>DEBUG /browse/FCREPO-100 <span class="error">&#91;jira.git.revisions.RevisionIndexer&#93;</span> RevisionIndexer.createIndexIfNeeded()<br/>
+DEBUG /browse/FCREPO-100 <span class="error">&#91;jira.git.revisions.RevisionIndexer&#93;</span> RevisionIndexer.createIndexIfNeeded()<br/>
+DEBUG /browse/FCREPO-100 <span class="error">&#91;jira.git.revisions.RevisionIndexer&#93;</span> repos size = 1<br/>
+DEBUG /browse/FCREPO-100 <span class="error">&#91;jira.git.revisions.RevisionIndexer&#93;</span> repos size = 1<br/>
+DEBUG /browse/FCREPO-100 <span class="error">&#91;xiplink.jira.git.GitManagerImpl&#93;</span> No updates<br/>
+DEBUG /browse/FCREPO-100 <span class="error">&#91;xiplink.jira.git.GitManagerImpl&#93;</span> No updates<br/>
+INFO /browse/FCREPO-100 <span class="error">&#91;jira.git.revisions.RevisionIndexer&#93;</span> Branch: gh-pages<br/>
+INFO /browse/FCREPO-100 <span class="error">&#91;jira.git.revisions.RevisionIndexer&#93;</span> Branch: gh-pages<br/>
+DEBUG /browse/FCREPO-100 <span class="error">&#91;xiplink.jira.git.GitManagerImpl&#93;</span> Fetching merge base from repository=/var/lib/git/fedora-client  for 75cd0f4d620974f07b1e70a0fbe7af2f7a3600ae and 0c9ae1b74f6ab3a1ac2b7f29e1aed496b795b6b4<br/>
+DEBUG /browse/FCREPO-100 <span class="error">&#91;xiplink.jira.git.GitManagerImpl&#93;</span> Fetching merge base from repository=/var/lib/git/fedora-client  for 75cd0f4d620974f07b1e70a0fbe7af2f7a3600ae and 0c9ae1b74f6ab3a1ac2b7f29e1aed496b795b6b4<br/>
+WARN /browse/FCREPO-100 <span class="error">&#91;jira.git.revisions.RevisionIndexer&#93;</span> Unable to index repository 'fedora-client'<br/>
+java.lang.NullPointerException<br/>
+	at com.xiplink.jira.git.revisions.RevisionIndexer.updateBranchIndex(RevisionIndexer.java:260)<br/>
+	at com.xiplink.jira.git.revisions.RevisionIndexer.updateIndex(RevisionIndexer.java:228)<br/>
+	at com.xiplink.jira.git.revisions.RevisionIndexer.updateIndex(RevisionIndexer.java:177)<br/>
+	at com.xiplink.jira.git.issuetabpanels.changes.GitRevisionsTabPanel.getActions(GitRevisionsTabPanel.java:42)<br/>
+	at com.atlassian.jira.plugin.issuetabpanel.IssueTabPanelModuleDescriptor.getActions(IssueTabPanelModuleDescriptor.java:95)<br/>
+	at com.atlassian.jira.web.action.issue.ViewIssue.getActions(ViewIssue.java:382)</p></div></div>
+<div class="comment" id="comment-11673"><div class="by">Chris Wilper, 2010-11-11 10:45 UTC</div><div class="text"><p>Looking a little more, it appears that the plugin is having problems determining the "merge base" of the gh-pages branch.  Browsing the project on github, gh-pages does seem to be a bit of a bizarre branch...it actually looks like a completely separate repository.  I made a local change to the code to avoid indexing non-master branches for now, just to see if it would work.  It did.</p></div></div>
+<div class="comment" id="comment-11674"><div class="by">Chris Wilper, 2010-11-11 10:48 UTC</div><div class="text"><p>Attached my "master-only" modification to the jira-git plugin (modified RevisionIndexer.java and built jar)</p></div></div>
+<div class="comment" id="comment-11675"><div class="by">Chris Wilper, 2010-11-11 11:35 UTC</div><div class="text"><p>This basically works, though it is only vs the master branch.  Also, the link to the changeset is to a page that shows all diffs.  The links shown for each added/modified/deleted file goes to the "history" view for each file, rather than jumping to the appropriate diff in the changeset page.  Because of the way the anchors are constructed (numerically) on that page, the jira-git plugin doesn't have enough info to construct such a hyperlink.  I'm open to changing each add/mod/del link to go to the a) raw file, b) blame page, or c) full changeset page on github too...</p></div></div>
+<div class="comment" id="comment-11681"><div class="by">eddie, 2010-11-12 21:42 UTC</div><div class="text"><p>thanks for all the legwork, chris. I've forked the project you built from at: <a href="https://github.com/eddies/jira4-git-plugin" class="external-link" rel="nofollow noreferrer">https://github.com/eddies/jira4-git-plugin</a> and incorporated the changes you described in this ticket (pom, revisionindexer) and added you as a committer</p></div></div>
+<p><a href="data/FCREPO-813.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

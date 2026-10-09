@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1465 Explore/Test migration utils</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1465</span> Explore/Test migration utils</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Nianli Ma</td></tr><tr><th>Assignee</th><td>Nianli Ma</td></tr><tr><th>Created</th><td>2015-04-14 19:28 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-23 13:13 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr><tr><th>Labels</th><td>fedora-3-to-4-migration</td></tr></table>
+<h2>Description</h2>
+<p>Use migration-utils with different types of relationships between objects and datastream.  Document results, fails (if there is), and the data not appeared but expected.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1465/10221_idresolver.log">idresolver.log</a>, 103101 bytes, added by Nianli Ma on 2015-04-21</li>
+</ul>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-14109"><div class="by">Nianli Ma, 2015-04-20 19:37 UTC</div><div class="text"><p>The following is the testing results for migration utils:<br/>
+1. no-content error: some data stream has no content in the original data store, I prefer the program log the error, and skip the data stream. But now, it just stopped there.<br/>
+2.  fails on production data which has two more layers (year, MMDD): NullPointerException, details as following<br/>
+---------------------------<br/>
+INFO 15:27:18.336 (InternalIDResolver) Builidng an index of all the datastreams in "/srv/fedora/datastreams"...<br/>
+INFO 15:31:58.187 (Migrator) Processing "iudl:1135374"...<br/>
+DEBUG 15:31:58.268 (BasicObjectVersionHandler) Considering object iudl:1135374 version at 2012-09-27T12:58:36.220Z.<br/>
+DEBUG 15:31:58.844 (BasicObjectVersionHandler) Considering changed datastream version AUDIT.0<br/>
+DEBUG 15:31:59.535 (BasicObjectVersionHandler) Considering changed datastream version DC1.0<br/>
+DEBUG 15:31:59.551 (BasicObjectVersionHandler) Adding <a href="http://purl.org/dc/elements/1.1/identifier" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/identifier</a> value iudl:1135374<br/>
+DEBUG 15:31:59.551 (BasicObjectVersionHandler) Adding <a href="http://purl.org/dc/elements/1.1/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/title</a> value Union Board records 1912-2010, bulk 1922-2010. 13 December 1955. (Minutes<br/>
+, agendas and working papers,1912-2009, undated, “Official” Minutes of the Union Board, 1912-2009, Bound Volume: Minutes of the Union Board: April 1955 – 24 April 1956)<br/>
+DEBUG 15:31:59.801 (BasicObjectVersionHandler) Considering object iudl:1135374 version at 2012-09-27T12:58:36.734Z.<br/>
+DEBUG 15:31:59.801 (BasicObjectVersionHandler) Considering changed datastream version RELS-EXT.0<br/>
+DEBUG 15:31:59.856 (BasicObjectVersionHandler) Considering object iudl:1135374 version at 2012-09-27T12:58:37.067Z.<br/>
+DEBUG 15:31:59.856 (BasicObjectVersionHandler) Considering changed datastream version DC.1<br/>
+DEBUG 15:31:59.862 (BasicObjectVersionHandler) Adding <a href="http://purl.org/dc/elements/1.1/identifier" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/identifier</a> value <a href="http://purl.dlib.indiana.edu/iudl/archives/VAC3408-01027" class="external-link" rel="nofollow noreferrer">http://purl.dlib.indiana.edu/iudl/archives/VAC3408-01027</a><br/>
+DEBUG 15:31:59.862 (BasicObjectVersionHandler) Adding <a href="http://purl.org/dc/elements/1.1/identifier" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/identifier</a> value iudl:1135374<br/>
+DEBUG 15:31:59.862 (BasicObjectVersionHandler) Adding <a href="http://purl.org/dc/elements/1.1/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/title</a> value Union Board records 1912-2010, bulk 1922-2010. 13 December 1955. (Minutes<br/>
+, agendas and working papers,1912-2009, undated, “Official” Minutes of the Union Board, 1912-2009, Bound Volume: Minutes of the Union Board: April 1955 – 24 April 1956)<br/>
+DEBUG 15:31:59.909 (BasicObjectVersionHandler) Considering object iudl:1135374 version at 2012-09-27T12:58:37.286Z.<br/>
+DEBUG 15:31:59.909 (BasicObjectVersionHandler) Considering changed datastream version METADATA.0<br/>
+<span class="error">&#91;WARNING&#93;</span> <br/>
+java.lang.reflect.InvocationTargetException<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:606)<br/>
+	at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:293)<br/>
+	at java.lang.Thread.run(Thread.java:744)<br/>
+Caused by: java.lang.NullPointerException<br/>
+	at org.fcrepo.migration.foxml11.Foxml11InputStreamFedoraObjectProcessor$Foxml11DatastreamVersion.getContent(Foxml11InputStreamFedoraObjectProcessor.java:370)<br/>
+	at org.fcrepo.migration.handlers.BasicObjectVersionHandler.processObjectVersions(BasicObjectVersionHandler.java:150)<br/>
+	at org.fcrepo.migration.handlers.VersionAbstractionFedoraObjectHandler.processObject(VersionAbstractionFedoraObjectHandler.java:90)<br/>
+	at org.fcrepo.migration.handlers.ObjectAbstractionStreamingFedoraObjectHandler.completeObject(ObjectAbstractionStreamingFedoraObjectHandler.java:62)<br/>
+	at org.fcrepo.migration.foxml11.Foxml11InputStreamFedoraObjectProcessor.processObject(Foxml11InputStreamFedoraObjectProcessor.java:115)<br/>
+	at org.fcrepo.migration.Migrator.run(Migrator.java:69)<br/>
+	at org.fcrepo.migration.Migrator.main(Migrator.java:29)<br/>
+	... 6 more</p></div></div>
+<div class="comment" id="comment-14110"><div class="by">Nianli Ma, 2015-04-20 19:46 UTC</div><div class="text"><p>Michael Durbin's response for the above error.</p>
+
+<p>Seems like it's a problem with the idresolver.</p>
+
+<p>We can either fix the id resolver or add a new one that works for your directory structure.</p>
+
+<p>First, pull down the latest version of migration-utils (I just pushed a change) and run the program again.  You should get a better error message.</p>
+
+<p>Second, look in the datastream directory and let me know what some of the filenames look like (when you get down to the files).</p>
+
+<p>Third... there's a slim chance you have a cache problem... delete whatever directory your idresolver is using for its cache and try again. (in the indexRoot) bean.</p>
+
+<p>----------------<br/>
+Michael Durbin: I have attached the output log file above. The datastreamStore is organized as following:<br/>
+1. First level &#8211; year: for example: 2005, 2006, ... 2015<br/>
+2. second level &#8211; DDMM (date), for example, under 2005, it has 0930, 1014, 1102...<br/>
+3. third level and fourth level &#8211; two level hash directories, for example 09/49,...<br/>
+4. under the four levels , there are the actual datastream, for example ~datastreams/2015/0316/09/49/iudl_1897784+ITEM-METADATA+ITEM-METADATA.</p>
+
+<p>I tried to clean the cache, it didn't help.<br/>
+Thanks,<br/>
+Nianli</p>
+</div></div>
+<div class="comment" id="comment-14114"><div class="by">Nianli Ma, 2015-04-21 13:53 UTC</div><div class="text"><p>3. Fails on development data which doesn't have the year and MMDD layers : redirect link error. For one object, the redirect link datastream actually migrated with no error. But the second object failed, but the redirect link actually works. Error info is as following:<br/>
+----------------------<br/>
+DEBUG 09:03:41.472 (BasicObjectVersionHandler) Considering changed datastream version PURL_REDIRECT.1<br/>
+ERROR 09:03:41.480 (FedoraRepositoryImpl) error creating resource <a href="http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fedora3" class="external-link" rel="nofollow noreferrer">http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fedora3</a><br/>
+/iudl/49/87/PURL_REDIRECT: 204 No Content<br/>
+ERROR 09:03:41.484 (FedoraRepositoryImpl) Error making or building PUT request.<br/>
+org.fcrepo.client.FedoraException: error creating resource <a href="http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fedora3/iudl/4" class="external-link" rel="nofollow noreferrer">http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fedora3/iudl/4</a><br/>
+9/87/PURL_REDIRECT: 204 No Content<br/>
+        at org.fcrepo.client.impl.FedoraRepositoryImpl.createOrUpdateRedirectDatastream(FedoraRepositoryImpl.java:181) ~[fcrepo-client-impl-4.1<br/>
+.2-SNAPSHOT.jar:na]<br/>
+        at org.fcrepo.migration.handlers.BasicObjectVersionHandler.processObjectVersions(BasicObjectVersionHandler.java:146) <span class="error">&#91;classes/:na&#93;</span><br/>
+        at org.fcrepo.migration.handlers.VersionAbstractionFedoraObjectHandler.processObject(VersionAbstractionFedoraObjectHandler.java:90) [cl<br/>
+asses/:na]<br/>
+        at org.fcrepo.migration.handlers.ObjectAbstractionStreamingFedoraObjectHandler.completeObject(ObjectAbstractionStreamingFedoraObjectHan<br/>
+dler.java:62) <span class="error">&#91;classes/:na&#93;</span><br/>
+        at org.fcrepo.migration.foxml11.Foxml11InputStreamFedoraObjectProcessor.processObject(Foxml11InputStreamFedoraObjectProcessor.java:115)<br/>
+ <span class="error">&#91;classes/:na&#93;</span><br/>
+        at org.fcrepo.migration.Migrator.run(Migrator.java:69) <span class="error">&#91;classes/:na&#93;</span><br/>
+        at org.fcrepo.migration.Migrator.main(Migrator.java:29) <span class="error">&#91;classes/:na&#93;</span><br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~<span class="error">&#91;na:1.7.0_45&#93;</span><br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57) ~<span class="error">&#91;na:1.7.0_45&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~<span class="error">&#91;na:1.7.0_45&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:606) ~<span class="error">&#91;na:1.7.0_45&#93;</span><br/>
+        at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:293) <span class="error">&#91;exec-maven-plugin-1.4.0.jar:na&#93;</span><br/>
+        at java.lang.Thread.run(Thread.java:744) <span class="error">&#91;na:1.7.0_45&#93;</span><br/>
+<span class="error">&#91;WARNING&#93;</span><br/>
+java.lang.reflect.InvocationTargetException<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)<br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+        at java.lang.reflect.Method.invoke(Method.java:606)<br/>
+        at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:293)<br/>
+        at java.lang.Thread.run(Thread.java:744)<br/>
+Caused by: java.lang.RuntimeException: org.fcrepo.client.FedoraException: org.fcrepo.client.FedoraException: error creating resource <a href="http://bir" class="external-link" rel="nofollow noreferrer">http://bir</a><br/>
+ch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fedora3/iudl/49/87/PURL_REDIRECT: 204 No Content<br/>
+        at org.fcrepo.migration.handlers.BasicObjectVersionHandler.processObjectVersions(BasicObjectVersionHandler.java:165)<br/>
+        at org.fcrepo.migration.handlers.VersionAbstractionFedoraObjectHandler.processObject(VersionAbstractionFedoraObjectHandler.java:90)<br/>
+        at org.fcrepo.migration.handlers.ObjectAbstractionStreamingFedoraObjectHandler.completeObject(ObjectAbstractionStreamingFedoraObjectHan<br/>
+dler.java:62)<br/>
+        at org.fcrepo.migration.foxml11.Foxml11InputStreamFedoraObjectProcessor.processObject(Foxml11InputStreamFedoraObjectProcessor.java:115)<br/>
+        at org.fcrepo.migration.Migrator.run(Migrator.java:69)<br/>
+        at org.fcrepo.migration.Migrator.main(Migrator.java:29)<br/>
+        ... 6 more<br/>
+Caused by: org.fcrepo.client.FedoraException: org.fcrepo.client.FedoraException: error creating resource <a href="http://birch.dlib.indiana.edu:8080/fed" class="external-link" rel="nofollow noreferrer">http://birch.dlib.indiana.edu:8080/fed</a><br/>
+ora4f/rest/migration_6/migrated-fedora3/iudl/49/87/PURL_REDIRECT: 204 No Content<br/>
+        at org.fcrepo.client.impl.FedoraRepositoryImpl.createOrUpdateRedirectDatastream(FedoraRepositoryImpl.java:186)<br/>
+        at org.fcrepo.migration.handlers.BasicObjectVersionHandler.processObjectVersions(BasicObjectVersionHandler.java:146)<br/>
+        ... 11 more<br/>
+Caused by: org.fcrepo.client.FedoraException: error creating resource <a href="http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fed" class="external-link" rel="nofollow noreferrer">http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fed</a><br/>
+ora3/iudl/49/87/PURL_REDIRECT: 204 No Content<br/>
+        at org.fcrepo.client.impl.FedoraRepositoryImpl.createOrUpdateRedirectDatastream(FedoraRepositoryImpl.java:181)<br/>
+        ... 12 more<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> BUILD FAILURE<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Total time: 51.350s<br/>
+<span class="error">&#91;INFO&#93;</span> Finished at: Tue Apr 21 09:03:41 EDT 2015<br/>
+<span class="error">&#91;INFO&#93;</span> Final Memory: 33M/290M<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;ERROR&#93;</span> Failed to execute goal org.codehaus.mojo:exec-maven-plugin:1.4.0:java (default-cli) on project migration-utils: An exception occured wh<br/>
+ile executing the Java class. null: InvocationTargetException: org.fcrepo.client.FedoraException: org.fcrepo.client.FedoraException: error crea<br/>
+ting resource <a href="http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fedora3/iudl/49/87/PURL_REDIRECT:" class="external-link" rel="nofollow noreferrer">http://birch.dlib.indiana.edu:8080/fedora4f/rest/migration_6/migrated-fedora3/iudl/49/87/PURL_REDIRECT:</a> 204 No Content -&gt; [Help 1<br/>
+]<br/>
+<span class="error">&#91;ERROR&#93;</span><br/>
+<span class="error">&#91;ERROR&#93;</span> To see the full stack trace of the errors, re-run Maven with the -e switch.<br/>
+<span class="error">&#91;ERROR&#93;</span> Re-run Maven using the -X switch to enable full debug logging.<br/>
+<span class="error">&#91;ERROR&#93;</span><br/>
+<span class="error">&#91;ERROR&#93;</span> For more information about the errors and possible solutions, please read the following articles:<br/>
+<span class="error">&#91;ERROR&#93;</span> <span class="error">&#91;Help 1&#93;</span> <a href="http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException" class="external-link" rel="nofollow noreferrer">http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException</a></p></div></div>
+<div class="comment" id="comment-14123"><div class="by">Nianli Ma, 2015-04-21 20:21 UTC</div><div class="text"><p>4. Policy datastream migration: no error showing when migrating the data, but there is no content migrated. </p></div></div>
+<div class="comment" id="comment-14136"><div class="by">Nianli Ma, 2015-04-23 13:11 UTC</div><div class="text"><p>5. I would like to test the migration for the objects with methods. It didn't go that far since it failed for other datastreams like the redirect purl links. It would be great the program can provide a function for user to skip some number of objects for migration, so that we don't need re-migrate from beginning every time.</p></div></div>
+<div class="comment" id="comment-14138"><div class="by">Michael Durbin, 2015-04-23 13:39 UTC</div><div class="text"><p>Did you make tickets for these identified issues, or should I?  If you did, could you add the label "fedora3-to-4-migration"?</p></div></div>
+<div class="comment" id="comment-14164"><div class="by">Andrew Woods, 2015-04-24 16:27 UTC</div><div class="text"><p>Please document what you have in this ticket as a new child page of:<br/>
+<a href="https://wiki.duraspace.org/display/FF/Fedora+3+to+4+Data+Migration" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Fedora+3+to+4+Data+Migration</a></p></div></div>
+<div class="comment" id="comment-14168"><div class="by">Nianli Ma, 2015-04-24 20:41 UTC</div><div class="text"><p>Documented at <a href="https://wiki.duraspace.org/display/FF/Preliminary+Testing+or+Exploring+for+Migration-utils" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Preliminary+Testing+or+Exploring+for+Migration-utils</a> as a child page of <a href="https://wiki.duraspace.org/display/FF/Fedora+3+to+4+Data+Migration" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Fedora+3+to+4+Data+Migration</a>.</p></div></div>
+<p><a href="data/FCREPO-1465.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1299 Error processing &quot;&quot;&quot;-escaped literals</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1299</span> Error processing &quot;&quot;&quot;-escaped literals</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>justin</td></tr><tr><th>Created</th><td>2015-01-23 16:39 UTC</td></tr><tr><th>Updated</th><td>2015-11-02 11:13 UTC</td></tr><tr><th>Resolved</th><td>2015-11-02 11:13 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr></table>
+<h2>Description</h2>
+<p>When posting the turtle RDF:</p>
+
+<p>&lt;&gt; &lt;<a href="http://purl.org/dc/terms/description" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/description</a>&gt; """<br/>
+""" .</p>
+
+<p>An internal server error is produced:</p>
+
+<p>     Ldp::HttpError:<br/>
+ (0x0D)STATUS: 500 org.apache.jena.riot.RiotException: <span class="error">&#91;line: 2, col: 48&#93;</span> illegal escape sequence value:<br/>
+        at org.apache.jena.riot.system.ErrorHandlerFactory$ErrorHandlerStd.fatal(ErrorHandlerFactory.java:136)<br/>
+        at org.apache.jena.riot.lang.LangEngine.raiseException(LangEngine.java:163)<br/>
+        at org.apache.jena.riot.lang.LangEngine.nextToken(LangEngine.java:106)<br/>
+        at org.apache.jena.riot.lang.LangTurtleBase.predicateObjectItem(LangTurtleBase.java:287)<br/>
+        at org.apache.jena.riot.lang.LangTurtleBase.predicateObjectList(LangTurtleBase.java:269)<br/>
+        at org.apache.jena.riot.lang.LangTurtleBase.triples(LangTurtleBase.java:250)<br/>
+        at org.apache.jena.riot.lang.LangTurtleBase.triplesSameSubject(LangTurtleBase.java:191)<br/>
+        at org.apache.jena.riot.lang.LangTurtle.oneTopLevelElement(LangTurtle.java:44)<br/>
+        at org.apache.jena.riot.lang.LangTurtleBase.runParser(LangTurtleBase.java:90)<br/>
+        at org.apache.jena.riot.lang.LangBase.parse(LangBase.java:42)<br/>
+        at org.apache.jena.riot.RDFParserRegistry$ReaderRIOTLang.read(RDFParserRegistry.ja...</p>
+
+<p>See <a href="https://github.com/fcrepo4/fcrepo4/issues/694" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/694</a></p>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-13194"><div class="by">Former user, 2015-01-23 16:40 UTC</div><div class="text"><p>Per the Turtle spec, """-escaped literals can contain any characters (including line breaks, carriage returns, etc.), other than """:</p>
+
+<p><a href="http://www.w3.org/TR/turtle/#h4_turtle-literals" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/turtle/#h4_turtle-literals</a></p></div></div>
+<div class="comment" id="comment-13635"><div class="by">Former user, 2015-03-06 15:28 UTC</div><div class="text"><p>I did some testing of this and found that RDF/XML can successfully include values with linebreaks, e.g.:</p>
+
+<p>&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br/>
+&lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"<br/>
+         xmlns:dcterms="http://purl.org/dc/terms/"&gt;<br/>
+  &lt;rdf:Description rdf:about="http://localhost:8080/fcrepo4/rest/foo"&gt;<br/>
+        &lt;dcterms:title&gt;Test title value</p>
+
+<p>with linebreaks&lt;/dcterms:title&gt;<br/>
+  &lt;/rdf:Description&gt;<br/>
+&lt;/rdf:RDF&gt;</p>
+
+<p>The output in Turtle then include the value, with """-escaping.  So I don't think the issue is that Jena lacks support for """-escaping since it's using it in the output.</p></div></div>
+<div class="comment" id="comment-13809"><div class="by">Andrew Woods, 2015-03-24 05:17 UTC</div><div class="text"><p>Former user, what is your recommended approach for resolution here? to dig into the issue at the Jena level?</p></div></div>
+<div class="comment" id="comment-13812"><div class="by">Former user, 2015-03-24 11:36 UTC</div><div class="text"><p>Since there is clearly support for """-escaping in Jena, I think we should first do the groundwork to see what the requirements are for Jena to parse them, and see if we can adjust how we use the Jena API for how we are reading in the Turtle.  If we can't, then digging into the Jena parsing to figure out why it's failing would be the next step.</p></div></div>
+<div class="comment" id="comment-13835"><div class="by">Osman Din, 2015-04-01 14:58 UTC</div><div class="text"><p>I'm unable to reproduce this using the REST API (assuming I'm understanding the concern correctly). It looks like the above example, i.e., the one with the triple quotes, is working OK.</p>
+
+<p>I successfully created a container using the following:</p>
+
+<p>curl -i -X POST -H "Content-Type: text/turtle" --data-binary "@body.rdf" "http://localhost:8080/rest"</p>
+
+<p>&lt;&gt; &lt;<a href="http://purl.org/dc/elements/1.1/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/title</a>&gt; """ """ .</p>
+
+<p>And the following:</p>
+
+<p>&lt;&gt; &lt;<a href="http://purl.org/dc/elements/1.1/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/title</a>&gt; """this thing "rocks" the world""".</p></div></div>
+<div class="comment" id="comment-13836"><div class="by">Former user, 2015-04-01 17:11 UTC</div><div class="text"><p>I just retried my tests, and I think I had an error in my local script.  I updated my script and was able to POST turtle with """-escaped literals without any problems.</p>
+
+<p>But justin and Adam Wead originally reported this issue, so I wonder whether something has changed to fix this, or if their case is failing still.</p></div></div>
+<div class="comment" id="comment-13837"><div class="by">justin, 2015-04-01 17:35 UTC</div><div class="text"><p>The original case we had included a CR-LF in the quotes. Has that been tested?</p></div></div>
+<div class="comment" id="comment-13838"><div class="by">Former user, 2015-04-01 17:45 UTC</div><div class="text"><p>Yes, I can POST turtle with CRLF in the value:</p>
+
+<p>curl -i -X POST -H "Content-Type: text/turtle" --data-binary "&lt;&gt; &lt;<a href="http://purl.org/dc/terms/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/title</a>&gt; \"\"\"test with\r\nCRLF\"\"\" ." "http://localhost:8080/fcrepo4/rest"</p>
+
+<p>When I retrieve the object that's created the CR and LF are present in the title value.</p></div></div>
+<div class="comment" id="comment-13944"><div class="by">Andrew Woods, 2015-04-10 23:54 UTC</div><div class="text"><p>justin? Adam Wead? can you confirm/deny that this issue still exists?<br/>
+This ticket will be closed as "Unable to reproduce" by April 20 unless we hear otherwise.</p></div></div>
+<div class="comment" id="comment-13999"><div class="by">cam156, 2015-04-14 16:22 UTC</div><div class="text"><p>I can reproduce the issue via a spec in sufia if that is at all helpful: <a href="https://github.com/projecthydra/sufia/compare/master...psu-stewardship:ldp_error" class="external-link" rel="nofollow noreferrer">https://github.com/projecthydra/sufia/compare/master...psu-stewardship:ldp_error</a></p>
+
+<p>This is the output of the spec<br/>
+  1) GenericFile complex description sound not raise ldp error<br/>
+     Failure/Error: subject.save!<br/>
+     Ldp::BadRequest:<br/>
+       RDF was not parsable: <span class="error">&#91;line: 8, col: 1 &#93;</span> Broken token (newline): ;</p>
+<ol>
+	<li>./spec/models/generic_file_spec.rb:624:in `block (3 levels) in &lt;top (required)&gt;'</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-14000"><div class="by">Andrew Woods, 2015-04-14 16:32 UTC</div><div class="text"><p>Former user? Osman Din?</p></div></div>
+<div class="comment" id="comment-14091"><div class="by">Former user, 2015-04-17 13:28 UTC</div><div class="text"><p>I think the issue here is that """-escaped literals work, but the value inside cannot end with a ".  If I translate the value in that test to a curl command, I get:</p>
+
+<p>curl -i -X POST -H "Content-Type: text/turtle" --data-binary "&lt;&gt; &lt;<a href="http://purl.org/dc/terms/description" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/description</a>&gt; \"\"\"Data for:\r\nJournal: Journal of Geophysical Research: Solid Earth\r\n\r\nArticle title: \"On the Origin and Evolution of Electrical Signals During Frictional Stick-Slip in Sheared Granular Material\"\"\"\"" "http://localhost:8080/fcrepo4/rest"</p>
+
+<p>This fails because it ends with four " symbols in a row.  The first three are interepreted as the end of the quote, and the final " produces the error.  If I add a space after the value and before the """-terminator, then it works:</p>
+
+<p>curl -i -X POST -H "Content-Type: text/turtle" --data-binary "&lt;&gt; &lt;<a href="http://purl.org/dc/terms/description" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/description</a>&gt; \"\"\"Data for:\r\nJournal: Journal of Geophysical Research: Solid Earth\r\n\r\nArticle title: \"On the Origin and Evolution of Electrical Signals During Frictional Stick-Slip in Sheared Granular Material\" \"\"\"" "http://localhost:8080/fcrepo4/rest"</p>
+
+<p>It will also work if I backslash-escape the quotes:</p>
+
+<p>curl -i -X POST -H "Content-Type: text/turtle" --data-binary "&lt;&gt; &lt;<a href="http://purl.org/dc/terms/description" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/description</a>&gt; \"\"\"Data for:\r\nJournal: Journal of Geophysical Research: Solid Earth\r\n\r\nArticle title: \\\"On the Origin and Evolution of Electrical Signals During Frictional Stick-Slip in Sheared Granular Material\\\"\"\"\"" "http://localhost:8080/fcrepo4/rest"</p></div></div>
+<div class="comment" id="comment-15679"><div class="by">Andrew Woods, 2015-11-02 00:21 UTC</div><div class="text"><p>Any news on this ticket? Is it still an issue? Can you update the status Esmé Cowles, and close if necessary.</p></div></div>
+<div class="comment" id="comment-15699"><div class="by">Esmé Cowles, 2015-11-02 11:13 UTC</div><div class="text"><p>Closing as Can't Reproduce &#8211; the only instance of this bug that I was able to verify was when a """-escaped literal ended with a quote &#8211; which produced four quotes in a row, which I don't think is valid.</p></div></div>
+<p><a href="data/FCREPO-1299.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

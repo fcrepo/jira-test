@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2821 Section 4.3.4: Return 405 on  PUT to LDPCv</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2821</span> Section 4.3.4: Return 405 on  PUT to LDPCv</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2018-07-05 17:31 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-08-02 19:49 UTC</td></tr><tr><th>Components</th><td>versioning</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>According to section 4.3.4, PUT requests to LDPCv (when implementations do not support them) shoudl return a 405 instead of the current 400 on:</p>
+<div class="panel" style="border-width: 1px;"></div>
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<td class='confluenceTd'><tt>curl -i -u fedoraAdmin:fedoraAdmin -XPUT -H</tt><tt>"Content-Type: application/sparql-update"</tt> <tt>@patch</tt><tt>.ru localhost:</tt><tt>8080</tt><tt>/rest/test4/obj/fcr:versions/</tt><tt>new</tt></td>
+</tr>
+</tbody></table>
+</div>
+
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-20078"><div class="by">Danny Bernstein, 2018-07-19 05:39 UTC</div><div class="text"><p>Situ, Longshou : since you have a PR in for this ticket,  it would be best to transition this one to "Review" by hitting the "Start Review" button (assuming this is ready for review).  Thanks.</p></div></div>
+<div class="comment" id="comment-20082"><div class="by">Jared Whiklo, 2018-07-19 18:04 UTC</div><div class="text"><p>Danny Bernstein I believe this ticket is incorrect. The specification is referring to LDPCv which is the /fcr:versions endpoint. Your example above with /fcr:versions/new is PUTting an LDPRm which is disallowed by the specification but not with any requirements for responses.</p></div></div>
+<div class="comment" id="comment-20083"><div class="by">Jared Whiklo, 2018-07-19 18:06 UTC</div><div class="text"><p>This ticket needs a function with <tt>@PUT</tt> specified in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraVersioning.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraVersioning.java</a> to return a 405.</p></div></div>
+<div class="comment" id="comment-20086"><div class="by">Situ, Longshou, 2018-07-19 18:44 UTC</div><div class="text"><p>Jared Whiklo I think we may not need to add the @ PUT method to FedoraVersioning.java. It'll return 405 by default if the PUT method isn't defined. And we've already added the tests here for both PUT and Patch: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraVersioningIT.java#L586-L599" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraVersioningIT.java#L586-L599</a>.</p>
+
+<p>It seems like the issue here is how we want PUTing to memento to behave as the example in the spec with PUTing to "localhost:8080/rest/test4/obj/fcr:versions/new". But we may do nothing since as you said "...PUTting an LDPRm which is disallowed by the specification but not with any requirements for responses".</p></div></div>
+<div class="comment" id="comment-20087"><div class="by">Jared Whiklo, 2018-07-19 20:15 UTC</div><div class="text"><p>Situ, Longshou you are correct. We do (at least I think) need to alter the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L92-L93" class="external-link" rel="nofollow noreferrer">FORWARD_COMPONENT_PATTERN</a> as that would make GET requests to things like <tt>/fcr:versions/something</tt> fail with a 404 instead of a 400.</p></div></div>
+<div class="comment" id="comment-20088"><div class="by">Situ, Longshou, 2018-07-19 20:55 UTC</div><div class="text"><p>Jared Whiklo It sounds good to me. I'll change the pattern for memento id in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L92-L93" class="external-link" rel="nofollow noreferrer">FORWARD_COMPONENT_PATTERN </a> from one or more digits to one or more characters like</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">private</span> <span class="code-keyword">final</span> <span class="code-keyword">static</span> Pattern FORWARD_COMPONENT_PATTERN = Pattern.compile(
+            <span class="code-quote">"(.*?)(/"</span> + FCR_METADATA + <span class="code-quote">")?(/"</span> + FCR_VERSIONS + <span class="code-quote">"(/.+)?)?(/"</span> + FCR_ACL + <span class="code-quote">"(\\#\\w+)?)?$"</span>);
+</pre>
+</div></div>
+
+<p>Danny Bernstein Do we still want 405 with PUTing on a LDPCv/memento path like/fcr:versions/new?</p></div></div>
+<div class="comment" id="comment-20096"><div class="by">Situ, Longshou, 2018-07-27 15:05 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1375" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1375</a></p></div></div>
+<div class="comment" id="comment-20111"><div class="by">Andrew Woods, 2018-08-02 16:47 UTC</div><div class="text"><p>Pending response to code review.</p></div></div>
+<div class="comment" id="comment-20114"><div class="by">Situ, Longshou, 2018-08-02 19:49 UTC</div><div class="text"><p>Andrew Woods I've added commit <a href="https://github.com/fcrepo4/fcrepo4/pull/1375/commits/5f69aede408ed34413cb4602d804e8c110141bb5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1375/commits/5f69aede408ed34413cb4602d804e8c110141bb5</a> to rename method mementoLinkAndOptionsHttpHeaders to addLinkAndOptionsHttpHeadersIfExists as suggested. Please let me know if you still want some changes for your other two comments. Thanks.</p></div></div>
+<div class="comment" id="comment-20137"><div class="by">Andrew Woods, 2018-08-16 15:44 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/4c04300b09292e49f7c3a27c03b3db97f57c4e44" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/4c04300b09292e49f7c3a27c03b3db97f57c4e44</a></p></div></div>
+<p><a href="data/FCREPO-2821.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

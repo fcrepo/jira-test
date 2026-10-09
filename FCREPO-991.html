@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-991 listMethods should gracefully handle missing CModel objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-991</span> listMethods should gracefully handle missing CModel objects</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-08-07 22:09 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Description</h2>
+<p>Currently listMethods fails (stack trace below) if a CModel object is not found.</p>
+
+<p>It should gracefully handle missing CModel objects (eg specifying a CModel URI simply to identify the type of object without actually wanting to create a CModel object).</p>
+
+<p>This means if an object subscribes to a set of CModels, and any single one of these doesn't exist as a Fedora CModel object it is not possible to list/execute methods for those that do exist.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-12033"><div class="by">Stephen Bayliss, 2011-08-07 22:09 UTC</div><div class="text"><p>Stack trace:</p>
+
+<p>javax.ws.rs.WebApplicationException: org.fcrepo.server.errors.DisseminationException: Content Model Object york:CModel-GenericMetadata does not exist.<br/>
+	at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:168)<br/>
+	at org.fcrepo.server.rest.MethodResource.getObjectMethodsForSDefImpl(MethodResource.java:125)<br/>
+	at org.fcrepo.server.rest.MethodResource.getAllObjectMethods(MethodResource.java:54)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:597)<br/>
+	at com.sun.jersey.server.impl.model.method.dispatch.AbstractResourceMethodDispatchProvider$ResponseOutInvoker._dispatch(AbstractResourceMethodDispatchProvider.java:175)<br/>
+	at com.sun.jersey.server.impl.model.method.dispatch.ResourceJavaMethodDispatcher.dispatch(ResourceJavaMethodDispatcher.java:67)<br/>
+	at com.sun.jersey.server.impl.uri.rules.HttpMethodRule.accept(HttpMethodRule.java:163)<br/>
+	at com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:71)<br/>
+	at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)<br/>
+	at com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:63)<br/>
+	at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:689)<br/>
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:647)<br/>
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:638)<br/>
+	at com.sun.jersey.spi.container.servlet.WebComponent.service(WebComponent.java:309)<br/>
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:425)<br/>
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:590)<br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:717)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.fcrepo.server.security.servletfilters.FilterRestApiFlash.doFilter(FilterRestApiFlash.java:79)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.fcrepo.server.security.xacml.pep.rest.PEP.doFilter(PEP.java:154)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.fcrepo.server.security.jaas.AuthFilterJAAS.doFilter(AuthFilterJAAS.java:295)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)<br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)<br/>
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:558)<br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:127)<br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)<br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)<br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:298)<br/>
+	at org.apache.coyote.ajp.AjpAprProcessor.process(AjpAprProcessor.java:427)<br/>
+	at org.apache.coyote.ajp.AjpAprProtocol$AjpConnectionHandler.process(AjpAprProtocol.java:384)<br/>
+	at org.apache.tomcat.util.net.AprEndpoint$Worker.run(AprEndpoint.java:1555)<br/>
+	at java.lang.Thread.run(Thread.java:662)<br/>
+Caused by: org.fcrepo.server.errors.DisseminationException: Content Model Object york:CModel-GenericMetadata does not exist.<br/>
+	at org.fcrepo.server.storage.SimpleDOReader.listMethods(SimpleDOReader.java:475)<br/>
+	at org.fcrepo.server.access.DefaultAccess.listMethods(DefaultAccess.java:582)<br/>
+	at org.fcrepo.server.rest.MethodResource.getObjectMethodsForSDefImpl(MethodResource.java:112)<br/>
+	... 40 more<br/>
+Caused by: org.fcrepo.server.errors.ObjectNotInLowlevelStorageException: no path in db registry for <span class="error">&#91;york:CModel-GenericMetadata&#93;</span><br/>
+	at org.fcrepo.server.storage.lowlevel.DBPathRegistry.get(DBPathRegistry.java:75)<br/>
+	at org.fcrepo.server.storage.lowlevel.DefaultLowlevelStorage$Store.retrieve(DefaultLowlevelStorage.java:300)<br/>
+	at org.fcrepo.server.storage.lowlevel.DefaultLowlevelStorage.retrieveObject(DefaultLowlevelStorage.java:84)<br/>
+	at org.fcrepo.server.storage.lowlevel.DefaultLowlevelStorageModule.retrieveObject(DefaultLowlevelStorageModule.java:133)<br/>
+	at org.fcrepo.server.storage.DefaultDOManager.getReader(DefaultDOManager.java:646)<br/>
+	at org.fcrepo.server.storage.SimpleDOReader.listMethods(SimpleDOReader.java:472)<br/>
+	... 42 more</p></div></div>
+<div class="comment" id="comment-12996"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-991.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

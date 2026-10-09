@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3766 fcrepo-migration-validator: too many open files</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3766</span> fcrepo-migration-validator: too many open files</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Michael Ritter</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2021-09-14 19:43 UTC</td></tr><tr><th>Updated</th><td>2021-11-16 18:53 UTC</td></tr><tr><th>Resolved</th><td>2021-10-21 20:05 UTC</td></tr><tr><th>Components</th><td>fcrepo-migration-validator</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-validator-1.1.0</td></tr></table>
+<h2>Description</h2>
+<p>When running validations against large datasets it was observed that there can be too many open file:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>java.io.UncheckedIOException: java.io.FileNotFoundException: /usr/nlm/dr/fedora/data/objects/2013/0128/14/01/nlm_nlmuid-101472827-pgimg-32 (Too many open files)
+java.lang.RuntimeException: java.io.UncheckedIOException: java.io.FileNotFoundException: /usr/nlm/dr/fedora/data/objects/2013/0128/14/01/nlm_nlmuid-101472827-pgimg-32 (Too many open files)
+        at org.fcrepo.migration.validator.impl.Fedora3ValidationExecutionManager.doValidation(Fedora3ValidationExecutionManager.java:95)
+        at org.fcrepo.migration.validator.Driver.call(Driver.java:144)
+        at org.fcrepo.migration.validator.Driver.call(Driver.java:45)
+        at picocli.CommandLine.executeUserObject(CommandLine.java:1933)
+        at picocli.CommandLine.access$1200(CommandLine.java:145)
+        at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2332)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2326)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2291)
+        at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2159)
+        at picocli.CommandLine.execute(CommandLine.java:2058)
+        at org.fcrepo.migration.validator.Driver.main(Driver.java:168)
+</pre>
+</div></div>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-22326"><div class="by">Michael Ritter, 2021-09-14 20:11 UTC</div><div class="text"><p>PR available: <a href="https://github.com/fcrepo-exts/fcrepo-migration-validator/pull/47" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-migration-validator/pull/47</a> </p></div></div>
+<div class="comment" id="comment-22327"><div class="by">Danny Bernstein, 2021-09-14 22:29 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo-exts/fcrepo-migration-validator/commit/f3fda5d269c93bd1dbf36e6e689e6540b31dc454" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-migration-validator/commit/f3fda5d269c93bd1dbf36e6e689e6540b31dc454</a></p></div></div>
+<div class="comment" id="comment-22482"><div class="by">Calvin Xu, 2021-09-20 18:36 UTC</div><div class="text"><p>I tested the PR build with the fix but still ran into the error on 3.1 million migrated objects, I am going to test the validator against a smaller set of data (10k) items to see if the error still comes up</p></div></div>
+<div class="comment" id="comment-22540"><div class="by">Calvin Xu, 2021-10-18 21:06 UTC</div><div class="text"><p>Still getting the ‘too many open files error’ when running against large set of migrated items, my latest run also have an error of  (<em>Fedora3ValidationExecutionManager) Failed to shutdown executor service cleanly after 1 minute of waiting</em> maybe is related?</p>
+
+<p>here’s the error log:</p>
+
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ERROR 16:59:31.863 (Fedora3ValidationExecutionManager) Failed to shutdown executor service cleanly after 1 minute of waiting
+java.io.UncheckedIOException: java.io.FileNotFoundException: /usr/nlm/dr/fedora/data/objects/2013/0128/14/03/nlm_nlmuid-101095975-pgimg-1 (Too many open files)
+java.lang.RuntimeException: java.io.UncheckedIOException: java.io.FileNotFoundException: /usr/nlm/dr/fedora/data/objects/2013/0128/14/03/nlm_nlmuid-101095975-pgimg-1 (Too many open files)
+        at org.fcrepo.migration.validator.impl.Fedora3ValidationExecutionManager.doValidation(Fedora3ValidationExecutionManager.java:95)
+        at org.fcrepo.migration.validator.Driver.call(Driver.java:144)
+        at org.fcrepo.migration.validator.Driver.call(Driver.java:45)
+        at picocli.CommandLine.executeUserObject(CommandLine.java:1933)
+        at picocli.CommandLine.access$1200(CommandLine.java:145)
+        at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2332)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2326)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2291)
+        at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2159)
+        at picocli.CommandLine.execute(CommandLine.java:2058)
+        at org.fcrepo.migration.validator.Driver.main(Driver.java:168)
+Caused by: java.io.UncheckedIOException: java.io.FileNotFoundException: /usr/nlm/dr/fedora/data/objects/2013/0128/14/03/nlm_nlmuid-101095975-pgimg-1 (Too many open files)
+        at org.fcrepo.migration.foxml.FoxmlInputStreamFedoraObjectProcessor.&lt;init&gt;(FoxmlInputStreamFedoraObjectProcessor.java:174)
+        at org.fcrepo.migration.foxml.FoxmlDirectoryDFSIterator.next(FoxmlDirectoryDFSIterator.java:118)
+        at org.fcrepo.migration.foxml.FoxmlDirectoryDFSIterator.next(FoxmlDirectoryDFSIterator.java:37)
+        at org.fcrepo.migration.validator.impl.Fedora3ValidationExecutionManager.doValidation(Fedora3ValidationExecutionManager.java:75)
+        ... 10 more
+Caused by: java.io.FileNotFoundException: /usr/nlm/dr/fedora/data/objects/2013/0128/14/03/nlm_nlmuid-101095975-pgimg-1 (Too many open files)
+        at java.base/java.io.FileInputStream.open0(Native Method)
+        at java.base/java.io.FileInputStream.open(FileInputStream.java:219)
+        at java.base/java.io.FileInputStream.&lt;init&gt;(FileInputStream.java:157)
+        at org.apache.commons.io.FileUtils.openInputStream(FileUtils.java:2370)
+        at org.apache.commons.io.FileUtils.readFileToString(FileUtils.java:2486)
+        at org.apache.commons.io.FileUtils.readFileToString(FileUtils.java:2472)
+        at org.fcrepo.migration.foxml.FoxmlInputStreamFedoraObjectProcessor.&lt;init&gt;(FoxmlInputStreamFedoraObjectProcessor.java:168)
+        ... 13 more
+</pre>
+</div></div>
+
+
+
+
+<p>could we reopen the ticket to investigate? thanks&#33;</p></div></div>
+<div class="comment" id="comment-22541"><div class="by">Michael Ritter, 2021-10-19 16:22 UTC</div><div class="text"><p>I have some additional work that needs to be done for the validator so I’ll take another look at this as well.</p>
+
+<p>I’m not able to transition the state of the ticket though, I think Danny would have to do that.</p></div></div>
+<div class="comment" id="comment-22545"><div class="by">Michael Ritter, 2021-10-20 22:38 UTC</div><div class="text"><p>Second PR up which reduces the number of open file handles when creating validation tasks: <a href="https://github.com/fcrepo-exts/fcrepo-migration-validator/pull/48" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-migration-validator/pull/48</a>  </p></div></div>
+<div class="comment" id="comment-22547"><div class="by">Danny Bernstein, 2021-10-21 20:05 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo-exts/fcrepo-migration-validator/commit/f4f716d60fa763e308d9b5c2f4b75b65e181f054" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-migration-validator/commit/f4f716d60fa763e308d9b5c2f4b75b65e181f054</a></p></div></div>
+<p><a href="data/FCREPO-3766.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

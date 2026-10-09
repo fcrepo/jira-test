@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-641 AuthFilterJAAS prevents the server from starting when FEDORA_HOME is not set</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-641</span> AuthFilterJAAS prevents the server from starting when FEDORA_HOME is not set</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Asger Askov Blekinge</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-02-19 14:09 UTC</td></tr><tr><th>Updated</th><td>2010-09-01 16:11 UTC</td></tr><tr><th>Resolved</th><td>2010-03-20 20:03 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr><tr><th>Is duplicated by</th><td><a href="FCREPO-660.html">FCREPO-660</a> Regression: setting FEDORA_HOME via context-param fails</td></tr></table>
+<h2>Description</h2>
+
+<p>This is the AuthFilterJAAS entry from web.xml<br/>
+    &lt;filter&gt;<br/>
+      &lt;filter-name&gt;AuthFilterJAAS&lt;/filter-name&gt;<br/>
+      &lt;filter-class&gt;org.fcrepo.server.jaas.AuthFilterJAAS&lt;/filter-class&gt;<br/>
+      &lt;init-param&gt;<br/>
+        &lt;description&gt;OPTIONAL. A comma separated list of class names for user principals. <br/>
+      First one that is found is effective only.&lt;/description&gt;<br/>
+        &lt;param-name&gt;userClassNames&lt;/param-name&gt;<br/>
+        &lt;param-value&gt;org.fcrepo.server.jaas.auth.UserPrincipal&lt;/param-value&gt;<br/>
+      &lt;/init-param&gt;<br/>
+      &lt;init-param&gt;<br/>
+        &lt;description&gt;OPTIONAL. A comma separated list of url-patterns to ignore&lt;/description&gt;<br/>
+        &lt;param-name&gt;excludeUris&lt;/param-name&gt;<br/>
+        &lt;param-value&gt;/getDS&lt;/param-value&gt;<br/>
+      &lt;/init-param&gt;<br/>
+    &lt;/filter&gt;</p>
+
+<p>For some reason, the filter does not read the context param<br/>
+    &lt;context-param&gt;<br/>
+      &lt;param-name&gt;fedora.home&lt;/param-name&gt;<br/>
+      &lt;param-value&gt;/home/abr/Servers/fcrepo3.3-1&lt;/param-value&gt;<br/>
+    &lt;/context-param&gt;<br/>
+But instead crashes when FEDORA_HOME is not set. The rest of the system works from the context param, so this is somewhat surprising.</p>
+
+<p>One of the trumped features of Fedora 3.3 was the ability to deploy several servlets. If we still depend on the environment variable, and not the context param, this feature is lost. For that reason, this bug has been marked as major.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11265"><div class="by">Chris Wilper, 2010-03-20 18:58 UTC</div><div class="text"><p>As Eddie pointed out in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-660" >
+                <a href="FCREPO-660.html" class="jira-issue-macro-key issue-link"  title="Regression: setting FEDORA_HOME via context-param fails" >
+            
+            FCREPO-660
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ (a dupe of this bug), for trunk, this was serendipitously addressed by r8516 (done for FCREPO-630: move to slf4j), with the addition of org.fcrepo.server.utilities.LogSetupContextListener which now houses the code in ServletController that was responsible for setting servlet.fedora.home.</p>
+</div></div>
+<div class="comment" id="comment-11266"><div class="by">Chris Wilper, 2010-03-20 20:03 UTC</div><div class="text"><p>Fixed for 3.3.1 by ensuring Constant.FEDORA_HOME is set properly in CleanupContextListener, which runs before any servlet filters or servlets are started.</p></div></div>
+<p><a href="data/FCREPO-641.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

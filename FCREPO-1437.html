@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1437 Add migration support for datastream properties.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1437</span> Add migration support for datastream properties.</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-04-01 17:50 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-14 14:05 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr><tr><th>Labels</th><td>fedora-3-to-4-migration</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1439.html">FCREPO-1439</a> Update fcrepo4-client to support the change in semantics for nonRdfResource property updates.</td></tr></table>
+<h2>Description</h2>
+<p>Replace the TODO block here:</p>
+
+<p><a href="https://github.com/fcrepo4-labs/migration-utils/blob/master/src/main/java/org/fcrepo/migration/handlers/BasicObjectVersionHandler.java#L117" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/blob/master/src/main/java/org/fcrepo/migration/handlers/BasicObjectVersionHandler.java#L117</a></p>
+
+<p>The types of properties you might find are the fields in the org.fcrepo.migration.DatastreamInfo interface.</p>
+
+<p>Consider reasonable published RDF predicates to use and apply them to the datastream.</p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-13843"><div class="by">Former user, 2015-04-01 19:52 UTC</div><div class="text"><p>So reasonable defaults would be something like:</p>
+
+<p>DSID -&gt; dcterms:identifier<br/>
+versionable -&gt; fedora:hasVersions (set automatically by fcrepo4)<br/>
+state -&gt; objState (being added by <a href="https://github.com/fcrepo4/ontology/commit/88766107f78a5d7fd1ebc3044142ea9034617e61" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/ontology/commit/88766107f78a5d7fd1ebc3044142ea9034617e61</a>)</p>
+
+<p>Seem about right for a default implementation?</p>
+
+<p>Not sure what to do with the URI.   Also noticed that the label isn't in the DatastreamInfo interface.  Do we care about that?</p></div></div>
+<div class="comment" id="comment-13844"><div class="by">Nick Ruest, 2015-04-01 19:56 UTC</div><div class="text"><p>We're working through mapping all the properties <a href="https://github.com/Islandora-Labs/islandora/blob/7.x-2.x/docs/technical-documentation/migration.md#fcrepo3-datastream-properties-to-fcrepo4" class="external-link" rel="nofollow noreferrer">here</a> for the Islandora migration. Maybe we can coordinate around that if I'm understanding this correctly.</p></div></div>
+<div class="comment" id="comment-13845"><div class="by">Michael Durbin, 2015-04-01 19:57 UTC</div><div class="text"><p>The properties (like label) that can change from version to version are in the DatastreamVersion object.  There are a few others there as well...</p></div></div>
+<div class="comment" id="comment-13846"><div class="by">Former user, 2015-04-01 20:03 UTC</div><div class="text"><p>Aha, I see those.  Some of those also seem to be set by fcrepo4 and are immutable.</p>
+
+<p>Does the link provided by Nick handle pretty much everything?  Only thing I see missing are the alternate id's and access url.</p></div></div>
+<div class="comment" id="comment-13847"><div class="by">Nick Ruest, 2015-04-01 20:06 UTC</div><div class="text"><p>Those two could be dc:identifier.</p></div></div>
+<div class="comment" id="comment-13848"><div class="by">Michael Durbin, 2015-04-01 20:10 UTC</div><div class="text"><p>Yeah, for stuff for which there's a fedora4 analog field we need to find some other way to include it for historical records of imported objects.  The hydra fedora-migrate project used <a href="http://www.loc.gov/premis/rdf/v1#hasDateCreatedByApplication" class="external-link" rel="nofollow noreferrer">http://www.loc.gov/premis/rdf/v1#hasDateCreatedByApplication</a> for created date. I suspect we can find some suitable predicates.  It's far from my strong suit... while it's important to have a reasonable sample values, we may need to implement something and then get suggestions from the broader community.</p></div></div>
+<div class="comment" id="comment-13849"><div class="by">Nick Ruest, 2015-04-01 20:15 UTC</div><div class="text"><p>Doh! They told me they used dc:dateCreated and dc:dateSubmitted. hasDateCreatedByApplication is way better.</p></div></div>
+<div class="comment" id="comment-13850"><div class="by">Michael Durbin, 2015-04-01 20:18 UTC</div><div class="text"><p>Perhaps I misunderstood the ruby code, but I was basing my assumption off of this: <a href="https://github.com/projecthydra-labs/fedora-migrate/blob/0fde25aa38e17a6e95c4ea138b34a6387d1d3efe/lib/fedora_migrate/content_mover.rb#L50" class="external-link" rel="nofollow noreferrer">https://github.com/projecthydra-labs/fedora-migrate/blob/0fde25aa38e17a6e95c4ea138b34a6387d1d3efe/lib/fedora_migrate/content_mover.rb#L50</a></p></div></div>
+<div class="comment" id="comment-13851"><div class="by">Nick Ruest, 2015-04-01 20:26 UTC</div><div class="text"><p>Nope. That looks right. </p>
+
+<p>ownerId is the tricky one for me. We use it in Islandora, and it is the Drupal user who created the object. In Hydra, a single system user is the one who creates all the Fedora objects. Still not sure what to use a migration predicate, since the way I understand it, we can't shove it into fedora:createdBy.</p></div></div>
+<div class="comment" id="comment-13923"><div class="by">Former user, 2015-04-10 12:53 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/migration-utils/pull/5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/pull/5</a></p></div></div>
+<div class="comment" id="comment-13927"><div class="by">Michael Durbin, 2015-04-10 14:58 UTC</div><div class="text"><p>Pending a couple review comments, this looks good.</p></div></div>
+<div class="comment" id="comment-13929"><div class="by">Andrew Woods, 2015-04-10 15:35 UTC</div><div class="text"><p>Michael Durbin, please go ahead and merge this whenever you are comfortable with the review responses. (squashing as appropriate)</p></div></div>
+<div class="comment" id="comment-13938"><div class="by">Andrew Woods, 2015-04-10 21:23 UTC</div><div class="text"><p>Pending additional code updates.</p></div></div>
+<div class="comment" id="comment-13969"><div class="by">Michael Durbin, 2015-04-13 18:23 UTC</div><div class="text"><p>There's one minor change (placeholder predicate names and values for modificationDate) that I think we should put in, then I'll merge it.</p></div></div>
+<div class="comment" id="comment-13987"><div class="by">Former user, 2015-04-14 13:28 UTC</div><div class="text"><p>I've pushed more changes to <a href="https://github.com/fcrepo4-labs/migration-utils/pull/5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/pull/5</a> to address this.  I still have no button to request review </p></div></div>
+<div class="comment" id="comment-13988"><div class="by">Andrew Woods, 2015-04-14 14:40 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/migration-utils/commit/445a67972339f87f055fd949ffe9f7267e4067db" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/commit/445a67972339f87f055fd949ffe9f7267e4067db</a></p></div></div>
+<p><a href="data/FCREPO-1437.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

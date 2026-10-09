@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-660 Regression: setting FEDORA_HOME via context-param fails</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-660</span> Regression: setting FEDORA_HOME via context-param fails</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2010-03-11 16:58 UTC</td></tr><tr><th>Updated</th><td>2010-03-20 18:44 UTC</td></tr><tr><th>Resolved</th><td>2010-03-11 17:38 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr><tr><th>Duplicates</th><td><a href="FCREPO-641.html">FCREPO-641</a> AuthFilterJAAS prevents the server from starting when FEDORA_HOME is not set</td></tr></table>
+<h2>Description</h2>
+<p>The setting of FEDORA_HOME is supported by three means:<br/>
+1) fedora.home context init-param in web.xml<br/>
+2) via a system property (e.g. -Dfedora.home=/foo)<br/>
+3) environment variable (e.g. export FEDORA_HOME=/bar)</p>
+
+<p>To reproduce: define fedora.home in web.xml, ensure that the FEDORA_HOME environment variable is not set, start Fedora. Tomcat should report "SEVERE: Error filterStart", Jetty reports "failed AuthFilterJAAS javax.servlet.ServletException: FEDORA_HOME environment variable not set".</p>
+
+<p>Quick workaround if FeSL is not being used is to simply comment out the AuthFilterJAAS filter from Fedora's web.xml.</p>
+
+<p>Prior to FeSL, none of the servlet filters required the value of FEDORA_HOME. Moreover, if the value of FEDORA_HOME is set via system property or environment variable, the problem does not manifest itself. Currently, ServletController retrieves the fedora.home context-param and sets the "servlet.fedora.home" System Property to make the value available to Constants.FedoraHome. However, if we can't guarantee that ServletController is loaded first, then the fedora.home context-param will not be available to the filters.</p>
+
+<p>Note: the load-on-startup element only controls servlet load order, and doesn't ensure a servlet will load before any of the filters.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11256"><div class="by">eddie, 2010-03-11 17:37 UTC</div><div class="text"><p>After implementing the fix locally by creating a new ServletContextListener, just discovered that this bug was serendipitously addressed by r8516, with the addition of org.fcrepo.server.utilities.LogSetupContextListener which now houses the code in ServletController that was responsible for setting servlet.fedora.home.</p></div></div>
+<div class="comment" id="comment-11257"><div class="by">Chris Wilper, 2010-03-11 19:22 UTC</div><div class="text"><p>Yeah, I was gonna say that when I saw this go by...it's now covered by setting it in the appropriate place, as with logging.  Good to have this tracked separately though.</p></div></div>
+<p><a href="data/FCREPO-660.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

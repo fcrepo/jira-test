@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-494 FieldSearch query connections held unnecessarily, leading to connection pool exhaustion</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-494</span> FieldSearch query connections held unnecessarily, leading to connection pool exhaustion</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Wojciech Lesinski</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-05-26 12:09 UTC</td></tr><tr><th>Updated</th><td>2016-04-06 10:07 UTC</td></tr><tr><th>Resolved</th><td>2009-11-18 23:22 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>Fedora Core 10. Fedora Commons 3.2. Tomcat included / external (latest) / Jetty (latest) / JBoss 4.2.3, database : Mysql (5.077) / Derby(included in 3.2) / McKoi (included in 3.1). Resource index turned on (Mulgara). Apart from that out-of-box configuration.
+<h2>Description</h2>
+<p>While using Fedora Administrator and after performing lots of operations on objects (i.e. viewing, updating, purging...) the client hangs up and the progress bar shows "Find Objects...". </p>
+
+<p>After calling netstat on the server, the list shows 100 sockets in CLOSE_WAIT state. <span class="error">&#91;100 - default value of &#39;maxActive&#39; instances in the connection pool&#93;</span><br/>
+...lines...<br/>
+89  tcp        1      0 ::ffff:127.0.0.1:43562      ::ffff:127.0.0.1:3306       CLOSE_WAIT <br/>
+...lines...<br/>
+Mysql server (in this case) shows no open connections, so the problem occurs on the application side as the number of maximum active connections have been reached .</p>
+
+<p>The same thing happens while using external Tomcat, Jetty and JBoss instead of included tomcat.  Furthermore, the connections become hanged regardless of the database (tested MySql, McKoi from fedora3.1 distribution and Derby from 3.2).</p>
+
+<p>The problem came out during a writing of a java connection client to the repository with the usage of FedoraAPIA and FedoraAPIM from the FedoraClient class. </p>
+
+<p>Increasing the maximum number of active instances in pool (for instance up to 3000) will not solve this problem, as a scenario causing this bug to come up can be easily found (e.g. lots parallel client calls).</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-10943"><div class="by">Chris Wilper, 2009-06-16 16:43 UTC</div><div class="text"><p>Thanks, we're trying to reproduce this.  If you can send any more details on specific operations or order of running things that causes this to occur?</p>
+
+<p>You mentioned using McKoi...was that vs. Fedora 3.1, or did you just use the old database vs. Fedora 3.2?</p></div></div>
+<div class="comment" id="comment-10956"><div class="by">Wojciech Lesinski, 2009-06-24 08:19 UTC</div><div class="text"><p>McKoi was vs Fedora 3.1. Derby vs Fedora 3.2 and Mysql vs Fedora 3.0 / 3.1 and 3.2.</p>
+
+<p>The scenario is as follows: </p>
+<ul class="alternate" type="square">
+	<li>1) new DigitalObjects are created (let's say 10),</li>
+	<li>2) search is performed</li>
+	<li>3) all new objects are opened (using openObject in FedoraAdmin).</li>
+	<li>4) All windows are closed within FedoraAdmin application</li>
+	<li>5) Back to nr 2) ....</li>
+</ul>
+
+
+<p>After some time the max amount of connections was reached on the server. FedoraClient was not responding anymore and the progress bar was showing "Find Objects...".</p>
+
+<p>An important fact is, that such a bug does not appear while using the new Flash Client that is brought with the 3.2 version of Fedora. (Maybe that will help).</p></div></div>
+<div class="comment" id="comment-11006"><div class="by">Chris Wilper, 2009-09-15 14:53 UTC</div><div class="text"><p>After failing to reproduce this with 10 objects, then searching and opening them about a dozen times, I tried creating a bigger set of objects via the old admin gui, by repeatedly hitting CTRL-N, ENTER.  After about 50 objects, the server appeared to hang at "Getting next PID...".  I kept the server running, and restarted the admin gui, and tried creating another new object.  It hung again, but the request to "describe" the repository at login succeeded (it does not hit the database).</p>
+
+<p>About five minutes later, I tried it again, and it succeeded.  The Fedora server log showed that both "get next pid" calls had completed about five minutes after they had started.</p>
+
+<p>Until further work is done in understanding this issue, I'm opening it in with the original major priority and assigning it to the 3.3 release.</p></div></div>
+<div class="comment" id="comment-11058"><div class="by">IssueT, 2009-11-05 18:05 UTC</div><div class="text"><p>It's easier to provoke this bug if you turn down the max connections in the dbcp props in fedora.fcfg to 5 or so.</p>
+
+<p>It looks like an object create action in the Swing admin app finishes off by doing a field search query to populate the object metadata for the object edit pane. If you turn up the logging to debug and grep on "ConnectionPool", you can see that a connection gets passed out to FieldSearchResultSQLImpl to run this query "SELECT doFields.pid FROM doField" and then another connection gets passed out immediately after.  Most connections are returned to the pool immediately, but this one is not. Even if you do a field search through the Web GUI, you can see that the ConnectionPool hands out a connection and then it gets returned immediately.Much later, you can see the connection being returned to the pool, presumably when that FieldSearchResultSQLImpl instance is expired.</p>
+
+<p>It seems like FieldSearchResultSQLImpl is designed to hold onto a connection in an object field so the result set can remain open to satisfy subsequent resumption token calls, which leaves the pool open to connection starvation if the caller doesn't maintain FieldSearchResultSQLImpl lifecycle properly.</p>
+
+<p>I assume this doesn't happen in the new admin client because it's using a REST operation to get the object metadata rather than a field search.</p>
+
+<p>I'd spend more time figuring out what about the Swing client's usage of that api does to not clean up that FieldSearchResultSQLImpl instance, but I presently have to get back to work. If nobody else pokes at this, I can devote more time to it tonight. At this minute, I can't really explain those CLOSE_WAIT sockets, because that actually looks like a connection getting <b>closed</b>, not pooled.</p>
+
+<p>In the meantime, it seems like a quick workaround would either be using the Flash admin client, or changing whenExhaustedAction to 2 for the db pool. I haven't tested this assumption, however.</p>
+
+<p>Here's the log statements I'm talking about:</p>
+
+<p>DEBUG 2009-11-05 11:13:18.768 <span class="error">&#91;http-8080-Processor23&#93;</span> (ConnectionPool) Got connection from pool (fedoraAdmin@jdbc:derby:/Users/michaeld/Library/Fedora/derby/fedora32;create=true, numIdle=1, numActive=1, maxActive=5)<br/>
+DEBUG 2009-11-05 11:13:18.768 <span class="error">&#91;http-8080-Processor23&#93;</span> (FieldSearchResultSQLImpl) SELECT doFields.pid FROM doFieldsDEBUG 2009-11-05 11:13:18.768 <span class="error">&#91;http-8080-Processor23&#93;</span> (ConnectionPool) Got connection from pool (fedoraAdmin@jdbc:derby:/Users/mi<br/>
+chaeld/Library/Fedora/derby/fedora32;create=true, numIdle=0, numActive=2, maxActive=5)DEBUG 2009-11-05 11:13:18.769 <span class="error">&#91;http-8080-Processor23&#93;</span> (ConnectionPool) Returned connection to pool (fedoraAdmin@jdbc:derby:/Users<br/>
+/michaeld/Library/Fedora/derby/fedora32;create=true, numIdle=1, numActive=1, maxActive=5)</p>
+
+<p>and much later (note the line prefixed with *s):</p>
+
+<p>DEBUG 2009-11-05 11:13:18.924 <span class="error">&#91;http-8080-Processor23&#93;</span> (ConnectionPool) Got connection from pool (fedoraAdmin@jdbc:derby:/Users/mi<br/>
+chaeld/Library/Fedora/derby/fedora32;create=true, numIdle=0, numActive=2, maxActive=5)<br/>
+DEBUG 2009-11-05 11:13:18.924 <span class="error">&#91;http-8080-Processor23&#93;</span> (ConnectionPool) Returned connection to pool (fedoraAdmin@jdbc:derby:/Users<br/>
+/michaeld/Library/Fedora/derby/fedora32;create=true, numIdle=1, numActive=1, maxActive=5)<br/>
+DEBUG 2009-11-05 11:13:18.925 <span class="error">&#91;http-8080-Processor23&#93;</span> (DOTranslatorImpl) Grabbing deserializer for: info:fedora/fedora-system:FOX<br/>
+ML-1.1<br/>
+DEBUG 2009-11-05 11:13:18.925 <span class="error">&#91;http-8080-Processor23&#93;</span> (FOXMLDODeserializer) Deserializing info:fedora/fedora-system:FOXML-1.1 for<br/>
+ transContext: 0<br/>
+DEBUG 2009-11-05 11:13:18.926 <span class="error">&#91;http-8080-Processor23&#93;</span> (FOXMLDODeserializer) instantiate datastream: dsid = DCchecksumType = DISAB<br/>
+LEDchecksum = none<br/>
+DEBUG 2009-11-05 11:13:18.926 <span class="error">&#91;http-8080-Processor23&#93;</span> (FOXMLDODeserializer) instantiate datastream: dsid = RELS-EXTchecksumType =<br/>
+ DISABLEDchecksum = none<br/>
+DEBUG 2009-11-05 11:13:18.926 <span class="error">&#91;http-8080-Processor23&#93;</span> (FOXMLDODeserializer) Just finished parse.<br/>
+DEBUG 2009-11-05 11:13:18.931 <span class="error">&#91;http-8080-Processor23&#93;</span> (DefaultDOManager) Got DOReader (source=filesystem) for test:onetwothree in<br/>
+ 7ms.<br/>
+********DEBUG 2009-11-05 11:13:18.932 <span class="error">&#91;http-8080-Processor23&#93;</span> (ConnectionPool) Returned connection to pool (fedoraAdmin@jdbc:derby:/Users<br/>
+/michaeld/Library/Fedora/derby/fedora32;create=true, numIdle=2, numActive=0, maxActive=5)<br/>
+DEBUG 2009-11-05 11:13:18.985 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) back from next doFilter()<br/>
+DEBUG 2009-11-05 11:13:18.985 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) FilterEnforceAuthn.. . .  doFilter() <br/>
+DEBUG 2009-11-05 11:13:18.985 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) back from next doFilter()<br/>
+DEBUG 2009-11-05 11:13:18.985 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) FilterFinalize.. . .  doFilter() <br/>
+DEBUG 2009-11-05 11:13:18.985 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) back from next doFilter()<br/>
+DEBUG 2009-11-05 11:13:18.985 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) FilterXmlUserfile.. . .  doFilter() <br/>
+DEBUG 2009-11-05 11:13:18.986 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) back from next doFilter()<br/>
+DEBUG 2009-11-05 11:13:18.986 <span class="error">&#91;http-8080-Processor23&#93;</span> (FilterSetup) FilterSetup.. . .  doFilter() <br/>
+INFO 2009-11-05 11:14:22.694 <span class="error">&#91;main&#93;</span> (Server) Shutting down server<br/>
+INFO 2009-11-05 11:14:22.694 <span class="error">&#91;main&#93;</span> (Server) Shutting down fedora.server.access.DynamicAccessModule<br/>
+INFO 2009-11-05 11:14:22.694 <span class="error">&#91;main&#93;</span> (Server) Shutting down fedora.server.security.DefaultBackendSecurity<br/>
+INFO 2009-11-05 11:14:22.694 <span class="error">&#91;main&#93;</span> (Server) Shutting down fedora.server.access.DefaultAccess<br/>
+INFO 2009-11-05 11:14:22.694 <span class="error">&#91;main&#93;</span> (Server) Shutting down fedora.server.oai.FedoraOAIProviderModule<br/>
+INFO 2009-11-05 11:14:22.694 <span class="error">&#91;main&#93;</span> (Server) Shutting down fedora.server.utilities.ThreadMonitorModule<br/>
+INFO 2009-11-05 11:14:22.694 <span class="error">&#91;main&#93;</span> (Server) Shutting down fedora.server.storage.ConnectionPoolManagerImpl<br/>
+INFO 2009-11-05 11:14:22.704 <span class="error">&#91;main&#93;</span> (ConnectionPool) Shutting down embedded derby database.</p>
+
+</div></div>
+<div class="comment" id="comment-11073"><div class="by">Chris Wilper, 2009-11-17 16:40 UTC</div><div class="text"><p>Thanks for looking into this in detail, Michael.  It appears to be a resurfacing of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-172" >
+                <a href="FCREPO-172.html" class="jira-issue-macro-key issue-link"  title="FieldSearch not releasing connection w/one result" >
+            
+            FCREPO-172
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p>
+
+<p>Ultimately, the server should be returning the connection to the pool as soon as the resultset is exhausted.  In this case, it's performing a query that we know has one result.  So it appears that the bug is with the logic of FieldSearch*SQLImpl ... I had written an integration test for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-172" >
+                <a href="FCREPO-172.html" class="jira-issue-macro-key issue-link"  title="FieldSearch not releasing connection w/one result" >
+            
+            FCREPO-172
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, so my next step is to figure out why that's not provoking this issue.</p></div></div>
+<div class="comment" id="comment-11077"><div class="by">Chris Wilper, 2009-11-18 12:59 UTC</div><div class="text"><p>Ok, I've dug further and can now reproduce this in an integration test.</p>
+
+<p>It only occurs when the client requests a single result per page from the server when running a query (this is what Util.java happens to do after a new object is created in the swing admin gui).  In those cases, even when there is only one result, the server keeps the session (and thus db connection) open, waiting for another (empty) "page" of results to be returned.</p>
+
+<p>The reason it wasn't showing up in the previous test written for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-172" >
+                <a href="FCREPO-172.html" class="jira-issue-macro-key issue-link"  title="FieldSearch not releasing connection w/one result" >
+            
+            FCREPO-172
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ was because that test always performed queries with maxResultsPerPage=10.</p></div></div>
+<div class="comment" id="comment-11078"><div class="by">Chris Wilper, 2009-11-18 14:23 UTC</div><div class="text"><p>More thoughts:</p>
+
+<p>The issue can be generalized beyond the "1 result requested per page, 1 actual result" case. The unnecessary, empty page of results occurs any time the number of actual results is a multiple of the client-specified maxResultPerPage.  In other words, when the last actual result falls on the last possible position on a page.</p>
+
+<p>When the client doesn't "know" how many responses to expect, this normally doesn't cause a connection pool exhaustion problem because it would just keep requesting the next page of results 'till the list is exhausted.</p>
+
+<p>Without resorting to changing the FieldSearch API itself, the proper way to solve this is to have Fedora "look ahead" into the result set and see if it's really necessary to keep the session open.  This is exactly the kind of thing that java.sql.ResultSet#last() was designed for.  Ideally, this can be used, but it requires the underlying JDBC driver to have scrollable result set (TYPE_SCROLL_INSENSITIVE) support.  Since we're aiming to support a wide variety of databases, I think it would be better to have Fedora not require this and just do the "peeking ahead" itself, on a normal (FORWARD_ONLY) resultset.</p></div></div>
+<div class="comment" id="comment-11079"><div class="by">Chris Wilper, 2009-11-18 23:22 UTC</div><div class="text"><p>Fixed in trunk. Employed the "peeking ahead" solution that can use a regular (non-scrollable) resultset, and added a test for this case.</p></div></div>
+<div class="comment" id="comment-16458"><div class="by">Nicolas Franck, 2016-04-06 10:07 UTC</div><div class="text"><p>I'm using Fedora Commons 3.8.1 with postgres database.</p>
+
+<p>I noticed this (strange?) behaviour when using findObjects</p>
+
+<ul>
+	<li>start from a large set of queries</li>
+	<li>for each query, do findObjects on query</li>
+	<li>go to next query</li>
+</ul>
+
+
+<p>If the results are more than 1, Fedora keeps the compiled query alive in the database.<br/>
+Obvious, because one can return to fetch the next result set using resumeFindObjects.<br/>
+But in this case, I'm leaving the session open, and vulnerable.</p>
+
+<p>Now the maximum of compiled queries in the database hits a wall.</p>
+
+<p>Iterating through the rest of the results (to exhaust the result set), does not clear the session.</p>
+
+<p>Is there a way to clear the session, to make this more safely?</p></div></div>
+<p><a href="data/FCREPO-494.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

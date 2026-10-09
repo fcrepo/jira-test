@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2520 Improve mimetype validation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2520</span> Improve mimetype validation</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Bill Branan</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2017-06-09 18:43 UTC</td></tr><tr><th>Updated</th><td>2018-02-19 21:23 UTC</td></tr><tr><th>Resolved</th><td>2018-02-15 15:24 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Is duplicated by</th><td><a href="FCREPO-2658.html">FCREPO-2658</a> Invalid ebucore:hasMimeType value inhibits access to content</td></tr></table>
+<h2>Description</h2>
+<p>In testing with the Hyku repository app on top of Fedora (using a build from the master branch, May 2017), occasional errors occur when files are deposited but fail to complete the process properly. When attempting to retrieve or delete the item from Fedora, a 500 response is returned. The errors in the log are:</p>
+
+<p>java.lang.IllegalArgumentException: Error parsing media type 'cannot open `/tmp/40e8273e-1ea8-48ec-916c-e78bc06ba1ea20170608-25523-m6g42x' (No such file or directory)'</p>
+
+<p>followed by:</p>
+
+<p>Caused by: java.text.ParseException: White space not allowed.</p>
+
+<p>Requesting fcr:metadata on the item shows the following:</p>
+
+<p>ebucore:hasMimeType      "cannot open `/tmp/40e8273e-1ea8-48ec-916c-e78bc06ba1ea20170608-25523-m6g42x' (No such file or directory)" ;</p>
+
+<p>The mimetype set here is clearly invalid. While it seems likely that the primary issue is due to the Hyku app supplying an invalid mimetype, there should be better data validation in Fedora to ensure that a mimetype which cannot be parsed is not allowed into the repository. </p>
+
+<p>Alternatively, if it is desirable to allow invalid data to be stored, then the API should fail gracefully when that data is requested and allow the item or the metadata itself to be removed or updated without error.</p>
+<h2>Comments (27)</h2>
+<div class="comment" id="comment-19101"><div class="by">Andrew Woods, 2017-06-09 20:52 UTC</div><div class="text"><p>As a preventative measure, this issue could be resolved by verifying that the user-provided MediaType is valid here:</p>
+
+<p>* <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraBinaryImpl.java#L163" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraBinaryImpl.java#L163</a></p>
+
+<p>The verification could be an attempt to parse the provided MediaType with:</p>
+
+<p>com.google.common.net.MediaType.parse()</p>
+
+<p>...and throw a new exception (package: org.fcrepo.kernel.api.exception) that is mapped into a "400 Bad Request" status to the client.</p>
+
+<p>Exception mappers, package: org.fcrepo.http.commons.exceptionhandlers</p>
+
+<p>This update will also require an additional integration test method added to: <br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java</a></p></div></div>
+<div class="comment" id="comment-19547"><div class="by">Ralf Claussnitzer, 2017-11-07 09:35 UTC</div><div class="text"><p>Would not using a regular expression be sufficient?</p>
+
+<p>Something like mentioned here: <a href="https://stackoverflow.com/questions/25201083/regex-to-match-and-validate-internet-media-type" class="external-link" rel="nofollow noreferrer">https://stackoverflow.com/questions/25201083/regex-to-match-and-validate-internet-media-type</a></p>
+
+<p>That's simple and straight forward and doesn't require a library...</p></div></div>
+<div class="comment" id="comment-19548"><div class="by">Andrew Woods, 2017-11-07 13:57 UTC</div><div class="text"><p>Ralf Claussnitzer: Agreed, although fickle, a regex could certainly work. In this case, the suggested Google library is already a dependency in the fcrepo-kernel-modeshape package:</p>
+<ul>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/pom.xml#L78" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/pom.xml#L78</a></li>
+</ul>
+
+
+<p>In either case, if you are interested in helping create a PR, whichever approach you select would be appreciated.</p></div></div>
+<div class="comment" id="comment-19557"><div class="by">Ralf Claussnitzer, 2017-11-21 14:09 UTC</div><div class="text"><p>I started some work here: <a href="https://github.com/claussni/fcrepo4/tree/fcrepo-2520" class="external-link" rel="nofollow noreferrer">https://github.com/claussni/fcrepo4/tree/fcrepo-2520</a></p>
+
+<p>Is this the solution you had in mind? Introducing a new Exception has consequences on the API.</p>
+
+<p>Testing turns out to be difficult, since I cannot run fcrepo-http-api tests individually. And because of: <a href="https://jira.duraspace.org/browse/FCREPO-2655" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2655</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19573"><div class="by">Andrew Woods, 2017-12-01 22:45 UTC</div><div class="text"><p>Ralf Claussnitzer: Your PR looks like a good direction. However, I am getting a test error:</p>
+
+<p>```</p>
+
+<p>$ mvn clean install</p>
+
+<p>Tests run: 14, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.226 sec &lt;&lt;&lt; FAILURE! - in org.fcrepo.integration.kernel.modeshape.FedoraBinaryImplIT<br/>
+testDatastreamContentType(org.fcrepo.integration.kernel.modeshape.FedoraBinaryImplIT) Time elapsed: 0.012 sec &lt;&lt;&lt; FAILURE!<br/>
+org.junit.ComparisonFailure: expected:&lt;some/mime-type<span class="error">&#91;; with=params&#93;</span>&gt; but was:&lt;some/mime-type[]&gt;<br/>
+ at org.junit.Assert.assertEquals(Assert.java:115)<br/>
+ at org.junit.Assert.assertEquals(Assert.java:144)<br/>
+ at org.fcrepo.integration.kernel.modeshape.FedoraBinaryImplIT.testDatastreamContentType(FedoraBinaryImplIT.java:174)</p>
+
+<p>```</p>
+
+<p>...and, the related issue documented in <a href="https://jira.duraspace.org/browse/FCREPO-2658" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2658</a> is not fixed by this PR.</p>
+
+<p>If you have time to move this PR forward, that would be greatly appreciated.</p></div></div>
+<div class="comment" id="comment-19574"><div class="by">Ralf Claussnitzer, 2017-12-04 15:43 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1272" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1272</a></p>
+
+<p>I'm not entirely sure about the need for a special exception. It involves a lot of changed to the Kernel API. Especially because it seems to be unnecessary to provide an exception mapper.</p></div></div>
+<div class="comment" id="comment-19600"><div class="by">Andrew Woods, 2018-01-12 17:55 UTC</div><div class="text"><p>Ralf Claussnitzer: to clarify, are you ok with the approach being suggested by Bethany Seeger?</p></div></div>
+<div class="comment" id="comment-19601"><div class="by">Ralf Claussnitzer, 2018-01-16 08:13 UTC</div><div class="text"><p>Andrew Woods: The HTTP layer should respond with BAD REQUEST on invalid, unparsable Media Types. I aggree with Bethany Seegers proposal to implement the check in the HTTP Layer.</p>
+
+<p>Here is her comment on this: <a href="https://github.com/fcrepo4/fcrepo4/pull/1272#issuecomment-353173508" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1272#issuecomment-353173508</a></p>
+<blockquote><p>One could put this check up a level at the HTTP layer - in the code before setContent() is called. Then one could use the JAX-RS MediaType method valueOf, which seems to serve the same purpose as the guava parse() method. Also, JAX-RS exceptions are available then, so the new one might not be necessary.</p></blockquote>
+<p>However, I would recommend additional, independent checks at the Modeshape Kernel API, in case another transport layer (other than HTTP) is added some day.</p></div></div>
+<div class="comment" id="comment-19602"><div class="by">Andrew Woods, 2018-01-16 16:16 UTC</div><div class="text"><p>Bethany Seeger: would you be interested and available to move this update forward?</p></div></div>
+<div class="comment" id="comment-19603"><div class="by">Bethany Seeger, 2018-01-17 14:13 UTC</div><div class="text"><p>Yes, I can move this forward this week - probably Friday.  Ralf Claussnitzer - I think that's a good idea to have a check at the modeshape kernel level as well.  </p></div></div>
+<div class="comment" id="comment-19604"><div class="by">Ralf Claussnitzer, 2018-01-17 14:50 UTC</div><div class="text"><p>Maybe we can avoid an additional Kernel Exception by combining content errors into a more general Exception class. The current PR results in to many changes. Probably an "improvement" ticket...</p></div></div>
+<div class="comment" id="comment-19605"><div class="by">Bethany Seeger, 2018-01-19 20:38 UTC</div><div class="text"><p>I was talking with a colleague and he pointed out what's below, from <a href="https://tools.ietf.org/html/rfc1341#page-56." class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc1341#page-56.</a>  It seems like we should accept any mime type and treat those we don't know as 'application/octet-stream'.  I don't think we do much with binary mime types internally to start with, so this should be a non-issue. But it does mean, if we want to follow this, that we should not throw an exception on ingest and instead not have an error being thrown on retrieving the binary with an invalidly formatted mime type (as in, let the content type be whatever and make sure the user can retrieve / delete the item).   Thoughts?</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+5. Upon encountering any unrecognized Content-
+ Type, an implementation must treat it as <span class="code-keyword">if</span> it had
+ a Content-Type of <span class="code-quote">"application/octet-stream"</span> with
+ no parameter sub-arguments. How such data are
+ handled is up to an implementation, but likely
+ options <span class="code-keyword">for</span> handling such unrecognized data
+ include offering the user to write it into a file
+ (decoded from its mail transport format) or
+ offering the user to name a program to which the
+ decoded data should be passed as input.
+ Unrecognized predefined types, which in a MIME-
+ conformant mailer might still include audio,
+ image, or video, should also be treated in <span class="code-keyword">this</span>
+ way.</pre>
+</div></div></div></div>
+<div class="comment" id="comment-19608"><div class="by">Bethany Seeger, 2018-01-22 19:13 UTC</div><div class="text"><p>Hi - I want to ack that the above mentioned rfc has been obsoleted by <a href="https://tools.ietf.org/html/rfc2045#page-12" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc2045#page-12</a> </p>
+
+<p>A few questions for you – how is fcrepo being run in the hyku stack? Is it tomcat?   I'm wondering because I can't really reproduce this issue (I thought I had earlier, but I was misunderstanding what I was looking at).   Tomcat seems to check the mime type syntax and rejects it if it's bad (400 bad request with a note of a syntax error in the request) - so that it doesn't even get to fcrepo server.  </p>
+
+<p>It's possible that the mime type gets corrupted in fcrepo and set to the string above, but I can't really see a point in the code where that type of corruption could happen, unless it's outside fcrepo (as in, it's in the data that the webserver passes in.)</p>
+
+<p>Essentially I'm looking for a way to reproduce this error - any thoughts? </p>
+
+<p>Thanks!</p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19609"><div class="by">Bethany Seeger, 2018-01-22 20:32 UTC</div><div class="text"><p>More on this – to do a PUT with an incorrect mime type is hard to do as  tomcat checks the content-type syntax and won't allow it to pass.  But to <em>change</em> the field ebucore:hasMimeType after the binary has been inserted will work and successfully demonstrates the issue. </p>
+
+<p>On a GET, there is a mime-type check on the field ebucore:hasMimeType which is what is throwing the exception.  I'll see if can relax that end of things.  </p></div></div>
+<div class="comment" id="comment-19610"><div class="by">Ralf Claussnitzer, 2018-01-23 08:10 UTC</div><div class="text"><blockquote><p>It seems like we should accept any mime type and treat those we don't know as 'application/octet-stream'</p></blockquote>
+<p>The application should accept any mime type, as long as it has valid syntax.</p></div></div>
+<div class="comment" id="comment-19611"><div class="by">Bethany Seeger, 2018-01-23 15:04 UTC</div><div class="text"><p>Yes, I'm in agreement there. The issue I see is that one can set ebucore:hasMimeType triple at any point in time - then we later check that that value is a valid MediaType and that's where the exception is thrown. </p>
+
+<p>So here's the scenario I think that is happening:  someone PUTS a file with a mime-type.  It's probably a valid one or the PUT won't get through Tomcat's syntax checking.   After that file is ingested, the client changes the ebucore:hasMimeType to something invalid.  Ralf Claussnitzer - do you know the Hyku code well enough to know if something like this is happening?  That's the only way I've been able to enter an invalid mime type - by updating the rdf triples after I've ingested it.  </p>
+
+<p>It does imply, then, that one must either 1) validate the ebucore:hasMimeType triple if present in a sparql update or 2) relax the code that retrieves the binary content (since that's where the exception is thrown).  </p>
+
+<p>I'm not clear on whether or not ebucore:hasMimeType implies strict checking that it is a syntactically valid mime type versus just a string.   I found <a href="https://pro.europeana.eu/files/Europeana_Professional/Share_your_data/Technical_requirements/EDM_profiles/Technical%20Metadata%20properties_20150217.pdf" class="external-link" rel="nofollow noreferrer">this</a>:  `The main MIME types as defined by IANA: e.g. audio, video, text, application, or a container MIME type.`</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19612"><div class="by">Bethany Seeger, 2018-01-23 15:49 UTC</div><div class="text"><p>What I'd most like to know regarding hyku/hyrax is if it adds the binary and then updates the RDF on the binary.    My logic: when one calls PUT or POST on fedora and includes the mime type, it should trigger the exception there, if the mime type is bad.  That's because this line:  <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L370" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L370</a>  invokes the MediaType.valueOf(String) constructor which checks syntax.  So if it was syntatically invalid going in, the exception would have happened there.  (MediaType.valueOf(String) is the method that's throwing the error when one tries to GET the binary later on.)</p>
+
+<p>That leaves the idea that something is updating the ebucore:hasMimeType RDF triple in between.  </p></div></div>
+<div class="comment" id="comment-19613"><div class="by">Andrew Woods, 2018-01-24 00:13 UTC</div><div class="text"><p>Esmé Cowles may have some input on the details of Samvera; but it sounds like your suspicion that the mime-type is effectively corrupted on a subsequent PATCH request is likely the case.</p>
+
+<p>If we can throw an exception on bad PATCHes, that would be helpful.</p></div></div>
+<div class="comment" id="comment-19615"><div class="by">Ralf Claussnitzer, 2018-01-24 06:46 UTC</div><div class="text"><blockquote><p>After that file is ingested, the client changes the ebucore:hasMimeType to something invalid.  Ralf Claussnitzer - do you know the Hyku code well enough to know if something like this is happening? </p></blockquote>
+<p>I'm sorry Bethany Seeger, I have no idea about Hyku. But I think your observation clearly indicates that it is possible to corrupt ebucore:hasMimeType.</p></div></div>
+<div class="comment" id="comment-19616"><div class="by">Bethany Seeger, 2018-01-24 18:11 UTC</div><div class="text"><p>Here is a PR that will solve the immediate problem.  <a href="https://github.com/fcrepo4/fcrepo4/pull/1280" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1280</a></p>
+
+<p>A work around for this issue is to change the 'ebucore:hasMimeType' value to something syntactically valid. You should be able to retrieve the resource then.  </p></div></div>
+<div class="comment" id="comment-19617"><div class="by">Danny Bernstein, 2018-01-24 23:54 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/80ada4ae53804ff2885ab6e773c2f855f2fe3e76" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/80ada4ae53804ff2885ab6e773c2f855f2fe3e76</a></p></div></div>
+<div class="comment" id="comment-19618"><div class="by">Aaron Birkland, 2018-01-25 14:31 UTC</div><div class="text"><p>This issue is not fully addressed yet.  There are two aspects to this ticket:</p>
+<ul>
+	<li>Degrade gracefully if an existing repository has bad mime type values (Bethany's PR, now merged addresses this)</li>
+	<li>Ensuring that bad values do not get in to the repository in the first place</li>
+</ul>
+
+
+<p>We can debate if (2) is necessary - is it the responsibility of the repository to ensure that mime type values are syntactically correct?  If not, then this needs to be positively asserted and/or documented and this ticket can be closed.</p>
+
+<p>If validation <b>is</b> necessary, then there are two areas of concern:</p>
+<ol>
+	<li>Validation of Content-Type headers in requests that create or modify an LDP-NR</li>
+	<li>Validation of direct mutations ebucore:hasMimeType triple (e.g. via a PATCH or PUT to the LDP-RS that describes an LDP-NR.)</li>
+</ol>
+
+
+<p>Validation concern (2) is particularly problematic.  The modeshape implementation chooses to assign particular significance to the  ebucore:hasMimeType triple.  The value of this triple is used in crafting responses to GET or HEAD requests on the associated LDP-NR.  We speculate that Hyrax (or some associated service) was causing the problem via PATCH (Bill Branan - can you confirm, please?).</p></div></div>
+<div class="comment" id="comment-19619"><div class="by">Bill Branan, 2018-01-25 18:09 UTC</div><div class="text"><p>While I cannot say for sure what was causing the invalid mimetype to be submitted to Fedora from Hyku, based on the investigation that Bethany has done, I would agree that a PATCH request is the most likely cause. This call likely occurred during a background job, after the initial ingest, where FITS is used for file characterization. Something likely went wrong during this processing step, but the call to update the mimetype in Fedora went forward.</p></div></div>
+<div class="comment" id="comment-19620"><div class="by">Bethany Seeger, 2018-01-25 21:11 UTC</div><div class="text"><p>Thanks, Bill Branan.   I think, then, what we mainly need to decide is on whether or not we want to do this:</p>
+<ol>
+	<li>Validation of direct mutations ebucore:hasMimeType triple (e.g. via a PATCH or PUT to the LDP-RS that describes an LDP-NR.)</li>
+</ol>
+
+
+<p>I think we're protected well enough against syntactically incorrect Content-Type headers all ready (with out any change to the code base).</p>
+
+<p>Do we edit other string literals anywhere?  Would this be a new practice?  Those are the questions that pop into my mind. </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19642"><div class="by">Noah Botimer, 2018-02-10 04:13 UTC</div><div class="text"><p>We've also been seeing problems with the mime type being set to something invalid making a file inaccessible. One thing I noticed was that GET requests were returning the stack trace as the body of the 500, but the Hyrax side was issuing a HEAD request, which omits the body entirely. This made it a pretty silent error on the app side.</p>
+
+<p>In our case, it was netCDF files being characterized as "application/netcdf, application/x-netcdf" by FITS/Droid. This resulted in a java.text parse error being thrown by Jersey, where it expected a <tt>;</tt> and got a  <tt>, </tt>– looking for options, not a secondary type.</p>
+
+<p>I've opened an issue and pull request for this particular case on the hydra-works gem: <a href="https://github.com/samvera/hydra-works/issues/334" class="external-link" rel="nofollow noreferrer">https://github.com/samvera/hydra-works/issues/334</a>.</p></div></div>
+<div class="comment" id="comment-19643"><div class="by">Bethany Seeger, 2018-02-15 15:24 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1283" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1283</a></p></div></div>
+<div class="comment" id="comment-19644"><div class="by">Jared Whiklo, 2018-02-15 21:38 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/99ce788e03325c99459c7d3b1af2c1310826fa1b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/99ce788e03325c99459c7d3b1af2c1310826fa1b</a></p></div></div>
+<p><a href="data/FCREPO-2520.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

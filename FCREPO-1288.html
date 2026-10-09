@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1288 Inconsistent naming conventions for configuration parameters</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1288</span> Inconsistent naming conventions for configuration parameters</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-01-15 01:21 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-01-27 18:24 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Description</h2>
+<p>The fcrepo configuration values passed into the JVM follow inconsistent conventions, including CamelCase, hyphens, underscores and period delimiters. Also, the values of these configuration parameters expect different formats. For example:</p>
+
+<p>fcrepo.home (expects a regular path)<br/>
+fcrepo.modeshape.configuration (expects a path prefixed by either "file:" or "classpath:")<br/>
+fcrepo.ispn.repo.CacheDirPath (uses camelCase, expects a regular path)<br/>
+fcrepo.binary-store-path (uses hyphens ? and expects a regular path)<br/>
+fcrepo.activemq.dir (regular path)<br/>
+fcrepo.infinispan.cache_configuration (why is this not fcrepo.ispn.*? and why the underscore?)</p>
+
+<p>Are there reasons why there is such a diversity of formats?</p>
+<h2>Comments (29)</h2>
+<div class="comment" id="comment-12789"><div class="by">Andrew Woods, 2015-01-15 02:25 UTC</div><div class="text"><p>Of the variations, the only one that is intentional is:<br/>
+fcrepo.modeshape.configuration (expects a path prefixed by either "file:" or "classpath:") <br/>
+...due to ModeShape expectations.</p></div></div>
+<div class="comment" id="comment-12790"><div class="by">Unknown, 2015-01-15 13:41 UTC</div><div class="text"><p>Additionally, the minter (spring) configuration file can be overriden by setting fcrepo.minter.config, which gives three different types of "configuration" formats: config, configuration and cache_configuration. It would be nice to standardize these.</p>
+
+<p>Plus, I have a use case for being able to override the activemq configuration. Should that be "fcrepo.activemq.configuration"?</p></div></div>
+<div class="comment" id="comment-12796"><div class="by">Andrew Woods, 2015-01-16 00:20 UTC</div><div class="text"><p>"fcrepo.activemq.configuration" aligns with the more frequent use of "configuration" vs. "config". That being the case, "fcrepo.minter.config" should also change to "fcrepo.minter.configuration".</p></div></div>
+<div class="comment" id="comment-13139"><div class="by">Unknown, 2015-01-17 01:49 UTC</div><div class="text"><p>Would it make sense to put all of the configurable properties into a central fcrepo.properties file? Then, each property could be overridden as in the current setup, but there would be a much cleaner way of managing these values.</p></div></div>
+<div class="comment" id="comment-13142"><div class="by">Andrew Woods, 2015-01-19 14:51 UTC</div><div class="text"><p>Unknown, A central properties file which provides the values (and current defaults) from which the other configuration files ultimately get there values would be cleaner, indeed.</p></div></div>
+<div class="comment" id="comment-13144"><div class="by">Unknown, 2015-01-19 18:05 UTC</div><div class="text"><p>Andrew Woods OK, I'm working on a PR for this &#8211; should be ready for review on 1/20 or 1/21</p></div></div>
+<div class="comment" id="comment-13161"><div class="by">Unknown, 2015-01-21 16:13 UTC</div><div class="text"><p>Addressed with this PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/691" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/691</a></p>
+
+<p>The basic conventions I adopted were:</p>
+<ul>
+	<li>prefix everything with fcrepo</li>
+	<li>for spring-related configuration, prefix with fcrepo.spring</li>
+	<li>for infinispan-related configuration, use fcrepo.ispn</li>
+	<li>for infinispan caches, use cache (instead of CacheDirPath)</li>
+	<li>for all other directories, use directory</li>
+	<li>for configuration files, use configuration</li>
+</ul>
+
+
+<p>A detailed list of changes are listed with the pull request</p></div></div>
+<div class="comment" id="comment-13183"><div class="by">Andrew Woods, 2015-01-22 22:20 UTC</div><div class="text"><p>I like your suggestion of changing the configuration elements, 'log.fcrepo.' to 'fcrepo.log.*'.<br/>
+Please do that and we can move this ticket through.</p></div></div>
+<div class="comment" id="comment-13192"><div class="by">Unknown, 2015-01-23 14:53 UTC</div><div class="text"><p>I changed the instances of log.fcrepo.* to fcrepo.log.* and pushed a new commit to the PR</p></div></div>
+<div class="comment" id="comment-13204"><div class="by">Andrew Woods, 2015-01-26 15:34 UTC</div><div class="text"><p>Unknown, I have not yet completed this review, but wanted to give you a heads up that there appear to be other "<b>repository</b>.json" files in the codebase that are not included in this PR... possibly the same with other logback and configuration files. Also, the other supported projects will need updates as well:<br/>
+<a href="https://github.com/fcrepo4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4</a></p></div></div>
+<div class="comment" id="comment-13205"><div class="by">Unknown, 2015-01-26 16:14 UTC</div><div class="text"><p>There are five repository.json files that weren't touched. For four of these, this makes sense:</p>
+
+<p>./fcrepo-integration-ldp/src/test/resources/test_repository.json<br/>
+./fcrepo-integration-rdf/src/test/resources/test_repository.json<br/>
+./fcrepo-jms/src/test/resources/config/testing/repository.json<br/>
+./fcrepo-kernel-impl/src/test/resources/config/testing/repository.json</p>
+
+<p>(There are no $</p>
+{property.value:default}
+<p> style property values in those files).</p>
+
+<p>in: ./fcrepo-connector-file/src/test/resources/config/testing/repository.json, however,<br/>
+there are three properties:</p>
+
+<p>fcrepo.test.dir1<br/>
+fcrepo.test.dir2<br/>
+fcrepo.test.properties.dir</p>
+
+<p>I'll add an additional commit to normalize these. I'll also see if I can't find other files that I missed earlier.</p></div></div>
+<div class="comment" id="comment-13206"><div class="by">Andrew Woods, 2015-01-26 16:21 UTC</div><div class="text"><p>Thanks, Unknown. Will you also be able to update the other projects in the fcrepo4 GitHub organization?</p></div></div>
+<div class="comment" id="comment-13207"><div class="by">Unknown, 2015-01-26 16:27 UTC</div><div class="text"><p>Andrew Woods yes, by the end of the week. It will be earlier, if we don't lose power in tomorrow's blizzard.</p></div></div>
+<div class="comment" id="comment-13208"><div class="by">Unknown, 2015-01-26 17:05 UTC</div><div class="text"><p>It looks like the following files use the test.port property set in pom.xml:</p>
+
+<p>./fcrepo-transform/src/test/resources/spring-test/test-container.xml<br/>
+./fcrepo-mint/src/test/resources/test-container.xml<br/>
+./fcrepo-integration-rdf/src/test/resources/spring-test/test-container.xml<br/>
+./fcrepo-integration-ldp/src/test/resources/spring-test/test-container.xml<br/>
+./fcrepo-http-api/src/test/resources/spring-test/test-container.xml</p>
+
+<p>I could change these to fcrepo.test.port for the sake of consistency. Thoughts?</p>
+
+
+<p>this test: ./fcrepo-webapp/src/test/java/org/fcrepo/integration/AbstractResourceIT.java defines a test.context.path property. I would like to change it to fcrepo.test.context.path.</p>
+
+
+<p>Also, this test: ./fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraCrudConcurrentIT.java uses a property with this value: RUN_TEST_CRUD_CONCURRENT. I am thinking of changing this to fcrepo.test.http.concurrent (or fcrepo.test.crud.concurrent, though I'm inclined toward the former)</p>
+
+
+<p>from ./fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraHttpConfiguration.java:</p>
+
+<p>$</p>
+{fcrepo.http.ldp.putRequiresIfMatch:false}
+
+<p>I am inclined to keep this unchanged. Thoughts?</p>
+
+
+<p>from ./fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/TransactionImpl.java</p>
+
+<p>the property: fcrepo4.tx.timeout is defined. I am thinking that I will change this to fcrepo.transactions.timeout (to bring it in line with fcrepo.spring.transactions.configuration and also to eliminate the more arcane tx abbreviation)</p>
+
+
+<p>From ./fcrepo-configs/src/main/resources/config/jgroups-fcrepo-tcp.xml there are a number of jgroups.* configuration values:</p>
+
+<p>    $</p>
+{jgroups.tcp.address:0.0.0.0}
+<p>    $</p>
+{jgroups.tcp.port:7800}
+<p>    $</p>
+{jgroups.tcpping.initial_hosts:localhost[7800]}
+
+<p>I'm not entirely sure what to do with these &#8211; should they be prefixed with fcrepo? Should they be left alone?</p></div></div>
+<div class="comment" id="comment-13209"><div class="by">Andrew Woods, 2015-01-26 17:53 UTC</div><div class="text"><p>We may as well get the pain over with (including the propagating updates to the other projects in fcrepo4 GitHub). All of your suggestions look good, including leaving the jgroups configuration values unchanged.</p></div></div>
+<div class="comment" id="comment-13212"><div class="by">Unknown, 2015-01-26 18:48 UTC</div><div class="text"><p>I just submitted a new commit to this PR with these additional changes.</p></div></div>
+<div class="comment" id="comment-13214"><div class="by">Unknown, 2015-01-26 20:33 UTC</div><div class="text"><p>I just submitted a similar PR for fcrepo-message-consumer: <a href="https://github.com/fcrepo4/fcrepo-message-consumer/pull/69" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/pull/69</a></p>
+
+<p>There were two configuration values that I did not change: fcrepo.port and fcrepo.context, both defined in ./fcrepo-message-consumer-webapp/pom.xml but not used anywhere else. I suspect that they could be removed, but I am not 100% sure about that.</p></div></div>
+<div class="comment" id="comment-13216"><div class="by">Unknown, 2015-01-26 21:08 UTC</div><div class="text"><p>An analogous PR for fcrepo-module-auth-rbacl is here: <a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/8</a></p></div></div>
+<div class="comment" id="comment-13218"><div class="by">Unknown, 2015-01-26 23:09 UTC</div><div class="text"><p>@awoods the auth-xacml module is a little tricky &#8211; when the spring configuration uses test.port, the code builds fine. However, when it is changed to fcrepo.test.port, it fails. So I left that value unchanged. Otherwise, the PR is here: <a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/29" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/29</a></p></div></div>
+<div class="comment" id="comment-13219"><div class="by">Andrew Woods, 2015-01-27 16:12 UTC</div><div class="text"><p>Unknown, auth-xacml depends on auth-rbacl. Once I pulled down and built your PRs for fcrepo4 and auth-rbacl, the change to fcrepo.test.port in auth-xacml worked (was required).<br/>
+I will update your auth-xacml PR.</p></div></div>
+<div class="comment" id="comment-13220"><div class="by">Andrew Woods, 2015-01-27 16:28 UTC</div><div class="text"><p>Unknown, I agree, the configuration elements in fcrepo-message-consumer-webapp/pom.xml: fcrepo.port and fcrepo.context can be removed. I will update your PR.</p></div></div>
+<div class="comment" id="comment-13221"><div class="by">Unknown, 2015-01-27 16:46 UTC</div><div class="text"><p>@awoods, thanks. I didn't know that auth-xacml had a dependency on auth-rbacl, but that makes sense. (I had only run mvn clean verify, instead of mvn install). And thanks for modifying the PRs</p></div></div>
+<div class="comment" id="comment-13222"><div class="by">Andrew Woods, 2015-01-27 17:08 UTC</div><div class="text"><p>Resolved with:</p>
+<ul>
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/2e09b91a3b1332303468346b1525872369591de0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/2e09b91a3b1332303468346b1525872369591de0</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/85eb41e56b7af2dd29366fb2057c54afc131f3bb" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/commit/85eb41e56b7af2dd29366fb2057c54afc131f3bb</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/fab005d6963c50b4e3f4f713791e94f1c9fca446" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/fab005d6963c50b4e3f4f713791e94f1c9fca446</a></li>
+	<li><a href="https://github.com/fcrepo4/fcrepo-message-consumer/commit/b396ca15c20141c8c181fc29063f19b36c18a8d1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/commit/b396ca15c20141c8c181fc29063f19b36c18a8d1</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-13228"><div class="by">Unknown, 2015-01-27 18:18 UTC</div><div class="text"><p>One more PR related to this: <a href="https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/4</a></p></div></div>
+<div class="comment" id="comment-13229"><div class="by">Unknown, 2015-01-27 18:18 UTC</div><div class="text"><p>The fcrepo-webapp-plus project is now failing. The same configuration changes should be applied</p></div></div>
+<div class="comment" id="comment-13230"><div class="by">Andrew Woods, 2015-01-27 18:24 UTC</div><div class="text"><p>fcrepo-webapp-plus:PR-4 has been merged to master.</p></div></div>
+<div class="comment" id="comment-14675"><div class="by">Former user, 2015-07-09 18:43 UTC</div><div class="text"><p>Is there a wiki page that documents these changes?  It would be nice to have a quick guide for people who wanted to update older repos.</p></div></div>
+<div class="comment" id="comment-14676"><div class="by">Andrew Woods, 2015-07-09 18:50 UTC</div><div class="text"><p>I believe the configuration items are mostly represented on this page:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/Application+Configuration" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Application+Configuration</a></p></div></div>
+<div class="comment" id="comment-14677"><div class="by">Unknown, 2015-07-09 18:55 UTC</div><div class="text"><p>But that page doesn't include all of the configuration options (esp. the spring overrides)</p></div></div>
+<p><a href="data/FCREPO-1288.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2322 verification tool cannot determine if a record is missing</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2322</span> verification tool cannot determine if a record is missing</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2016-12-02 20:20 UTC</td></tr><tr><th>Updated</th><td>2016-12-16 15:20 UTC</td></tr><tr><th>Resolved</th><td>2016-12-16 15:20 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Labels</th><td>import-export-phase-2, verification</td></tr></table>
+<h2>Description</h2>
+<p>If I create an f4 export and then verify it, it fails to notices that I've removed some resources in Fedora.  </p>
+
+<p>The logic of the verification tool should, perhaps, walk both of the systems  - first walking one system, say the file system, checking to see that things are in fedora.  Then, secondly, walk the fedora 4 server checking to see that the resources are on disk.   This would help determine if resources have been dropped altogether.  Perhaps the second pass could have a short cut, since if the item is there, the resources have already been compared for sameness in the first pass.</p>
+
+<p>Part of me wonders if the above is actually necessary, but it does seem like it's a huge gap if we can't tell that a resource is missing altogether. </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-18152"><div class="by">Jared Whiklo, 2016-12-12 15:58 UTC</div><div class="text"><p>So if I do an export, then I delete resources from Fedora. Should the validation of my export fail? I'd say no, because at the time the export the resource was there. Otherwise I think the verification tooling should be migrated into the import-export script and occur right after the export. </p></div></div>
+<div class="comment" id="comment-18158"><div class="by">Bethany Seeger, 2016-12-12 16:41 UTC</div><div class="text"><p>That's very true. </p>
+
+<p>Use cases for this type of feature: <br/>
+1) a resource could get lost during export/import (unlikely, but it would be good to know if one does go missing)<br/>
+2) I want to know what's changed since I last exported things from the system. </p>
+
+<p>I would agree that #2 is out of the scope of the purpose of this tool.   When I wrote this ticket, I was thinking of use case #1. </p>
+</div></div>
+<div class="comment" id="comment-18161"><div class="by">Jared Whiklo, 2016-12-12 17:02 UTC</div><div class="text"><p>Ok so we need to know when the export started and possibly when it ended, then we need to walk the Fedora repo down from the chosen resource for any resources that existed before either of date/times and see if they exist on disk.</p></div></div>
+<div class="comment" id="comment-18252"><div class="by">Joshua Allan Westgard, 2016-12-16 15:05 UTC</div><div class="text"><p>After discussion it was agreed that we would provide documentation explaining that the verification tool only works against the resources that are in the tree in the location specified by the config file submitted.  </p>
+
+<ol>
+	<li>If users add resources after export, they will get an error because the added resource won't be present in the exported set.</li>
+	<li>If users delete resources from the original tree after export, the tool will not notice that they have been deleted, even though "extra" resources would be present in the export.</li>
+</ol>
+
+
+<p>This ticket should be closed as "will not fix" and a new ticket for documentation opened.</p></div></div>
+<div class="comment" id="comment-18262"><div class="by">Bethany Seeger, 2016-12-16 15:20 UTC</div><div class="text"><p>For the reasons Joshua Allan Westgard specifies above. </p></div></div>
+<p><a href="data/FCREPO-2322.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-627 Fedora REST-style object viewer does not properly handle encoded slashes in the pid value.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-627</span> Fedora REST-style object viewer does not properly handle encoded slashes in the pid value.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Tim Cornwell</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-01-28 14:10 UTC</td></tr><tr><th>Updated</th><td>2010-05-18 21:43 UTC</td></tr><tr><th>Resolved</th><td>2010-05-18 21:43 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 1, Fedora 3.4</td></tr></table>
+<h2>Environment</h2>Fedora 3.3,<br/>
+Red Hat Enterprise Linux Server release 5 (Tikanga)
+<h2>Description</h2>
+<p>Using the Object View interface (from Firefox 3.6)  with a PID value of hdl:2200%2F20061002130521143T</p>
+
+<p>   ...fedora/get/hdl:2200%2F20061002130521143T</p>
+
+<p>...returns a page containing the "View..." options.  Selecting the first one: "View the Datastreams List for this Object"<br/>
+returns a stack trace:<br/>
+"...<br/>
+javax.ws.rs.WebApplicationException: fedora.server.errors.MalformedPidException: PID object-id cannot contain '/' character.<br/>
+	at fedora.server.rest.BaseRestResource.handleException(BaseRestResource.java:162)<br/>
+	at fedora.server.rest.DatastreamResource.listDatastreams(DatastreamResource.java:100)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)<br/>
+...<br/>
+"<br/>
+(full trace attached)</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-627/10076_stacktrace">stacktrace</a>, 4886 bytes, added by Tim Cornwell on 2010-01-28</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11223"><div class="by">Stephen Bayliss, 2010-01-29 01:07 UTC</div><div class="text"><p>PIDs can contain escaped octets (<a href="http://www.fedora-commons.org/confluence/display/FCR30/Fedora+Identifiers" class="external-link" rel="nofollow noreferrer">http://www.fedora-commons.org/confluence/display/FCR30/Fedora+Identifiers</a>), however the % character itself will need to be URL-encoded when the PID is used as part of a URL (or indeed in a query string).  Specifying "%2F" as any part of a URL will result in URL-decoding to the slash character.</p>
+
+<p><a href="http://tools.ietf.org/html/rfc3986#section-2.4" class="external-link" rel="nofollow noreferrer">http://tools.ietf.org/html/rfc3986#section-2.4</a> specifies that the % character itself must be encoded if the octet is to be used as data.</p></div></div>
+<div class="comment" id="comment-11233"><div class="by">Chris Wilper, 2010-02-16 16:34 UTC</div><div class="text"><p>I think it has always worked without requiring that the '%' in '%2F' is escaped.  Sounds like a regression...</p>
+
+<p>Either way, the consistency between the old API-A-Lite /get/ URL syntax and that of the REST api /object/ syntax should be verified with respect to how these kinds of PIDs need to be encoded on the URL, and the stylesheets that present the HTML need to provide the right kind of link.</p></div></div>
+<div class="comment" id="comment-11239"><div class="by">Stephen Bayliss, 2010-02-17 12:57 UTC</div><div class="text"><p>Similarly for encoding ":" which works fine on /objects but not on /get</p>
+
+<p>(see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-224" >
+                <a href="FCREPO-224.html" class="jira-issue-macro-key issue-link"  title="API-A fails to unescape first colon in URL" >
+            
+            FCREPO-224
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+)</p>
+
+<p>eg PID changeme:public-demo%3AdemoObjectCollection  (ie the pid name - without namespace - of public-demo:demoObjectCollection octet-escaped)</p>
+
+<p>for /get : escaping the % character</p>
+
+<p>/get/changeme%3Apublic-demo%253AdemoObjectCollection</p>
+
+<ul class="alternate" type="square">
+	<li>no path in db registry for <span class="error">&#91;changeme:public-demo%253AdemoObjectCollection&#93;</span></li>
+</ul>
+
+
+<p>for /get: no escaping of % character<br/>
+/get/policy%3Apublic-demo%3AdemoObjectCollection</p>
+
+<ul class="alternate" type="square">
+	<li>MalormedPIDException (expected)</li>
+</ul>
+
+
+<p>for /objects : escaping the % character<br/>
+/objects/policy%3Apublic-demo%253AdemoObjectCollection</p>
+
+<ul class="alternate" type="square">
+	<li>works fine</li>
+</ul>
+
+
+<p>Additionally, the /fedora/search interface does not correctly url-encode PIDs in search result links.</p>
+
+<p>eg:</p>
+
+<p>&lt;a href="get/policy:public-demo%3AdemoOjbectCollection"&gt;</p>
+
+<p>should instead be</p>
+
+<p>&lt;a href="get/policy%3Apublic-demo%253AdemoOjbectCollection"&gt;</p></div></div>
+<div class="comment" id="comment-11310"><div class="by">Stephen Bayliss, 2010-04-11 20:35 UTC</div><div class="text"><p>See comments on 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-224" >
+                <a href="FCREPO-224.html" class="jira-issue-macro-key issue-link"  title="API-A fails to unescape first colon in URL" >
+            
+            FCREPO-224
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for what should be tested for ":" and what would constitute a "safe" fix for this for ":"</p></div></div>
+<div class="comment" id="comment-11370"><div class="by">Stephen Bayliss, 2010-05-12 21:45 UTC</div><div class="text"><p>I'm not sure if we should treat this as a regression.</p>
+
+<p>RFCs 1738 (2.2) and 2396 (2.4) are pretty explicit on this:  if a % character is to be treated as data then it <b>must</b> be escaped in URLs and URIs.</p>
+
+<p>So if the (normalized) PID is hdl:2200%2F20061002130521143T  then in a URI this must be represented as hdl:2200%252F20061002130521143T</p>
+
+<p>If the previous behaviour was to not URL-decode the percent-escaped octets, then this was in fact a bug.</p>
+
+<p>The position with regard to ":" appears to be more ambiguous:</p>
+
+<p>RFC1738 2.2 - Reserved<br/>
+states that ":" <b>may</b> be reserved, and if a character is reserved then it must be encoded.  However in the path part of a URL ":" is technically not reserved (only / ? &amp; # are used as separators) and therefore does not have to be encoded.  </p>
+
+<p>RFC2396 2.4<br/>
+states that it is up to the implementation (ie the scheme - in this case http) as to whether a character is a subcomponent delimiter and therefore must be escaped.  It would seem that in this case it is not a subcomponent delimiter (although it is used as such in other parts of a URL) and therefore does not have to be escaped.</p>
+
+<p>It's perfectly valid in any case to percent-encode an unreserved character (and the URIs should be treated as semantically equivalent) - so both ":" and %3A forms should be accepted.</p>
+
+<p>Most software seems to accept ":" unencoded in a path without a problem, although most URL/URI encoders seem to encode ":" as %3A.</p>
+
+<p>So I would suggest <br/>
+(1) we accept ":" and "%3A" in URLs - but in any UI we render as "%3A" to be consistent with most URI encoders and decoders (Java URI decoding and encoding should handle this seamlessly)<br/>
+(2) we ensure that all path segments/delimited sections of URLs are correctly decoded in REST API calls, so that % characters in PIDs must be encoded as %25 (it looks like this is currently <b>not</b> happening in the LITE APIs, looking at 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-224" >
+                <a href="FCREPO-224.html" class="jira-issue-macro-key issue-link"  title="API-A fails to unescape first colon in URL" >
+            
+            FCREPO-224
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ and the testing above, but appears ok in the new REST API)<br/>
+(3) the search, object view etc pages need reviewing to ensure they're correctly encoding URLs in the pages</p>
+
+<p>It would appear from the testing above that the LITE APIs do not do URL-decoding correctly, but the new REST API does (but this needs further testing).  If the LITE API behaviour has in fact changed recently we could consider this a regression, and fix it in the LITE APIs as well (although we could consider not doing this as the LITE API is to be deprecated).</p>
+
+<p>(For info - and warning - , Firefox has the behaviour of un-escaping percent-encoded characters in the address bar - however if the address is copied and pasted elsewhere the percent-encoding is in fact retained.  So if a URL which contains %3A is clicked on, the address will appear in the address bar to contain ":".  This gets even more confusing when a % character has been encoded to %25 so an encoded sequence such as %2525 will get rendered as %25 - looking like an encoded character when it's not...)</p></div></div>
+<div class="comment" id="comment-11371"><div class="by">Stephen Bayliss, 2010-05-13 17:28 UTC</div><div class="text"><p>Noting that<br/>
+(a) the original bug report is concerned with HTML views produced by API-A LITE, specifically incorrect URLs in links<br/>
+(b) object view production (through xslt) is shared with the new REST API (apart from the "search" view)<br/>
+(c) all object views produce URLs referring to the new REST API<br/>
+(d) the LITE APIs do not accept (or require) URL-encoding<br/>
+(e) the new REST API requires URL-encoding</p>
+
+<p>fhe following has been implemented</p>
+<ul class="alternate" type="square">
+	<li>modify all xslt producing HTML views to correctly URL-encode PIDs</li>
+	<li>modify both API-A LITE and new REST API search interface HTML production to correctly URL-encode PIDs</li>
+	<li>modify the describe API method to render URLs (including URL-encoding of PIDs) within the new REST API (was using API-A LITE)</li>
+	<li>modify the XML output from getObjectProfile to URL-encode PIDs in the dissemination and item index URLs</li>
+	<li>update documentation for API-A LITE to indicate that URL-encoding is not necessary (and is not accepted)</li>
+	<li>update documentation for REST API to indicate that URL-encoding is mandatory (particularly applies to percent-encoded octets in PIDs)</li>
+	<li>reopen, and unlink, 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-224" >
+                <a href="FCREPO-224.html" class="jira-issue-macro-key issue-link"  title="API-A fails to unescape first colon in URL" >
+            
+            FCREPO-224
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, as this is not fixed by the above and now appears to be a separate issue</li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-627.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1879 Prefer header should determine response entity on LDPR creation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1879</span> Prefer header should determine response entity on LDPR creation</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2016-01-28 16:50 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1878.html">FCREPO-1878</a> On creation of LDPR, Content-Type is inappropriate to response entity</td></tr></table>
+<h2>Description</h2>
+<p>"Prefer: return=minimal" should return the newly created LDPR URI in the format indicated in the Content-Type header (possibly matching the Accept request header).</p>
+
+<p>"Prefer: return=representation" should return a representation of the newly created resource in line with a subsequent GET.</p>
+
+<p>If a Prefer header is included, the response should include a Preference-Applied header.</p>
+
+<p>The default behavior should be the minimal response, but not include a Preference-Applied header.</p>
+
+<p>See also:<br/>
+<a href="https://www.w3.org/TR/ldp/#prefer-parameters" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#prefer-parameters</a><br/>
+<a href="https://tools.ietf.org/html/rfc7240" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7240</a><br/>
+<a href="https://groups.google.com/d/msg/fedora-tech/84EzwFUZvJU/p2_moiBGBwAJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/84EzwFUZvJU/p2_moiBGBwAJ</a></p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-16036"><div class="by">Benjamin Armintor, 2016-01-28 16:55 UTC</div><div class="text"><p>Tagging Robert Sanderson A. Soroka Esmé Cowles for feedback.</p></div></div>
+<div class="comment" id="comment-16037"><div class="by">A. Soroka, 2016-01-28 16:58 UTC</div><div class="text"><p>If the value of the Accept header for a "Prefer: return=minimal" request is a RDF serialization (as it often will be) how should the created URI be presented? As the value of a predicate? As the subject of some triples? I would prefer (SEE WHAT I DID THERE?!) to return an empty body for "Prefer: return=minimal".</p></div></div>
+<div class="comment" id="comment-16038"><div class="by">Robert Sanderson, 2016-01-28 17:05 UTC</div><div class="text"><p>+1 to the issue.</p>
+
+<p>Agree that getting the URI back only works for a very limited number of content types, none of which would be valid RDF.  So I retract the conneg suggestion from the -tech discussion, unless there's a significant use case to cover, and agree with the empty body.</p></div></div>
+<div class="comment" id="comment-16039"><div class="by">Benjamin Armintor, 2016-01-28 17:07 UTC</div><div class="text"><p>I'm agnostic (but persuadable), but I could see value in a minimal triple of:</p>
+
+<p>&lt;createdUri&gt; a &lt;ldp:ResourceSubclass&gt;</p>
+
+<p>especially since IIRC the LDP spec is vague about what RDF posted to a new resource should do in the absence of a specified interaction model (create a container of some kind, or a RDFSource, or what). But that's also in the Link@rel=type headers, presumably.</p></div></div>
+<div class="comment" id="comment-16041"><div class="by">Esmé Cowles, 2016-01-29 12:50 UTC</div><div class="text"><p>I'm not sure how useful JSON, RDF or any other formats are for Prefer: return=minimal &#8211; we're just returning the URI, and the only use case I've heard for this is using curl from the command-line.  Almost any other tool can get the URL of the created resource from the Location header just as easily.  So I would think the minimal response would always be text/plain regardless of any Accept header.</p>
+
+<p>If there is a use case for the minimal response in some other format, that's fine.  But I don't think we should support content negotiation for it unless there's a real need for it.</p></div></div>
+<div class="comment" id="comment-16042"><div class="by">Robert Sanderson, 2016-01-29 15:16 UTC</div><div class="text"><p>Benjamin Armintor Given that the URI is also in the headers, the class of LDP resource seems like a good single triple if we want to go that way. Also the information needs to be known before the response can be sent (it has to also be in the headers) so it's not like there's an additional cost to build the response, per A. Soroka's concern.</p></div></div>
+<div class="comment" id="comment-22349"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-1879.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

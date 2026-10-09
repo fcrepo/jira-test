@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3296 Run and Document status of Fedora 6 against API Test Suite</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3296</span> Run and Document status of Fedora 6 against API Test Suite</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2020-05-04 22:09 UTC</td></tr><tr><th>Updated</th><td>2020-05-15 20:44 UTC</td></tr><tr><th>Resolved</th><td>2020-05-15 20:44 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>This task is to run the Fedora API Test Suite against Fedora 6 and document the differences from Fedora 5 runs:<br/>
+<a href="https://fedora.info/spec-tests/fcrepo/5.0.2/testsuite-execution-report.html" class="external-link" rel="nofollow noreferrer">https://fedora.info/spec-tests/fcrepo/5.0.2/testsuite-execution-report.html</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3296/10347_testsuite-execution-report.html">testsuite-execution-report.html</a>, 81726 bytes, added by Andrew Woods on 2020-05-04</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-21170"><div class="by">Andrew Woods, 2020-05-04 22:11 UTC</div><div class="text"><p>===============================================<br/>
+Fedora API Specification Test Suite<br/>
+Total tests run: 241, Failures: 74, Skips: 24<br/>
+===============================================</p>
+
+<p>General summary of errors:</p>
+<ul class="alternate" type="square">
+	<li>Direct/Indirect containers</li>
+	<li>X-If-State-Token</li>
+	<li>Prefer headers</li>
+	<li>Want-Digest</li>
+	<li>PATCH with containment triples</li>
+	<li>External content</li>
+	<li>Various Mementos</li>
+	<li>ACLs</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-21173"><div class="by">Andrew Woods, 2020-05-05 19:47 UTC</div><div class="text"><p>Execution steps:</p>
+<ol>
+	<li>Start Fedora<br/>
+$ java -Dfcrepo.log=DEBUG -Dfcrepo.external.content.allowed=fcrepo-http-api/src/test/resources/allowed_external_paths.txt -Dfcrepo.auth.webac.userAgent.baseUri=<a href="http://example.com/" class="external-link" rel="nofollow noreferrer">http://example.com/</a> -jar fcrepo-webapp/target/fcrepo-webapp-6.0.0-SNAPSHOT-jetty-console.jar --headless</li>
+	<li>Download and build Fedora API Test Suite - <a href="https://github.com/fcrepo/Fedora-API-Test-Suite" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/Fedora-API-Test-Suite</a><br/>
+$ mvn clean install</li>
+	<li>Run tests<br/>
+$ java -jar target/testsuite-1.0-SNAPSHOT-shaded.jar -c config-local.yml</li>
+</ol>
+
+
+<p>..Where "config-local.yml" is:<br/>
+```<br/>
+default:<br/>
+  rooturl: <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a><br/>
+  root-controller-user-webid: <a href="http://example.com/fedoraAdmin" class="external-link" rel="nofollow noreferrer">http://example.com/fedoraAdmin</a><br/>
+  root-controller-user-name: pat<br/>
+  root-controller-user-password: password<br/>
+  permissionless-user-webid: <a href="http://example.com/testuser" class="external-link" rel="nofollow noreferrer">http://example.com/testuser</a><br/>
+  permissionless-user-name: testuser<br/>
+  permissionless-user-password: testpass<br/>
+  broker-url: tcp://127.0.0.1:61616<br/>
+  topic-name: fedora<br/>
+  queue-name: <br/>
+  implementation-name: Fedora<br/>
+  implementation-version: 6.0.0<br/>
+```</p>
+</div></div>
+<div class="comment" id="comment-21175"><div class="by">Andrew Woods, 2020-05-05 20:25 UTC</div><div class="text"><p>Documented in wiki: <br/>
+<a href="https://wiki.lyrasis.org/display/FF/Fedora+API+Specification+Test+Suite" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FF/Fedora+API+Specification+Test+Suite</a></p></div></div>
+<div class="comment" id="comment-21207"><div class="by">Danny Bernstein, 2020-05-15 20:43 UTC</div><div class="text"><p>Looks good.</p></div></div>
+<p><a href="data/FCREPO-3296.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1272 Too many transactions kill Fedora</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1272</span> Too many transactions kill Fedora</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-01-01 00:25 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:22 UTC</td></tr><tr><th>Resolved</th><td>2015-01-22 17:45 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Environment</h2>Physical hardware<br/>
+16 processors, Intel(R) Xeon(R) E5520  @ 2.27GHz<br/>
+8GB RAM<br/>
+RHEL 6<br/>
+OpenJDK 1.7.0_65<br/>
+Tomcat 7.0.54-2<br/>
+<br/>
+Tomcat memory settings: -Xms1024m -Xmx4096m -XX:NewSize=512m -XX:MaxNewSize=512m -XX:PermSize=512m -XX:MaxPermSize=512m<br/>
+<br/>
+Fedora Release: 4.0.0 | Build #83664b9e (no customization)
+<h2>Description</h2>
+<p>Created stress test script (see attached file). </p>
+
+<p>The script loops over the following tasks 10,000 times: </p>
+<ul class="alternate" type="square">
+	<li>open a transaction</li>
+	<li>create an object</li>
+	<li>commit the transaction</li>
+</ul>
+
+
+<p>Fedora starts consistently throwing error around cycle #950.</p>
+
+<p>After that, the app becomes unresponsive and Tomcat needs to be killed. See logfile excerpt. </p>
+
+<p>Interestingly, on my ArchLinux development VM with less RAM and processor this does not happen. </p>
+
+<p>Happy New Year!</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1272/10191_catalina_txCrash.log">catalina_txCrash.log</a>, 468268 bytes, added by scossu on 2015-01-01</li>
+<li><a href="attachments/FCREPO-1272/10192_fcrepo_stressTest.sh">fcrepo_stressTest.sh</a>, 563 bytes, added by scossu on 2015-01-01</li>
+<li><a href="attachments/FCREPO-1272/10193_test.sh">test.sh</a>, 484 bytes, added by Andrew Woods on 2015-01-16</li>
+<li><a href="attachments/FCREPO-1272/10194_test.sh.auth">test.sh.auth</a>, 561 bytes, added by Andrew Woods on 2015-01-16</li>
+</ul>
+<h2>Comments (19)</h2>
+<div class="comment" id="comment-12733"><div class="by">scossu, 2015-01-02 18:10 UTC</div><div class="text"><p>More tests performed: </p>
+<ul class="alternate" type="square">
+	<li>Tested using packaged fcrepo-4.0.0 instead of source-compiled</li>
+	<li>Adjusted Tomcat memory settings: -server -Xms512m -Xmx4096m -XX:NewSize=256m -XX:MaxNewSize=512m -XX:PermSize=64m -XX:MaxPermSize=512m -XX:+DisableExplicitGC</li>
+</ul>
+
+
+<p>Same results. Application starts throwing errors at transaction #950.</p></div></div>
+<div class="comment" id="comment-12747"><div class="by">Former user, 2015-01-08 16:49 UTC</div><div class="text"><p>Assuming this is related to the ObservationManager, maybe we should just use a System property instead.  This would let you override the automatic baseURL detection at runtime if you wanted to.</p></div></div>
+<div class="comment" id="comment-12797"><div class="by">Former user, 2015-01-16 14:49 UTC</div><div class="text"><p>I have seen similar issues when doing large-scale ingest.  The first few 1000-object batches would load at roughly constant speed, but then ingest rate would slow down and eventually fcrepo4 would have an OutOfMemoryError related to garbage-collection.</p>
+
+<p>Redeploying the fcrepo4 WAR file after each batch eliminates the problem.  So I've implemented using a System property instead of the ObservationManager to pass the baseURL, and I'm running an ingest test now to see if this resolves the issue.</p></div></div>
+<div class="comment" id="comment-12799"><div class="by">Andrew Woods, 2015-01-16 15:46 UTC</div><div class="text"><p>I have run both of the scripts locally without hitting an OOM. The ingests progressively slow down, but the memory remains stable. <br/>
+Scripts are attached: test.sh and test.sh.auth</p>
+
+<p>Former user, I would suggest ensuring that you can replicate the issue before committing to a fix.<br/>
+If it is possible to replicate, it is also worth verifying that the issue is in both 4.0.0 and 4.0.1-SNAPSHOT.</p></div></div>
+<div class="comment" id="comment-12802"><div class="by">Former user, 2015-01-16 17:27 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>I'll setup 4.0.0 and 4.0.1-SNAPSHOT on my VM to test the script.  But even if there is no OOM error, the slowdown is worrying.  I was able to ingest all 70K objects last October, but saw significant slowdown with larger batches.  Since then, all my attempts to ingest large numbers of objects have failed.</p></div></div>
+<div class="comment" id="comment-12805"><div class="by">Former user, 2015-01-16 20:32 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>I was not able to reproduce any OOM or slowdowns with 4.0.1-SNAPSHOT.  I ran the stressTest shell script against a current master build and my baseurl-system-property, and got the same results.  I also did a few other tests that have sometimes created errors for me &#8211; creating 10K objects, updating a single object's title 10K times, etc. with the same results.</p>
+
+<p>Meanwhile, my ingest process running aginst a baseurl-system-property build has gotten through 10K batches and is starting to slow down.</p>
+
+<p>So I can't confirm this bug.  But there does appear to be some bug related to a long running time and/or a large number of operations, and my baseurl-system-property branch does not fix it.  In previous testing, I definitely found that I could load millions of files without triggering the problem.  But updating 10K objects reliably triggers the problem.  That process mostly involves PUT requests to creating nodes and update the RDF.</p></div></div>
+<div class="comment" id="comment-13137"><div class="by">Andrew Woods, 2015-01-16 21:07 UTC</div><div class="text"><p>It looks like we will need to put the profiler on it to see where the increased time is happening. Will you have time for this? YourKit or the like?</p></div></div>
+<div class="comment" id="comment-13138"><div class="by">Former user, 2015-01-16 21:38 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>I've setup YourKit and restarted my ingest process.  It should take around 8 hours to get to a significant slowdown and OutOfMemoryError.  When that happens, I'll create a YourKit profiling snapshot.</p></div></div>
+<div class="comment" id="comment-13140"><div class="by">Former user, 2015-01-19 11:58 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>I've tried a couple of different strategies (starting YourKit before starting the ingest, waiting until the OOM occurs and then starting YourKit), but I haven't been able to get a profiling session to work either way.  If I run YourKit for the entire ingest process, it runs out of memory (even with 6GB of heap allocated).  If I try to start it once the error has occurred, then it hangs when trying to connect to the agent.</p>
+
+<p>Do you have any advice for how to capture a very large session?  Would it be helpful to capture the first hour of the ingest process?  The error takes 6-8 hours to produce, but presumably the slowdown is already happening?</p></div></div>
+<div class="comment" id="comment-13141"><div class="by">Andrew Woods, 2015-01-19 14:37 UTC</div><div class="text"><p>Former user, In your comment from Jan 16th above <span class="error">&#91;1&#93;</span>, you stated that you were not able to recreate OOMs. Has that changed? Are you now able to reproduce Stefano's error?<br/>
+If so, what script are you running?</p>
+
+<p>As for YourKit, I wonder if taking an hour-long sample would be useful? If not, possibly taking two small samples separated by a couple of hours for comparison?<br/>
+If you pass along your script, I can experiment on my side as well.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://jira.duraspace.org/browse/FCREPO-1272?focusedCommentId=39217&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-39217" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1272?focusedCommentId=39217&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-39217</a></p></div></div>
+<div class="comment" id="comment-13143"><div class="by">Former user, 2015-01-19 16:15 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>I was not able to produce errors or slowdowns with Stefano's scripts, or doing 10K runs of various GET/POST/PUT/PATCH operations.  But I am consistently hitting an OOM error related to garbage collection when I do real-world large-scale ingest, after around 10K objects are loaded (with 50K files and 20K authority records).  I was able to load all the files, so I am relatively sure that it's the metadata loading that's causing the problems.  This does HEAD requests to check whether objects exist, and then PUT requests with RDF/XML to load the metadata for objects that don't exist.  I haven't been able to simplify this process of creating this error, which now involves several GB of data files and our loading utility.</p>
+
+<p>Tomorrow, I'll see if I can reproduce the error with a lighter-weight toolset.  Meanwhile, I'll take a couple of snapshots as the ingest runs and hopefully that'll be useful.</p></div></div>
+<div class="comment" id="comment-13145"><div class="by">Former user, 2015-01-19 19:44 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>I've uploaded my first three snapshots here:</p>
+
+<p><a href="http://ticklefish.org/tmp/snapshot/Tomcat-2015-01-19-1.snapshot.gz" class="external-link" rel="nofollow noreferrer">http://ticklefish.org/tmp/snapshot/Tomcat-2015-01-19-1.snapshot.gz</a><br/>
+<a href="http://ticklefish.org/tmp/snapshot/Tomcat-2015-01-19-2.snapshot.gz" class="external-link" rel="nofollow noreferrer">http://ticklefish.org/tmp/snapshot/Tomcat-2015-01-19-2.snapshot.gz</a><br/>
+<a href="http://ticklefish.org/tmp/snapshot/Tomcat-2015-01-19-3.snapshot.gz" class="external-link" rel="nofollow noreferrer">http://ticklefish.org/tmp/snapshot/Tomcat-2015-01-19-3.snapshot.gz</a></p>
+
+<p>Whether because of the profiler or because my Dropbox sync was trying to sync, or both, the ingest progress has been dramatically slower than usual.  A batch typically takes about 30 minutes, but in this case, the first batch has not yet finished in more than 3 hours.</p></div></div>
+<div class="comment" id="comment-13146"><div class="by">Andrew Woods, 2015-01-19 21:09 UTC</div><div class="text"><p>Former user, I have been doing some profiling/experimenting, and discovered that for every new transaction, a new thread is added to the RepositoryChangeBus. Those threads do not go away. </p>
+
+<p>I ran four scripted tests on the 4.0.0 release that simply creates batches of 500 UUIDPathMinter containers:<br/>
+1. Authorization enable, with each create in its own transaction<br/>
+2. No Authorization, and no transactions<br/>
+3. No Authorization, with each create in its own transaction<br/>
+4. Authorization enable, and no transactions</p>
+
+<p>Results below<br/>
+========================== auth and txn<br/>
+0 - 500<br/>
+real    1m32.179s</p>
+
+<p>501 - 1000<br/>
+real    3m20.417s</p>
+
+<p>1001 - 1092 ...died</p>
+
+<p>Summary: OOM due to too many threads</p>
+
+<p>========================== no auth, no txn<br/>
+0 - 500<br/>
+real    0m31.704s</p>
+
+<p>501 - 1000<br/>
+real    0m27.681s</p>
+
+<p>1001 - 1500<br/>
+real    0m26.675s</p>
+
+<p>Summary: consistent speed, no additional threads (44)</p>
+
+<p>========================== no auth, yes txn<br/>
+0 - 500<br/>
+real    1m27.267s</p>
+
+<p>501 - 1000<br/>
+real    3m25.789s</p>
+
+<p>Summary: progressive slowing, each txn adds a permanent thread (1057)</p>
+
+<p>========================== yes auth, no txn<br/>
+0 - 500<br/>
+real    0m30.114s</p>
+
+<p>500 - 1000<br/>
+real    0m30.824s</p>
+
+<p>Summary: consistent speed, no additional threads (38)</p>
+</div></div>
+<div class="comment" id="comment-13147"><div class="by">Andrew Woods, 2015-01-19 21:30 UTC</div><div class="text"><p>Former user, For whatever reason, after downloading and gunzipping your snapshots, I get a "not a valid snapshot file" error when trying to load them.</p></div></div>
+<div class="comment" id="comment-13148"><div class="by">Former user, 2015-01-20 13:53 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>I am able to load my own snapshots into YourKit locally.  I just downloaded and gunzipped the first snapshot and the md5 matches my original file (260b0261db43b68fe271108011e3cab0).</p>
+
+<p>I'm using MacOSX, JDK 1.8.0_05 and YourKit 2014 (build 14116, 12/23/2014).  Maybe there is an incompatibility related to the platform/version?</p></div></div>
+<div class="comment" id="comment-13149"><div class="by">Former user, 2015-01-20 14:18 UTC</div><div class="text"><p>Andrew-</p>
+
+<p>So it sounds like you have a good way to reproduce this bug (too many transactions), but my problem is something else.  I have created a separate bug for the garbage collection issues: 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1294" >
+                <a href="FCREPO-1294.html" class="jira-issue-macro-key issue-link"  title="Long-running ingest produces &quot;OutOfMemoryError: GC overhead limit exceeded&quot; error" >
+            
+            FCREPO-1294
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<div class="comment" id="comment-13165"><div class="by">Andrew Woods, 2015-01-21 21:16 UTC</div><div class="text"><p>scossu, Based on re-running my tests documented in this ticket, the unbounded thread issue seems to have been resolved in master by this ticket:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1293" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1293</a></p>
+
+<p>Could you please verify on your end?</p></div></div>
+<div class="comment" id="comment-13168"><div class="by">scossu, 2015-01-21 23:22 UTC</div><div class="text"><p>Ran fcrepo_stressTest.sh and ingested all 10,000 nodes witihin transactions without error.<br/>
+Time without auth: 95 minutes. <br/>
+Time with auth: 96 minutes. </p></div></div>
+<div class="comment" id="comment-13169"><div class="by">Andrew Woods, 2015-01-22 01:34 UTC</div><div class="text"><p>That is good news, scossu.</p></div></div>
+<p><a href="data/FCREPO-1272.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

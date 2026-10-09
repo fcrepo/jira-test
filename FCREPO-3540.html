@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3540 fcrepo doesn&#x27;t run on postgres when running on AWS RDS</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3540</span> fcrepo doesn&#x27;t run on postgres when running on AWS RDS</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2020-11-19 19:30 UTC</td></tr><tr><th>Updated</th><td>2020-12-18 07:55 UTC</td></tr><tr><th>Resolved</th><td>2020-11-20 20:28 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, fcrepo-6.0.0-alpha-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>The problem is that we are trying to disable triggers in order to truncate the search tables when doing so requires super user control of the database.  In RDS, since AWS partially manages the instance, some super user permissions are not available to the root user.</p>
+
+<p> </p>
+
+<p>Here's the stacktrace.</p>
+
+<p>Caused by: org.fcrepo.kernel.api.exception.RepositoryRuntimeException: Failed to truncate search index tables<br/>
+ at org.fcrepo.search.impl.DbSearchIndexImpl.reset(DbSearchIndexImpl.java:467)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+ at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:344)<br/>
+ at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:208)<br/>
+ at com.sun.proxy.$Proxy47.reset(Unknown Source)<br/>
+ at org.fcrepo.search.impl.SearchIndexMetrics.lambda$reset$3(SearchIndexMetrics.java:93)<br/>
+ at io.micrometer.core.instrument.composite.CompositeTimer.record(CompositeTimer.java:79)<br/>
+ at org.fcrepo.search.impl.SearchIndexMetrics.reset(SearchIndexMetrics.java:92)<br/>
+ at org.fcrepo.persistence.ocfl.impl.ReindexService.reset(ReindexService.java:187)<br/>
+ at org.fcrepo.persistence.ocfl.impl.IndexBuilderImpl.rebuild(IndexBuilderImpl.java:85)<br/>
+ at org.fcrepo.persistence.ocfl.impl.IndexBuilderImpl.rebuildIfNecessary(IndexBuilderImpl.java:76)<br/>
+ at org.fcrepo.persistence.ocfl.RepositoryInitializer.initialize(RepositoryInitializer.java:67)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+ at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleElement.invoke(InitDestroyAnnotationBeanPostProcessor.java:389)<br/>
+ at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:333)<br/>
+ at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:157)<br/>
+ ... 56 common frames omitted<br/>
+Caused by: java.sql.BatchUpdateException: Batch entry 0 ALTER TABLE search_resource_rdf_type DISABLE TRIGGER ALL was aborted: ERROR: permission denied: "RI_ConstraintTrigger_c_16508" is a system trigger  Call getNextException to see other errors in the batch.<br/>
+ at org.postgresql.jdbc.BatchResultHandler.handleCompletion(BatchResultHandler.java:199)<br/>
+ at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:532)<br/>
+ at org.postgresql.jdbc.PgStatement.internalExecuteBatch(PgStatement.java:870)<br/>
+ at org.postgresql.jdbc.PgStatement.executeBatch(PgStatement.java:893)<br/>
+ at com.mchange.v2.c3p0.impl.NewProxyStatement.executeBatch(NewProxyStatement.java:1013)<br/>
+ at org.fcrepo.search.impl.DbSearchIndexImpl.reset(DbSearchIndexImpl.java:465)<br/>
+ ... 77 common frames omitted<br/>
+Caused by: org.postgresql.util.PSQLException: ERROR: permission denied: "RI_ConstraintTrigger_c_16508" is a system trigger<br/>
+ at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2553)<br/>
+ at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2285)<br/>
+ at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:521)<br/>
+ ... 81 common frames omitted</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-21730"><div class="by">Peter Winckles, 2020-11-19 19:46 UTC</div><div class="text"><p>As a general rule, it would be best if Fedora did not need superuser permissions to run</p></div></div>
+<div class="comment" id="comment-21736"><div class="by">Andrew Woods, 2020-11-20 00:42 UTC</div><div class="text"><p>Danny Bernstein: Certainly this is an important bug to fix. Is it needed by one of the migration pilot partners? I am wondering if this is actually a Beta-blocker.</p></div></div>
+<div class="comment" id="comment-21737"><div class="by">Danny Bernstein, 2020-11-20 18:57 UTC</div><div class="text"><p>I'm going to record a video on fcrepo-aws-deployer on Monday and I need this to be fixed.  I've testing my final fix now. </p>
+
+<p>Plus how much would it suck if a user were trying to run their fedora on AWS RDS  using the recommended database (postgresql) only to have it just fail to start.</p></div></div>
+<div class="comment" id="comment-21738"><div class="by">Danny Bernstein, 2020-11-20 20:28 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1815" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1815</a></p></div></div>
+<div class="comment" id="comment-21740"><div class="by">Jared Whiklo, 2020-11-23 18:18 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/4b42bac00ce584af948c6e9b6976f9298ac4ed35" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/4b42bac00ce584af948c6e9b6976f9298ac4ed35</a></p></div></div>
+<p><a href="data/FCREPO-3540.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-75 HTTP Error Codes are not being returned correctly.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-75</span> HTTP Error Codes are not being returned correctly.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-05-07 09:13 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr></table>
+<h2>Description</h2>
+<p>When trying to get a datastream by a Fedora URL, e.g. <a href="http://example.org/fedora/get/id:1/DC" class="external-link" rel="nofollow noreferrer">http://example.org/fedora/get/id:1/DC</a>, for a datastream that doesn't exist (anymore) Fedora returns an empty object instead of a http 404 error.</p>
+
+<p>The header returned by fedora is:<br/>
+HTTP/1.1 200 OK<br/>
+Server: Apache-Coyote/1.1<br/>
+Pragma: No-cache<br/>
+Cache-Control: no-cache<br/>
+Expires: Thu, 01 Jan 1970 01:00:00 CET<br/>
+Content-Length: 0<br/>
+Date: Tue, 24 Apr 2007 12:50:04 GMT</p>
+
+<p>Fedora should return an error to indicate that the resource is unavailable.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10137"><div class="by">Daniel Davis, 2007-09-10 17:07 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: fcswa<br/>
+Logged In: YES <br/>
+user_id=1855086<br/>
+Originator: NO</p>
+
+<p>I have not looked into this bug in great detail, but it appears related to our use of ServletFilters. Commenting out ServletFilters in web.xml fixes the problem and things work as they did in Fedora 2.1.1(although things were not ideal in 2.1.1 so there are still some error handling things to be addressed). The problem appears to be introduced when a low level exception is thrown and it bubbles back up to the FedoraAccessServlet class. At this point it appears to throw the correct http response code which should cause tomcat to redirect to the appropriate jsp error handling files in fedora/errors. However, this redirect seems to re-invoke ServletFilter code(I think this is because we use a target match of /* which matches on all requests). Something causes failure inside ServletFilter code so the redirect to jsp files never occurs and all that is returned is a blank page.</p>
+
+<p>So figuring out cause of failure in ServletFilter code when redirecting for jsps or finding a way to exclude jsp redirects from invoking ServletFilters I think should fix the larger problem. Dealing with more general error handling across codebase is probably more work.</p>
+
+<p>Ross</p>
+
+<p>Chris Wilper wrote: </p>
+
+<p>Hi Thorny,</p>
+
+<p>Dan and I were just talking about this problem today.</p>
+
+<p>Here are my thoughts:</p>
+
+<p>I don't believe it would be a big effort to fix.  If this is simply scoped as "proper http error codes from API-A Lite"<br/>
+I'm guessing it's a max of 3.5 days with proper tests.  And a maintenance release with the amount of testing done for<br/>
+2.2.1 is a good two person-days worth of time.</p>
+
+<p>I think if we are talking about doing a 2.2.2 release soon we need to be aware that it will impact how quickly 3.0 gets done, and consider if there are other low-hanging bug-fruits (?!) to include so we get the most out of the release overhead time we incur.</p>
+
+<ul class="alternate" type="square">
+	<li>Chris</li>
+</ul>
+
+
+<p>We have a major problem at UVA with that error message bug. I don't really know what the right thing to call it is, but the problem is where error messages are not being propagated back through to Fedora. What is happening is that when users hit a page for which they don't have access, they get a blank page. This is a major problem. Our usage is up 132% this year, which is good, but our support people are getting a lot of complaints. People just don't understand what is going on. Leslie Johnston told me that she personally had several complaints from different faculty in one day!</p>
+
+<p>Fixing this in 3.0 isn't really going to help anytime soon, either.<br/>
+There is no way that we can cut over to 3.0 during the school year. I am sure that other people who are using access controls have the problem.<br/>
+Is there any way that we can get this fixed and get a maintenance release out sometime soon, as well as getting it in 3.0?</p>
+
+<p>Thorny</p></div></div>
+<div class="comment" id="comment-10138"><div class="by">Chris Wilper, 2007-09-18 23:29 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>fixed in maintenance-2.2 branch, including tests.<br/>
+i'll keep this open till this fix gets merged with trunk.</p></div></div>
+<div class="comment" id="comment-10139"><div class="by">Chris Wilper, 2007-09-24 19:09 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>Added fix + tests for risearch.  Now fixed in maintenance@6135 and trunk@6136</p></div></div>
+<div class="comment" id="comment-10140"><div class="by">Chris Wilper, 2007-09-29 16:26 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>added fix + test for case where risearch is disabled (risearch endpoint now returns 500, not 200).<br/>
+maintenance-2.2@6157, trunk@6158</p></div></div>
+<div class="comment" id="comment-10141"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: lvdlinden<br/>
+Item #: 1714089<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1714089" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1714089</a><br/>
+Closed On: 2007-09-24 14:09:54<br/>
+Closed By: cwilper</p></div></div>
+<p><a href="data/FCREPO-75.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

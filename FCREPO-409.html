@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-409 MySQL error on shutdown</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-409</span> MySQL error on shutdown</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Renaud Waldura</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2009-02-04 20:24 UTC</td></tr><tr><th>Updated</th><td>2010-01-29 07:50 UTC</td></tr><tr><th>Resolved</th><td>2009-02-20 13:25 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.2</td></tr></table>
+<h2>Environment</h2>java version &quot;1.5.0_17&quot;<br/>
+Java(TM) 2 Runtime Environment, Standard Edition (build 1.5.0_17-b04)<br/>
+Java HotSpot(TM) 64-Bit Server VM (build 1.5.0_17-b04, mixed mode)<br/>
+<br/>
+Linux vmrh64bit02 2.6.18-128.el5 #1 SMP Wed Dec 17 11:41:38 EST 2008 x86_64 x86_64 x86_64 GNU/Linux<br/>
+
+<h2>Description</h2>
+<p>Whenever I shutdown the Fedora Repository (by shutting down Tomcat), the log shows:</p>
+
+<p>INFO: Illegal access: this web application instance has been stopped already.  Could not load com.mysql.jdbc.SQLError.  The eventual following stack trace is caused by an error th rown for debugging purposes as well as to attempt to terminate the thread which caused the illegal access, and has no functional impact.<br/>
+java.lang.IllegalStateException<br/>
+        at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1272)<br/>
+        at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1232)<br/>
+        at java.lang.ClassLoader.loadClassInternal(ClassLoader.java:319)<br/>
+        at com.mysql.jdbc.MysqlIO.send(MysqlIO.java:3246)<br/>
+        at com.mysql.jdbc.MysqlIO.quit(MysqlIO.java:1656)<br/>
+        at com.mysql.jdbc.ConnectionImpl.realClose(ConnectionImpl.java:4261)<br/>
+        at com.mysql.jdbc.ConnectionImpl.cleanup(ConnectionImpl.java:1248)<br/>
+        at com.mysql.jdbc.ConnectionImpl.finalize(ConnectionImpl.java:2655)<br/>
+        at java.lang.ref.Finalizer.invokeFinalizeMethod(Native Method)<br/>
+        at java.lang.ref.Finalizer.runFinalizer(Finalizer.java:83)<br/>
+        at java.lang.ref.Finalizer.access$100(Finalizer.java:14)<br/>
+        at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:160)</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-409/10043_FCSUPPORT-37.patch">FCSUPPORT-37.patch</a>, 1577 bytes, added by Renaud Waldura on 2009-02-04</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-10823"><div class="by">Renaud Waldura, 2009-02-04 20:36 UTC</div><div class="text"><p>This patch (attached) appears to fix the issue. (I.e. it works for me!)</p>
+
+<p>It implements shutdownModule() in ConnectionPoolManagerImpl, which calls the new new method ConnectionPool.close(). <br/>
+ConnectionPool.close() merely forwards the call to dataSource.close().</p>
+
+<p>Maybe the ddlConverter should be closed also?</p></div></div>
+<div class="comment" id="comment-10826"><div class="by">Chris Wilper, 2009-02-07 05:28 UTC</div><div class="text"><p>I wasn't able to get the IllegalStateException (ubuntu 32bit w/mysql), but looked at the patch and I think it's doing something that should be done regardless.</p></div></div>
+<div class="comment" id="comment-10836"><div class="by">Former user, 2009-02-20 13:24 UTC</div><div class="text"><p>I wasn't able to reproduce the exception either (also tried Windows XP and OSX), but applied the patch anyway as it is probably the right way to close the connection pools.</p></div></div>
+<div class="comment" id="comment-11224"><div class="by">MHR, 2010-01-29 07:49 UTC</div><div class="text"><p>Hi guys .. I got this problem . the main reason that there is a connection object for JDBC  (I suppose its static ) ...so just close it and give it value null in ovverrided function finilize() like this ( con refers to connection Obj. ):<br/>
+@Override<br/>
+    protected void finalize() throws Throwable {</p>
+
+<p>        super.finalize();</p>
+
+<p>        try</p>
+{
+             con.close();
+             }
+<p>catch(Exception r)</p>
+{
+                  r.getMessage();
+             }
+<p>             con=null;<br/>
+    }<br/>
+This solve my problem, but on the other hand I dont recommand to use connection as static never .. <br/>
+M.</p></div></div>
+<p><a href="data/FCREPO-409.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

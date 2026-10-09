@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-787 Adding datastream with referenced content on file system throws Exception when providing a checksum</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-787</span> Adding datastream with referenced content on file system throws Exception when providing a checksum</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Benjamin Armintor</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2010-08-26 20:08 UTC</td></tr><tr><th>Updated</th><td>2012-05-30 00:13 UTC</td></tr><tr><th>Resolved</th><td>2012-05-30 00:13 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3, Fedora 3.4</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr><tr><th>Is related to</th><td><a href="FCREPO-696.html">FCREPO-696</a> Adding datastream with managed content throws Exception when providing a checksum</td></tr><tr><th>Is related to</th><td><a href="FCREPO-776.html">FCREPO-776</a> Allow externally-managed content referring to a file URI to be readable by unauthenticated users</td></tr></table>
+<h2>Description</h2>
+<p>Replicates fcrepo-696, with the additional problem that an empty read-only context is insufficient for policy resolution.  I think the solution is to add the ability to attach a context to DatastreamReferencedContent (and arguably to DatastreamManagedContent, which would have the same problem if it enforced a policy regarding the URLs it would fetch).</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-11579"><div class="by">Benjamin Armintor, 2010-08-26 20:20 UTC</div><div class="text"><p>I'm running a patched 3.3 install to address this; I can get it into trunk easily if the solution sits well with everyone.</p></div></div>
+<div class="comment" id="comment-12165"><div class="by">Rebecca Sutton Koeser, 2011-12-20 21:12 UTC</div><div class="text"><p>The description here is a little opaque to me, but the label and related ticket makes me think this is the same problem I just ran into with Fedora 3.4 - trying to ingest new objects using <a href="file:///" class="external-link" rel="nofollow noreferrer">file:///</a> URIs for datastream content, when I provide a checksum type and a checksum I get the "Checksum Mismatch: ExceptionReadingStream" error; however, if I don't specify either or when I only specify a checksum type the objects ingest just fine (and the checksum is calculated correctly).  Here's an example of the fedora log output when it errors, in case it's helpful:</p>
+
+<p>ERROR 2011-12-19 17:26:08.328 <span class="error">&#91;http-8943-8&#93;</span> (FedoraObjectResource) Unexpected error fulfilling REST API request<br/>
+org.fcrepo.server.errors.ObjectIntegrityException: FOXML IO stream was bad : Checksum Mismatch: ExceptionReadingStream<br/>
+        at org.fcrepo.server.storage.translation.FOXMLDODeserializer.deserialize(FOXMLDODeserializer.java:258) [fcrepo-server-3.4.2.jar:<br/>
+na]<br/>
+        at org.fcrepo.server.storage.translation.DOTranslatorImpl.deserialize(DOTranslatorImpl.java:75) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.translation.DOTranslatorModule.deserialize(DOTranslatorModule.java:126) [fcrepo-server-3.4.2.jar:na<br/>
+]<br/>
+        at org.fcrepo.server.storage.DefaultDOManager.getIngestWriter(DefaultDOManager.java:802) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.management.DefaultManagement.ingest(DefaultManagement.java:160) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at sun.reflect.GeneratedMethodAccessor114.invoke(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) <span class="error">&#91;na:1.6.0_14&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_14&#93;</span><br/>
+        at org.fcrepo.server.messaging.NotificationInvocationHandler.invoke(NotificationInvocationHandler.java:68) [fcrepo-server-3.4.2.<br/>
+jar:na]<br/>
+        at $Proxy0.ingest(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at org.fcrepo.server.management.ManagementModule.ingest(ManagementModule.java:354) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.rest.FedoraObjectResource.createObject(FedoraObjectResource.java:293) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span></p></div></div>
+<div class="comment" id="comment-12168"><div class="by">Benjamin Armintor, 2011-12-20 22:23 UTC</div><div class="text"><p>This issue should have been fixed in 3.5, along with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-776" >
+                <a href="FCREPO-776.html" class="jira-issue-macro-key issue-link"  title="Allow externally-managed content referring to a file URI to be readable by unauthenticated users" >
+            
+            FCREPO-776
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.  </p></div></div>
+<div class="comment" id="comment-12169"><div class="by">Rebecca Sutton Koeser, 2011-12-21 02:05 UTC</div><div class="text"><p>Thanks for the update.  I will test on 3.5 when I get a chance and report back.</p></div></div>
+<div class="comment" id="comment-12269"><div class="by">Benjamin Armintor, 2012-03-19 21:00 UTC</div><div class="text"><p>This doesn't appear to be working in 3.5.  I've got a test to demonstrate,and am now trying to figure out what I meant about read-only contexts when I posted this issue.  Sigh.</p></div></div>
+<div class="comment" id="comment-12270"><div class="by">Benjamin Armintor, 2012-03-20 01:56 UTC</div><div class="text"><p>I should have the test and fix for this pushed to master soon.  In the meantime, I think you should be able to work around this by adding a policy that permits API-M if the action is "urn:fedora:names:fedora:2.1:action:id-retrieveFile"; your other policy should still block unallowed file paths.  You might add something about there being a nil client IP to that condition if you want to firm it up more, but that will eventually break.</p></div></div>
+<div class="comment" id="comment-12303"><div class="by">Benjamin Armintor, 2012-05-30 00:13 UTC</div><div class="text"><p>Sorry this took so long- it ended up being a bear to fix it in FESL. In master at:<br/>
+<a href="https://github.com/fcrepo/fcrepo/commit/1760d76e549dfcec355b7e43df72a7c0b41ede0c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/1760d76e549dfcec355b7e43df72a7c0b41ede0c</a></p></div></div>
+<p><a href="data/FCREPO-787.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

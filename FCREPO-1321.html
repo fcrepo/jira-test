@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1321 Reduce Sonar major issue - &quot;Class Data Abstraction Coupling&quot;</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1321</span> Reduce Sonar major issue - &quot;Class Data Abstraction Coupling&quot;</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Trivial</td></tr><tr><th>Reporter</th><td>Yinlin Chen</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-01-30 18:27 UTC</td></tr><tr><th>Updated</th><td>2015-09-24 21:18 UTC</td></tr><tr><th>Resolved</th><td>2015-09-24 21:18 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to fix major issue "Class Data Abstraction Coupling". There are 6 files: <a href="http://sonar.fcrepo.org/drilldown/issues/1?&amp;rule=checkstyle%3Acom.puppycrawl.tools.checkstyle.checks.metrics.ClassDataAbstractionCouplingCheck&amp;rule_sev=MAJOR&amp;severity=MAJOR" class="external-link" rel="nofollow noreferrer">http://sonar.fcrepo.org/drilldown/issues/1?&amp;rule=checkstyle%3Acom.puppycrawl.tools.checkstyle.checks.metrics.ClassDataAbstractionCouplingCheck&amp;rule_sev=MAJOR&amp;severity=MAJOR</a></p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-13274"><div class="by">Andrew Woods, 2015-01-30 18:29 UTC</div><div class="text"><p>Not all of the issues in this Sonar report are actual issues, in which case we should discuss and potentially change the rules.</p></div></div>
+<div class="comment" id="comment-13414"><div class="by">Osman Din, 2015-02-16 19:35 UTC</div><div class="text"><p>I think we should update the Sonar checkstyle/puppycrawl rule value to a higher number (15?) or disable the rule altogether because:</p>
+
+<p>1) The instantiation operations in question seem to be mostly for exceptions and JDK data structures. Do things really need to be more flexible, e.g. by using DI and making different bindings (via XML) possible? Probably not.<br/>
+2) Really 'complex' classes would most likely be caught in a code review, and I'm not sure sure how much value an automated analysis on this <em>specific</em> design case brings to the table. </p>
+
+<p>It does seem, however, that the rule does indirectly catch instances where the new operator is being used excessively. So, if we want to disable this rule we should probably check if some other 'new'-catching mechanism exists (assuming if it's an issue at all).</p></div></div>
+<div class="comment" id="comment-13436"><div class="by">Andrew Woods, 2015-02-17 15:13 UTC</div><div class="text"><p>I agree that the "exceptions" that are included in this metric should be excluded. However, the classes that are flagged are some of the most complex classes in the codebase and should be refactored... although probably not as an immediate-term priority.<br/>
+If you would be interested in investigating how to exclude "exceptions" from the com.puppycrawl.tools.checkstyle.checks.metrics.ClassDataAbstractionCouplingCheck, that would be helpful.<br/>
+Otherwise, I will keep this ticket alive, but move it out of the current sprint.</p></div></div>
+<div class="comment" id="comment-13479"><div class="by">Osman Din, 2015-02-18 19:29 UTC</div><div class="text"><p>Ok, I checked and it turns out that these classes (exceptions, collections) can be excluded via ClassDataAbstractionCoupling# excludeClasses property in XML:</p>
+
+<p><a href="http://checkstyle.sourceforge.net/config_metrics.html" class="external-link" rel="nofollow noreferrer">http://checkstyle.sourceforge.net/config_metrics.html</a></p>
+</div></div>
+<div class="comment" id="comment-13481"><div class="by">Andrew Woods, 2015-02-18 19:39 UTC</div><div class="text"><p>Is that something that needs to be done within Sonar, or can we add it to fcrepo-build-tools?</p></div></div>
+<div class="comment" id="comment-13482"><div class="by">Osman Din, 2015-02-18 19:44 UTC</div><div class="text"><p>Is Sonar using the build-tools xml file to do the reporting? If so, then I think the buildtools should be updated.</p></div></div>
+<div class="comment" id="comment-14579"><div class="by">A. Soroka, 2015-06-26 18:26 UTC</div><div class="text"><p>Can we have a new issue to update the build tools?</p></div></div>
+<div class="comment" id="comment-15287"><div class="by">Nick Ruest, 2015-09-24 15:56 UTC</div><div class="text"><p>September 24, 2015 Fedora Tech call:</p>
+
+<p>"What does this mean!?"</p>
+
+<p>or</p>
+
+<p>Is this even an issue? Can we close this, and re-open it later if we need to?</p></div></div>
+<p><a href="data/FCREPO-1321.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

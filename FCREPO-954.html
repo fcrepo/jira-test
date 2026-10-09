@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-954 Populate metadata to Akubra API</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-954</span> Populate metadata to Akubra API</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>jerry y pan</td></tr><tr><th>Assignee</th><td>jerry y pan</td></tr><tr><th>Created</th><td>2011-06-11 07:53 UTC</td></tr><tr><th>Updated</th><td>2012-07-03 21:27 UTC</td></tr><tr><th>Resolved</th><td>2012-07-03 21:27 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr></table>
+<h2>Description</h2>
+<p>We have a use case to expose Fedora datastream/objects to science data tools that are dependent on a meaningful file system and MIME indicators by file extension. For example, Earth and Atmospheric Science community has a tool to read a special format called NetCDF that represents multiple-dimensional arrays and there are data tools serve them via HTTP, but needs to scan the file system for that type of files, rather than read a HTTP stream.</p>
+
+<p>I would therefore like to have the the hints argument in the Akubra API  to be populated with the mime type and the parent PID, in order to implement a special storage on the file system for this kind of tool. The Parent PID is to be used to form a correct collection hierarchy, and the MIME type is to be used to write the file extension.</p>
+
+<p>We have had an implementation (using the Fedora 3.4.2 legacy storage system) that used the internal low-level storage API, which needs to be move into Akubra as a true sustainable solution.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11986"><div class="by">Chris Wilper, 2011-06-21 23:26 UTC</div><div class="text"><p>Thanks for joining us in today's call, Jerry. </p>
+
+<p>We brainstormed how it could be done, and talked about a pluggable "hint provider" interface, implementations of which would provide the necessary hints (content type, parent id, etc) to be passed down to Akubra at storage time. This interface might look something like:</p>
+
+<p>public interface FedoraAkubraHintProvider { <br/>
+    Map&lt;String, String&gt; getHintsForAboutToBeStoredObject(FedoraObject obj); <br/>
+    Map&lt;String, String&gt; getHintsForAboutToBeStoredDatastream(FedoraObject obj, String datastreamId);<br/>
+}</p>
+
+<p>One can imagine that implementations of this interface could be injected via Spring.</p>
+
+<p>If implemented for Fedora 3.6, the class that uses this interface would be DefaultDOManager...wherever it makes a call to m_permanentStore.addDatastream, .replaceDatastream, .addObject, and .replaceObject. The hint (map) retrieved would be passed down to the LowlevelStorage implementation, keeping the original method signature, but adding one that specifies a hint in addition to the id and inputstream.  Then for the Akubra-based implementation of LowlevelStorage, the hint would actually be passed down to the underlying akubra implementation.</p>
+
+<p>If implemented in Fedora 4.0, the class that uses this interface would be a concrete implementation of HighLevelStorage (specificially, a high level storage implementation that uses akubra for blob storage).</p>
+
+<p>I have opened this issue, signifying that the committers agree that a pluggable "hint provider" for Akubra should be added to Fedora. I have also put it in the 4.0 bucket, signifying that we'd like to see it happen for Fedora 4.0. However, as we discussed in the meeting, this may be possible to add to Fedora 3.6 if a) it is done in time, and b) the implementation, including integration tests, is done by someone other than the committers; we are focused primarily on performance testing and fixes for the 3.6 release.</p>
+
+<p>Jerry, you mentioned on the call that you may have resources put into the implementation of this. That's great. Do you think it may be possible in the next 2 or 3 months? It's a bit early to have a date for Fedora 3.6, but I'd guess that 3 months after 3.5 is the quickest it would happen.</p></div></div>
+<div class="comment" id="comment-11987"><div class="by">jerry y pan, 2011-06-23 16:32 UTC</div><div class="text"><p>Thanks for the discussion on this issue and the resolution. Yes we should be able to work on this within next 2 months and we will contact contact you and the team to review the implementation. I would like to push it for 3.6. -Jerry</p></div></div>
+<div class="comment" id="comment-12064"><div class="by">Chris Wilper, 2011-09-27 23:34 UTC</div><div class="text"><p>Discussed Jerry's work thus far:</p>
+
+<p><a href="https://github.com/JerryPan/fcrepo/tree/fcrepo-954" class="external-link" rel="nofollow noreferrer">https://github.com/JerryPan/fcrepo/tree/fcrepo-954</a></p>
+
+<p>...at today's committer meeting:</p>
+
+<p><a href="https://wiki.duraspace.org/display/FCREPO/2011-09-27+-+Committer+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FCREPO/2011-09-27+-+Committer+Meeting</a></p>
+
+<p>(see notes on above page) There was agreement that we should recommend new configurations/dependencies for modules come in through spring config files instead of the old way, fedora.fcfg. Also, we discussed that a utility to do the conversion on a per-module basis (FCFG to spring config file) would be good. So 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1001" >
+                <a href="FCREPO-1001.html" class="jira-issue-macro-key issue-link"  title="FCFG to Spring conversion utility" >
+            
+            FCREPO-1001
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ was created.</p>
+
+<p>Scoping this for 3.6 since it now seems likely that the work &amp; tests will be ready in time for the release.</p>
+</div></div>
+<p><a href="data/FCREPO-954.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

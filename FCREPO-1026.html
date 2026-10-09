@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1026 Make validation more pluggable/configurable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1026</span> Make validation more pluggable/configurable</h1>
+<table class="meta"><tr><th>Type</th><td>Epic</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-11-15 21:04 UTC</td></tr><tr><th>Updated</th><td>2012-03-05 13:46 UTC</td></tr><tr><th>Resolved</th><td>2012-03-05 13:46 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr></table>
+<h2>Description</h2>
+<p>Currently validation is somewhat configurable:  A custom validation module could be written and configured in fedora.fcfg.</p>
+
+<p>This isn't that flexible as it means that if the existing validation was also to be carried out, then that would need to be called by the custom validator.  A better design pattern might be something like the management Decorator pattern we already used.</p>
+
+<p>We also might consider allowing validators to operate on the digital object, rather than a file or inputstream - it may be more convenient for the validator to access the object itself rather than FOXML.</p>
+
+<p>We perhaps also might distinguish between different types of validation, eg validation of the FOXML vs validation of the object - the FOXML is a serialisation of the object, it is not the object itself. </p>
+
+<p>Existing validation on doCommit() (DefaultDOManager) only happens in debug - but the validator is invoked on ingest separately.</p>
+
+<p>The existing validation could be refactored so that the XML validation and schematron validation become decorator implementations.</p>
+
+<p>We should also consider relationships validation (which is carried out by the ValidationUtility, and not included in the DOValidatorImpl).</p>
+
+<p>Perhaps the REST validate endpoint could also be extended (and configurable) to validate using the above as well as the current ECM validation.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12219"><div class="by">Stephen Bayliss, 2012-01-25 21:52 UTC</div><div class="text"><p>My thoughts on implementing this are:</p>
+
+<ul>
+	<li>Existing FOXML validation on ingest (and when committing object if in DEBUG):
+	<ul>
+		<li>improve configuration options to select which validation (XSD and/or Schematron) get run at each point (ingest, commit to object store)</li>
+	</ul>
+	</li>
+	<li>New DigitalObject-based validation - new module (configure via spring) to hook into new interface DOObjectValidator in current doCommit() - this for instance (with some fairly minor code changes) will allow the ECM validator to be plugged in to validate on ingest (as configuration option, of course!).</li>
+</ul>
+
+
+<p>As part of this tackle the current Schematron validation lack of caching the prepared stylesheet - for which there probably should be a different issue.  Tests showing this can range from 20% to 50% of DefaultManagement.ingest time</p></div></div>
+<div class="comment" id="comment-12226"><div class="by">Stephen Bayliss, 2012-02-02 13:42 UTC</div><div class="text"><p>Current implementation in fcrepo-1026 branch, and proposed documentation at <a href="https://wiki.duraspace.org/display/FEDORA36/Validation" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA36/Validation</a></p>
+
+<p>Outstanding issue:  HTTP status codes - current foxml validation error results in a 500.  A 400 code (perhaps 422, but this is a webdav extension so could be regarded as non-standard from a purist REST standpoint, though people do use it) would be more appropriate.</p>
+
+<p>Would this constitute a breaking change for the REST API?  One could argue the case that the current 500 codes for validation errors are in fact a bug, as it's not a server error.</p></div></div>
+<div class="comment" id="comment-12227"><div class="by">Stephen Bayliss, 2012-02-02 20:33 UTC</div><div class="text"><p>Committer meeting 2012-02-02:</p>
+
+<p>Ok to change the response code to 4xx for 3.6</p>
+
+<p>400 decided as the most appropriate code</p></div></div>
+<div class="comment" id="comment-12255"><div class="by">Stephen Bayliss, 2012-03-05 13:46 UTC</div><div class="text"><p>Response code now 400 for all validation failures, including the new spring-configurable validation module and existing XSD/Schematron validation</p></div></div>
+<p><a href="data/FCREPO-1026.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

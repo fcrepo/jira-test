@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-238 APIM.ingest() creates objects with wrong last modification</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-238</span> APIM.ingest() creates objects with wrong last modification</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2008-08-08 10:39 UTC</td></tr><tr><th>Updated</th><td>2011-10-25 21:21 UTC</td></tr><tr><th>Resolved</th><td>2011-10-18 17:03 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.0, Fedora 3.1, Fedora 3.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr><tr><th>Is related to</th><td><a href="FCREPO-931.html">FCREPO-931</a> Modifying a datastream does not always result in modifications being in the latest datastream version</td></tr></table>
+<h2>Description</h2>
+<p>I created fedora objects with multiple datastreams with a call of APIM.ingest() method of Fedora30. The creation date of all datastreams except uncustomized DC and AUDIT is later than  lastModifiedDate of the fedora object for each created FOXML.</p>
+
+<p>Thanks a lot for your help,<br/>
+Rozita</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-238/10133_FCREPO-238.patch">FCREPO-238.patch</a>, 2166 bytes, added by frank asseg on 2011-07-26</li>
+<li><a href="attachments/FCREPO-238/10134_obj_demo_5.xml">obj_demo_5.xml</a>, 3888 bytes, added by frank asseg on 2011-07-26</li>
+</ul>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-10494"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: rozitaf<br/>
+Item #: 2042798<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=2042798" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=2042798</a></p></div></div>
+<div class="comment" id="comment-10796"><div class="by">Bill Branan, 2008-11-13 16:00 UTC</div><div class="text"><p>This issue can be reproduced by removing all date values from a demo object and performing an ingest. I tried this with demo:5 and found that all datastreams other than AUDIT were given a CREATED date later than the object's lastModifiedDate.</p></div></div>
+<div class="comment" id="comment-12021"><div class="by">frank asseg, 2011-07-26 17:17 UTC</div><div class="text"><ul class="alternate" type="square">
+	<li>Patch to fix faulty behaviour</li>
+	<li>FOXML1.1 object to reporduce faulty behaviour</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-12022"><div class="by">frank asseg, 2011-07-26 17:20 UTC</div><div class="text"><p>the problem i think is that Server.getCurrentDate(Context) uses the time from the context and not the time of the last modified datastream.<br/>
+i created a patch with a new variable lastModDate which gets set to the date of the last datastream created when ingesting a new object.<br/>
+ i attached the demo object used to reproduce faulty behaviour:</p>
+
+<p>Steps to repoduce:</p>
+
+<p>1.) open fedora admin<br/>
+2.) click ingest new "foxml1.1 object"<br/>
+3.) choose obj_demo_5.xml, which has been added to this bug as an attachment.<br/>
+4.) click view XML<br/>
+5.) see that the lastModification date in the DC fields is a couple of milliseconds before the datastream's creation date.</p></div></div>
+<div class="comment" id="comment-12027"><div class="by">Stephen Bayliss, 2011-08-02 21:32 UTC</div><div class="text"><p>See DefaultDOManager:</p>
+
+<ul class="alternate" type="square">
+	<li>line 780 picks up the date/time from the request</li>
+	<li>lines 814-823 set this on the object</li>
+	<li>lines 827-841 set this on datastreams that don't have a date/time set</li>
+</ul>
+
+
+<p>This implies that somewhere in the prececeding code, ie when the object is deserialized, a datestamp is being added to datastreams where there is none in the FOXML, which is a bug, as it means that the line 827-841 above don't get to do their job.</p>
+
+<p>This could be in the deserializer, or possibly the Datastream classes themselves are somehow setting defaults on construction etc.</p></div></div>
+<div class="comment" id="comment-12028"><div class="by">Stephen Bayliss, 2011-08-02 22:02 UTC</div><div class="text"><p>And for a potential candidate for this bug, FOXMLDODeserializer.instantiateDatastream does m_obj.addDatastreamVersion... which calls BasicDigitalObject.add (under the hood), which has:</p>
+
+<p>        if (d.DSCreateDT == null) </p>
+{
+            d.DSCreateDT = new Date();
+        }
+
+<p>Which is just plain wrong; it should probably be leaving this as null.  But doing this could throw up issues elsewhere in the code potentially (expect some NPEs will need tracking down).  Theoretically Datastream.DSCreateDT should be final?</p></div></div>
+<div class="comment" id="comment-12029"><div class="by">Former user, 2011-08-03 18:06 UTC</div><div class="text"><p>after investigating stephen's comments i think the problem might be in FOXMLDODeserializer.startElement() at line 378 which sets the class variable m_dsCreateDate from the FOXML. When the datastream date in the FOXML is empty DateUtility returns null (DateUtility.parseDateLoose(String dateString):184). So in FOXMLDODeserializer.instantiateXMLDatastream(): 854 the datastream's DSCreateDT is assigned null.<br/>
+I'm not quite sure how to fix this, since it seems to me with the current approach FOXMLDODeserializer needs knowledge of the current create date from the context.</p></div></div>
+<div class="comment" id="comment-12030"><div class="by">Stephen Bayliss, 2011-08-03 18:56 UTC</div><div class="text"><p>I think it is ok since the deserialization is kicked off at line 805 in DefaultDOManager.getIngestWriter; then DefaultDOManager.getIngestWriter subsequently sets the DSCreateDT to the one from the context around lines 826-841 if the existing DSCreateDT is null or "".</p>
+
+<p>So if we can stop any "default" date (ie one not provided in the FOXML) being assigned in the deserialisation process and leave it at null, then the existing code should add the correct value.</p>
+
+<p>Probably should also verify that add/modify datastreams still work as intended and pick up the date from the context also.</p>
+
+<p>(And I've not actually traced this through with a debugger... so still might be missing something - but in principle we should make sure that null/empty dates only get set at one consistent point in the codepath.)</p></div></div>
+<div class="comment" id="comment-12031"><div class="by">Former user, 2011-08-04 20:02 UTC</div><div class="text"><p>@Stephen: Sounds good to me, i'll try this approach and will post my feedback.</p></div></div>
+<div class="comment" id="comment-12072"><div class="by">Chris Wilper, 2011-10-18 17:10 UTC</div><div class="text"><p>Squashed and merged Frank's fix to master. <a href="https://github.com/fcrepo/fcrepo/commit/8da0a20b0938ee9d3b077cd740d9af611ca2933f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/8da0a20b0938ee9d3b077cd740d9af611ca2933f</a></p></div></div>
+<p><a href="data/FCREPO-238.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

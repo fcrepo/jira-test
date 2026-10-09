@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-994 Purging more than 200 files concurrently depletes the DB Pool and causes inconsistencies.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-994</span> Purging more than 200 files concurrently depletes the DB Pool and causes inconsistencies.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>frank asseg</td></tr><tr><th>Created</th><td>2011-08-24 16:31 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Environment</h2>SMP PREEMPT Sat Aug 6 16:18:35 CEST 2011 x86_64 Intel(R) Core(TM)2 Quad CPU Q9550 @ 2.83GHz GenuineIntel GNU/Linux<br/>
+java version &quot;1.6.0_26&quot;<br/>
+Java(TM) SE Runtime Environment (build 1.6.0_26-b03)<br/>
+Java HotSpot(TM) 64-Bit Server VM (build 20.1-b02, mixed mode)<br/>
+
+<h2>Description</h2>
+<p>When purging Objects rapidly the DB Thread Pool gets exhausted<br/>
+first a log message like "Max DB Threads (200) reached..." get printed before <br/>
+the system then says something along the lines "could'nt delete object <br/>
+from Database. but this should be ok". After that the system is in an inconsistent state<br/>
+and e.g. search requests end in a HTTP 500 Server Error.</p>
+
+<p>I will add a test case soon...</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-994/10137_fcrepo-994.tar.gz">fcrepo-994.tar.gz</a>, 1547 bytes, added by frank asseg on 2011-08-30</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-12041"><div class="by">frank asseg, 2011-08-30 14:07 UTC</div><div class="text"><p>these are fedora's warnings:<br/>
+INFO: Maximum number of threads (200) created for connector with address null and port 8080<br/>
+11:06:21.744 <span class="error">&#91;http-8080-10&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from registry, but that might be ok; continuing with purge<br/>
+11:06:21.807 <span class="error">&#91;http-8080-50&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from registry, but that might be ok; continuing with purge<br/>
+11:06:21.807 <span class="error">&#91;http-8080-27&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from registry, but that might be ok; continuing with purge<br/>
+11:06:21.807 <span class="error">&#91;http-8080-166&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from registry, but that might be ok; continuing with purge<br/>
+11:06:21.806 <span class="error">&#91;http-8080-24&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from registry, but that might be ok; continuing with purge<br/>
+11:06:35.557 <span class="error">&#91;http-8080-180&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from registry, but that might be ok; continuing with purge<br/>
+11:06:35.559 <span class="error">&#91;http-8080-180&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from FieldSearch index (Error attempting delete of object with pid 'fcrepo994:3161': FATAL: remaining connection slots are reserved for non-replication superuser connections), but that might be ok; continuing with purge<br/>
+11:06:35.593 <span class="error">&#91;http-8080-180&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from registry, but that might be ok; continuing with purge<br/>
+11:06:35.594 <span class="error">&#91;http-8080-180&#93;</span> WARN  o.f.server.storage.DefaultDOManager - Object couldn't be removed from FieldSearch index (Error attempting delete of object with pid 'fcrepo994:3447': FATAL: remaining connection slots are reserved for non-replication superuser connections), but that might be ok; continuing with purge</p></div></div>
+<div class="comment" id="comment-12042"><div class="by">frank asseg, 2011-08-30 14:12 UTC</div><div class="text"><p>DON'T USE ON PRODUCTION -&gt; this will leave the repo in a n inconsitent state.</p>
+
+<p>this maven project is for reproducing 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-994" >
+                <a href="FCREPO-994.html" class="jira-issue-macro-key issue-link"  title="Purging more than 200 files concurrently depletes the DB Pool and causes inconsistencies." >
+            
+            FCREPO-994
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+. and has a single class with a main method called FCREPO994Reproducer to run.<br/>
+you might have to tweak the setting OBJECT_COUNT to actually reproduce the failure depending on machine perfomance.</p></div></div>
+<div class="comment" id="comment-12044"><div class="by">Benjamin Armintor, 2011-08-30 20:48 UTC</div><div class="text"><p>Can you post the configuration for your connection pool manager?  there is a parameter that indicates the behavior on pool exhaustion- "whenExhaustedAction" - that takes 3 values:<br/>
+0 - fail<br/>
+1 - wait for freed resource<br/>
+2 - grow the pool</p>
+
+<p>The default value is 0; you might try 1 (2 will probably swamp your Db).</p></div></div>
+<div class="comment" id="comment-12045"><div class="by">frank asseg, 2011-08-31 13:00 UTC</div><div class="text"><p>"&lt;param name="whenExhaustedAction" value="1"&gt;...&lt;/param&gt;"<br/>
+this is from my fcrepo installation, which is unchanged since installation</p></div></div>
+<div class="comment" id="comment-12046"><div class="by">Chris Wilper, 2011-09-06 20:42 UTC</div><div class="text"><p>Talked about this on Sept 6 2011 call. Agreed to send a 503 up the stack in case of exhaustion.</p></div></div>
+<div class="comment" id="comment-13049"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-994.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-816 Allow substitution of URL path parameters when service methods reference &quot;E&quot; datastream</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-816</span> Allow substitution of URL path parameters when service methods reference &quot;E&quot; datastream</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-11-07 16:51 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.1</td></tr></table>
+<h2>Description</h2>
+<p>A little (if at all!) documented feature of the CMA is that when a service method binds to an "E" type datastream, the parameters supplied to the method (including default parameters) are available for parameter substitution in the "E" datastream's contentLocation. (see DisseminationService lines 248 onwards)</p>
+
+<p>eg, if the datastream's contentLocation is<br/>
+<a href="http://server/service?param=(PARAM1" class="external-link" rel="nofollow noreferrer">http://server/service?param=(PARAM1</a>)</p>
+
+<p>and the service method binding to this datastream has a parameter PARAM1, this is substituted in the above URL - service method parameters can be passed through to the datastreams they are invoking.</p>
+
+<p>Noting that the current CMA does not support binding of service methods as inputs to other methods, this provides a mechanism whereby a datastream can "proxy" for an object method, with any method parameters being passed through to the proxy datastream and thus to the underlying service (which could itself be a method on an object).</p>
+
+<p>However, parameter substitution is currently based on matching "=(PARAM)" which means that URL path parameters are not substituted.  This is inconsistent with the parameter substitution on the WSDL datastream, where any occurence of (PARAM) is substituted (ie no limitation on only substituting query string parameters).</p>
+
+<p>Noting again the lack of dissemination binding, implementing this will allow an easy way to implement datastreams as proxies for methods to effectively allow method bindings as inputs to methods.</p>
+
+<p>Example:</p>
+
+<p>method1 runs an xslt on a datastream<br/>
+method2 runs an xslt on method1 to provide an XHTML version</p>
+
+<p>issue: method2 cannot bind to method1 (it is possible to supply the full method1 URL as an input to method2 in the WSDL operation location, however this input is not a datastream binding, this means that datastream mediation will not occur - so if eg the external XSLT service does not have access to object service methods the call will fail - eg if API-A authentication is enabled).</p>
+
+<p>usual solution: create a datastream in the data object that references method1, then method2 binds to this object datastream.  This is cumbersome as it means adding this proxy datastream to every data object, and effectively introduces a binding between the data object and the SDef (for ease of maintenance, the data object should only need to bind to the CModel)</p>
+
+<p>better solution:<br/>
+create a datastream called METHOD1 on the sdep with contentLocation<br/>
+<a href="http://local.fedora.server/objects/(PID)/methods/sdef:pid/method1" class="external-link" rel="nofollow noreferrer">http://local.fedora.server/objects/(PID)/methods/sdef:pid/method1</a></p>
+
+<p>This effectively creates METHOD1 datastream as a proxy for the METHOD1 service, on the service depoyment object.</p>
+
+<p>method2 can then bind to method1 by instead binding to this datstream by:<br/>
+1) declaring a default input param PID value $pid (in METHODMAP)<br/>
+2) declaring a datastream binding to METHOD1, specifying the pid attribute as the sdep pid (to bind to the sdep METHOD1 datastream rather than a METHOD1 datastream on the data object)<br/>
+3) in the WSDL, use (METHOD1) to effectively bind to the method1 method</p>
+
+<p>Implementation:<br/>
+Extend the curent parameter substitution based on a pattern "=(PARAM1)" to also include the pattern "/(PARAM1)" (possibly check for /(PARAM1)/, /(PARAM1)?, /(PARAM1)# and /(PARAM1) with nothing after - we need to avoid inadvertent substitution elsewhere in the URL, eg if (PARAM1) is used as part of a query string)</p>
+
+<p>Potential issue: if there are URLs that use the pattern (PARAM1) by design in their path this would inadvertently get substituted.  I can't recall seeing many URLs that use brackets in their path, and in any case appropriate choice of the binding name would get around this.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11662"><div class="by">Benjamin Armintor, 2010-11-09 23:17 UTC</div><div class="text"><p>Discussed on the 9 Nov committer call; there are some concerns about the way chained disseminations are to be dealt with, the conceptual model of datastreams vs disseminations, etc.  Want to defer action until we can follow up with reporter.</p></div></div>
+<div class="comment" id="comment-11669"><div class="by">Stephen Bayliss, 2010-11-10 15:16 UTC</div><div class="text"><p>Agreed, the focus of this is not overall to propose how chaining of disseminators should be done.  (Though in the absence of this in the short term, it does provide a mechanism)</p>
+
+<p>The motivation for doing this could be expressed more simply as:</p>
+<ul class="alternate" type="square">
+	<li>the current code allows parameters passed to methods to be passed to the underlying bound datastream where the datastream is of type "E"</li>
+	<li>however only URL query parameters are currently passed, in a REST-ful world this should be expanded to also include path parameters</li>
+</ul>
+
+
+<p>Though it could be argued that the mechanism currently in place should not be there at all and should be removed?  But should we be removing functionality that people may already being made use of?</p></div></div>
+<div class="comment" id="comment-12987"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-816.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

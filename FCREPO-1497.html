@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1497 Indirectly Contained Resources Don&#x27;t Show Inbound Relationships</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1497</span> Indirectly Contained Resources Don&#x27;t Show Inbound Relationships</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Trey Pendragon</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-04-23 17:52 UTC</td></tr><tr><th>Updated</th><td>2016-07-25 22:43 UTC</td></tr><tr><th>Resolved</th><td>2015-07-20 20:31 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>ldp</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2092.html">FCREPO-2092</a> ldp:isMemberOfRelation does not find reference property</td></tr></table>
+<h2>Description</h2>
+<p>HTTP Log Here: <a href="https://gist.github.com/terrellt/bfaa82d74f42746a2140" class="external-link" rel="nofollow noreferrer">https://gist.github.com/terrellt/bfaa82d74f42746a2140</a></p>
+
+<p>When requesting /test/2 I would have expected two triples:</p>
+
+<p>&lt;<a href="http://localhost:8983/fedora/rest/test/1/members/ef/55/eb/46/ef55eb46-84f1-4b49-8a23-b0ab18c4e7aa" class="external-link" rel="nofollow noreferrer">http://localhost:8983/fedora/rest/test/1/members/ef/55/eb/46/ef55eb46-84f1-4b49-8a23-b0ab18c4e7aa</a>&gt; ns001:proxyFor &lt;<a href="http://localhost:8983/fedora/rest/test/2" class="external-link" rel="nofollow noreferrer">http://localhost:8983/fedora/rest/test/2</a>&gt; .</p>
+
+<p>and &lt;<a href="http://localhost:8983/fedora/rest/test/1" class="external-link" rel="nofollow noreferrer">http://localhost:8983/fedora/rest/test/1</a>&gt; &lt;<a href="http://pcdm.org/models#hasMember" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#hasMember</a>&gt; &lt;<a href="http://localhost:8983/fedora/rest/test/2" class="external-link" rel="nofollow noreferrer">http://localhost:8983/fedora/rest/test/2</a>&gt; .</p>
+
+<p>I only get the first, likely because it's indirectly contained.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1497/10231_body-indirect.ttl">body-indirect.ttl</a>, 363 bytes, added by Andrew Woods on 2015-07-17</li>
+<li><a href="attachments/FCREPO-1497/10230_body-proxy.ttl">body-proxy.ttl</a>, 86 bytes, added by Andrew Woods on 2015-07-17</li>
+<li><a href="attachments/FCREPO-1497/10229_notes.txt">notes.txt</a>, 1158 bytes, added by Andrew Woods on 2015-07-17</li>
+</ul>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-14728"><div class="by">Former user, 2015-07-14 21:00 UTC</div><div class="text"><p>I believe the issue here is that the proxyFor triple is stored, but the hasMember triple is generated (based on the IndirectContainer's LDP membership triples).  So it should be possible to update ReferencesRdfContext (which generates the inbound references triples) to look for proxies and add the same triples as inbound links.</p></div></div>
+<div class="comment" id="comment-14743"><div class="by">Former user, 2015-07-16 14:51 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/842" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/842</a></p></div></div>
+<div class="comment" id="comment-14755"><div class="by">Andrew Woods, 2015-07-17 16:39 UTC</div><div class="text"><p>Former user, I just ran through Trey Pendragon's script (see attached: notes.txt) and did not come up with the desired results. Could you double check?</p></div></div>
+<div class="comment" id="comment-14756"><div class="by">Andrew Woods, 2015-07-17 16:45 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-14758"><div class="by">Former user, 2015-07-17 20:05 UTC</div><div class="text"><p>I've updated <a href="https://github.com/fcrepo4/fcrepo4/pull/842" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/842</a> with some changes to the tests and session handling.  I tried to address the core issue with ReferencesRdfContext.java, but wasn't able to get it working.  I'll pick that back up on Monday.</p>
+
+<p>Andrew Woods, the issue with Trey's script is that body-proxy.ttl doesn't have the ore:proxyIn triple (cf. <a href="https://github.com/escowles/ldp-pcdm/blob/master/ldp-cover-proxy.ttl" class="external-link" rel="nofollow noreferrer">https://github.com/escowles/ldp-pcdm/blob/master/ldp-cover-proxy.ttl</a>), so there's no link up to the container that drives the generated predicates.  The IT has the ore:proxyIn triple.</p></div></div>
+<div class="comment" id="comment-14762"><div class="by">Former user, 2015-07-20 14:07 UTC</div><div class="text"><p>I've updated the PR to use a function-based approach:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/842" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/842</a></p></div></div>
+<div class="comment" id="comment-14765"><div class="by">Andrew Woods, 2015-07-20 17:19 UTC</div><div class="text"><p>Looks good, pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-14768"><div class="by">Former user, 2015-07-20 19:31 UTC</div><div class="text"><p>OK, I've updated the PR to remove the whitespace change and use PropertyValuesIterator.</p></div></div>
+<div class="comment" id="comment-14770"><div class="by">Andrew Woods, 2015-07-20 20:31 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/8845a22fdeffbec07bb0d0abd35ec9fd3854e788" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8845a22fdeffbec07bb0d0abd35ec9fd3854e788</a></p></div></div>
+<p><a href="data/FCREPO-1497.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

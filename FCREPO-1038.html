@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1038 Calling HEAD on getDatastreamDissemination in REST API calls GET on the underlying service for datastreams in control group E</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1038</span> Calling HEAD on getDatastreamDissemination in REST API calls GET on the underlying service for datastreams in control group E</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>IssueT</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2011-12-08 02:19 UTC</td></tr><tr><th>Updated</th><td>2014-06-07 18:20 UTC</td></tr><tr><th>Resolved</th><td>2012-08-30 18:48 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2, Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1149.html">FCREPO-1149</a> Implement proper HEAD request handling in REST API for Datastream Dissemination</td></tr></table>
+<h2>Environment</h2>Linux 2.6.18-194.11.1.el5 #1 SMP<br/>
+Red Hat Enterprise Linux Server release 5.5 (Tikanga)
+<h2>Description</h2>
+<p>Performing a HEAD call on the getDatastreamDissemination REST API does not seem to result in a HEAD call on the underlying resource for control group E. Instead it seems like a HTTPClient instance is spun up and the whole underlying HTTP request for a GET completes before the server returns a response. This is kind of deadly for large files.</p>
+
+<p>Maybe there's another api I should be invoking? Anyway, this seems like an unintended behavior.</p>
+<h2>Comments (15)</h2>
+<div class="comment" id="comment-12147"><div class="by">IssueT, 2011-12-08 02:33 UTC</div><div class="text"><p>It looks like by running a script such as <a href="https://gist.github.com/1444504" class="external-link" rel="nofollow noreferrer">https://gist.github.com/1444504</a> I'm able to put Fedora in a state where it is no longer able to serve out E datastreams and the only solution is a restart. My underlying service that presents the files via HTTP continues to work.</p></div></div>
+<div class="comment" id="comment-12148"><div class="by">IssueT, 2011-12-08 02:35 UTC</div><div class="text"><p>Here's my HTTP client settings in case they're useful: <a href="https://gist.github.com/1444522" class="external-link" rel="nofollow noreferrer">https://gist.github.com/1444522</a></p></div></div>
+<div class="comment" id="comment-12151"><div class="by">Chris Wilper, 2011-12-10 00:30 UTC</div><div class="text"><p>Hmm. I believe that if HEAD isn't explicitly implemented, Jersey will try to honor the request by pretending it was a GET and omitting the response body. That may be what's happening here. And that in itself is not a problem...just an inefficiency that could be improved by explicitly implementing HEAD so the underlying Fedora code knows that only a HEAD should be requested of the underlying resource.</p>
+
+<p>However, what you seem to be indicating is that some resource (the http connection pool?) is getting exhausted (and thus causing future requests to block) after a bunch of HEAD requests to E datastreams.</p>
+
+<p>If that's true, it could be that when jersey omits the response body, it's not bothering to close the associated stream, and that's what's causing the connection pool to become exhausted.</p>
+
+<p>When you say "in a state where it is no longer able to serve out E datastreams", does that mean you're observing Fedora hanging for future requests? Or does it give you an error?</p></div></div>
+<div class="comment" id="comment-12152"><div class="by">IssueT, 2011-12-10 01:31 UTC</div><div class="text"><p>I can try to recreate this situation on one of our boxes to make sure nothing is logged, but on the client side, you just see the browser continuously loading and never retrieving anything.</p></div></div>
+<div class="comment" id="comment-12153"><div class="by">IssueT, 2011-12-10 01:45 UTC</div><div class="text"><p>fedora.log didn't reveal very much. Catalina.out didn't reveal anything until Tomcat started shutting down, then there were these few lines:</p>
+
+<p>Dec 7, 2011 2:38:19 PM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads<br/>
+SEVERE: The web application <span class="error">&#91;/fedora&#93;</span> appears to have started a thread named <span class="error">&#91;MySQL Statement Cancellation Timer&#93;</span> but has failed to stop it. This is very likely to create a memory leak.<br/>
+Dec 7, 2011 2:38:19 PM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads<br/>
+SEVERE: The web application <span class="error">&#91;/fedora&#93;</span> is still processing a request that has yet to finish. This is very likely to create a memory leak. You can control the time allowed for requests to finish by using the unloadDelay attribute of the standard Context implementation.<br/>
+Dec 7, 2011 2:38:19 PM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads<br/>
+SEVERE: The web application <span class="error">&#91;/fedora&#93;</span> appears to have started a thread named <span class="error">&#91;MultiThreadedHttpConnectionManager cleanup&#93;</span> but has failed to stop it. This is very likely to create a memory leak.<br/>
+Dec 7, 2011 2:38:19 PM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads</p>
+
+<p>And then literally gobs of lines like these:</p>
+
+<p>Dec 7, 2011 2:38:20 PM org.apache.catalina.loader.WebappClassLoader clearReferencesThreads<br/>
+SEVERE: The web application <span class="error">&#91;/fedora&#93;</span> is still processing a request that has yet to finish. This is very likely to create a memory leak. You can control the time allowed for requests to finish by using the unloadDelay attribute of the standard Context implementation.   </p>
+
+<p>Dec 7, 2011 2:38:20 PM org.apache.catalina.loader.WebappClassLoader clearThreadLocalMap<br/>
+SEVERE: The web application <span class="error">&#91;/fedora&#93;</span> created a ThreadLocal with key of type <span class="error">&#91;java.lang.ThreadLocal&#93;</span> (value <span class="error">&#91;java.lang.ThreadLocal@7c3037a0&#93;</span>) and a value of type [com.sun.jersey.server.impl.application<br/>
+.WebApplicationContext] (value <span class="error">&#91;com.sun.jersey.server.impl.application.WebApplicationContext@15be3a66&#93;</span>) but failed to remove it when the web application was stopped. This is very likely to create a mem<br/>
+ory leak.</p>
+
+</div></div>
+<div class="comment" id="comment-12154"><div class="by">IssueT, 2011-12-10 01:47 UTC</div><div class="text"><p>I wasn't totally clear in my previous statements. Fedora can serve objects and inline xml datastreams very well when it gets in the described state, but any attempt to get the content of an E datastream just sits and spins.</p></div></div>
+<div class="comment" id="comment-12161"><div class="by">Chris Wilper, 2011-12-13 21:48 UTC</div><div class="text"><p>Discussed on today's call. If it's what I think is, then the fix may be just closing the underlying connection in the finally clause for getDatastreamDissemination and getDissemination IF the request method was "HEAD". This has to be validated.</p></div></div>
+<div class="comment" id="comment-12162"><div class="by">IssueT, 2011-12-13 21:51 UTC</div><div class="text"><p>Thanks for the update!</p></div></div>
+<div class="comment" id="comment-12166"><div class="by">Chris Wilper, 2011-12-20 21:43 UTC</div><div class="text"><p>Will also check Jersey bug tracker to see if it's a known issue...if not, it might be a Jersey bug which we should report in their tracker.</p></div></div>
+<div class="comment" id="comment-12366"><div class="by">eddie, 2012-08-08 09:37 UTC</div><div class="text"><p>Chirs, is this still an open issue?</p></div></div>
+<div class="comment" id="comment-12370"><div class="by">Chris Wilper, 2012-08-09 19:16 UTC</div><div class="text"><p>Needs to be validated, now that we've switched to CXF there's a chance it's no longer an issue.</p></div></div>
+<div class="comment" id="comment-12431"><div class="by">frank asseg, 2012-08-24 20:34 UTC</div><div class="text"><p>This seems to be fixed with 3.6 since i can do lots of HEAD requests via the REST API to "E" datastreams:<br/>
+<a href="http://localhost:8080/fedora/objects/testme:997/datastreams/externalds/content" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/testme:997/datastreams/externalds/content</a><br/>
+but there still no @HEAD implementation for the Resource.<br/>
+And it seems implementing a HEAD method would not be trivial since, the headers would have to be exactly the same, including the etag and stuff. Since this is generated by CXF, i would not know how to supply valid header infos without supplying the streamed content to cxf:</p>
+
+<p>Status Code: 200<br/>
+Date: Fri, 24 Aug 2012 15:27:51 GMT<br/>
+Via: 1.1 wiki.duraspace.org<br/>
+X-Confluence-Request-Time: 1345822071615<br/>
+X-Seraph-LoginReason: OUT<br/>
+Content-Disposition: inline; filename="FEDORA35"<br/>
+Content-Length: 4167<br/>
+Last-Modified: Wed, 13 Jul 2011 20:55:17 GMT<br/>
+Server: Apache-Coyote/1.1<br/>
+ETag: "1310590517000"<br/>
+Content-Type: image/png;charset=UTF-8<br/>
+Cache-Control: no-cache, must-revalidate<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT</p>
+
+<p>It would be easy to get the Mimetype from the datastream profile in fedora and supplying this for a HEAD request, but i would not know how to set the other header fields like the ETag, or the content-length without accessing the underlying stream.</p></div></div>
+<div class="comment" id="comment-12438"><div class="by">frank asseg, 2012-08-30 18:48 UTC</div><div class="text"><p>As discussed in the developer meeting the issue is closed, since there is no more faulty behavior since switching the implementation to Apache CXF.<br/>
+Openen a new Feature Request as 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1149" >
+                <a href="FCREPO-1149.html" class="jira-issue-macro-key issue-link"  title="Implement proper HEAD request handling in REST API for Datastream Dissemination" >
+            
+            FCREPO-1149
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for a HEAD implementation.</p></div></div>
+<div class="comment" id="comment-12443"><div class="by">eddie, 2012-09-03 11:07 UTC</div><div class="text"><p>As this issue is currently scoped, wasn't this actually fixed in 3.6 then (not 3.6.1 as currently marked)?</p></div></div>
+<div class="comment" id="comment-12566"><div class="by">Benjamin Armintor, 2013-10-03 20:21 UTC</div><div class="text"><p>In frank asseg's example, I think most of those headers are set by Confluence. As far as I can see, CXF sends the following back when I send a HEAD request with curl for a datastream dissemination:<br/>
+***<br/>
+HTTP/1.1 200 OK<br/>
+Server: Apache-Coyote/1.1<br/>
+Set-Cookie: JSESSIONID=94156535D5CA479BE4CE6A014275A72C; Path=/fedora<br/>
+content-disposition: inline; filename="econ_9495_719.pdf.pdf"<br/>
+Date: Wed, 02 Oct 2013 19:14:19 GMT<br/>
+Content-Type: application/pdf<br/>
+Content-Length: 0<br/>
+***<br/>
+So FCRepo really ought to have the latitude to implement HEAD as it sees fit, so long as it reproduces the headers in responses to both HEAD and GET. This is (perhaps obviously) more difficult for JAXB responses, where we can't predict what the length would be- we could probably still provide the Last-Modified and ETag headers, but couldn't really fulfill the contract without the Content-Length.</p></div></div>
+<p><a href="data/FCREPO-1038.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

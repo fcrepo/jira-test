@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-902 FeSL policy finder xpath is incorrect/restrictive</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-902</span> FeSL policy finder xpath is incorrect/restrictive</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-04-09 00:34 UTC</td></tr><tr><th>Updated</th><td>2011-04-10 21:56 UTC</td></tr><tr><th>Resolved</th><td>2011-04-10 21:56 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-818.html">FCREPO-818</a> DbXmlPolicyIndex query is not built for XACML-2.0 </td></tr></table>
+<h2>Description</h2>
+<p>The XPath generated for policy queries in the xml database are restrictive and in certain cases will not return matching policies.</p>
+
+<p>Example:<br/>
+If a policy specifies an attribute id not usually supplied in the request it will not be matched when it should be (the policy query is built on attributes supplied by the PEP; ie before additional attribute-finding has taken place).  An attribute in the policy which is not specified in the request should always result in a match (since the finder is unable to determine if the policy matches due to lack of information in the request).</p>
+
+<p>The attribute conditions part of the query needs to include an additional clause specifying "if a policy attribute is not present in the request".</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11906"><div class="by">Stephen Bayliss, 2011-04-10 13:13 UTC</div><div class="text"><p>The above is still imperfect - there is a distinction between:</p>
+<ul class="alternate" type="square">
+	<li>a datastream ID attribute missing in the request; which means the resource is not a datastream, and there should be no policy matching on the datastream attribute</li>
+	<li>a custom resouce attribute missing in the request; which means the request does not know about the attribute (it will be retrieved later when evaluating); and a policy specifying this attribute should always be matched by the finder.</li>
+</ul>
+
+
+<p>But it is probably the best we can do unless a mechanism for specifying attribute lookups to take place before policy finding takes place can be implemented.</p></div></div>
+<div class="comment" id="comment-11907"><div class="by">Stephen Bayliss, 2011-04-10 21:56 UTC</div><div class="text"><p>Opened, fixed, closed; as issue was causing some new integration tests for fcrepo-840 to fail (policies that include custom RI-based attributes as resource attributes were not picked up by eXist/DBXML policy index)</p></div></div>
+<p><a href="data/FCREPO-902.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

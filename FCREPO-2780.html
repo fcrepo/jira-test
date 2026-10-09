@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2780 GET inbound refs incomplete response</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2780</span> GET inbound refs incomplete response</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Created</th><td>2018-04-26 20:29 UTC</td></tr><tr><th>Updated</th><td>2018-04-30 20:56 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.1</td></tr></table>
+<h2>Environment</h2>Postgres/tomcat
+<h2>Description</h2>
+<p>In short, the response/output of a GET request, which includes a Prefer Header for  InboundReferences, on a resource with thousands of incoming relationships is truncated and incomplete.</p>
+
+<p> </p>
+
+<p>The bulk of the description that follows was initially reported on the fedora-tech group:</p>
+
+<p><a href="https://groups.google.com/forum/#!topic/fedora-tech/U7qR4_irzTI" class="external-link" rel="nofollow noreferrer">https://groups.google.com/forum/#!topic/fedora-tech/U7qR4_irzTI</a></p>
+
+<p> </p>
+
+<p>We have a resource (X) that thousands, if not tens of thousands, of other resources pointed to.</p>
+
+<p>A -&gt; X<br/>
+B -&gt; X<br/>
+C -&gt; X<br/>
+D -&gt; X<br/>
+...</p>
+
+<p>We performed a repo-wide update that re-assigned those relations to a different (new) resource (Y).</p>
+
+<p>A -&gt; Y<br/>
+B -&gt; Y<br/>
+C -&gt; Y<br/>
+D -&gt; Y<br/>
+...</p>
+
+<p>Before updating an individual resource (A,B,C,D, etc) we versioned the resource. In the end, we never deleted resource X, even though it should no longer have had any resources pointing to it.  This is just as well because the versioned resources still reference X.</p>
+
+<p>Given that the versioned resources (A,B,C,D, etc.) reference resource X, a GET request on resource X (with inbound references to be included) results in only a couple of hundred of the inbound references (when thousands were expected) and the output was truncated.</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;https:<span class="code-comment">//lakesuperior.artic.edu/fcrepo/<span class="code-keyword">rest</span>/prod/a8/c2/c9/33/a8c2c933-d353-6406-e8d3-c86117f1f219/fcr:versions/combine-1499644677.878718&gt;
+</span>        ns003:status &lt;https:<span class="code-comment">//lakesuperior.artic.edu/fcrepo/<span class="code-keyword">rest</span>/prod/18/cd/e3/84/18cde384-3763-4695-a372-90492638ad71&gt; .
+</span>
+&lt;https:<span class="code-comment">//lakesuperior.artic.edu/fcrepo/<span class="code-keyword">rest</span>/prod/d0/ee/bc/07/d0eebc07-1b32-7771-efaf</span></pre>
+</div></div>
+
+<p>Note that the last URI in the above snippet just ends.  It should have another hyphen and UUID segment.</p>
+
+<p>This phenomenon has been observed when requesting turtle and n-triples serializations.  It resulted in a 500 Null Pointer Exception when requesting JSONLD.  Not all serializations were tested.</p>
+
+<p> </p>
+
+<p> </p>
+<p><a href="data/FCREPO-2780.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

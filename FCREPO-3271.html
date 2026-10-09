@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3271 Handle conflicts during transaction commits</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3271</span> Handle conflicts during transaction commits</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2020-04-09 17:09 UTC</td></tr><tr><th>Updated</th><td>2020-12-15 21:48 UTC</td></tr><tr><th>Resolved</th><td>2020-12-15 21:45 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-3123.html">FCREPO-3123</a> Perform locking on ocfl objects during commit</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3584.html">FCREPO-3584</a> Resource locking does not take into account ghost nodes</td></tr></table>
+<h2>Description</h2>
+<p>When two simultaneous transactions update the same object(s), the second transaction should fail at commit time, preferably before any of its changes are persisted. This failure should produce a 409 status on the commit.</p>
+
+<p>A few notes on how this may work:</p>
+<ul>
+	<li>The OCFL java client includes mechanisms for optimistic locking based on the expected Head version number at the time of committing</li>
+	<li>OCFLObjectSession includes the unimplemented <b>prepare()</b> method.
+	<ul>
+		<li>This method could perform a precheck and lock on objects it is updating</li>
+		<li>We would most likely need to capture the current head version per ocfl object when they are first modified, for checking later against the head version in OCFL.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p> </p>
+
+<p>Should be able to update/reenable/replace integration test:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/TransactionsIT.java#L414" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/TransactionsIT.java#L414</a></p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-21700"><div class="by">Andrew Woods, 2020-11-18 15:12 UTC</div><div class="text"><p>Likely related to: <a href="https://jira.lyrasis.org/browse/FCREPO-3123" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3123</a></p></div></div>
+<div class="comment" id="comment-21701"><div class="by">Andrew Woods, 2020-11-18 15:13 UTC</div><div class="text"><p>This is needed for Beta. Changing to "major".</p></div></div>
+<div class="comment" id="comment-21839"><div class="by">Peter Winckles, 2020-12-15 21:45 UTC</div><div class="text"><p>I implemented this against: <a href="https://jira.lyrasis.org/browse/FCREPO-3123" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3123</a></p>
+
+<p>Noting that there is one known bug: <a href="https://jira.lyrasis.org/browse/FCREPO-3584" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3584</a></p></div></div>
+<p><a href="data/FCREPO-3271.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2508 text/csv incorrectly interpreted as RDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2508</span> text/csv incorrectly interpreted as RDF</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Conal Tuohy</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2017-05-31 13:13 UTC</td></tr><tr><th>Updated</th><td>2017-08-16 14:18 UTC</td></tr><tr><th>Resolved</th><td>2017-06-22 17:18 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.2</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>bug</td></tr><tr><th>Duplicates</th><td><a href="FCREPO-2262.html">FCREPO-2262</a> The mime type text/csv should not be treated as RDF by fedora.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2420.html">FCREPO-2420</a> Can&#x27;t download csv file on version 4.5.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2516.html">FCREPO-2516</a> Trouble accessing nc and csv files</td></tr></table>
+<h2>Description</h2>
+<p>Fedora interprets "text/csv" as RDF and creates an empty container instead of a binary with the content.</p>
+
+<p>See <a href="https://github.com/fcrepo4/fcrepo4/issues/1197" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/1197</a></p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-19061"><div class="by">Bethany Seeger, 2017-06-01 15:57 UTC</div><div class="text"><p>Discussion at 6/1/2017 fedora tech meeting generated the solution of being explicit (in this specific code) about what is acceptable as an RDF serialization and any other mime text type being considered a binary.</p></div></div>
+<div class="comment" id="comment-19097"><div class="by">Bethany Seeger, 2017-06-08 13:30 UTC</div><div class="text"><p>Wondering – are we targeting master with this one or would this also go on the 4.7 maintenance branch?</p></div></div>
+<div class="comment" id="comment-19098"><div class="by">Andrew Woods, 2017-06-08 14:02 UTC</div><div class="text"><p>Bethany Seeger: master for now... we will discuss on today's tech call moving almost all master commits to 4.7-maintenance.</p></div></div>
+<div class="comment" id="comment-19120"><div class="by">Bethany Seeger, 2017-06-15 00:20 UTC</div><div class="text"><p>Just an FYI - should be able to finish this up on Friday or Monday.  Had to travel this week, so that threw me off of getting this done sooner. </p></div></div>
+<div class="comment" id="comment-19129"><div class="by">Bethany Seeger, 2017-06-20 15:01 UTC</div><div class="text"><p>Andrew Woods - I was thinking of using the strings in <a href="https://github.com/fcrepo4/fcrepo4/blob/375a781850e08dc31c4ddcd3ec1ef1c61c2c405c/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/domain/RDFMediaType.java#L87" class="external-link" rel="nofollow noreferrer">POSSIBLE_RDF_RESPONSE_VARIANTS_STRING</a> list to determine what is a valid RDF format, and therefore a container versus binary. </p>
+
+<p>However, it doesn't include <a href="https://github.com/apache/jena/blob/b642b16705a31de0359a3288aa708f9082f67e5d/jena-arq/src/main/java/org/apache/jena/riot/WebContent.java#L110" class="external-link" rel="nofollow noreferrer">'application/n3' (contentTypeN3Alt1)</a> , which is (or was?) an accepted mime type.  So, when I've made my changes, tests that use 'application/n3' as the mime type now fail.  I can either change the tests, or add that content type to the POSSIBLE_RDF_RESPONSE_VARIANTS_STRING.  I'm wondering why contentTypeN3Alt1 wasn't in there in the first place and the history of POSSIBLE_RDF_RESPONSE_VARIANTS_STRING? I was trying to use that to prevent having the code have to be explicit about what it cannot accept, however, maybe being explicit is the way to go.  </p>
+
+<p>I realize that POSSIBLE_RDF_RESPONSE_VARIANTS_STRING list might not be the best thing to use, since it's probably for the 'Accept' header.  My goal is to make sure we don't have to have these exceptions listed everywhere ('text/plain', 'text/csv') in the code, but rather in one spot. </p></div></div>
+<div class="comment" id="comment-19130"><div class="by">Andrew Woods, 2017-06-20 15:20 UTC</div><div class="text"><p>It looks like <a href="https://github.com/fcrepo4/fcrepo4/blob/375a781850e08dc31c4ddcd3ec1ef1c61c2c405c/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/domain/RDFMediaType.java#L87" class="external-link" rel="nofollow noreferrer">POSSIBLE_RDF_RESPONSE_VARIANTS_STRING</a> is currently only used in integration-test code.</p>
+
+<p>Using a constant for defining the allowable mime-types would be good... but I do not believe the Jersey machinery allows for an array of constants in the "@Produces" annotation.</p>
+
+<p>As for the history of removing 'contentTypeN3Alt1'... that goes back a long way: <a href="https://www.pivotaltracker.com/n/projects/684825/stories/64775424" class="external-link" rel="nofollow noreferrer">https://www.pivotaltracker.com/n/projects/684825/stories/64775424</a></p>
+
+<p>My guess is that the underlying RDF generation machinery did not allow for "application/n3"... that may have since changed.</p></div></div>
+<div class="comment" id="comment-19135"><div class="by">Bethany Seeger, 2017-06-20 18:15 UTC</div><div class="text"><p>In looking at this more...</p>
+
+<p>Jena now allows 'application/n3' for a valid RDF type, though it's not technically a mime type (yet). So, some of the tests use that mime type when <em>creating</em> resources (versus accessing them, which would fail since the 'application/n3' is not in the @Produces list). When I limited the type checking to just that POSSIBLE_RDF_RESPONSE_VARIANTS_STRING list, the tests started failing, because Jena (used in former logic) was far more lenient. </p>
+
+<p>I will change the logic I created to <em>not</em> use the POSSIBLE_RDF_RESPONSE_VARIANTS_STRING. </p>
+
+<p>I would like to change the test code to use the IANA accepted mime type of 'text/n3'.  Do you have any objection to me changing that?</p></div></div>
+<div class="comment" id="comment-19136"><div class="by">Esmé Cowles, 2017-06-20 18:18 UTC</div><div class="text"><p>+1 to using 'text/n3' — much better to use the standard mime type.</p></div></div>
+<div class="comment" id="comment-19137"><div class="by">Andrew Woods, 2017-06-20 18:23 UTC</div><div class="text"><p>Bethany Seeger: changing the tests to 'text/n3' sounds good. </p></div></div>
+<div class="comment" id="comment-19152"><div class="by">Bethany Seeger, 2017-06-22 17:18 UTC</div><div class="text"><p>resolved with: <a href="https://github.com/fcrepo4/fcrepo4/pull/1205" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1205</a></p></div></div>
+<div class="comment" id="comment-19168"><div class="by">Bethany Seeger, 2017-06-28 18:18 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/commit/0063969d8bc04074ff5c25eae9852059ec659030" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/0063969d8bc04074ff5c25eae9852059ec659030</a></p></div></div>
+<p><a href="data/FCREPO-2508.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

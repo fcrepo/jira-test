@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-873 Thread-safety issue in Trippi - RIOTripleIterator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-873</span> Thread-safety issue in Trippi - RIOTripleIterator</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2011-03-10 21:46 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:57 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:57 UTC</td></tr><tr><th>Components</th><td>legacy - Trippi</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-905.html">FCREPO-905</a> Tidy up handling of threads.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-946.html">FCREPO-946</a> Rebuilder does not terminate</td></tr></table>
+<h2>Description</h2>
+<p>A number of JVM crashes due to SIGSEGV.  On looking at the logs, most of them have the following in common:</p>
+
+<p>Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)<br/>
+j  java.lang.Thread.start0()V+0<br/>
+j  java.lang.Thread.start()V+32<br/>
+j  org.trippi.io.RIOTripleIterator.&lt;init&gt;(Ljava/io/InputStream;Lorg/openrdf/rio/RDFParser;Ljava/lang/String;)V+116<br/>
+j  org.trippi.TripleIterator.fromStream(Ljava/io/InputStream;Ljava/lang/String;Lorg/trippi/RDFFormat;)Lorg/trippi/TripleIterator;+98<br/>
+J  org.fcrepo.server.storage.RDFRelationshipReader.readRelationships(Ljava/io/InputStream;)Ljava/util/Set;<br/>
+J  org.fcrepo.server.storage.types.BasicDigitalObject.getRels(Ljava/lang/String;)Ljava/util/Set;</p>
+
+<p>Lookiing at the source (<a href="https://github.com/fcrepo/trippi/blob/master/src/java/org/trippi/io/RIOTripleIterator.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/trippi/blob/master/src/java/org/trippi/io/RIOTripleIterator.java</a>) I wonder if we have a thread-safety issue around m_finishedParsing:</p>
+
+<p>In the constructor:</p>
+<ul class="alternate" type="square">
+	<li>parsing is kicked off in a separate thread</li>
+	<li>getNext() is called</li>
+</ul>
+
+
+<p>getNext() reads m_finishedParsing.<br/>
+the parsing thread sets m_finishedParsing to true when done</p>
+
+<p>Although getNext() is synchronized, there's no protection around the parsing thread setting m_finishedParsing, so potentially an issue if the parsing completes whilst getNext() is reading m_finishedParsing.</p>
+
+
+
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-873/10122_Trippi_RIOTripleIterator_thread-safety_issue.rar">Trippi RIOTripleIterator thread-safety issue.rar</a>, 89854 bytes, added by Stephen Bayliss on 2011-03-10</li>
+</ul>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-11836"><div class="by">Benjamin Armintor, 2011-03-11 22:58 UTC</div><div class="text"><p>I think we could just check the thread state on the parsing thread, rather than have a semaphore in the class.  I'll try to get a branch for this going when I finish the trippi/json patch.</p></div></div>
+<div class="comment" id="comment-11837"><div class="by">Stephen Bayliss, 2011-03-11 23:26 UTC</div><div class="text"><p>This has now been tested with m_finishedParsing made volatile - and it makes no difference; so perhaps this potential thread-safety issue isn't the cause of the SIGSEGV.</p></div></div>
+<div class="comment" id="comment-11856"><div class="by">Benjamin Armintor, 2011-03-15 00:53 UTC</div><div class="text"><p>I'm pushing an issue branch that may fix this (by pooling threads in an Executor rather than creating new threads).  Can you try it out?  I think there is still a race condition in Iterators that are closed before the RDF is exhausted, but there should be fewer resources allocated to thread creation. </p></div></div>
+<div class="comment" id="comment-11864"><div class="by">Stephen Bayliss, 2011-03-15 12:46 UTC</div><div class="text"><p>Thanks.  So could the issue with iterators being closed before the RDF is exhausted cause an issue with garbage collection?  Just thinking that might be the cause of the SIGSEGV...</p>
+
+<p>Have pushed these changes to branch fcrepo-873-v1.4.3 to allow testing on a Fedora 3.4.2 iinstallation.</p></div></div>
+<div class="comment" id="comment-11865"><div class="by">Stephen Bayliss, 2011-03-15 19:26 UTC</div><div class="text"><p>Performance reported to be quite a lot slower with the sync in the close and the executor.  Wonder if this is down to the Synchronized/notifyAll() in the close, or the cached thread pool execution?</p></div></div>
+<div class="comment" id="comment-11866"><div class="by">Benjamin Armintor, 2011-03-15 19:37 UTC</div><div class="text"><p>If it's in the context of a single parse, it could be the thread pooling; if over a group of parse, probably the close.  But first things first: Did it address the SIGSEGV?</p></div></div>
+<div class="comment" id="comment-11873"><div class="by">Stephen Bayliss, 2011-03-15 21:53 UTC</div><div class="text"><p>Good news - no SIGSEGV on the first test.  Tests being re-run to confirm.  Is there any configuration or alternative thread pool implementations that may help with the performance on this (though granted it is probably a corner case and generally the server wouldn't be under this load).</p></div></div>
+<div class="comment" id="comment-11880"><div class="by">Stephen Bayliss, 2011-03-17 23:21 UTC</div><div class="text"><p>After some further testing it doesn't appear that there is a significant performance difference.  And no SIGSEGV.</p></div></div>
+<div class="comment" id="comment-11909"><div class="by">Benjamin Armintor, 2011-04-12 20:20 UTC</div><div class="text"><p>Merged to Trippi trunk: <a href="https://github.com/fcrepo/trippi/commit/508c2d5ae939eb5d537cc47223596d99720ccb62" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/trippi/commit/508c2d5ae939eb5d537cc47223596d99720ccb62</a></p></div></div>
+<div class="comment" id="comment-12006"><div class="by">Benjamin Armintor, 2011-07-01 19:18 UTC</div><div class="text"><p>Without a way to call shutdown on the ExecutorService, this introduces a 60 second lag on system shutdown.  Investigating ways to shutdown service.</p></div></div>
+<div class="comment" id="comment-12813"><div class="by">Andrew Woods, 2015-01-16 20:57 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-873.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

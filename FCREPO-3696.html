@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3696 Reads to large containers unacceptably slow</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3696</span> Reads to large containers unacceptably slow</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2021-04-14 04:41 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 20:53 UTC</td></tr><tr><th>Resolved</th><td>2021-06-08 17:21 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>I noticed this problem when doing some optimization the search tables with a repo with 1.5 million object.</p>
+
+<p>It appears that a simple read operation such as<br/>
+ curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a><br/>
+ passes a transaction id to the containment index which in turn causes it to use ContainmentIndexImpl.SELECT_CHILDREN_IN_TRANSACTION  which is much slower than the lighter weight  ContainmentIndexImpl.SELECT_CHILDREN which is used when the transaction id is null.  Since we're always using a transaction, we are always using the more complicated and slower query. </p>
+
+<p>****<br/>
+  <br/>
+ So here’s the performance on the first query (SELECT_CHILDREN):  .28 ms<br/>
+ fedora=&gt; explain analyze SELECT fedora_id FROM containment WHERE parent = 'info:fedora' AND end_time IS NULL ORDER BY fedora_id LIMIT 100 OFFSET 0;<br/>
+ QUERY PLAN<br/>
+ --------------------------------------------------------------------------------------------------------------------------------------------------<br/>
+ Limit (cost=0.55..12.32 rows=100 width=48) (actual time=0.029..0.240 rows=100 loops=1)<br/>
+ -&gt; Index Scan using containment_pkey on containment (cost=0.55..185605.24 rows=1576596 width=48) (actual time=0.028..0.200 rows=100 loops=1)<br/>
+ Filter: ((end_time IS NULL) AND ((parent)::text = 'info:fedora'::text))<br/>
+ Planning Time: 0.148 ms<br/>
+ Execution Time: 0.280 ms<br/>
+ (5 rows)<br/>
+ (edited)<br/>
+  <br/>
+ <a href="https://fedora-project.slack.com/archives/CM74BAYS3/p1618373815290400" class="external-link" rel="nofollow noreferrer">9:16</a><br/>
+ Here’s the query produce by  SELECT_CHILDREN_IN_TRANSACTION<br/>
+ fedora=&gt; explain analyze SELECT x.fedora_id FROM (SELECT fedora_id FROM containment WHERE parent = 'info:fedora' AND end_time IS NULL UNION SELECT fedora_id FROM containment_transactions WHERE parent = 'info:fedora' AND transaction_id = 'x' AND operation = 'add') x WHERE NOT EXISTS (SELECT 1 FROM containment_transactions WHERE parent = 'info:fedora' AND fedora_id = x.fedora_id AND transaction_id = 'x' AND operation IN ('delete', 'purge')) ORDER BY x.fedora_id LIMIT 100 OFFSET 0<br/>
+ ;<br/>
+ QUERY PLAN-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br/>
+ -----------------------------<br/>
+ Limit (cost=958591.18..958592.94 rows=100 width=516) (actual time=21888.321..21888.767 rows=100 loops=1)<br/>
+ -&gt; Merge Anti Join (cost=958591.18..986210.31 rows=1573730 width=516) (actual time=21888.319..21888.723 rows=100 loops=1)<br/>
+ Merge Cond: ((containment.fedora_id)::text = (containment_transactions.fedora_id)::text)<br/>
+ -&gt; Unique (cost=958583.00..966465.99 rows=1576597 width=516) (actual time=21888.273..21888.635 rows=100 loops=1)<br/>
+ -&gt; Sort (cost=958583.00..962524.49 rows=1576597 width=516) (actual time=21888.270..21888.577 rows=100 loops=1)<br/>
+ Sort Key: containment.fedora_id<br/>
+ Sort Method: external merge Disk: 91104kB<br/>
+ -&gt; Append (cost=0.00..63413.09 rows=1576597 width=516) (actual time=0.016..1154.568 rows=1577478 loops=1)<br/>
+ -&gt; Seq Scan on containment (cost=0.00..39755.96 rows=1576596 width=48) (actual time=0.015..566.892 rows=1577478 loops=1)<br/>
+ Filter: ((end_time IS NULL) AND ((parent)::text = 'info:fedora'::text))<br/>
+ Rows Removed by Filter: 3152<br/>
+ -&gt; Index Scan using containment_transactions_idx3 on containment_transactions containment_transactions_1 (cost=0.15..8.17 rows=1 width=49) (actual time=<br/>
+ 0.017..0.017 rows=0 loops=1)<br/>
+ Index Cond: ((transaction_id)::text = 'x'::text)<br/>
+ Filter: (((parent)::text = 'info:fedora'::text) AND ((operation)::text = 'add'::text))<br/>
+ -&gt; Sort (cost=8.18..8.19 rows=1 width=49) (actual time=0.039..0.040 rows=0 loops=1)<br/>
+ Sort Key: containment_transactions.fedora_id<br/>
+ Sort Method: quicksort Memory: 25kB<br/>
+ -&gt; Index Scan using containment_transactions_idx3 on containment_transactions (cost=0.15..8.17 rows=1 width=49) (actual time=0.025..0.025 rows=0 loops=1)<br/>
+ Index Cond: ((transaction_id)::text = 'x'::text)<br/>
+ Filter: (((operation)::text = ANY ('{delete,purge}'::text[])) AND ((parent)::text = 'info:fedora'::text))<br/>
+ Planning Time: 0.378 ms<br/>
+ Execution Time: 21905.394 ms<br/>
+ (22 rows)<br/>
+  <br/>
+ Notice the second query takes 75,000 times longer  (21,095 ms / 0.28 = 75,339).  </p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-22262"><div class="by">Danny Bernstein, 2021-06-08 17:21 UTC</div><div class="text"><p>This issue has been addressed.</p></div></div>
+<p><a href="data/FCREPO-3696.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

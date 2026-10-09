@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3649 Unexpected fcr:fixity endpoint responses to invalid requests</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3649</span> Unexpected fcr:fixity endpoint responses to invalid requests</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2021-02-18 21:32 UTC</td></tr><tr><th>Updated</th><td>2021-02-20 12:14 UTC</td></tr><tr><th>Resolved</th><td>2021-02-20 12:14 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Description</h2>
+<p>The fcr:fixity endpoint responds oddly to invalid request methods. Generally the results are errors, but not expected ones.</p>
+
+<p>PUT to existing binary (would probably expect a 405 and related message)</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -ufedoraAdmin:fedoraAdmin -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/binary_with_sha1/fcr:fixity
+</span>
+# HTTP/1.1 409 Conflict
+
+# NonRdfSource resources cannot contain other resources
+</pre>
+</div></div>
+<p>PATCH or DELETE (would expect a 405)</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -ufedoraAdmin:fedoraAdmin -XPATCH http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/binary_with_sha1/fcr:fixity
+</span>
+# HTTP/1.1 404 Not Found
+# Error: No OCFL mapping found <span class="code-keyword">for</span> info:fedora/binary_with_sha1/fcr:fixity
+</pre>
+</div></div>
+<p>HEAD (would expect a 405)</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -ufedoraAdmin:fedoraAdmin -I http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/binary_with_sha1/fcr:fixity -v
+</span>
+# HTTP/1.1 200 OK
+</pre>
+</div></div>
+<p>Request to fcr:fixity of a resource that doesn't exist</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -ufedoraAdmin:fedoraAdmin -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/doesnotexist/fcr:fixity
+</span># HTTP/1.1 201 Created
+
+
+curl -ufedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/doesnotexist/fcr:fixity
+</span># 404
+# Error: No OCFL mapping found <span class="code-keyword">for</span> info:fedora/doesnotexist
+
+curl -ufedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/doesnotexist
+</span># 404
+# Error: No OCFL mapping found <span class="code-keyword">for</span> info:fedora/doesnotexist
+
+# Try to create <span class="code-quote">"doesnotexist"</span> via POST, thinks the ID is taken
+curl -ufedoraAdmin:fedoraAdmin -XPOST http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/ -H<span class="code-quote">"Slug: doesnotexist"</span>
+</span># http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/3cedc11e-e8f8-4c77-91a7-ad50f230078c</span></pre>
+</div></div>
+<p>PUT to fcr:fixity of an existing non-binary resource</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -ufedoraAdmin:fedoraAdmin -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/helloworld
+</span>
+curl -ufedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/helloworld/fcr:fixity -v
+</span># HTTP/1.1 404 Not Found
+# org.fcrepo.kernel.impl.models.ContainerImpl@69dd2e29 is not a binary
+
+</pre>
+</div></div>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22089"><div class="by">Jared Whiklo, 2021-02-19 17:02 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1883" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1883</a></p></div></div>
+<div class="comment" id="comment-22100"><div class="by">Peter Winckles, 2021-02-20 12:14 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/7382b803a02590c13723e71fe68ff014b18603af" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/7382b803a02590c13723e71fe68ff014b18603af</a></p></div></div>
+<p><a href="data/FCREPO-3649.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>
