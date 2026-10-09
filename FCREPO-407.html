@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-407 404 &quot;Not found&quot; page never shown -- generates an error</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-407</span> 404 &quot;Not found&quot; page never shown -- generates an error</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Renaud Waldura</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-02-04 19:44 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2009-02-07 04:23 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.2</td></tr></table>
+<h2>Environment</h2>java version &quot;1.5.0_17&quot;<br/>
+Java(TM) 2 Runtime Environment, Standard Edition (build 1.5.0_17-b04)<br/>
+Java HotSpot(TM) 64-Bit Server VM (build 1.5.0_17-b04, mixed mode)<br/>
+<br/>
+Linux vmrh64bit02 2.6.18-128.el5 #1 SMP Wed Dec 17 11:41:38 EST 2008 x86_64 x86_64 x86_64 GNU/Linux<br/>
+
+<h2>Description</h2>
+<p>Accessing any invalid URL generates an error. E.g. <a href="http://localhost:8080/fedora/xxx" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/xxx</a> yields the page:</p>
+
+
+<p>HTTP Status 404 - </p>
+
+<p>--------------------------------------------------------------------------------</p>
+
+<p>type Status report</p>
+
+<p>message </p>
+
+<p>description The requested resource () is not available.</p>
+
+
+<p>--------------------------------------------------------------------------------</p>
+
+<p>Apache Tomcat/5.5.27</p>
+
+
+<p>And the following error appears in the log:</p>
+
+
+<p>ERROR 2009-02-04 10:29:44.966 <span class="error">&#91;http-80-Processor2&#93;</span> (<span class="error">&#91;jsp&#93;</span>) Servlet.service() for servlet jsp threw exception<br/>
+java.lang.NullPointerException<br/>
+        at org.apache.jsp.jsp.notfound_002d404_jsp._jspService(notfound_002d404_jsp.java:76)<br/>
+        at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.java:98)<br/>
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:729)<br/>
+        at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:331)<br/>
+        at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:329)<br/>
+        at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:265)<br/>
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:729)<br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:269)<br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.invoke(ApplicationDispatcher.java:679)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.processRequest(ApplicationDispatcher.java:463)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.doForward(ApplicationDispatcher.java:399)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.forward(ApplicationDispatcher.java:301)<br/>
+        at org.apache.catalina.core.StandardHostValve.custom(StandardHostValve.java:364)<br/>
+        at org.apache.catalina.core.StandardHostValve.status(StandardHostValve.java:285)<br/>
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:137)<br/>
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:117)<br/>
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:108)<br/>
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:174)<br/>
+        at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:875)<br/>
+        at org.apache.coyote.http11.Http11BaseProtocol$Http11ConnectionHandler.processConnection(Http11BaseProtocol.java:665)<br/>
+        at org.apache.tomcat.util.net.PoolTcpEndpoint.processSocket(PoolTcpEndpoint.java:528)<br/>
+        at org.apache.tomcat.util.net.LeaderFollowerWorkerThread.runIt(LeaderFollowerWorkerThread.java:81)<br/>
+        at org.apache.tomcat.util.threads.ThreadPool$ControlRunnable.run(ThreadPool.java:689)<br/>
+        at java.lang.Thread.run(Thread.java:595)<br/>
+Feb 4, 2009 10:29:44 AM org.apache.catalina.core.StandardHostValve custom<br/>
+SEVERE: Exception Processing ErrorPage<span class="error">&#91;errorCode=404, location=/jsp/notfound-404.jsp&#93;</span><br/>
+org.apache.jasper.JasperException: Exception in JSP: /jsp/notfound-404.jsp:23</p>
+
+<p>20:                      &lt;h3&gt;No such object, datastream, or dissemination.&lt;/h3&gt;<br/>
+21:                   &lt;/center&gt;<br/>
+22: &lt;%<br/>
+23: if (exception.getMessage() != null) </p>
+{
+24:     out.print(exception.getMessage());
+25: }
+<p>26: %&gt;</p>
+
+
+<p>Stacktrace:<br/>
+        at org.apache.jasper.servlet.JspServletWrapper.handleJspException(JspServletWrapper.java:451)<br/>
+        at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:373)<br/>
+        at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:329)<br/>
+        at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:265)<br/>
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:729)<br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:269)<br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.invoke(ApplicationDispatcher.java:679)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.processRequest(ApplicationDispatcher.java:463)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.doForward(ApplicationDispatcher.java:399)<br/>
+        at org.apache.catalina.core.ApplicationDispatcher.forward(ApplicationDispatcher.java:301)<br/>
+        at org.apache.catalina.core.StandardHostValve.custom(StandardHostValve.java:364)<br/>
+        at org.apache.catalina.core.StandardHostValve.status(StandardHostValve.java:285)<br/>
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:137)<br/>
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:117)<br/>
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:108)<br/>
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:174)<br/>
+        at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:875)<br/>
+        at org.apache.coyote.http11.Http11BaseProtocol$Http11ConnectionHandler.processConnection(Http11BaseProtocol.java:665)<br/>
+        at org.apache.tomcat.util.net.PoolTcpEndpoint.processSocket(PoolTcpEndpoint.java:528)<br/>
+        at org.apache.tomcat.util.net.LeaderFollowerWorkerThread.runIt(LeaderFollowerWorkerThread.java:81)<br/>
+        at org.apache.tomcat.util.threads.ThreadPool$ControlRunnable.run(ThreadPool.java:689)<br/>
+        at java.lang.Thread.run(Thread.java:595)</p>
+
+
+<p>The fix is simple and works:</p>
+
+<p>Index: src/war/fedora/jsp/notfound-404.jsp<br/>
+===================================================================<br/>
+&#8212; src/war/fedora/jsp/notfound-404.jsp	(revision 7890)<br/>
++++ src/war/fedora/jsp/notfound-404.jsp	(working copy)<br/>
+@@ -20,7 +20,7 @@<br/>
+                      &lt;h3&gt;No such object, datastream, or dissemination.&lt;/h3&gt;<br/>
+                   &lt;/center&gt;<br/>
+ &lt;%<br/>
+-if (exception.getMessage() != null) {<br/>
++if (exception != null &amp;&amp; exception.getMessage() != null) </p>
+{
+     out.print(exception.getMessage());
+ }
+<p> %&gt;</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10824"><div class="by">Chris Wilper, 2009-02-07 04:07 UTC</div><div class="text"><p>Verified as bug; moved to FCREPO tracker</p></div></div>
+<div class="comment" id="comment-10825"><div class="by">Chris Wilper, 2009-02-07 04:23 UTC</div><div class="text"><p>Fixed in trunk; thanks for the report and suggested fix.  I did the same null check on the other jsps where applicable.</p></div></div>
+<p><a href="data/FCREPO-407.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

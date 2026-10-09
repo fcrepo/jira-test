@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-50 Postgres java.lang.NumberFormatException at first startup</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-50</span> Postgres java.lang.NumberFormatException at first startup</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2007-02-16 18:08 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>None</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10070"><div class="by">Chris Wilper, 2007-03-12 20:33 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: sjw46<br/>
+Logged In: YES <br/>
+user_id=1709161<br/>
+Originator: YES</p>
+
+<p>After running an install and selecting Postgresql, the first attempt to start<br/>
+Fedora 2.2 results in the following error:</p>
+
+<p>**************************</p>
+<ul>
+	<li>
+	<ul>
+		<li>FEDORA STARTUP ERROR **<br/>
+**************************</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>Fedora startup failed<br/>
+fedora.server.errors.ModuleInitializationException: A connection pool could not<br/>
+be instantiated. The underlying error was a java.lang.NumberFormatExceptionThe<br/>
+message was "null".<br/>
+        at<br/>
+fedora.server.storage.ConnectionPoolManagerImpl.initModule(ConnectionPoolManagerImpl.java:214)<br/>
+        at fedora.server.Module.&lt;init&gt;(Module.java:48)<br/>
+        at<br/>
+fedora.server.storage.ConnectionPoolManagerImpl.&lt;init&gt;(ConnectionPoolManagerImpl.java:69)</p>
+
+<p>------- Additional Comment #1 From Chris Wilper 2007-01-23 12:49 <span class="error">&#91;reply&#93;</span> ------- <br/>
+CAUSE:<br/>
+------<br/>
+This is caused by a badly-populated fedora.fcfg at install-time.  Due to the use<br/>
+of different case when auto-populating the initial fedora.fcfg, the installer<br/>
+ends up creating a partially-populated "datastore" element named<br/>
+"localPostgresqlPool" (vs. "localPostgreSQLPool").  This ultimately causes the<br/>
+NumberFormatException at startup because the ConnectionPoolManager module<br/>
+expects a numeric param value that isn't present for "localPostgresqlPool".</p>
+
+<p>WORKAROUND:<br/>
+-----------<br/>
+Users can work around this problem by taking the following steps:</p>
+
+<p>  1) After running the installer, open the file<br/>
+$FEDORA_HOME/server/config/fedora.fcfg in an editor.<br/>
+  2) Find the datastore with id="localPostgreSQLPool" (uppercase SQL).<br/>
+  3) Copy all "param" elements EXCEPT the first four (dbUsername, dbPassword,<br/>
+jdbcURL, jdbcDriverClass)<br/>
+  4) Go to the end of the file, into the datastore with id="localPostgresqlPool"<br/>
+ (lowercase sql) and paste the copied "param" elements after the four existing<br/>
+elements.<br/>
+  5) You can now remove the entire, old datastore element with<br/>
+id="localPostgreSQLPool" (uppercase SQL).<br/>
+  6) Save the modified fedora.fcfg.<br/>
+  7) Start Fedora as usual.</p></div></div>
+<div class="comment" id="comment-10071"><div class="by">eddie, 2007-05-22 04:50 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: NO</p>
+
+<p>Fixed in svn maintenance-2.2 branch (rev 6003).</p>
+
+<p>Details: <br/>
+src/java/fedora/utilities/install/FedoraHome.java, line 114, now reads:<br/>
+dbPoolName = "localPostgreSQLPool";</p></div></div>
+<div class="comment" id="comment-10072"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: sjw46<br/>
+Item #: 1661683<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1661683" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1661683</a><br/>
+Closed On: 2007-05-21 23:50:56<br/>
+Closed By: pangloss</p></div></div>
+<p><a href="data/FCREPO-50.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

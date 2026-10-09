@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1979 Gracefully reject character encodings other than UTF-8 in HTTP requests</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1979</span> Gracefully reject character encodings other than UTF-8 in HTTP requests</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Yinlin Chen</td></tr><tr><th>Created</th><td>2016-04-06 16:08 UTC</td></tr><tr><th>Updated</th><td>2017-10-04 21:11 UTC</td></tr><tr><th>Resolved</th><td>2017-01-20 19:43 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.1</td></tr><tr><th>Labels</th><td>housekeeping</td></tr><tr><th>Addresses</th><td><a href="FCREPO-1973.html">FCREPO-1973</a> RDF integration test error on Windows:  testBibframe</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1993.html">FCREPO-1993</a> PATCH content must be assumed always to be UTF-8</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2370.html">FCREPO-2370</a> JSON-LD FedoraLdpIT tests fail for 4.7.1-RC on Windows</td></tr></table>
+<h2>Environment</h2>Common on Windows machines, where the default platform charset encoding is Cp1252.
+<h2>Description</h2>
+<p>Some platforms (such as Windows) may send client requests with encodings other than UTF-8.  The Fedora HTTP service should detect non-UTF8 requests, and handle them gracefully.</p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-16475"><div class="by">Scott Prater, 2016-04-06 17:12 UTC</div><div class="text"><p>Remember to un-Ignore the BibframeIT test when this ticket is resolved:   <a href="https://github.com/fcrepo4/fcrepo4/commit/f016047386f25068fcd59da1d015fbe6fad3d413" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f016047386f25068fcd59da1d015fbe6fad3d413</a></p></div></div>
+<div class="comment" id="comment-16608"><div class="by">Andrew Woods, 2016-04-29 22:08 UTC</div><div class="text"><p>Scott Prater, now that <a href="https://jira.duraspace.org/browse/FCREPO-1993" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1993</a> is resolved, is this current ticket still an issue?</p></div></div>
+<div class="comment" id="comment-17596"><div class="by">Yinlin Chen, 2016-09-21 17:49 UTC</div><div class="text"><p>The test is still failed after remove @Ignore <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-integration-rdf/src/test/java/org/fcrepo/integration/rdf/BibframeIT.java#L29" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-integration-rdf/src/test/java/org/fcrepo/integration/rdf/BibframeIT.java#L29</a> in Windows.</p>
+
+<p>Thus, this ticket still has an issue. </p></div></div>
+<div class="comment" id="comment-18453"><div class="by">Yinlin Chen, 2017-01-20 19:42 UTC</div><div class="text"><p>Andrew Woods PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1160" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1160</a></p>
+
+<p>Been tested on a Windows 10 machine and executed "maven install". All test are passed. (01/20/17)</p></div></div>
+<div class="comment" id="comment-18454"><div class="by">Andrew Woods, 2017-01-20 20:10 UTC</div><div class="text"><p>Osman Din, can you verify this build on a Windows machine?</p></div></div>
+<div class="comment" id="comment-18459"><div class="by">Osman Din, 2017-01-21 23:58 UTC</div><div class="text"><p>It builds OK, Andrew Woods.</p>
+
+<p><a href="https://gist.github.com/anonymous/c12c079795f4c5d097dc9a72890fa7d6" class="external-link" rel="nofollow noreferrer">https://gist.github.com/anonymous/c12c079795f4c5d097dc9a72890fa7d6</a></p>
+
+<p>The first time I ran "mvn clean install", however, I did get 2 apparently unrelated spurious failure from fcrepo kernel impl modeshape.</p>
+
+<p>Built on Windows 7 machine w/ Java 1.8.0_121.</p></div></div>
+<div class="comment" id="comment-18460"><div class="by">Andrew Woods, 2017-01-22 01:20 UTC</div><div class="text"><p>Thanks, Osman Din. Aaron Birkland was also curious of the exact PR that may have fixed this issue. There have been a few encoding updates that may have resulted in the fix. <br/>
+It would be interesting to us "git bisect" to pinpoint the PR that is responsible, if you have the time.</p></div></div>
+<div class="comment" id="comment-18461"><div class="by">Yinlin Chen, 2017-01-22 02:22 UTC</div><div class="text"><p>Andrew Woods I decided to give this ticket another try by instinct after I saw this <a href="https://jira.duraspace.org/browse/FCREPO-2370" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2370</a>.</p></div></div>
+<div class="comment" id="comment-18467"><div class="by">Andrew Woods, 2017-01-24 00:17 UTC</div><div class="text"><p>Yinlin Chen, can you verify that this issue is broken before and fixed after the commit associated with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2370" >
+                <a href="FCREPO-2370.html" class="jira-issue-macro-key issue-link"  title="JSON-LD FedoraLdpIT tests fail for 4.7.1-RC on Windows" >
+            
+            FCREPO-2370
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+?<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/1bf56b18b2f629b911be2fa0bb08f54d00b36908" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1bf56b18b2f629b911be2fa0bb08f54d00b36908</a></p></div></div>
+<div class="comment" id="comment-18484"><div class="by">Yinlin Chen, 2017-01-24 16:24 UTC</div><div class="text"><p>Andrew Woods I have verified that this issue is broken before and fixed after the commit associated with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2370" >
+                <a href="FCREPO-2370.html" class="jira-issue-macro-key issue-link"  title="JSON-LD FedoraLdpIT tests fail for 4.7.1-RC on Windows" >
+            
+            FCREPO-2370
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/1bf56b18b2f629b911be2fa0bb08f54d00b36908" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1bf56b18b2f629b911be2fa0bb08f54d00b36908</a></p></div></div>
+<div class="comment" id="comment-19450"><div class="by">Andrew Woods, 2017-10-04 21:11 UTC</div><div class="text"><p>Related commit removing @Ignore in Bibframe test: <a href="https://github.com/fcrepo4/fcrepo4/commit/0bb3da2a59f679b8bed3ce52fc8443aeb4704032" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/0bb3da2a59f679b8bed3ce52fc8443aeb4704032</a></p></div></div>
+<p><a href="data/FCREPO-1979.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

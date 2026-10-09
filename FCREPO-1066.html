@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1066 Maven build errors with git-site and m2e lifecycle-mapping</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1066</span> Maven build errors with git-site and m2e lifecycle-mapping</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2012-02-09 00:04 UTC</td></tr><tr><th>Updated</th><td>2012-02-09 04:23 UTC</td></tr><tr><th>Resolved</th><td>2012-02-09 00:08 UTC</td></tr><tr><th>Components</th><td>legacy - java-client</td></tr></table>
+<h2>Description</h2>
+<p>Maven builds (mvn compile) are currently failing due to two issues:</p>
+
+<p>1) The git-site dependency was on a SNAPSHOT version, and the snapshot has been deleted. Change to use a released version (0.3.1) as fcrepo-misc does.<br/>
+2) The use of m2e's lifecycle-mapping "plugin" incorrectly listed it directly under plugins. It's not an actual plugin, so builds fail if it's there and maven can't find it in any repository. Just having it in the pluginManagement section is sufficient.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-12233"><div class="by">Chris Wilper, 2012-02-09 00:08 UTC</div><div class="text"><p>See <a href="https://github.com/mediashelf/fedora-client/commit/9432e24ffe98e599edbd0e05eb37fcb170db993d" class="external-link" rel="nofollow noreferrer">https://github.com/mediashelf/fedora-client/commit/9432e24ffe98e599edbd0e05eb37fcb170db993d</a></p></div></div>
+<div class="comment" id="comment-12234"><div class="by">eddie, 2012-02-09 03:25 UTC</div><div class="text"><p>Thanks for the m2e bit.</p>
+
+<p>I added the wagon-gitsite snapshot because 0.3.1 doesn't work anymore--not sure why, but the issue is noted here <a href="https://github.com/khuxtable/wagon-gitsite/pull/13" class="external-link" rel="nofollow noreferrer">https://github.com/khuxtable/wagon-gitsite/pull/13</a>. Not sure what the right solution is for this short of pushing a forked release of the plugin to a Maven repo.</p></div></div>
+<div class="comment" id="comment-12235"><div class="by">Chris Wilper, 2012-02-09 04:23 UTC</div><div class="text"><p>Hmm...0.3.1 has worked for me for fcrepo-misc (a multi-module project) for a while:</p>
+
+<p><a href="http://cwilper.github.com/fcrepo-misc/" class="external-link" rel="nofollow noreferrer">http://cwilper.github.com/fcrepo-misc/</a></p>
+
+<p>With fcrepo-misc's pom, the following steps have worked for me to deploy:</p>
+
+<p>git checkout v0.1.1 (whatever the just-tagged version is)<br/>
+mvn site-deploy -P release-site<br/>
+git checkout master<br/>
+git pull</p></div></div>
+<p><a href="data/FCREPO-1066.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

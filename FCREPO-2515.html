@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2515 import/export tool should produce consistent Turtle (1.0 or 1.1 conforming)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2515</span> import/export tool should produce consistent Turtle (1.0 or 1.1 conforming)</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2017-06-05 22:28 UTC</td></tr><tr><th>Updated</th><td>2017-06-09 14:51 UTC</td></tr><tr><th>Resolved</th><td>2017-06-09 14:51 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>While troubleshooting some failures of the import-export verification tool to verify RDF graphs produced with and without binaries exported, differences were discovered in the syntax of the turtle that the import-export tool writes to disk.</p>
+
+<p>When binaries are included, the turtle appears to conform to RDF 1.0 rules, where all the literals (including strings) are explicitly typed.  Presumably this is coming more or less directly from Fedora.  When binaries are not included, however, the tool is filtering some triples out of the graph, and appears to write turtle that conforms to the more relaxed RDF 1.1 rules, where untyped literals can be assumed to be of type xsd:string and "true" and "false" are assumed to be Booleans when untyped, among other differences.</p>
+
+<p>While these differences might be semantically insignificant (at least to RDF 1.1 parsers &#8211; but not to RDF 1.0), and could in theory be something that the verification tool were expected to handle, it seems like a good practice for the import/export tool to produce syntactically consistent turtle no matter which options are chosen.</p>
+
+<p>Here are examples of the turtle written to disk by import/export with binaries:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/pcdm/00/38/ba/b1/0038bab1-b6e3-44e9-9580-8046440f7d84&gt;
+</span>        rdf:type               bibo:Article ;
+        rdf:type               fedora:Container ;
+        rdf:type               fedora:Resource ;
+        rdf:type               pcdm:<span class="code-object">Object</span> ;
+        pcdm:memberOf          &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/pcdm/de/41/c4/51/de41c451-a1bb-46ac-ac86-e30a65254275&gt; ;
+</span>        fedora:lastModifiedBy  <span class="code-quote">"bypassAdmin"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        fedora:createdBy       <span class="code-quote">"bypassAdmin"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        fedora:created         <span class="code-quote">"2017-06-05T20:12:24.161Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:lastModified    <span class="code-quote">"2017-06-05T20:12:24.161Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        bibo:pageEnd           2 ;
+        bibo:pageStart         2 ;
+        dcterms:title          <span class="code-quote">"NO GATE CRASHING."</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        rdf:type               ldp:RDFSource ;
+        rdf:type               ldp:Container ;
+        fedora:writable        <span class="code-quote">"<span class="code-keyword">true</span>"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#<span class="code-object">boolean</span>&gt; ;
+</span>        fedora:hasParent       &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/pcdm&gt; .</span>
+</pre>
+</div></div>
+
+<p>and with no binaries:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/pcdm/00/38/ba/b1/0038bab1-b6e3-44e9-9580-8046440f7d84&gt;
+</span>        a                      ldp:Container , fedora:Resource , pcdm:<span class="code-object">Object</span> , ldp:RDFSource , bibo:Article , fedora:Container ;
+        fedora:created         <span class="code-quote">"2017-06-05T20:12:24.161Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:createdBy       <span class="code-quote">"bypassAdmin"</span> ;
+        fedora:hasParent       &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/pcdm&gt; ;
+</span>        fedora:lastModified    <span class="code-quote">"2017-06-05T20:12:24.161Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:lastModifiedBy  <span class="code-quote">"bypassAdmin"</span> ;
+        fedora:writable        <span class="code-keyword">true</span> ;
+        pcdm:memberOf          &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/pcdm/de/41/c4/51/de41c451-a1bb-46ac-ac86-e30a65254275&gt; ;
+</span>        dcterms:title          <span class="code-quote">"NO GATE CRASHING."</span> ;
+        bibo:pageEnd           2 ;
+        bibo:pageStart         2 .
+</pre>
+</div></div>
+
+
+<p>See also: <a href="https://www.w3.org/TR/rdf11-new/" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/rdf11-new/</a></p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19084"><div class="by">Esmé Cowles, 2017-06-06 13:33 UTC</div><div class="text"><p>Unless we want to use something like the <a href="https://github.com/fcrepo4/fcrepo4/tree/4.7-maintenance/jena-patch" class="external-link" rel="nofollow noreferrer">jena-patch</a> module to force RDF 1.0 output, I think we'll need to parse the RDF even when we don't want to filter it.  I don't remember the exact issue, but I remember there were problems when this was happening.  They may be as simple as test failures that depended on the RDF 1.0 TTL output.</p></div></div>
+<div class="comment" id="comment-19085"><div class="by">Joshua Allan Westgard, 2017-06-06 13:43 UTC</div><div class="text"><p>The specific issue that brought this up for me is that in verification we start from the unfiltered graph coming from Fedora.  When we compare that to the turtle on disk, strings like "bypassAdmin"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#string</a>&gt; are not recognized as the same as just "bypassAdmin".  Ultimately, we ought to be able to get the verification tool to evaluate against the abstract syntax and to allow RDF 1.1 rules, but at the same time it seemed like import/export should serialize in the same way all the time.</p></div></div>
+<div class="comment" id="comment-19086"><div class="by">Andrew Woods, 2017-06-06 15:26 UTC</div><div class="text"><p>We may choose not to go the direction of enforcing RDF 1.0 syntax, but this PR does that: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/105" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/105</a></p></div></div>
+<div class="comment" id="comment-19093"><div class="by">Andrew Woods, 2017-06-07 18:14 UTC</div><div class="text"><p>Esmé Cowles: do you have thoughts on whether this PR should go in or not?</p></div></div>
+<div class="comment" id="comment-19100"><div class="by">Esmé Cowles, 2017-06-09 14:51 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/9d26814ff1bb91961ead10623994a13d3661e322" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/9d26814ff1bb91961ead10623994a13d3661e322</a></p></div></div>
+<p><a href="data/FCREPO-2515.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2374 Change in datatype behavior for strings in RDF output</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2374</span> Change in datatype behavior for strings in RDF output</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-12-22 19:12 UTC</td></tr><tr><th>Updated</th><td>2017-01-25 18:12 UTC</td></tr><tr><th>Resolved</th><td>2017-01-06 01:08 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.1</td></tr><tr><th>Labels</th><td>api-spec, undo-breaking-change</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2295.html">FCREPO-2295</a> Upgrade to Jena 3.1.1</td></tr></table>
+<h2>Description</h2>
+<p>I've noticed a difference in output between 4.7.0 and 4.7.1-rc1. Although there are minor and (I think) inconsequential differences to how the turtle is formatted, the main thing I see is that string datatypes specified during ingest are stripped in the output of 4.7.1-rc1.   As noted, I've seen this with xsd:string.  I've tested xsd:dateTime and that outputs as expected.  I've not tested any other datatypes.</p>
+<h2>Comments (38)</h2>
+<div class="comment" id="comment-18297"><div class="by">Andrew Woods, 2016-12-22 19:34 UTC</div><div class="text"><p>See email discussion: <a href="https://groups.google.com/d/msg/fedora-tech/sOB7EvUof28/9SxyOHSkDQAJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/sOB7EvUof28/9SxyOHSkDQAJ</a></p>
+
+<p>This seems more like a change to be documented vs. a bug.</p></div></div>
+<div class="comment" id="comment-18299"><div class="by">Esmé Cowles, 2016-12-22 19:41 UTC</div><div class="text"><p>I dithered about whether to make this a bug or not.  I agree it's a change that needs to be documented, and not a very serious change at that.  As Unknown noted, the literals are equivalent in RDF 1.1.</p>
+
+<p>But I also think this is a change that has broken at least one application, so in the context of the 4.7.1 release, it's a non-backwards-compatible change, and therefore a bug.  I don't know if it would be easy to output typed literals like 4.7.0 did.  If so, I think it would be better to do that than make this change.</p></div></div>
+<div class="comment" id="comment-18303"><div class="by">Unknown, 2016-12-22 19:51 UTC</div><div class="text"><p>The reason the output is different has to do with the fact that we are no longer using the very out-of-date 2.x series of Sesame serializers and are now using the current version of Jena. There are actually bugs in the way the Sesame-based serialization has worked up to now, esp. for JSON-LD output, so I definitely wouldn't want to revert that change.</p>
+
+<p>The important question here is whether the semantics change (I would argue that they have not). I know for a fact that I have written down-stream code that relied on the xsd:string datatype, but that was my fault (and not the fault of Fedora), and I have since removed that from my code (that's because the code wasn't respecting RDF semantics). I would be curious to know what it is about kefo's code that breaks when the xsd:string datatype is not part of the serialization.</p>
+
+<p>I think this should certainly be mentioned as part of the release notes, but I see this as neither a breaking change nor a bug.</p></div></div>
+<div class="comment" id="comment-18304"><div class="by">Esmé Cowles, 2016-12-22 20:01 UTC</div><div class="text"><p>Unknown, I wasn't suggesting we revert to using Sesame 2.x — I was suggesting there may be a setting or filter or something we could easily use to produce strings with xsd:string type applied like we were producing with 4.7.0.</p>
+
+<p>I'm not sure I agree about semantic changes being the most important thing here.  I agree that literals with no type are xsd:strings in RDF 1.1, but I also think it's important to consider people using older tools where they are not.  What I've heard from user feedback is that they won't want breaking changes, and particularly not breaking changes that happen frequently or in patch releases.  So unless we have a particular reason to change the way strings are showing up, I think the best thing is to avoid changing the behavior if we can in 4.7.1.</p></div></div>
+<div class="comment" id="comment-18306"><div class="by">kefo, 2016-12-22 20:31 UTC</div><div class="text"><p>I agree about the semantics.  They're no different. </p>
+
+<p>But to explain how this change cascades for us.  A GET is performed on an fcrepo resource and the output copied to a triplestore.  When loaded to the triplestore, the triplestore - rightly or wrongly or whatever - respects the datatype, such that you must include it when querying a literal/string.   </p>
+
+<p>Obviously, we'll reindex the triplestore when we update, but we also need to implement changes to various components because all of our SPARQL queries are designed with the datatype in mind.  (I'm also inspecting any options with respect to the triplestore that might mitigate this.)</p>
+
+<p>I'd be wary of all downstream products having fully adopted RDF 1.1 semantics and made requisite changes.</p>
+
+<p>As for this behavior and fcrepo in 4.7.0, how the literal was inserted - with a declared datatype or not - seems immaterial.  A GET outputs the xsd:string datatype whether it was specified or not when the resource was created (assuming my PUT passes muster, see below for an example GET when the datatype is not included at PUT time).  </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -i -XPUT -H "Content-Type: text/turtle" -d '&lt;&gt; &lt;http://purl.org/dc/elements/1.1/title&gt; "4.7.0: Datatype output or not to datatype output?";' http://192.168.99.100:8080/fcrepo/rest/ktest/c
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+ETag: W/"a25e556cd73a6a72249ceadb32de3054d2d1f26f"
+Last-Modified: Thu, 22 Dec 2016 20:01:16 GMT
+Location: http://192.168.99.100:8080/fcrepo/rest/ktest/c
+Content-Type: text/plain
+Content-Length: 46
+Date: Thu, 22 Dec 2016 20:01:16 GMT
+
+http://192.168.99.100:8080/fcrepo/rest/ktest/c
+
+curl http://192.168.99.100:8080/fcrepo/rest/ktest/c
+@prefix rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; .
+@prefix xsi: &lt;http://www.w3.org/2001/XMLSchema-instance&gt; .
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+@prefix ldp: &lt;http://www.w3.org/ns/ldp#&gt; .
+@prefix xs: &lt;http://www.w3.org/2001/XMLSchema&gt; .
+@prefix dc: &lt;http://purl.org/dc/elements/1.1/&gt; .
+
+&lt;http://192.168.99.100:8080/fcrepo/rest/ktest/c&gt; a fedora:Container , fedora:Resource ;
+	dc:title "4.7.0: Datatype output or not to datatype output?"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; ;
+	fedora:lastModifiedBy "bypassAdmin"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; ;
+	fedora:createdBy "bypassAdmin"^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; ;
+	fedora:created "2016-12-22T20:01:16.79Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+	fedora:lastModified "2016-12-22T20:01:16.79Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+	a ldp:RDFSource , ldp:Container ;
+	fedora:writable "true"^^&lt;http://www.w3.org/2001/XMLSchema#boolean&gt; ;
+	fedora:hasParent &lt;http://192.168.99.100:8080/fcrepo/rest/ktest&gt; .
+</pre>
+</div></div>
+
+<p>When it comes to considering changes between versions, I think it is worth pointing out that the <b>reverse</b> happens now in fcrepo 4.7.1-rc1.  If a GET in 4.7.0 returns a literal with an xsd:string datatype regardless whether it was specified at ingest, in 4.7.1 it will return a literal without a datatype, regardless whether you specified one on ingest.</p>
+
+</div></div>
+<div class="comment" id="comment-18308"><div class="by">Unknown, 2016-12-22 21:07 UTC</div><div class="text"><p>I would note that, according to the <a href="https://www.w3.org/TR/ldp/#terms" class="external-link" rel="nofollow noreferrer">LDP specification</a>, LDP-RS and LDPC are both defined in terms of RDF 1.1 (i.e. <a href="https://www.w3.org/TR/ldp/#bib-rdf11-concepts" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#bib-rdf11-concepts</a>).</p>
+
+<p>kefo what triplestore are you using that doesn't support RDF 1.1?</p></div></div>
+<div class="comment" id="comment-18311"><div class="by">kefo, 2016-12-22 21:37 UTC</div><div class="text"><p>Blazegraph.  We're running version 2.1.2, which is one release behind current.  2.1.2 is all of 7 months old.  </p>
+
+<p>Frankly, I'm still trying to get to the bottom of RDF 1.1 support in blazegraph, but I can say for certain that if something is inserted with xsd:string it must be queried by its datatype to be findable.</p></div></div>
+<div class="comment" id="comment-18312"><div class="by">Unknown, 2016-12-22 22:24 UTC</div><div class="text"><p>It appears that Blazegraph plans to begin supporting RDF 1.1 in their 2.2 release, but a release date has not been set for that. At present, Blazegraph is also built on top of an older version of Sesame 2.x (incidentally, they are currently using the 2.7 line of Sesame, which was the version Fedora migrated away from).</p>
+
+<p>As some background, Sesame has since been rebranded as RDF4J and is at major version 4.x. This is from their home page:</p>
+
+<p>"Sesame 4 is now our new recommended version of Sesame to use for any new project, however we will of course continue to bring out patch releases for Sesame 2.x for a little while longer."</p>
+
+<p>This is precisely why I removed our use of Sesame 2.7 from Fedora. I looked briefly through the Jena ARQ code, and none of the QuotedStringOutput* classes appear to output a datatype for string literals. Perhaps A. Soroka would know more about the jena internals.</p></div></div>
+<div class="comment" id="comment-18320"><div class="by">scossu, 2016-12-27 16:25 UTC</div><div class="text"><p>I fully support Esmé Cowles' concern about this being a non-backwards-compatible change and Andrew Woods' added tag. This change as it is now will prevent us from upgrading to Fedora 4.7.1 unless we move out of Blazegraph, wait for it to implement RDF 1.1 (still unannounced as Unknown notes) or reworking many parts of our client code. </p>
+
+<p>I think that Esmé Cowles' suggestion to use a switch to support both RDF 1.0 and 1.1 output is the best solution. Furthermore, if we still want to consider this a "patch" release, RDF 1.0 should be the default output format and 1.1 be available via an added request header or configuration. This would ensure continuity for the clients. </p>
+
+<p>Also, issuing a deprecation warning would be advisable even if the next release is non-breaking. A next minor or major version may switch to RDF 1.1 as the default output format. </p></div></div>
+<div class="comment" id="comment-18321"><div class="by">A. Soroka, 2016-12-28 12:17 UTC</div><div class="text"><p>1. Jena has dealt in RDF 1.1. for quite some time. It is frankly astonishing to me that Blazegraph doesn't.</p>
+
+<p>2. If configuration of some kind is introduced to downgrade Fedora's behavior, I suggest that with it be included a date by which users can expect that option to disappear and RDF 1.1 to be the norm for Fedora. Otherwise, you will be supporting it a decade from now.</p></div></div>
+<div class="comment" id="comment-18322"><div class="by">Esmé Cowles, 2016-12-28 14:18 UTC</div><div class="text"><p>I agree we don't want to be maintaining this forever. I think any adjustments we make here can be limited to the 4.7.x patch releases and removed after that.  </p></div></div>
+<div class="comment" id="comment-18323"><div class="by">A. Soroka, 2016-12-28 14:21 UTC</div><div class="text"><p>That sounds reasonable.</p></div></div>
+<div class="comment" id="comment-18324"><div class="by">scossu, 2016-12-28 14:51 UTC</div><div class="text"><p>Agree, however we need to make sure that we are able to support major triplestore systems such as Blazegraph. I believe the Islandora community relies on it quite a bit. </p>
+
+<p>As soon as a date is known for BG (and possibly any other major triplestores that may be currently used in Fedora 4 production scenarios) to support RDF 1.1 we can establish a "cut-off" date by which RDF 1.0 output can be safely deprecated. That should be either a MINOR or MAJOR release. </p></div></div>
+<div class="comment" id="comment-18325"><div class="by">A. Soroka, 2016-12-28 15:04 UTC</div><div class="text"><p>In no way is it reasonable to let Blazegraph (which is in no way a dependency for Fedora) block Fedora's development progress, and even less so is it reasonable to wait for any triplestore that anyone anywhere might be using with Fedora. A single patch release is completely appropriate here, after which any issues of laggard 3rd party components should devolve to integration frameworks like <tt>fcrepo-camel-toolkit</tt> or API-X.</p></div></div>
+<div class="comment" id="comment-18326"><div class="by">A. Soroka, 2016-12-28 15:06 UTC</div><div class="text"><p>A new ticket should be opened now to determine the amount of work it will be to institute controllable RDF standard compliance. If it is not trivial then those parties interested in RDF 1.0 can then be invited to contribute the required development resources.</p></div></div>
+<div class="comment" id="comment-18327"><div class="by">Unknown, 2016-12-28 15:42 UTC</div><div class="text"><p>Isn't the solution here to simply re-index Blazegraph with the updated triples?</p></div></div>
+<div class="comment" id="comment-18328"><div class="by">scossu, 2016-12-28 15:51 UTC</div><div class="text"><p>Unknown I will let kefo chime in if I am misstating this, but the problem seems to lie in the fact that Blazegraph needs an explicit string data type in the query to match string literals. So if we reindex the triplestore, Blazegraph would regard all string literals as untyped, while our queries all have the xsd:string type. </p></div></div>
+<div class="comment" id="comment-18329"><div class="by">Unknown, 2016-12-28 15:56 UTC</div><div class="text"><p>Blazegraph needs a string datatype only if the literal in question is indexed with a string datatype. If the literal is indexed without a string datatype, then (under RDF 1.0) Blazegraph would need to be queried without the string datatype. </p>
+
+<p>For any triplestore that supports RDF 1.1, it doesn't matter if you index the literal with or without the datatype &#8211; you are able to query the literal with or without the datatype.</p></div></div>
+<div class="comment" id="comment-18330"><div class="by">A. Soroka, 2016-12-28 15:57 UTC</div><div class="text"><p>So both reindexing and some changes to queries? That seems much more reasonable than downgrading RDF compliance.</p></div></div>
+<div class="comment" id="comment-18331"><div class="by">scossu, 2016-12-28 15:59 UTC</div><div class="text"><p>A. Soroka I am not suggesting that Fedora development should be held back and it might be OK to have Fedora deprecate RDF 1.0 at some point regardless of external dependencies, as long as there is a "safe place" for us to hold back upgrading until external dependencies catch up. The point I am making here is more about product quality than application design. </p>
+
+<p>Right now, we want to move out of Fedora 4.6 due to known vulnerabilities related to Infinispan. We are not able to do that due to critical bugs present in 4.7.0 that should be fixed in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2323" >
+                <a href="FCREPO-2323.html" class="jira-issue-macro-key issue-link"  title="Resource with URI property containing hash inaccessible when target is deleted " >
+            
+            FCREPO-2323
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+. But also we could not upgrade to 4.7.1 if it were released without RDF 1.0 support. We need to get to a "safe place" ASAP, without having to introduce API client changes or switching triplestore products. </p>
+
+<p>In short, if a critical bug arises, it should be isolated from other changes as much as possible and released as a patch in order to allow a quick transition to that "safe place" I mentioned. </p></div></div>
+<div class="comment" id="comment-18332"><div class="by">A. Soroka, 2016-12-28 16:01 UTC</div><div class="text"><p>What I understand Unknown to have just pointed out is that you are in fact able to migrate to 4.7.1 as it is, simply by reindexing and adjusting the queries you are using.</p></div></div>
+<div class="comment" id="comment-18333"><div class="by">kefo, 2016-12-28 16:45 UTC</div><div class="text"><p>What A. Soroka states is accurate, but it makes the assumption that 'adjusting the queries' is a trivial undertaking across several environments in what appears, based on numbering, to be a patch release.  It's not; this release introduces new features that, by virtue of their introduction, have downstream consequences for at least one organization using fedora.  (I know that to view this as a patch release based on the numbering is misleading, but I also think it is a common perception, until someone delves into the archives of fedora-tech and realizes that there's no such thing being applied here.)  </p>
+
+<p>This conversation has become focused on blazegraph, but began as a conversation about how to address this change in behavior in fcrepo4.7.1 and its real or potential impact to fedora users.  And whether or not Blazegraph is behind the curve here on RDF 1.1 doesn't negate this simple fact.  (FWIW, we chose blazegraph rather deliberately after fuseki wasn't working out for us, for a number of reasons - and this isn't the forum to troubleshoot fuseki issues either.)</p>
+</div></div>
+<div class="comment" id="comment-18334"><div class="by">A. Soroka, 2016-12-28 16:58 UTC</div><div class="text"><p>Demanding that Fedora should continue to support a previous RDF specification assumes that so doing is trivial. We have no reason to assume that. It is clear that some work will be required to move ARTIC forward to a new version of Fedora. What is not clear to me is why that work should go on in the Fedora code base and should provide for Fedora to support multiple RDF specifications instead of going on in ARTIC's codebase and providing for ARTIC's queries to reach the form they will eventually reach in any event.</p>
+
+<p>Another question: are there any other sites experiencing this as a problem?</p>
+</div></div>
+<div class="comment" id="comment-18335"><div class="by">A. Soroka, 2016-12-28 17:05 UTC</div><div class="text"><p>Another question: if the need is for explicit datatyping on string literals, could not a simple shim be used temporarily (processing RDF and adding the datatype as needed) for as long as it takes to migrate the queries in question?</p></div></div>
+<div class="comment" id="comment-18336"><div class="by">Unknown, 2016-12-29 03:03 UTC</div><div class="text"><p>To be clear, changing the code in Fedora is decidedly non-trivial. It would probably involve rolling back most of the commits that have happened since Oct 10, 2016, and adding back in the dependency on Sesame 2.7 (along the way, it would also re-introduce several bugs). And if that is the approach, what advantage would 4.7.1-RC have over the existing 4.7.0 release?</p>
+
+<p>I want to also be clear that simply releasing the RC artifacts as a 4.8.0 version is also far from ideal &#8211; there are a number of changes that are not part of the forthcoming release but which are slated for the 4.8.0 release. If we simply call the current RC 4.8.0 we then push those changes farther down the road to some 4.9.0 release, and I am decidedly -1 on doing that. I think calling these artifacts 4.7.1 is perfectly reasonable.</p>
+
+<p>Another perspective on this is that there are features (and certain bugs that have been addressed) in the 4.7.1-RC that my institution is eagerly awaiting. I have code that depends on these changes.</p></div></div>
+<div class="comment" id="comment-18337"><div class="by">Esmé Cowles, 2017-01-01 13:36 UTC</div><div class="text"><p>Unknown, I appreciate that you want to get a release out with the updated RDF machinery, but at the same time, I think the way strings and booleans are handled is a breaking change.  I just spun up all of the old releases to see if the handling of literals has changed before, and I found that we've been taking plain literals and spitting them back out as typed literals since before the 4.0.0 release.</p>
+
+<p>The main feedback I've gotten on Fedora releases is that fewer (and more predictable) breaking changes is the most important thing.  So I'm worried that this kind of small change that will aggravate people.</p>
+
+<p>Maybe we need to rethink the 4.8.0 timeline? Maybe we can find a better option on Thursday's tech call?  I just created the agenda for that with the 4.7.1 release status as the first item: <a href="https://wiki.duraspace.org/display/FF/2017-01-05+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2017-01-05+-+Fedora+Tech+Meeting</a></p></div></div>
+<div class="comment" id="comment-18339"><div class="by">Unknown, 2017-01-03 15:11 UTC</div><div class="text"><p>Esmé Cowles, this is the last thing I am going to say on this topic. I have made my point here, and I think we are simply not going to agree on this. From my perspective, Fedora has, since the very first 4.0.0 release, transacted in RDF 1.1: plain strings and typed string literals have always been treated as equivalent (both you and kefo have already noted this), and various RDF 1.1 syntaxes &#8211; syntaxes that are not part of RDF 1.0 &#8211; such as JSON-LD, Turtle, and the application/n-triples mimetype have also been part of Fedora 4.x from the beginning.</p>
+
+<p>Thus, given RDF 1.1 semantics, whether strings are serialized with or without the datatype is irrelevant: they are semantically equivalent. And this is, therefore, not a breaking change. I can see how an application that interprets the RDF 1.1 concrete syntax as RDF 1.0 will eventually run into trouble, but I do not see how that should affect the Fedora release process in any way.</p>
+
+<p>I will not be at the Thursday tech call. At this point, my only interest is in seeing this release happen in the near term with the changes that are currently part of the release candidate. Whether it is called 4.7.1 or 4.8.0 doesn't matter to me.</p></div></div>
+<div class="comment" id="comment-18340"><div class="by">scossu, 2017-01-03 15:41 UTC</div><div class="text"><p>Esmé Cowles Unknown I think both your positions are very valid and they address two different aspects of the issue. On one side there is a need to move out of RDF 1.0 for several valid reasons, on the other the need to keep a consistent communication with stakeholders not involved in first person with the Fedora development about breaking changes. 4.7 is already hard to upgrade to due to the migration needed, an additional requirement to review client code makes it even more complex; in addition to that, the fact that this change happens in a supposed patch release makes the upgrade process and the versioning logic even more confusing. </p>
+
+<p>Far from advocating for a rollback of the effort put into this improvement, it seems like Esmé Cowles proposed a reasonable middle ground solution (barring my lack of knowledge of the coding effort needed) by allowing non-compliant clients to keep using RDF 1.0 for a limited period of time without preventing compliant ones from using 1.1 immediately. </p>
+
+<p>At this point I would let Andrew Woods chime in for an evaluation of the possible ways forward. </p></div></div>
+<div class="comment" id="comment-18341"><div class="by">Andrew Woods, 2017-01-03 21:47 UTC</div><div class="text"><p>It appears that the point of breakage is limited to the removal of the <tt>xsd:string</tt> and <tt>xsd:boolean</tt> type qualifiers. Echoing A. Soroka's comment (<a href="https://jira.duraspace.org/browse/FCREPO-2374?focusedCommentId=53432&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-53432" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2374?focusedCommentId=53432&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-53432</a>), is there any reason why we can not simply augment the RDF responses to include that type detail?</p></div></div>
+<div class="comment" id="comment-18342"><div class="by">A. Soroka, 2017-01-03 22:14 UTC</div><div class="text"><p>To be clear, I was suggesting that individual <em>sites</em> might want to add explicit datatypes with some kind of proxy mechanism. I think it would be totally inappropriate for Fedora to do that.</p></div></div>
+<div class="comment" id="comment-18343"><div class="by">Esmé Cowles, 2017-01-03 22:25 UTC</div><div class="text"><p>As Unknown alluded to earlier, I don't think it will be easy to add the types to the literals ourselves.  Because we are using the Jena RDF output tools (see <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/responses/RdfStreamStreamingOutput.java#L117" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/responses/RdfStreamStreamingOutput.java#L117</a>), which don't include the types when they can be inferred, we'd need to intercept the triples, override the Jena classes, or something like that.  So it's not just a matter to explicitly adding the datatypes when we iterate over the triples or something like that.</p></div></div>
+<div class="comment" id="comment-18346"><div class="by">Andrew Woods, 2017-01-05 05:42 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1152" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1152</a></p></div></div>
+<div class="comment" id="comment-18347"><div class="by">Aaron Birkland, 2017-01-05 15:36 UTC</div><div class="text"><p>Sorry, I largely missed this thread.  I tend to agree with A. Soroka that the general solution for a site to manage its own risk is via external integration mechanisms;  Place appropriate transformations in your async camel routes for services that need to consume specific representations of resources, or use API-X if those representations need http exposure (e.g. via intercepting/proxying, or exposing endpoints).  </p></div></div>
+<div class="comment" id="comment-18350"><div class="by">Esmé Cowles, 2017-01-05 17:31 UTC</div><div class="text"><p>I've tested <a href="https://github.com/fcrepo4/fcrepo4/pull/1152" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1152</a> and it looks good to me.  Any objections to me merging this PR?</p></div></div>
+<div class="comment" id="comment-18351"><div class="by">Andrew Woods, 2017-01-05 17:41 UTC</div><div class="text"><p>No objections from me... but it would be good to hear from another committer.</p></div></div>
+<div class="comment" id="comment-18353"><div class="by">Bethany Seeger, 2017-01-05 18:40 UTC</div><div class="text"><p>I just tested it out as well - it all looks good to me. </p></div></div>
+<div class="comment" id="comment-18370"><div class="by">Esmé Cowles, 2017-01-06 01:08 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/848871b6726de0147971249c850bbad762de3aa8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/848871b6726de0147971249c850bbad762de3aa8</a></p></div></div>
+<div class="comment" id="comment-18371"><div class="by">Esmé Cowles, 2017-01-06 01:12 UTC</div><div class="text"><p>Also, I've created 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2380" >
+                <a href="FCREPO-2380.html" class="jira-issue-macro-key issue-link"  title="Remove jena-patch module for 4.8 or subsequent releases" >
+            
+            FCREPO-2380
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ to track removing the jena-patch module when we're ready to make a release with breaking changes.</p></div></div>
+<p><a href="data/FCREPO-2374.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

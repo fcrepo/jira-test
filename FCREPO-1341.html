@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1341 Missing default properties in pom.xml</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1341</span> Missing default properties in pom.xml</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Assignee</th><td>Ralf Claussnitzer</td></tr><tr><th>Created</th><td>2015-01-31 18:33 UTC</td></tr><tr><th>Updated</th><td>2018-07-13 22:12 UTC</td></tr><tr><th>Resolved</th><td>2015-02-16 20:04 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>A couple of system properties are referenced throughout the POMs and code but never declared in any POM. These properties can be set in Maven command line executions: ```mvn ... -Dfcrepo.test.port=8080```</p>
+
+<p>The properties should be declared in the man POM using some default values. They can than be overridden by command line arguments.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1341/10199_build.out">build.out</a>, 75785 bytes, added by Andrew Woods on 2015-02-02</li>
+</ul>
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-13308"><div class="by">Ralf Claussnitzer, 2015-01-31 18:38 UTC</div><div class="text"><p>Pull request: <a href="https://github.com/fcrepo4/fcrepo4/pull/705" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/705</a></p></div></div>
+<div class="comment" id="comment-13310"><div class="by">Andrew Woods, 2015-02-02 18:42 UTC</div><div class="text"><p>I always am getting the following build error in fcrepo-mint when executing:<br/>
+mvn clean install</p>
+
+<p>...on a local copy of PR-705. Does it work for you?</p>
+
+<p>See attached, build.out</p></div></div>
+<div class="comment" id="comment-13312"><div class="by">Ralf Claussnitzer, 2015-02-03 12:53 UTC</div><div class="text"><p>Works for me as well for Travis CI: <a href="https://travis-ci.org/fcrepo4/fcrepo4/builds/49020512" class="external-link" rel="nofollow noreferrer">https://travis-ci.org/fcrepo4/fcrepo4/builds/49020512</a></p>
+
+<p>Hm: "ERROR 13:40:22.128 (ContainerWrapper) Error with test server java.net.BindException: Address already in use (Line 689)"</p>
+
+<p>1- The error message above complains about an occupied address. Sure there is no other build in parallel or anything?<br/>
+2- Sometimes local Maven artifacts that got installed during development of other modules interfere. Did you try to build with a clean Maven repo?<br/>
+3- Which Java Version do you use? Oracle JDK 7 as in Travis?</p></div></div>
+<div class="comment" id="comment-13314"><div class="by">Andrew Woods, 2015-02-03 14:27 UTC</div><div class="text"><p>When I build, there is no other build running in parallel, but I have Tomcat running on 8080 for other reasons. This is the purpose of the build-helper-maven-plugin, it ensures that the integration tests do not clash with bound ports.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L702" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L702</a></p>
+
+<p>When I stop my Tomcat, your PR succeeds.</p>
+
+<p>It appears that the defaults that you are introducing in this PR override the ports that the build-helper-maven-plugin selects. A requirement of this ticket would be to figure out a way to have defaults not override the build-helper-maven-plugin.</p></div></div>
+<div class="comment" id="comment-13316"><div class="by">Ralf Claussnitzer, 2015-02-03 14:43 UTC</div><div class="text"><p>Ok, I think I see the problem: The default I choose for `fcrepo.test.port` is `8080` because in all the places where this property is queried there is `8080` as default, in case the property is not set. This now interferes with the build-helper-maven-plugin configuration.</p>
+
+<p>Solution might be to set fcrepo.test.port empty by default: `&lt;fcrepo.test.port/&gt;`<br/>
+Can you try this with your setup?</p></div></div>
+<div class="comment" id="comment-13317"><div class="by">Andrew Woods, 2015-02-03 15:10 UTC</div><div class="text"><p>Did `&lt;fcrepo.test.port/&gt;` work for you as intended?</p></div></div>
+<div class="comment" id="comment-13318"><div class="by">Ralf Claussnitzer, 2015-02-03 15:34 UTC</div><div class="text"><p>Uhm, nope. O.o</p>
+
+<p>Instead some NPE happens during verify phase:</p>
+
+<p>...<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Reactor Summary:<br/>
+<span class="error">&#91;INFO&#93;</span> <br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Commons 4 .................................. SUCCESS <span class="error">&#91;2.508s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository BOM ............................. SUCCESS <span class="error">&#91;0.324s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository JCR BOM ......................... SUCCESS <span class="error">&#91;0.291s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository BOMs ............................ SUCCESS <span class="error">&#91;0.333s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Kernel API ...................... SUCCESS <span class="error">&#91;3.744s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Metrics Module .................. SUCCESS <span class="error">&#91;0.996s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Minter Module ................... SUCCESS <span class="error">&#91;3.369s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Configurations Module ........... SUCCESS <span class="error">&#91;0.485s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Kernel Implementation ........... SUCCESS <span class="error">&#91;15.846s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository JMS Module ...................... SUCCESS <span class="error">&#91;12.514s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Object Serialization Module ..... SUCCESS <span class="error">&#91;2.995s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository HTTP Commons Module ............. SUCCESS <span class="error">&#91;3.708s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository FileSystem Connector Module ..... SUCCESS <span class="error">&#91;7.615s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Authorization Commons Module .... SUCCESS <span class="error">&#91;18.392s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository HTTP API Module ................. SUCCESS <span class="error">&#91;32.523s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository RDF Transformations Module ...... SUCCESS <span class="error">&#91;12.014s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Deployable Web Application ...... FAILURE <span class="error">&#91;7.191s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository LDP integration tests Module .... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository RDF integration tests Module .... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> BUILD FAILURE<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Total time: 2:05.953s<br/>
+<span class="error">&#91;INFO&#93;</span> Finished at: Tue Feb 03 16:30:59 CET 2015<br/>
+<span class="error">&#91;INFO&#93;</span> Final Memory: 84M/784M<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;ERROR&#93;</span> Internal error: java.lang.NullPointerException -&gt; <span class="error">&#91;Help 1&#93;</span><br/>
+org.apache.maven.InternalErrorException: Internal error: java.lang.NullPointerException<br/>
+	at org.apache.maven.lifecycle.internal.BuilderCommon.handleBuildError(BuilderCommon.java:128)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:95)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:59)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.singleThreadedBuild(LifecycleStarter.java:183)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:161)<br/>
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:320)<br/>
+	at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:156)<br/>
+	at org.apache.maven.cli.MavenCli.execute(MavenCli.java:537)<br/>
+	at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:196)<br/>
+	at org.apache.maven.cli.MavenCli.main(MavenCli.java:141)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:606)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:289)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:229)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:415)<br/>
+	at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:356)<br/>
+Caused by: java.lang.NullPointerException<br/>
+	at org.codehaus.plexus.component.configurator.converters.ComponentValueSetter.configure(ComponentValueSetter.java:348)<br/>
+	at org.codehaus.plexus.component.configurator.converters.composite.ObjectWithFieldsConverter.processConfiguration(ObjectWithFieldsConverter.java:161)<br/>
+	at org.codehaus.plexus.component.configurator.converters.composite.ObjectWithFieldsConverter.fromConfiguration(ObjectWithFieldsConverter.java:89)<br/>
+	at org.codehaus.plexus.component.configurator.converters.composite.ArrayConverter.fromChildren(ArrayConverter.java:129)<br/>
+	at org.codehaus.plexus.component.configurator.converters.composite.ArrayConverter.fromConfiguration(ArrayConverter.java:91)<br/>
+	at org.codehaus.plexus.component.configurator.converters.ComponentValueSetter.configure(ComponentValueSetter.java:295)<br/>
+	at org.codehaus.plexus.component.configurator.converters.composite.ObjectWithFieldsConverter.processConfiguration(ObjectWithFieldsConverter.java:161)<br/>
+	at org.codehaus.plexus.component.configurator.BasicComponentConfigurator.configureComponent(BasicComponentConfigurator.java:56)<br/>
+	at org.apache.maven.plugin.internal.DefaultMavenPluginManager.populatePluginFields(DefaultMavenPluginManager.java:567)<br/>
+	at org.apache.maven.plugin.internal.DefaultMavenPluginManager.getConfiguredMojo(DefaultMavenPluginManager.java:529)<br/>
+	at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:92)<br/>
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:209)<br/>
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:153)<br/>
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:145)<br/>
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:84)<br/>
+	... 16 more</p>
+
+<p>No idea what's going on here. :-/</p></div></div>
+<div class="comment" id="comment-13321"><div class="by">Ralf Claussnitzer, 2015-02-03 20:04 UTC</div><div class="text"><p>Now, I think I know what's going on.</p>
+
+<p>The Build Helper Maven Plugin dynamically creates Maven properties on runtime in the `process-test-classes` phase. One of these properties is `fcrepo.test.port` <span class="error">&#91;1&#93;</span>. There are more port parameters in other configurations in other POMs. It seems like this plugin is crashing if the property already exists and is empty (bug?).</p>
+
+<p>I'm not sure what to do here. Since Maven has no problems it doesn't look like there is anything broken. It's just IntelliJ IDEA complaining about undefined properties. My pull request, however, makes no sense then.</p>
+
+<p>Are these port properties documented somewhere?</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L708" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L708</a></p></div></div>
+<div class="comment" id="comment-13322"><div class="by">Andrew Woods, 2015-02-03 20:48 UTC</div><div class="text"><p>The referenced ports are internal to the build framework, and not documented specifically. Plugin details are available here:<br/>
+<a href="http://mojo.codehaus.org/build-helper-maven-plugin/index.html" class="external-link" rel="nofollow noreferrer">http://mojo.codehaus.org/build-helper-maven-plugin/index.html</a></p>
+
+<p>If it would be helpful, please feel free to add a page under:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/Developer+Guide" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Developer+Guide</a></p></div></div>
+<div class="comment" id="comment-13326"><div class="by">Ralf Claussnitzer, 2015-02-04 08:54 UTC</div><div class="text"><p>The build-helper-maven-plugin dynamically changes the environment in a way IDEs might not be aware of. That's a problem of IDEs Maven support, not a problem of the build system itself.</p>
+
+<p>I propose renaming those dynamic properties to denote the fact that they are generated at build time, e.g. `dynamic.fcrepo.test.port`. Does this make sense? If you think so I will update the pull request accordingly and add a page to the Developer Guide.</p></div></div>
+<div class="comment" id="comment-13328"><div class="by">Andrew Woods, 2015-02-04 14:25 UTC</div><div class="text"><p>Changing the property names of the dynamically generated ports would be for developer clarity, not for any function purpose, correct?<br/>
+If so, I would suggest the name be: "fcrepo.dynamic.test.port", "fcrepo.dynamic.jms.port", and "fcrepo.dynamic.stomp.port"</p>
+
+<p>Additionally, you will want to update these and similar ports in the related and child projects:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-message-consumer" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-camel" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-release-tests" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-release-tests</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-client" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-client</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-webapp-plus" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-webapp-plus</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider</a></p></div></div>
+<div class="comment" id="comment-13332"><div class="by">Ralf Claussnitzer, 2015-02-04 14:56 UTC</div><div class="text"><p>&gt; Changing the property names of the dynamically generated ports would be for developer clarity, not for any function purpose, correct?<br/>
+Absolutely.</p>
+
+<p>&gt; If so, I would suggest the name be: "fcrepo.dynamic.test.port", "fcrepo.dynamic.jms.port", and "fcrepo.dynamic.stomp.port"<br/>
+Ok.</p>
+
+<p>&gt; Additionally, you will want to update these and similar ports in the related and child projects:<br/>
+Yep, this is already on the list.</p>
+</div></div>
+<div class="comment" id="comment-13337"><div class="by">Andrew Woods, 2015-02-05 17:45 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo-message-consumer/pull/73" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/pull/73</a></p></div></div>
+<div class="comment" id="comment-13338"><div class="by">Andrew Woods, 2015-02-05 17:46 UTC</div><div class="text"><p>Ralf Claussnitzer, please use the button, "Start Work", if you are working this ticket (as you clearly are). Then click "Start Review" when you are done.<br/>
+Thanks!</p></div></div>
+<div class="comment" id="comment-13347"><div class="by">Ralf Claussnitzer, 2015-02-06 09:33 UTC</div><div class="text"><p>There is no such button for me. :-/<br/>
+May be I need to be assigned?</p></div></div>
+<div class="comment" id="comment-13348"><div class="by">Ralf Claussnitzer, 2015-02-06 14:33 UTC</div><div class="text"><p>Issued pull requests:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/12" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/12</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/31" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/31</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/6</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-release-tests/pull/6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-release-tests/pull/6</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-camel/pull/51" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/pull/51</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/11" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/11</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-message-consumer/pull/73" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/pull/73</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/705" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/705</a></p>
+
+<p>This module doesn't use dynamic properties:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-client" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-client</a></p>
+
+<p>Updated developer documentation:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/Maven+build+system" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Maven+build+system</a></p>
+
+<p>I had some trouble testing fcrepo-module-auth-xacml, fcrepo-webapp-plus and fcrepo4-release-tests locally. TravicCI runs where ok.</p></div></div>
+<div class="comment" id="comment-13349"><div class="by">Unknown, 2015-02-06 14:41 UTC</div><div class="text"><p>Ralf Claussnitzer I ran into the same thing with fcrepo-module-auth-xacml recently &#8211; the issue for me was that it depends on fcrepo-module-auth-rbacl, so you need to do a full mvn install on the rbacl module before trying to verify the xacml build. (mvn verify won't do it).</p></div></div>
+<div class="comment" id="comment-13350"><div class="by">Andrew Woods, 2015-02-06 16:14 UTC</div><div class="text"><p>Ralf Claussnitzer, This looks good... once the minor comment in the fcrepo4 PR is addressed and the fcrepo4-release-tests build is fixed.<br/>
+Thanks!</p></div></div>
+<div class="comment" id="comment-13357"><div class="by">Ralf Claussnitzer, 2015-02-09 10:34 UTC</div><div class="text"><p>Thanks Unknown, this worked.</p></div></div>
+<div class="comment" id="comment-13415"><div class="by">Andrew Woods, 2015-02-16 20:04 UTC</div><div class="text"><p>All PRs have been merged into their respective master branches:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/12" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/12</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/31" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/31</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-webapp-plus/pull/6</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-release-tests/pull/6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-release-tests/pull/6</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-camel/pull/51" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/pull/51</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/11" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/11</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-message-consumer/pull/73" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/pull/73</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/705" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/705</a></p></div></div>
+<p><a href="data/FCREPO-1341.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

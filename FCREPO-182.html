@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-182 Improved HTTP 1.1 support (Content-Length and Content-Range)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-182</span> Improved HTTP 1.1 support (Content-Length and Content-Range)</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Asger Askov Blekinge</td></tr><tr><th>Created</th><td>2008-02-01 10:39 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Sub-tasks</th><td><a href="FCREPO-885.html">FCREPO-885</a> Content-length support for datastreams</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-64.html">FCREPO-64</a> Datastream SIZE attribute not fully implemented</td></tr><tr><th>Depends on</th><td><a href="FCREPO-724.html">FCREPO-724</a> Provide a rebuild utility to compute and store SIZE attributes for managed content datastreams</td></tr><tr><th>Is related to</th><td><a href="FCREPO-438.html">FCREPO-438</a> Improved HTTP 1.1 support  (ETag/Last-Modified)</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1210.html">FCREPO-1210</a> Implement HTTP 1.1 Features for Conditional GET of Datastream Disseminations</td></tr></table>
+<h2>Description</h2>
+<p>Purpose: For chunked downloading and better support of various HTTP1.1-savvy utilities and services (including WebDAV clients, httpfs, etc..)</p>
+
+<p>Description: Fedora should provide Content-Length in GET and HEAD response headers when this information is easily available.  When practical, the Content-Range header (partial read) on GET request should also be supported.</p>
+
+<p>Details: Support of both should be possible for any Fedora HTTP request that maps to exactly one Inline or Managed datastream in the repository.  This includes:</p>
+
+<p>1) getDatastreamDissemination<br/>
+2) getDissemination (where the input maps directly to an X or M datastream and does not go through a service)</p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-10384"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1884267<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1884267" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1884267</a></p></div></div>
+<div class="comment" id="comment-11051"><div class="by">Former user, 2009-11-02 19:28 UTC</div><div class="text"><p>As Matt Zumwalt suggests, this issue should also be considered for the reworking of the REST API and therefore possibly included in 3.3</p></div></div>
+<div class="comment" id="comment-11432"><div class="by">Stephen Bayliss, 2010-06-17 12:38 UTC</div><div class="text"><p>The REST API seems to be supporting Content-Length correctly (and for HEAD) - can we close this?</p></div></div>
+<div class="comment" id="comment-11618"><div class="by">Graeme West, 2010-09-29 21:09 UTC</div><div class="text"><p>I could be wrong, but I don't think the REST interface sets Content-Length for Managed Content datastreams. I tested with exactly the same datastream content in Fedora 3.4, and only the inline XML version set Content-Length.</p>
+
+<p>I'm not sure if this is desired behaviour or not, but it seems inconsistent. Examples below.</p>
+
+<p>curl -u myuser:mypass -I <a href="http://myrepo:8080/fedora/objects/gcu:134/datastreams/testmanaged/content" class="external-link" rel="nofollow noreferrer">http://myrepo:8080/fedora/objects/gcu:134/datastreams/testmanaged/content</a><br/>
+HTTP/1.1 200 OK<br/>
+Server: Apache-Coyote/1.1<br/>
+Pragma: No-cache<br/>
+Cache-Control: no-cache<br/>
+Expires: Thu, 01 Jan 1970 01:00:00 GMT<br/>
+Set-Cookie: JSESSIONID=64114A168596894BBF2FA1D597BF8DBD; Path=/fedora<br/>
+content-disposition: inline; filename="testmanaged.xml"<br/>
+Content-Type: text/xml<br/>
+Content-Length: 0<br/>
+Date: Wed, 29 Sep 2010 15:52:56 GMT</p>
+
+<p>curl -u myuser:mypass -I <a href="http://myrepo:8080/fedora/objects/gcu:134/datastreams/testinline/content" class="external-link" rel="nofollow noreferrer">http://myrepo:8080/fedora/objects/gcu:134/datastreams/testinline/content</a><br/>
+HTTP/1.1 200 OK<br/>
+Server: Apache-Coyote/1.1<br/>
+Pragma: No-cache<br/>
+Cache-Control: no-cache<br/>
+Expires: Thu, 01 Jan 1970 01:00:00 GMT<br/>
+Set-Cookie: JSESSIONID=DBBF58E80733B934A42C3A63C38E89AA; Path=/fedora<br/>
+content-disposition: inline; filename="testinline.xml"<br/>
+Content-Type: text/xml<br/>
+Content-Length: 1301<br/>
+Date: Wed, 29 Sep 2010 15:49:26 GMT</p>
+
+<p>On the Content-Range side of things, Fedora seems to ignore Range headers for both managed and inline datastreams:</p>
+
+<p>curl -u myuser:mypass -I -r 0-40 <a href="http://myrepo:8080/fedora/objects/gcu:134/datastreams/testinline/content" class="external-link" rel="nofollow noreferrer">http://myrepo:8080/fedora/objects/gcu:134/datastreams/testinline/content</a><br/>
+HTTP/1.1 200 OK<br/>
+Server: Apache-Coyote/1.1<br/>
+Pragma: No-cache<br/>
+Cache-Control: no-cache<br/>
+Expires: Thu, 01 Jan 1970 01:00:00 GMT<br/>
+Set-Cookie: JSESSIONID=214A2CF19DF37AE71FE4D1603087B461; Path=/fedora<br/>
+content-disposition: inline; filename="testinline.xml"<br/>
+Content-Type: text/xml<br/>
+Content-Length: 1301<br/>
+Date: Wed, 29 Sep 2010 16:06:11 GMT</p>
+
+<p>It'd be super awesome if it could return these headers properly.</p>
+
+<p>Graeme</p></div></div>
+<div class="comment" id="comment-11640"><div class="by">Scott Prater, 2010-10-28 04:35 UTC</div><div class="text"><p>I can confirm that the content-length header is NOT being set when Fedora 3.4 serves managed datastreams:</p>
+
+<p>REST API with curl:<br/>
+$ curl --trace-ascii t1 -u fedoraAdmin:XXXXXX <br/>
+<a href="http://localhost:8080/fedora/objects/1711.dl:URLXHQEEJWTMZ8R/datastreams/THUMB/content" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/1711.dl:URLXHQEEJWTMZ8R/datastreams/THUMB/content</a> <br/>
+ &gt; t2</p>
+
+<p>Here's the output of the request and response headers:<br/>
+== Info: About to connect() to localhost port 8080<br/>
+== Info:   Trying 127.0.0.1... == Info: connected<br/>
+== Info: Connected to localhost (127.0.0.1) port 8080<br/>
+== Info: Server auth using Basic with user 'fedoraAdmin'<br/>
+=&gt; Send header, 276 bytes (0x114)<br/>
+0000: GET /fedora/objects/1711.dl:URLXHQEEJWTMZ8R/datastreams/THUMB/co<br/>
+0040: ntent HTTP/1.1<br/>
+0050: Authorization: Basic xxxxxxxxxxxxxxxxxxx=<br/>
+007b: User-Agent: curl/7.15.5 (i386-redhat-linux-gnu) libcurl/7.15.5 O<br/>
+00bb: penSSL/0.9.8b zlib/1.2.3 libidn/0.6.5<br/>
+00e2: Host: localhost:8080<br/>
+0105: Accept: <b>/</b><br/>
+0112:<br/>
+&lt;= Recv header, 17 bytes (0x11)<br/>
+0000: HTTP/1.1 200 OK<br/>
+&lt;= Recv header, 27 bytes (0x1b)<br/>
+0000: Server: Apache-Coyote/1.1<br/>
+&lt;= Recv header, 18 bytes (0x12)<br/>
+0000: Pragma: No-cache<br/>
+&lt;= Recv header, 25 bytes (0x19)<br/>
+0000: Cache-Control: no-cache<br/>
+&lt;= Recv header, 40 bytes (0x28)<br/>
+0000: Expires: Wed, 31 Dec 1969 18:00:00 CST<br/>
+&lt;= Recv header, 58 bytes (0x3a)<br/>
+0000: content-disposition: inline; filename="thumb.jpg"<br/>
+&lt;= Recv header, 26 bytes (0x1a)<br/>
+0000: Content-Type: image/jpeg<br/>
+&lt;= Recv header, 28 bytes (0x1c)<br/>
+0000: Transfer-Encoding: chunked<br/>
+&lt;= Recv header, 37 bytes (0x25)<br/>
+0000: Date: Wed, 27 Oct 2010 22:39:08 GMT<br/>
+&lt;= Recv data, 2458 bytes (0x99a)</p>
+
+
+<p>Old-style SOAP API-A with curl:<br/>
+$ curl --trace-ascii t1 -u fedoraAdmin:XXXXXX <br/>
+<a href="http://localhost:8080/fedora/get/1711.dl:URLXHQEEJWTMZ8R/THUMB" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/get/1711.dl:URLXHQEEJWTMZ8R/THUMB</a> &gt; t2</p>
+
+<p>And here's the output:</p>
+
+<p>== Info: About to connect() to localhost port 8080<br/>
+== Info:   Trying 127.0.0.1... == Info: connected<br/>
+== Info: Connected to localhost (127.0.0.1) port 8080<br/>
+== Info: Server auth using Basic with user 'fedoraAdmin'<br/>
+=&gt; Send header, 260 bytes (0x104)<br/>
+0000: GET /fedora/get/1711.dl:URLXHQEEJWTMZ8R/THUMB HTTP/1.1<br/>
+0038: Authorization: Basic xxxxxxxxxxxxxxxxxx==<br/>
+006b: User-Agent: curl/7.15.5 (i386-redhat-linux-gnu) libcurl/7.15.5 O<br/>
+00ab: penSSL/0.9.8b zlib/1.2.3 libidn/0.6.5<br/>
+00d2: Host: localhost:8080<br/>
+00f5: Accept: <b>/</b><br/>
+0102:<br/>
+&lt;= Recv header, 17 bytes (0x11)<br/>
+0000: HTTP/1.1 200 OK<br/>
+&lt;= Recv header, 27 bytes (0x1b)<br/>
+0000: Server: Apache-Coyote/1.1<br/>
+&lt;= Recv header, 18 bytes (0x12)<br/>
+0000: Pragma: No-cache<br/>
+&lt;= Recv header, 25 bytes (0x19)<br/>
+0000: Cache-Control: no-cache<br/>
+&lt;= Recv header, 40 bytes (0x28)<br/>
+0000: Expires: Wed, 31 Dec 1969 18:00:00 CST<br/>
+&lt;= Recv header, 26 bytes (0x1a)<br/>
+0000: Content-Type: image/jpeg<br/>
+&lt;= Recv header, 28 bytes (0x1c)<br/>
+0000: Transfer-Encoding: chunked<br/>
+&lt;= Recv header, 37 bytes (0x25)<br/>
+0000: Date: Wed, 27 Oct 2010 22:52:31 GMT<br/>
+&lt;= Recv data, 1148 bytes (0x47c)</p>
+
+<p>In the absence of a "Content-Length" header being set by the servlet, Tomcat sets a "Transfer-Encoding: chunked" header on the response.  This causes problems in some HTTP/1.1 applications, such as the Quicktime plugin for Firefox in Mac and Windows.</p></div></div>
+<div class="comment" id="comment-11641"><div class="by">Graeme West, 2010-10-28 04:51 UTC</div><div class="text"><p>Hi Scott - we also noticed the discontinuity you pointed out between the old-style API-A and the REST interface in relation to Content-Length a couple of days ago, so thanks for posting this useful information on it.</p>
+
+<p>"In the absence of a "Content-Length" header being set by the servlet, Tomcat sets a "Transfer-Encoding: chunked" header on the response. This causes problems in some HTTP/1.1 applications, such as the Quicktime plugin for Firefox in Mac and Windows. "</p>
+
+<p>I can corroborate the strange behaviour in the QuickTime plugin (among other applications) when using the REST-style URLs with media files. I hadn't noticed the 'chunked' header, but that seems to explain it.</p>
+
+<p>I've been looking at the code that seems to set the Content-Length headers for API-A getDatastream(Dissemination) and will contribute a patch for REST if I can put together some code. Anyone else who has ideas/code on this front, please get in touch with me </p>
+
+<p>We're on the verge of deploying Fedora for HTML5 media streaming so we can also give any improvements that need tested a thorough check.</p></div></div>
+<div class="comment" id="comment-11644"><div class="by">Stephen Bayliss, 2010-10-28 14:47 UTC</div><div class="text"><p>Datastream size is now available for new managed content datastreams (but not existing ones - overdue is a migration utility to calculate and persist size for these) - so theoretically it should be possible to provide this header.  I didn't manage to spot anywhere in the code where this is being added to the headers from a quick look through though.</p></div></div>
+<div class="comment" id="comment-11645"><div class="by">Graeme West, 2010-10-29 18:29 UTC</div><div class="text"><p>There's something relevant around line 658 to 675 of FedoraAccessServlet.java in trunk. I'm not sure how the 'dissemination' object is structured but it seems to be a this point that the MIME type is added to the response headers, so perhaps Content-Length could go in there too,</p></div></div>
+<div class="comment" id="comment-11646"><div class="by">Scott Prater, 2010-10-30 20:45 UTC</div><div class="text"><p>FedoraAccessServlet looks like it might be a good place to calculate and set the Content-Length header... but I'm wondering if it would be worthwhile to set it down lower, as a field in MIMETypedStream?  Then the size wouild be available globally.  Do you have an opinion on this, Steve?</p></div></div>
+<div class="comment" id="comment-11647"><div class="by">Scott Prater, 2010-10-30 20:49 UTC</div><div class="text"><p>Not set the header itself in MIMETypedStream, of course... but calculate the size, set a field, and create a method to retrieve it from MIMETypedStream objects.  Then it could be accessed any place where a MIMETypedStream is used, such as in FedoraAccessServlet.</p></div></div>
+<div class="comment" id="comment-11648"><div class="by">Stephen Bayliss, 2010-11-01 12:38 UTC</div><div class="text"><p>Persistence of size for managed datastreams addressed by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-64" >
+                <a href="FCREPO-64.html" class="jira-issue-macro-key issue-link"  title="Datastream SIZE attribute not fully implemented" >
+            
+            FCREPO-64
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<div class="comment" id="comment-11649"><div class="by">Stephen Bayliss, 2010-11-01 12:39 UTC</div><div class="text"><p>Existing managed content datastreams (prior to 3.4) won't have the size attribute calculated (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-64" >
+                <a href="FCREPO-64.html" class="jira-issue-macro-key issue-link"  title="Datastream SIZE attribute not fully implemented" >
+            
+            FCREPO-64
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+), 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-724" >
+                <a href="FCREPO-724.html" class="jira-issue-macro-key issue-link"  title="Provide a rebuild utility to compute and store SIZE attributes for managed content datastreams" >
+            
+            FCREPO-724
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ addresses calculation of size for those</p></div></div>
+<div class="comment" id="comment-11650"><div class="by">Stephen Bayliss, 2010-11-01 13:10 UTC</div><div class="text"><p>A couple of comments.</p>
+
+<p>The size for managed content datastreams is preserved as a datastream (version) attribute in the FOXML.  The size is calculated in DefaultDOManager.doCommit, see lines 1210, 1215, 1218.  The ILowLevelStorage interface was modified in 3.4 to return the stream's size on addDatastream and replaceDatastream (this is supported by Akubra, but potentially may not be supported by external ILowLevelStorage implementations).</p>
+
+<p>It sounds reasonable to me to use MIMETypedStream to carry this information.  MIMETypedStream currently has a "header" field (org.fcrepo.storage.types.Property[]).  The header field is currently set for example to return a content-disposition header indicating the filename to be used for a datastream; and the BaseRestResource.buildResponse returns the contents of this header field (and others, potentially including content-length) as HTTP headers.  So it would seem the route to go down if MIMETypedStream could consistently be populated with the appropriate content-length header.</p>
+
+<p>Probably need to think about what to do for external content, whether we persist the size in the FOXML, when to update this size (for instance, a HEAD request to the external content and inspection of last-modified/etags to determine if the size is "current") - I think there were some discussions about this at a committer's meeting.</p></div></div>
+<div class="comment" id="comment-11651"><div class="by">Scott Prater, 2010-11-01 18:18 UTC</div><div class="text"><p>Thanks, Steve.  I'll work on setting a Property "Content-Length" header for MIMETypedStreams.</p></div></div>
+<div class="comment" id="comment-11935"><div class="by">Chris Wilper, 2011-05-03 20:53 UTC</div><div class="text"><p>TODO: Create sub-issue or linked issue to cover what (subset of this) was actually rolled in for 3.5. In summary, part of Content-Length was implemented. We need documentation on when people can expect the Content-Length header to be provided b y Fedora based on the 3.5 impl.</p></div></div>
+<div class="comment" id="comment-13101"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-182.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

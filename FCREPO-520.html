@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-520 Recommended use of entity references for special characters in web admin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-520</span> Recommended use of entity references for special characters in web admin</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bill Branan</td></tr><tr><th>Created</th><td>2009-08-05 14:58 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>As reported by Richard Green on the dev mailing list, the web admin fails with an error when attempting to include encoded characters, using name encoding, within XML datastream content. Using number encoding for these characters works fine. See a list of name and number encodings here: <a href="http://www.ascii.cl/htmlcodes.htm" class="external-link" rel="nofollow noreferrer">http://www.ascii.cl/htmlcodes.htm</a>.</p>
+
+<p>As an example, adding the line &lt;dc:rights&gt;&#169; Fedora Commons&lt;/dc:rights&gt; to a DC datastream works fine, but attempting to add &lt;dc:rights&gt;&copy; Fedora Commons&lt;/dc:rights&gt; fails with the error "The entity 'copy' was referenced but not declared". A few name encoded characters do work (such as &lt; and &gt;) but most do not.</p>
+
+<p>The same errors are thrown when attempting this through the swing admin.</p>
+
+<p>A note from Peter Cliff on this issue: </p>
+
+<p>You need to define entities with names (&copy;) etc.</p>
+
+<p>See:</p>
+
+<p><a href="http://www.xml.com/pub/a/98/08/xmlqna2.html" class="external-link" rel="nofollow noreferrer">http://www.xml.com/pub/a/98/08/xmlqna2.html</a><br/>
+<a href="http://www.tizag.com/xmlTutorial/xmlentity.php" class="external-link" rel="nofollow noreferrer">http://www.tizag.com/xmlTutorial/xmlentity.php</a></p>
+
+<p>So my guess is that somewhere some XML parsing/creating is happening<br/>
+behind the scenes of that client and it is throwing the whole thing off<br/>
+when the XML processing fails on account of an undefined entity?</p>
+
+<p>I couldn't find any entity definitions for the HTML named ones in the<br/>
+src/xsd/ (aside from the reference in xhtml1-strict.xsd). Do there need<br/>
+to be some?</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10989"><div class="by">Bill Branan, 2009-08-05 15:06 UTC</div><div class="text"><p>Entity definitions for most characters can be found in one of these files:<br/>
+<a href="http://www.w3.org/TR/xhtml1/DTD/xhtml-lat1.ent" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/xhtml1/DTD/xhtml-lat1.ent</a><br/>
+<a href="http://www.w3.org/TR/xhtml1/DTD/xhtml-special.ent" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/xhtml1/DTD/xhtml-special.ent</a><br/>
+<a href="http://www.w3.org/TR/xhtml1/DTD/xhtml-symbol.ent" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/xhtml1/DTD/xhtml-symbol.ent</a></p>
+
+<p>These are all combined into a DTD here: <a href="http://gv.ca/dtd/character-entities.dtd" class="external-link" rel="nofollow noreferrer">http://gv.ca/dtd/character-entities.dtd</a></p></div></div>
+<div class="comment" id="comment-11007"><div class="by">Chris Wilper, 2009-09-15 17:15 UTC</div><div class="text"><p>Resolution:</p>
+<ul class="alternate" type="square">
+	<li>not support non-core xml entity references for inline xml datastream</li>
+	<li>recommend &#163;, directlky enter the character,</li>
+	<li>spit out a client-side warning, saying that if it finds any that look like non-supported entity references.</li>
+	<li>update docs to make this known.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-12952"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-520.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

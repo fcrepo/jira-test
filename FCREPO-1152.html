@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1152 Ingest with FeSL AuthZ enabled: Object whose PIDs start with a digit are not accessible once created</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1152</span> Ingest with FeSL AuthZ enabled: Object whose PIDs start with a digit are not accessible once created</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2012-08-31 04:15 UTC</td></tr><tr><th>Updated</th><td>2012-10-31 07:28 UTC</td></tr><tr><th>Resolved</th><td>2012-10-31 07:28 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.6.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.6.2</td></tr></table>
+<h2>Environment</h2>Red Hat Enterprise Linux Server release 5.8 (Tikanga)<br/>
+Linux 2.6.18-308.11.1.el5PAE #1 SMP i686 i386 GNU/Linux<br/>
+Oracle Java 1.7.0_04<br/>
+PostgreSQL 9.0.1
+<h2>Description</h2>
+<p>When FeSL Authz is enabled, objects whose PIDs start with a digit cannot be accessed or modified once they are created.  The object is created, but attempts to view the object, add a datastream to it, or purge it result in this error:</p>
+
+<p>java.net.URISyntaxException: Illegal character in scheme name at index 0</p>
+
+<p>This exception appears to be thrown when URI.parse() is called in org.fcrepo.server.security.xacml.pep.rest.objectshandlers.GetObjectProfile.handleRequest().</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1152/10158_fcrepo-1152-test-feslauthz-output.txt">fcrepo-1152-test-feslauthz-output.txt</a>, 6430 bytes, added by Scott Prater on 2012-08-31</li>
+<li><a href="attachments/FCREPO-1152/10159_fcrepo-1152-test-nofeslauthz-output.txt">fcrepo-1152-test-nofeslauthz-output.txt</a>, 5738 bytes, added by Scott Prater on 2012-08-31</li>
+<li><a href="attachments/FCREPO-1152/10160_fesl-authz-newobject-bad.xml">fesl-authz-newobject-bad.xml</a>, 619 bytes, added by Scott Prater on 2012-08-31</li>
+<li><a href="attachments/FCREPO-1152/10161_fesl-authz-newobject-good1.xml">fesl-authz-newobject-good1.xml</a>, 619 bytes, added by Scott Prater on 2012-08-31</li>
+<li><a href="attachments/FCREPO-1152/10162_fesl-authz-newobject-good2.xml">fesl-authz-newobject-good2.xml</a>, 619 bytes, added by Scott Prater on 2012-08-31</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12440"><div class="by">Scott Prater, 2012-08-31 04:25 UTC</div><div class="text"><p>Attached sample files that can be used for testing, and test results on my host, with and without FeSL AuthZ enabled.</p></div></div>
+<div class="comment" id="comment-12441"><div class="by">Benjamin Armintor, 2012-08-31 04:51 UTC</div><div class="text"><p>It's true that, according to RFC 2396: "scheme        = alpha *( alpha | digit | "+" | "-" | "." )" and:<br/>
+ "Scheme names consist of a sequence of characters beginning with a<br/>
+   lower case letter and followed by any combination of lower case<br/>
+   letters, digits, plus ("+"), period ("."), or hyphen ("-").  For<br/>
+   resiliency, programs interpreting URI should treat upper case letters<br/>
+   as equivalent to lower case in scheme names (e.g., allow "HTTP" as<br/>
+   well as "http")."</p>
+
+<p>Is the PID supposed to be exposed as a URI attribute there, or is it a mistake not to ensure that it's prefixed with "info:fedora/"?</p>
+
+<p>At a glance, it looks like legacy authZ doesn't populate this attribute.</p>
+</div></div>
+<div class="comment" id="comment-12442"><div class="by">Scott Prater, 2012-09-03 06:20 UTC</div><div class="text"><p>It looks the PID should be supplied, and that it should be, but isn't, prefixed with "info:/fedora".</p>
+
+<p>In org.fcrepo.server.security.xacml.pep.rest.objecthandlers.AddDatastream:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/f10c0986839eb75e5d18aba62c92e7fdf8182382/fcrepo-security/fcrepo-security-pep/src/main/java/org/fcrepo/server/security/xacml/pep/rest/objectshandlers/AddDatastream.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/f10c0986839eb75e5d18aba62c92e7fdf8182382/fcrepo-security/fcrepo-security-pep/src/main/java/org/fcrepo/server/security/xacml/pep/rest/objectshandlers/AddDatastream.java</a></p>
+
+<p>Lines 82 - 85:</p>
+
+<p>        String path = request.getPathInfo();<br/>
+        String[] parts = path.split("/");</p>
+
+<p>        String pid = parts<span class="error">&#91;1&#93;</span>;</p>
+
+<p>Lines 107 -110, where the error occurs:</p>
+
+<p>            if (pid != null &amp;&amp; !"".equals(pid)) </p>
+{
+                resAttr.put(new URI(XACML_RESOURCE_ID),
+                            new AnyURIAttribute(new URI(pid)));
+            }
+
+<p>Lines 108, 120, and 124 (pid, formatURI, dsLocation) set a HashMap value to a URI, but don't check that the strings can actually be turned into URIs.  Perhaps some simple checks should be put into place there?  And the PID could definitely be first turned into a URI.</p>
+
+<p>A more difficult question:  could we implement a check in the create object methods that verify these attributes can be populated (at least the ones that are common to all API actions, such as the PID), prior to ingesting the object, so we don't wind up in a situation where we create inaccessible objects?</p></div></div>
+<div class="comment" id="comment-12482"><div class="by">Benjamin Armintor, 2012-10-31 07:28 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/e0547ed724e52f1e57d13189bff3217e360ef99e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/e0547ed724e52f1e57d13189bff3217e360ef99e</a></p>
+
+<p>If the pid cannot be rendered as a URI, a warning is logged and the XACML machinery falls back to a string attribute.  This value is subsequently encoded with a leading slash, which makes the URI conversion work regardless.</p></div></div>
+<p><a href="data/FCREPO-1152.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

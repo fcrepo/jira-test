@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1889 Direct/Indirect Containers allow writing arbitrary triples to any resource, despite access controls</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1889</span> Direct/Indirect Containers allow writing arbitrary triples to any resource, despite access controls</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Robert Sanderson</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-02-04 19:49 UTC</td></tr><tr><th>Updated</th><td>2019-04-24 14:50 UTC</td></tr><tr><th>Resolved</th><td>2018-11-12 14:41 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.1.0</td></tr><tr><th>Labels</th><td>auth</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1498.html">FCREPO-1498</a> Indirectly Contained Resource Etags</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1742.html">FCREPO-1742</a> Last-Modified and ETag should not change with inbound references</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2899.html">FCREPO-2899</a> Must disallow PATCH of Indirect Containers updating SMTs</td></tr></table>
+<h2>Description</h2>
+<p>In a thought experiment, it is anticipated that by manipulating direct and indirect containers, it would allow an attacker to create arbitrary triples on any resource that they should not have write access to.</p>
+
+<p>For example, if a user can create an indirect container (/a):</p>
+
+<p>/a a ldp:IndirectContainer ;<br/>
+  ldp:insertedContentRelation rdf:object ;<br/>
+  ldp:membershipResource /resource/to/attack ;<br/>
+  ldp:hasMemberRelation xxx:predicateToCreate .</p>
+
+<p>When posting a new resource:<br/>
+&lt;&gt; a rdf:Statement ;<br/>
+  rdf:object /resource/to/link</p>
+
+<p>Would create the triple</p>
+
+<p>/resource/to/attack xxx:predicateToCreate /resource/to/link</p>
+
+<p>Expected Behavior:  </p>
+
+<p>The creation of the resource in the indirect container should fail with a permissions / auth related error.</p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1889/10259_auth.ttl">auth.ttl</a>, 250 bytes, added by Jared Whiklo on 2016-04-07</li>
+<li><a href="attachments/FCREPO-1889/10260_indirect_expand.ttl">indirect_expand.ttl</a>, 364 bytes, added by Jared Whiklo on 2016-04-07</li>
+</ul>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-16286"><div class="by">A. Soroka, 2016-03-10 16:09 UTC</div><div class="text"><p>Robert Sanderson, have you had a chance to actually try this interaction? Is there actually a concrete problem here, or is this more of an idea for a problem? <span class="error">&#91;grin&#93;</span></p></div></div>
+<div class="comment" id="comment-16476"><div class="by">Jared Whiklo, 2016-04-07 14:57 UTC</div><div class="text"><p>Just doing some testing and it appears that this is not allowed.</p>
+
+<p>The error messages are horrible and should be fixed, but essentially as you don't have access to <b>read</b> <tt>/resource/to/attack</tt>, you can't reference it from your resource.</p>
+
+<p>What I did</p>
+
+<p>1. Standup webapp-plus with Webac enabled using mvn:jetty<br/>
+2. Create a resource <tt>/resource/to/attack</tt> using user <b>admin1</b><br/>
+3. Ensure user <b>user1</b> cannot read <tt>/resource/to/attack</tt> (OK)<br/>
+3. Create a resource <tt>/allow/resource</tt> using user <b>admin1</b><br/>
+4. Create a WebAc Acl and WebAc Authorization attached to <tt>/allow/resource</tt> (auth.ttl attached)<br/>
+5. Ensure that user <b>user1</b> can read <tt>/allow/resource</tt> (OK) and can create a contained resource (OK)<br/>
+6. Try to create an indirect container inside <tt>/allow/resource</tt> pointing to <tt>/resource/to/attack</tt> (indirect_expand.ttl attached)</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&gt; curl -i -XPUT -uuser1:password1 -H"Content-type: text/turtle" --data-binary "@indirect_expand.ttl" http://localhost:8080/rest/allow/resource/box
+HTTP/1.1 400 Bad Request
+Date: Thu, 07 Apr 2016 14:52:49 GMT
+Link: &lt;data:text/plain;base64,VW5hYmxlIHRvIGZpbmQgcmVmZXJlbmNlZCBub2RlClBlcm1pc3Npb24gZGVuaWVkIHRvIHBlcmZvcm0gYWN0aW9ucyAiW3JlZ2lzdGVyX25hbWVzcGFjZV0iIG9uIHBhdGggPHVua25vd24+&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"
+Content-Type: text/plain
+Content-Length: 108
+Server: Jetty(9.3.1.v20150714)
+
+Unable to find referenced node
+Permission denied to perform actions "[register_namespace]" on path &lt;unknown&gt;
+</pre>
+</div></div>
+
+<p>The <tt>register_namespace</tt> error I'll look into further, but I think the <tt>Unable to find referenced node</tt> is due to this each in the WebACRolesProvider.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>DEBUG 09:52:49.323 (WebACRolesProvider) findRolesForPath: /{}resource/{}to/{}attack
+DEBUG 09:52:49.323 (WebACRolesProvider) Getting agent roles for: /resource/to/attack
+DEBUG 09:52:49.325 (WebACRolesProvider) No ACLs defined on this node or in parent hierarchy
+DEBUG 09:52:49.326 (WebACRolesProvider) Getting root authorization from classpath: /root-authorization.ttl
+DEBUG 09:52:49.327 (ServletContainerAuthenticationProvider) Trying to authenticate: null; FAD: org.fcrepo.auth.webac.WebACAuthorizationDelegate@4f573b84
+DEBUG 09:52:49.328 (WebACRolesProvider) Unfiltered ACL: {http://xmlns.com/foaf/0.1/Agent=[]}
+DEBUG 09:52:49.328 (AbstractRolesAuthorizationDelegate) request principal matched role assignment: http://xmlns.com/foaf/0.1/Agent
+DEBUG 09:52:49.328 (AbstractRolesAuthorizationDelegate) roles for this request: []
+DEBUG 09:52:49.328 (AbstractRolesAuthorizationDelegate) roles: [], actions: [read], path: /{}resource/{}to/{}attack
+DEBUG 09:52:49.328 (WebACAuthorizationDelegate) Request for actions: [read], on path: /{}resource/{}to/{}attack, with roles: []. Permission=false
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16479"><div class="by">A. Soroka, 2016-04-07 19:11 UTC</div><div class="text"><p>Good, that's healthy. Obviously we'll want a better error response than that, but that's a smaller problem, I think.</p></div></div>
+<div class="comment" id="comment-17677"><div class="by">A. Soroka, 2016-09-29 13:35 UTC</div><div class="text"><p>Jared Whiklo Robert Sanderson It seems like Rob's issue report is wrong here (viz. Jared's eigentliche-experiment). Can we update this ticket or close it with a new ticket opened as appropriate?</p></div></div>
+<div class="comment" id="comment-17678"><div class="by">Jared Whiklo, 2016-09-29 13:38 UTC</div><div class="text"><p>We should probably try this again, as my test was a little while ago. But then I am fine with closing the issue and opening one to provide a better response to the end-user.</p>
+
+<p>But this is Robert Sanderson's issue, so he should have final say on that.</p></div></div>
+<div class="comment" id="comment-17679"><div class="by">Robert Sanderson, 2016-09-29 13:54 UTC</div><div class="text"><p>If it requires the /resource/to/attack not to be <b>readable</b> by the attacker, I personally consider that still to be a bug. I would not want to limit read access in order to prevent write access.</p></div></div>
+<div class="comment" id="comment-18047"><div class="by">A. Soroka, 2016-12-01 16:37 UTC</div><div class="text"><p>I don't understand the comment, Robert Sanderson... where is read access being limited?</p></div></div>
+<div class="comment" id="comment-20446"><div class="by">Andrew Woods, 2018-10-14 17:55 UTC</div><div class="text"><p>This ticket is still an issue as of: 2018-10-14.</p></div></div>
+<div class="comment" id="comment-20490"><div class="by">Jared Whiklo, 2018-10-29 14:16 UTC</div><div class="text"><p>My plan (flawed as it might be) was to parse the incoming request for the creation of a direct or indirect container and ensure the user has permissions on the ldp:membershipRelation resource as well as where they are currently creating the direct or indirect container.</p>
+
+<p>Unsure how to pull in a second ACL to the Shiro security context, but what I have right now is this.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/compare/master...whikloj:FCREPO-1889" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/compare/master...whikloj:FCREPO-1889</a></p></div></div>
+<div class="comment" id="comment-20495"><div class="by">Peter Matthew Eichman, 2018-10-29 21:02 UTC</div><div class="text"><p>Jared Whiklo One idea that occurred to me today for pulling in a second ACL (i.e., in addition to the ACL of the request resource) would be to use a request attribute to add the URIs of any additional resources that needs their ACLs retrieved and permissions parsed and added to the AuthorizationInfo. That attribute could then be read by the WebACAuthorizingRealm as it is executing the <tt>doGetAuthorizationInfo</tt> method, and used to locate additional ACL(s) to parse and add their permissions. That is, when WebACFilter calls <tt>isPermitted(toWrite)</tt> on the membership relation resource, that resources ACL will be parsed and its permissions added to the known permission for the user.</p></div></div>
+<div class="comment" id="comment-20497"><div class="by">Jared Whiklo, 2018-10-31 15:27 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1465" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1465</a></p></div></div>
+<div class="comment" id="comment-20506"><div class="by">Andrew Woods, 2018-11-01 19:58 UTC</div><div class="text"><p>Issue still appears to be present. Script for reproducing:<br/>
+<a href="https://gist.github.com/awoods/5cca6e0548cdea5af1e016625cb0c76d" class="external-link" rel="nofollow noreferrer">https://gist.github.com/awoods/5cca6e0548cdea5af1e016625cb0c76d</a></p></div></div>
+<div class="comment" id="comment-20652"><div class="by">Peter Matthew Eichman, 2019-02-22 19:16 UTC</div><div class="text"><p>The current tip of the 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1889" >
+                <a href="FCREPO-1889.html" class="jira-issue-macro-key issue-link"  title="Direct/Indirect Containers allow writing arbitrary triples to any resource, despite access controls" >
+            
+            FCREPO-1889
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ branch disallows the problematic case, but introduces a regression where the testuser cannot POST or PUT to the container they do have write access to.</p></div></div>
+<div class="comment" id="comment-20656"><div class="by">Peter Matthew Eichman, 2019-04-04 15:43 UTC</div><div class="text"><p>Merged: <a href="https://github.com/fcrepo4/fcrepo4/commit/b0a7a444735745bc52d3e8efa03a02dfdb350f3c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/b0a7a444735745bc52d3e8efa03a02dfdb350f3c</a></p>
+
+<p> </p></div></div>
+<p><a href="data/FCREPO-1889.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-537 Certain ingests may report failure, but retain the object in the registry, filesystem, and RI in an unreadable state.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-537</span> Certain ingests may report failure, but retain the object in the registry, filesystem, and RI in an unreadable state.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2009-10-06 22:54 UTC</td></tr><tr><th>Updated</th><td>2009-11-25 20:20 UTC</td></tr><tr><th>Resolved</th><td>2009-11-25 20:20 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>RI enabled
+<h2>Description</h2>
+<p>The error occurred again, and this time we are able to reproduce it.  As <br/>
+far as I can tell, it looks like when Fedora checks and verifies that a <br/>
+foxml file is well-formed, it then creates a stub object, then checks <br/>
+the datastreams.  If validation of the datastreams fails under certain <br/>
+conditions, Fedora returns an error, but leaves the stub object in the <br/>
+file system and in the database.</p>
+
+<p>To reproduce this:<br/>
+The steps to reproduce the error are (using attached files)</p>
+
+<p>1. Compare the content of DemoFail.xml and DemoSuccess.xml. They should <br/>
+differ only in the location of the attribute xmlns:xlink: on the element<br/>
+&lt;foxml:digitalObject&gt; (DemoFail) or &lt;mods:mods&gt; (DemoSucess).</p>
+
+<p>2. Ingest object demo:failObject from DemoSuccess.xml; it should be <br/>
+successful.</p>
+
+<p>3. Purge the object demo:failObject.</p>
+
+<p>3. Ingest object demo:failObject from DemoFail.xml; it will fail because <br/>
+of the location of the xlink namespace declaration.</p>
+
+<p>4. Since the object was not ingested, try to repeat step 2. It will fail <br/>
+with an ObjectAlreadyInLowlevelStorageException. At this point, you can <br/>
+neither ingest nor purge the object demo:failObject.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-537/10066_DemoFail.xml">DemoFail.xml</a>, 2107 bytes, added by Aaron Birkland on 2009-10-06</li>
+<li><a href="attachments/FCREPO-537/10067_DemoSuccess.xml">DemoSuccess.xml</a>, 2111 bytes, added by Aaron Birkland on 2009-10-06</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11017"><div class="by">Aaron Birkland, 2009-10-06 22:55 UTC</div><div class="text"><p>Certain defects in an object can get past the object validation stage of Ingest, and cause errors only upon reading and deserializing from storage.  In this case, the specific defect is declaring an XML namespace outside of an inline XML datastream where that namespace is referenced.</p>
+
+<p>The sequence of events leading to the error are as follows (all occurring within the scope of ingest)<br/>
+1) Object passes validation<br/>
+2) Triples are saved to RI<br/>
+3) Object is saved to storage and registry<br/>
+4) Object is loaded from storage and deserialized for the purpose of populating FieldSearch<br/>
+5) Exception is thrown in deserialization process<br/>
+6) Rollback procedure is initiated - it is supposed to clean up RI, registry, and storage<br/>
+7) In clearing the RI, the object is read from storage to determine triples to delete<br/>
+8) Exception is thrown, cleanup process is aborted as a result.  Triples, object XML, and registry entry are intact<br/>
+9) Fedora reports failure of ingest</p></div></div>
+<div class="comment" id="comment-11114"><div class="by">Aaron Birkland, 2009-11-25 20:20 UTC</div><div class="text"><p>Fixed the obvious un-recoverability problem by removing unnecessary retrievals from storage, instead relying on already known/retrieved/submitted data.   Added a validating deserialization step to discover errors in a controlled fashion and provoke a failure upon ingest.  The changes end up balancing out as far as performance, with the submitted fix perhaps achieving a very slight performance increase</p>
+
+<p>Used a live system test to verify fix, in configB only.  DOManager itself is a bit too unweildy to test with an offline test without a significant amount of effort.</p>
+</div></div>
+<p><a href="data/FCREPO-537.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

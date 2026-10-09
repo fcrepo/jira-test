@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-984 Fedora fails to start when specifying relative paths for fedora.home and Spring configuration params</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-984</span> Fedora fails to start when specifying relative paths for fedora.home and Spring configuration params</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2011-07-23 03:39 UTC</td></tr><tr><th>Updated</th><td>2011-07-25 20:10 UTC</td></tr><tr><th>Resolved</th><td>2011-07-23 03:52 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr></table>
+<h2>Description</h2>
+<p>In Fedora 3.4.2 and prior, providing a relative path for the fedora.home context-param in web.xml worked and allowed, for example, for portable copies of Jetty that included Fedora.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12018"><div class="by">eddie, 2011-07-23 03:52 UTC</div><div class="text"><p>Fixed in 6f500ad5bd71e22d5549833abb1b471235e96df5.</p>
+
+<p>FYI, for Jetty 6.x, creating a contexts/fedora.xml with the following contents will do (substituting your own relative path to FEDORA_HOME for "fedora/default"):</p>
+
+<p>&lt;?xml version="1.0"  encoding="ISO-8859-1"?&gt;<br/>
+&lt;!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.mortbay.org/configure.dtd"&gt;<br/>
+&lt;Configure class="org.mortbay.jetty.webapp.WebAppContext"&gt;<br/>
+  &lt;Set name="contextPath"&gt;/fedora&lt;/Set&gt;<br/>
+  &lt;Set name="war"&gt;&lt;SystemProperty name="jetty.home" default="."/&gt;/webapps/fedora&lt;/Set&gt;<br/>
+  &lt;Set name="initParams"&gt;<br/>
+    &lt;Map&gt;<br/>
+      &lt;Entry&gt;<br/>
+        &lt;Item&gt;fedora.home&lt;/Item&gt;<br/>
+        &lt;Item&gt;&lt;SystemProperty name="jetty.home" default="."/&gt;/fedora/default&lt;/Item&gt;<br/>
+      &lt;/Entry&gt;<br/>
+    &lt;/Map&gt;<br/>
+  &lt;/Set&gt;<br/>
+&lt;/Configure&gt;</p></div></div>
+<p><a href="data/FCREPO-984.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

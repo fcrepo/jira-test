@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-809 Option to include managed XML content as inline XML in exported FOXML</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-809</span> Option to include managed XML content as inline XML in exported FOXML</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2010-10-13 18:23 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-12-07 23:09 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Is related to</th><td><a href="FCREPO-807.html">FCREPO-807</a> When inline XML is provided for Managed content, it&#x27;s auto-converted to Inline XML</td></tr></table>
+<h2>Description</h2>
+<p>We allow exporting with inline managed content as base64; where the datastream mime type indicates XML maybe we should (optionally?) allow exporting with the XML inline. Notwithstanding potential namespace declaration issues... </p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11632"><div class="by">Scott Prater, 2010-10-13 18:24 UTC</div><div class="text"><p>Originally suggested by Stephen Bayliss in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-807" >
+                <a href="FCREPO-807.html" class="jira-issue-macro-key issue-link"  title="When inline XML is provided for Managed content, it&#39;s auto-converted to Inline XML" >
+            
+            FCREPO-807
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<div class="comment" id="comment-11664"><div class="by">Chris Wilper, 2010-11-09 23:29 UTC</div><div class="text"><p>Scott, we discussed this in today's call.  Can you provide a little more info on the use cases that this would facilitate?  </p></div></div>
+<div class="comment" id="comment-11666"><div class="by">Scott Prater, 2010-11-10 00:29 UTC</div><div class="text"><p>Sure.  First, some background about how this issue came to be.  My main concern is with FCREPO-807:  we ran into an issue where we were ingesting large amounts of FOXML that contained inline XML which we wanted stored as managed datastreams (and were indicated as such in the FOXML), but were silently being stored as inline datastreams.  Researching the topic, I came across that issue, which as originally proposed by Steve Bayliss, included the feature described here.  After talking with Steve, we decided to split 807 into two separate issues:  
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-807" >
+                <a href="FCREPO-807.html" class="jira-issue-macro-key issue-link"  title="When inline XML is provided for Managed content, it&#39;s auto-converted to Inline XML" >
+            
+            FCREPO-807
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, which was reclassified as a bug (since Fedora does not behave as users expect it would, and as intuition would suggest it should behave), and this issue, which is really a feature.</p>
+
+<p>That said, I can come up with two use cases for including managed datastream XML in exported FOXML.  The first would be for archiving/backup/migration purposes:  I can imagine a situation in which someone would want to backup their data and/or move it elsewhere without having to chase down many links, especially if many of those links are to localhost or resources on a private network.  Of course, this wouldn't make binary datastreams, redirects, and external datastreams any more accessible, but it could reduce the number of links that would need to be followed to assemble an object outside Fedora.</p>
+
+<p>The second use case is one that's actually much closer to my needs:  I use the export API to get XML representations of our objects and process them to create complex METS packages.  Having managed datastream XML available in the exported object XML would save me quite a few HTTP fetches.</p></div></div>
+<div class="comment" id="comment-11670"><div class="by">Stephen Bayliss, 2010-11-10 15:23 UTC</div><div class="text"><p>I'd also support this.  Including "M" datastreams as inline XML rather than base64 makes it easier to export objects, edit them offline and ingest them again.  Something I do when for instance developing CMA objects, once I'm happy with them I often export them, "tidy them up", and re-ingest.</p>
+
+<p>Plus when authoring objects it makes life a lot easier to include XML inline for "M" datastreams rather than having to base64-encode.</p>
+
+<p>(Furthermore the FOXML schema does support it)</p></div></div>
+<div class="comment" id="comment-11687"><div class="by">Chris Wilper, 2010-11-16 23:58 UTC</div><div class="text"><p>Hi Scott, we talked about this again at today's committer meeting.  There's generally some reluctance (from me, and at least a couple of the other committers) to encourage the use of inline xml datastreams, because of all the problems they have caused for us in the past.  Providing XML datastreams inside the FOXML requires more memory of the server and places requirements on the XML that it can't contain any document type declarations, processing instructions, custom entity references, or xml comments.  It also requires that the XML is encoded is transcoded to UTF-8 on the way out.</p>
+
+<p>Indeed, there is a movement afoot to reconsider having inline xml datastreams <b>at all</b> in future versions of Fedora and/or FOXML.  Of course, that will require more discussion, but it feels like we'd be jumping the gun to provide this capability only to take it away later.</p>
+
+<p>We were wondering if the AtomZIP format would fit the bill for your use cases.  If you specify that AtomZIP as the desired format, Fedora will give you a zip file with an Atom.xml manifest and content included as separate entries within the ZIP file.  This would only require you to make one request of Fedora, and you'd get all the content you need to generate a custom METS file, for example.</p></div></div>
+<div class="comment" id="comment-11688"><div class="by">Scott Prater, 2010-11-17 00:20 UTC</div><div class="text"><p>That sounds reasonable to me. The AtomZIP export would be even faster than an export with inline XML, if I were dealing with many and/or very large xml datastreams: fewer bytes being transferred across the network.</p>
+
+<p>Perhaps we should shelve this issue, then?  </p></div></div>
+<p><a href="data/FCREPO-809.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

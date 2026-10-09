@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2149 Export: trailing slash in repo path causes filename issues</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2149</span> Export: trailing slash in repo path causes filename issues</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2016-08-31 17:10 UTC</td></tr><tr><th>Updated</th><td>2016-09-02 14:58 UTC</td></tr><tr><th>Resolved</th><td>2016-09-02 14:58 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr></table>
+<h2>Description</h2>
+<p>Running the command shown below, where there is a trailing slash on the repository URL, causes the filename to show up simply as '.ttl' with no actual filename.  A trailing slash should be removed, if present. </p>
+
+<p>`java -jar ../../fcrepo4-labs/fcrepo-import-export/fcrepo-export/target/fcrepo-export-0.0.1-SNAPSHOT.jar --mode export --resource <a href="http://localhost:8080/fcrepo_4.6_rc/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo_4.6_rc/rest/</a> -binDir bin_dir --descDir desc_dir`</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-17336"><div class="by">Andrew Woods, 2016-09-01 19:51 UTC</div><div class="text"><p>I am not seeing this anymore. Can you confirm that it is still an problem Bethany Seeger?</p></div></div>
+<div class="comment" id="comment-17337"><div class="by">Bethany Seeger, 2016-09-01 19:57 UTC</div><div class="text"><p>I just ran it on the lastest stuff (without PR 9). I still see it. <br/>
+(note that I have things in bin_dir, but that's just because I have both desc and binary files going into the same place currently)</p>
+
+<p>If I run the export on the root resource, this is what it ends up looking like:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+export/bin_dir/fcrepo_4.6_rc/<span class="code-keyword">rest</span>&gt;ls -latr
+total 8
+-rw-r--r--  1 bseeger  AMHERST\Domain Users  1806 Sep  1 15:53 .ttl
+drwxr-xr-x  4 bseeger  AMHERST\Domain Users   136 Sep  1 15:53 ..
+drwxr-xr-x  3 bseeger  AMHERST\Domain Users   102 Sep  1 15:53 .
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17339"><div class="by">Andrew Woods, 2016-09-01 20:03 UTC</div><div class="text"><p>Can you run with the latest master?</p></div></div>
+<div class="comment" id="comment-17340"><div class="by">Bethany Seeger, 2016-09-01 20:06 UTC</div><div class="text"><p>Sure, here's what it looks like: </p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+
+/fcrepo4-labs/fcrepo-<span class="code-keyword">import</span>-export/fcrepo-<span class="code-keyword">import</span>-export-driver/target&gt;java -jar fcrepo-<span class="code-keyword">import</span>-export-driver-0.0.1-SNAPSHOT.jar --mode export --binDir /Users/bseeger/Projects/fedora/backup/export/bin_dir --descDir /Users/bseeger/Projects/fedora/backup/export/bin_dir -r http:<span class="code-comment">//localhost:8080/fcrepo_4.6_rc/<span class="code-keyword">rest</span>/
+</span>
+/export/bin_dir/fcrepo_4.6_rc/<span class="code-keyword">rest</span>&gt;ls -latr
+total 320
+-rw-r--r--  1 bseeger  AMHERST\Domain Users    1806 Sep  1 16:03 .ttl
+drwxr-xr-x  3 bseeger  AMHERST\Domain Users     102 Sep  1 16:03 ..
+-rw-r--r--  1 bseeger  AMHERST\Domain Users  152204 Sep  1 16:03 goats
+-rw-r--r--  1 bseeger  AMHERST\Domain Users    1834 Sep  1 16:03 asc.ttl
+drwxr-xr-x  4 bseeger  AMHERST\Domain Users     136 Sep  1 16:03 asc
+drwxr-xr-x  6 bseeger  AMHERST\Domain Users     204 Sep  1 16:03 .
+
+</pre>
+</div></div>
+
+<p>Is this not your experience?</p></div></div>
+<div class="comment" id="comment-17341"><div class="by">Bethany Seeger, 2016-09-01 20:13 UTC</div><div class="text"><p>It should look like this: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+├── <span class="code-keyword">rest</span>
+│   ├── asc
+│   │   ├── 336
+│   │   │   └── members.ttl
+│   │   └── 336.ttl
+│   ├── asc.ttl
+│   └── goats
+└── <span class="code-keyword">rest</span>.ttl
+</pre>
+</div></div>
+<p>But instead I get: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+└── <span class="code-keyword">rest</span>
+    ├── .ttl
+    ├── asc
+    │   ├── 336
+    │   │   └── members.ttl
+    │   └── 336.ttl
+    ├── asc.ttl
+    └── goats
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17343"><div class="by">Bethany Seeger, 2016-09-01 20:37 UTC</div><div class="text"><p>Resolved with PR <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/12" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/12</a></p>
+
+<p>Unless, of course, you're not seeing it. Then I need to figure out what's going on with my system. </p></div></div>
+<div class="comment" id="comment-17346"><div class="by">Andrew Woods, 2016-09-02 13:16 UTC</div><div class="text"><p>Pending response to code review.</p></div></div>
+<div class="comment" id="comment-17351"><div class="by">Esmé Cowles, 2016-09-02 14:58 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/ff095f5c41e3d4d14bfd8c9c139139fffc2de08d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/ff095f5c41e3d4d14bfd8c9c139139fffc2de08d</a></p></div></div>
+<p><a href="data/FCREPO-2149.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

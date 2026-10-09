@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2667 Fcrepo 4.7.5 RC2 defaults to file-simple modeshape config when DB one is specifed</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2667</span> Fcrepo 4.7.5 RC2 defaults to file-simple modeshape config when DB one is specifed</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2018-01-25 21:35 UTC</td></tr><tr><th>Updated</th><td>2018-01-31 22:33 UTC</td></tr><tr><th>Resolved</th><td>2018-01-31 22:33 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.5</td></tr></table>
+<h2>Environment</h2>Linux, Tomcat7, Postgres/Mysql
+<h2>Description</h2>
+<p>When starting fcrepo-webapp-4.7.5-rc2 in Tomcat using a modeshape repository JSON file specifiying Mysql or Postgres, fcrepo-webapp nevertheless defaults to the file-simple/repository.json configuration file.</p>
+
+<p>This does not happen with fcrepo-webapp 4.7.4.  It also does not happen with 4.7.5 RC1.  It seems to only affect RC2.  Andrew Woods believed that this was the only (notable?) change between the two versions:  </p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/cab6f05305e26cf7b0aa818e6683dda422c6984d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/cab6f05305e26cf7b0aa818e6683dda422c6984d</a></p>
+
+<p>Attached are the repository.json files being used. I believe they are fairly uncontroversial.</p>
+
+<p>Also attached are clean catalina.out and fcrepo.log logs showing RC2 start and stop. Nothing terribly illuminating, but it shows the file-simple being loaded.</p>
+
+<p>Finally, I attach two additional files: one showing the steps taken to clear, start, load data to, and then stop 4.7.5-RC1 using postgres and another showing the same for RC2.  I have more, if needed, showing my results from 474 and the mysql equivalents.</p>
+
+<p>Mysql version is 5.6.  Postgres version is 9.4</p>
+
+<p>The command that starts tomcat, and fcrepo:</p>
+
+<p>/usr/bin/java -Djava.util.logging.config.file=/opt/lake/tomcat7-47/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager -Dfcrepo.home=/data/fcrepo47_data -Dfcrepo.activemq.dir=/data/fcrepo47_data/jms -Dlogback.configurationFile=/opt/lake/fcrepo47/etc/logback.xml -Dfcrepo.modeshape.configuration=<a href="file:/opt/lake/fcrepo47/etc/repository-postgres.json" class="external-link" rel="nofollow noreferrer">file:/opt/lake/fcrepo47/etc/repository-postgres.json</a> -Djdk.tls.ephemeralDHKeySize=2048 -Djava.endorsed.dirs=/opt/lake/tomcat7-47/endorsed -classpath /opt/lake/tomcat7-47/bin/bootstrap.jar:/opt/lake/tomcat7-47/bin/tomcat-juli.jar -Dcatalina.base=/opt/lake/tomcat7-47 -Dcatalina.home=/opt/lake/tomcat7-47 -Djava.io.tmpdir=/opt/lake/tomcat7-47/temp org.apache.catalina.startup.Bootstrap start</p>
+
+
+
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2667/10324_catalina.out">catalina.out</a>, 18874 bytes, added by kefo on 2018-01-25</li>
+<li><a href="attachments/FCREPO-2667/10325_fcrepo47.log">fcrepo47.log</a>, 3284 bytes, added by kefo on 2018-01-25</li>
+<li><a href="attachments/FCREPO-2667/10326_postgres-475-rc1.txt">postgres-475-rc1.txt</a>, 4245 bytes, added by kefo on 2018-01-25</li>
+<li><a href="attachments/FCREPO-2667/10327_postgres-475-rc2.txt">postgres-475-rc2.txt</a>, 4476 bytes, added by kefo on 2018-01-25</li>
+<li><a href="attachments/FCREPO-2667/10328_repository-mysql.json">repository-mysql.json</a>, 1067 bytes, added by kefo on 2018-01-25</li>
+<li><a href="attachments/FCREPO-2667/10329_repository-postgres.json">repository-postgres.json</a>, 1052 bytes, added by kefo on 2018-01-25</li>
+</ul>
+<h2>Comments (18)</h2>
+<div class="comment" id="comment-19621"><div class="by">Jared Whiklo, 2018-01-25 21:50 UTC</div><div class="text"><p>kefo I was able to set up a machine with MySQL and 4.7.5-RC-2 and have it use MySQL. From my catalina.out</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>INFO 17:22:10.611 (ModeShapeRepositoryFactoryBean) Using repo config (classpath): file:/opt/apache-tomcat-8.5.24/webapps/fcrepo/WEB-INF/classes/config/jdbc-mysql/repository.json
+INFO 17:22:10.618 (DefaultPropertiesLoader) Loading properties
+INFO 17:22:10.619 (DefaultPropertiesLoader) com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean.default.objectStoreDir = /opt/fcrepo/com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean.default.objectStoreDir
+INFO 17:22:10.619 (DefaultPropertiesLoader) com.arjuna.ats.arjuna.objectstore.objectStoreDir = /opt/fcrepo/com.arjuna.ats.arjuna.objectstore.objectStoreDir
+INFO 17:22:10.619 (DefaultPropertiesLoader) fcrepo.object.directory = /opt/fcrepo/fcrepo.object.directory
+INFO 17:22:10.620 (DefaultPropertiesLoader) fcrepo.binary.directory = /opt/fcrepo/fcrepo.binary.directory
+INFO 17:22:10.620 (DefaultPropertiesLoader) fcrepo.modeshape.index.directory = /opt/fcrepo/fcrepo.modeshape.index.directory
+INFO 17:22:10.620 (DefaultPropertiesLoader) fcrepo.activemq.directory = /opt/fcrepo/fcrepo.activemq.directory
+INFO 17:22:15.518 (RdfWriterHelper) Loading JENA 3.1.1 Patched RDF Output Writers</pre>
+</div></div>
+<p>I will note that you don't seem to specify the postgres username and password in your custom repository file, so did you just remove it from the java command line above?</p>
+
+<p>I will try copying the repository.json out to the filesystem and see if I can still get it to work.</p></div></div>
+<div class="comment" id="comment-19622"><div class="by">kefo, 2018-01-25 23:00 UTC</div><div class="text"><p>Not sure what you mean by not specifying the username and password in the custom repository file.  I believe I did, at least for database access, in both files, though I have replaced the actual username and passowrd values in the files above with dummy entries.</p>
+
+<p>FWIW, in all my tests, I never made a change to the repository json file.  To say that another way: the repository json files you see attached to this ticket worked for fcrepo 4.7.4 and fcrepo 4.7.5-rc1 just fine before they were ignored by 4.7.5-rc2.</p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19623"><div class="by">Danny Bernstein, 2018-01-26 04:39 UTC</div><div class="text"><p>kefo:  so I rebuilt 4.7.4 and confirmed that mysql was working correctly (on tomcat).  </p>
+
+<p>Then I rebuilt 4.7.5 RC-1,  blew away my database and fcrepo4-data and copied in the RC 1 war into my tomcat and started it up and it worked. </p>
+
+<p>It repeated the same process for 4.7.5 RC-2 and <b><em>it worked for mysql</em></b>.</p>
+
+<p>The problem I was seeing before stemmed from the fact that I wasn't using tomcat but rather the one-click which I do not think supports non-default configurations.</p>
+
+<p> </p>
+
+<p>my tomcat command line: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+  502 50687     1   0  8:38PM ttys022    0:35.94 /Library/Java/JavaVirtualMachines/jdk1.8.0_111.jdk/Contents/Home/bin/java -Djava.util.logging.config.file=/opt/fcrepo-tomcat-8.5.16/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager -Dfcrepo.modeshape.configuration=classpath:/config/jdbc-mysql/repository.json -Dfcrepo.mysql.username=root -Dfcrepo.mysql.password=root -Dfcrepo.mysql.host=localhost -Dfcrepo.mysql.port=3306 -Djdk.tls.ephemeralDHKeySize=2048 -Djava.protocol.handler.pkgs=org.apache.catalina.webresources -Dfcrepo.modeshape.configuration=classpath:/config/jdbc-mysql/repository.json -Dfcrepo.mysql.username=root -Dfcrepo.mysql.password=root -Dfcrepo.mysql.host=localhost -Dfcrepo.mysql.port=3306 -classpath /opt/fcrepo-tomcat-8.5.16/bin/bootstrap.jar:/opt/fcrepo-tomcat-8.5.16/bin/tomcat-juli.jar -Dcatalina.base=/opt/fcrepo-tomcat-8.5.16 -Dcatalina.home=/opt/fcrepo-tomcat-8.5.16 -Djava.io.tmpdir=/opt/fcrepo-tomcat-8.5.16/temp org.apache.catalina.startup.Bootstrap start</pre>
+</div></div></div></div>
+<div class="comment" id="comment-19624"><div class="by">kefo, 2018-01-26 15:09 UTC</div><div class="text"><p>Danny Bernstein: you are using the repository.json mysql config that comes bundled with Fedora and specifying the DB details (username, password, host, etc) as part of command line options, yes?  What if you try to tell 4.7.5 to use a custom (i.e. not bundled) repository.json file as in my command?</p>
+
+<p>-Dfcrepo.modeshape.configuration=<a href="file:/opt/lake/fcrepo47/etc/repository-postgres.json" class="external-link" rel="nofollow noreferrer">file:/opt/lake/fcrepo47/etc/repository-postgres.json</a></p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19625"><div class="by">Jared Whiklo, 2018-01-26 17:08 UTC</div><div class="text"><p>Using an external json file.</p>
+
+<p>Here is catalina.out</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>26-Jan-2018 17:03:36.671 INFO [localhost-startStop-1] org.apache.jasper.servlet.TldScanner.scanJars At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+INFO 17:03:39.196 (ModeShapeRepositoryFactoryBean) Using repo config (classpath): file:/opt/jareds-mysql.json
+INFO 17:03:39.204 (DefaultPropertiesLoader) Loading properties
+INFO 17:03:39.205 (DefaultPropertiesLoader) com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean.default.objectStoreDir = /opt/fcrepo/com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean.default.objectStoreDir
+INFO 17:03:39.205 (DefaultPropertiesLoader) com.arjuna.ats.arjuna.objectstore.objectStoreDir = /opt/fcrepo/com.arjuna.ats.arjuna.objectstore.objectStoreDir
+INFO 17:03:39.205 (DefaultPropertiesLoader) fcrepo.object.directory = /opt/fcrepo/fcrepo.object.directory
+INFO 17:03:39.205 (DefaultPropertiesLoader) fcrepo.binary.directory = /opt/fcrepo/fcrepo.binary.directory
+INFO 17:03:39.205 (DefaultPropertiesLoader) fcrepo.modeshape.index.directory = /opt/fcrepo/fcrepo.modeshape.index.directory
+INFO 17:03:39.205 (DefaultPropertiesLoader) fcrepo.activemq.directory = /opt/fcrepo/fcrepo.activemq.directory
+INFO 17:03:44.262 (RdfWriterHelper) Loading JENA 3.1.1 Patched RDF Output Writers</pre>
+</div></div>
+<p> </p>
+
+<p>Here is the json file</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>{
+    "name" : "repo",
+    "jndiName" : "",
+    "workspaces" : {
+        "predefined" : ["default"],
+        "default" : "default",
+        "allowCreation" : true,
+        "cacheSize" : 10000
+    },
+    "storage" : {
+        "persistence": {
+            "type" : "db",
+            "connectionUrl": "jdbc:mysql://localhost:3306/fcrepo?createDatabaseIfNotExist=true",
+            "driver" : "com.mysql.jdbc.Driver",
+            "username" : "fcrepouser",
+            "password" : "fcrepouserpassword"
+        },
+        "binaryStorage" : {
+            "type" : "file",
+            "directory" : "${fcrepo.binary.directory:target/binaries}",
+            "minimumBinarySizeInBytes" : 4096
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        },
+        "providers" : [
+            { "classname" : "org.fcrepo.auth.common.BypassSecurityServletAuthenticationProvider" }
+        ]
+    },
+    "garbageCollection" : {
+        "threadPool" : "modeshape-gc",
+        "initialTime" : "00:00",
+        "intervalInHours" : 24
+    },
+    "node-types" : ["fedora-node-types.cnd"]
+}</pre>
+</div></div>
+<p>and here is the tomcat command when running.</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tomcat    9088     1 21 17:03 ?        00:00:37 /usr/lib/jvm/java/bin/java -Djava.util.logging.config.file=/opt/tomcat/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager -Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom -Dfcrepo.modeshape.configuration=file:/opt/jareds-mysql.json -Dfcrepo.home=/opt/fcrepo -Djdk.tls.ephemeralDHKeySize=2048 -Djava.protocol.handler.pkgs=org.apache.catalina.webresources -Xms512M -Xmx1024M -server -XX:+UseParallelGC -Dignore.endorsed.dirs= -classpath /opt/tomcat/bin/bootstrap.jar:/opt/tomcat/bin/tomcat-juli.jar -Dcatalina.base=/opt/tomcat -Dcatalina.home=/opt/tomcat -Djava.io.tmpdir=/opt/tomcat/temp org.apache.catalina.startup.Bootstrap start</pre>
+</div></div>
+<p>I'm not sure what I am doing differently, everything I can see from kefo issue seems correct?!</p></div></div>
+<div class="comment" id="comment-19626"><div class="by">kefo, 2018-01-30 15:59 UTC</div><div class="text"><p>I can add a little more to this.</p>
+
+<p>My fcrepo.xml file looks like this:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ more /opt/lake/tomcat7-47/conf/Catalina/localhost/fcrepo.xml
+&lt;Context docBase=<span class="code-quote">"/opt/lake/fcrepo47/webapp/fcrepo.war"</span>
+         privileged=<span class="code-quote">"<span class="code-keyword">true</span>"</span>
+         antiResourceLocking=<span class="code-quote">"<span class="code-keyword">false</span>"</span>
+         antiJARLocking=<span class="code-quote">"<span class="code-keyword">false</span>"</span>
+         unpackWAR=<span class="code-quote">"<span class="code-keyword">false</span>"</span>
+         swallowOutput=<span class="code-quote">"<span class="code-keyword">true</span>"</span>&gt;
+&lt;/Context&gt;</pre>
+</div></div>
+<p>I don't know if that is relevant, but it may be.  I say that because, whenever I start tomcat, despite the instruction 'unpackWAR="false"' an 'fcrepo' directory is created under '/opt/lake/tomcat7-47/work/Catalina/localhost/', which then contains a WEB-INF directory, classes and lib directories, etc.  Perhaps that is to expected.</p>
+
+<p>Anyways, when I start RC1, the 'repo.xml' file within the 'spring' directory under WEB-INF looks like this:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ more /opt/lake/tomcat7-47/work/Catalina/localhost/fcrepo/WEB-INF/classes/spring/repo.xml
+&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;
+&lt;beans xmlns=<span class="code-quote">"http:<span class="code-comment">//www.springframework.org/schema/beans"</span>
+</span>    xmlns:xsi=<span class="code-quote">"http:<span class="code-comment">//www.w3.org/2001/XMLSchema-instance"</span>
+</span>    xmlns:context=<span class="code-quote">"http:<span class="code-comment">//www.springframework.org/schema/context"</span>
+</span>    xmlns:p=<span class="code-quote">"http:<span class="code-comment">//www.springframework.org/schema/p"</span>
+</span>    xsi:schemaLocation="
+    http:<span class="code-comment">//www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+</span>    http:<span class="code-comment">//www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd"&gt;
+</span>
+    &lt;!-- Context that supports the actual ModeShape JCR itself --&gt;
+
+    &lt;context:annotation-config/&gt;
+
+    &lt;bean name=<span class="code-quote">"modeshapeRepofactory"</span>
+        class=<span class="code-quote">"org.fcrepo.kernel.modeshape.spring.ModeShapeRepositoryFactoryBean"</span>
+        p:repositoryConfiguration=<span class="code-quote">"${fcrepo.modeshape.configuration}"</span>/&gt;
+
+    &lt;bean class=<span class="code-quote">"org.modeshape.jcr.ModeShapeEngine"</span> init-method=<span class="code-quote">"start"</span>/&gt;
+
+    &lt;!-- For the time being, load annotation config here too --&gt;
+    &lt;bean class=<span class="code-quote">"org.fcrepo.metrics.MetricsConfig"</span>/&gt;
+
+    &lt;bean id=<span class="code-quote">"connectionManager"</span> class=<span class="code-quote">"org.apache.http.impl.conn.PoolingHttpClientConnectionManager"</span> /&gt;
+&lt;/beans&gt;
+[kford1@kfordbox lake]$ more /opt/lake/tomcat7-47/conf/Catalina/localhost/fcrepo.xml
+&lt;Context docBase=<span class="code-quote">"/opt/lake/fcrepo47/webapp/fcrepo.war"</span>
+         privileged=<span class="code-quote">"<span class="code-keyword">true</span>"</span>
+         antiResourceLocking=<span class="code-quote">"<span class="code-keyword">false</span>"</span>
+         antiJARLocking=<span class="code-quote">"<span class="code-keyword">false</span>"</span>
+         unpackWAR=<span class="code-quote">"<span class="code-keyword">false</span>"</span>
+         swallowOutput=<span class="code-quote">"<span class="code-keyword">true</span>"</span>&gt;
+&lt;/Context&gt;
+</pre>
+</div></div>
+<p>Note this line:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+        p:repositoryConfiguration=<span class="code-quote">"${fcrepo.modeshape.configuration}"</span>/&gt;</pre>
+</div></div>
+<p> </p>
+
+<p> </p>
+
+<p>When I start RC2, which defaults, for me, to the file-simple/repository.json file, my repo.xml file looks like this:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ more /opt/lake/tomcat7-47/work/Catalina/localhost/fcrepo/WEB-INF/classes/spring/repo.xml
+&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;
+&lt;beans xmlns=<span class="code-quote">"http:<span class="code-comment">//www.springframework.org/schema/beans"</span>
+</span>    xmlns:xsi=<span class="code-quote">"http:<span class="code-comment">//www.w3.org/2001/XMLSchema-instance"</span>
+</span>    xmlns:context=<span class="code-quote">"http:<span class="code-comment">//www.springframework.org/schema/context"</span>
+</span>    xmlns:p=<span class="code-quote">"http:<span class="code-comment">//www.springframework.org/schema/p"</span>
+</span>    xsi:schemaLocation="
+    http:<span class="code-comment">//www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+</span>    http:<span class="code-comment">//www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd"&gt;
+</span>
+    &lt;!-- Context that supports the actual ModeShape JCR itself --&gt;
+
+    &lt;context:annotation-config/&gt;
+
+    &lt;bean name=<span class="code-quote">"modeshapeRepofactory"</span>
+        class=<span class="code-quote">"org.fcrepo.kernel.modeshape.spring.ModeShapeRepositoryFactoryBean"</span>
+        p:repositoryConfiguration=<span class="code-quote">"classpath:/config/file-simple/repository.json"</span>/&gt;
+
+    &lt;bean class=<span class="code-quote">"org.modeshape.jcr.ModeShapeEngine"</span> init-method=<span class="code-quote">"start"</span>/&gt;
+
+    &lt;!-- For the time being, load annotation config here too --&gt;
+    &lt;bean class=<span class="code-quote">"org.fcrepo.metrics.MetricsConfig"</span>/&gt;
+
+    &lt;bean id=<span class="code-quote">"connectionManager"</span> class=<span class="code-quote">"org.apache.http.impl.conn.PoolingHttpClientConnectionManager"</span> /&gt;
+&lt;/beans&gt;
+</pre>
+</div></div>
+<p>Note that file-simple/repository.json is now hard-coded and no longer a parameter:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+        p:repositoryConfiguration=<span class="code-quote">"classpath:/config/file-simple/repository.json"</span>/&gt;</pre>
+</div></div>
+<p> </p>
+
+<p>My RC2 WAR file comes from the Release page on github.  Is anyone else testing this using that release file?</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19627"><div class="by">Danny Bernstein, 2018-01-30 17:50 UTC</div><div class="text"><p>kefo :  I built the the RC-2  files.  It sounds like it is possible that I had some environment variables set in my shell when I generated the files.   I was testing by rebuilding the RC-2 locally.  I will verify that there is an issue with the RC-2 files on github and reupload.  --db</p>
+
+<p>I retested with an external repository.json and was not able to reproduce the issue. </p></div></div>
+<div class="comment" id="comment-19628"><div class="by">kefo, 2018-01-30 18:15 UTC</div><div class="text"><p>I'm not sure I understand you here:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>I retested with an external repository.json and was not able to reproduce the issue. </pre>
+</div></div>
+<p>But I just unpacked the WAR file I downloaded from github and can see the hard-coded repositoryConfiguration line in repo.xml.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19629"><div class="by">Danny Bernstein, 2018-01-30 18:17 UTC</div><div class="text"><p>kefo :  so I confirmed that the fcrepo-webapp-4.7.5-RC-2.war copy on github had the value hard-coded.  Like I said,  I must have built it with a shell in which I had set JAVA_OPTS manually.   I've re-uploading fresh copies of 4.7.5-RC-2 and confirmed the that fcrepo.modeshape.configuration is not hardcoded.  </p></div></div>
+<div class="comment" id="comment-19630"><div class="by">Danny Bernstein, 2018-01-30 18:21 UTC</div><div class="text"><p>kefo:  ignore my "I retested".  That comment was unintentionally posted (previous edit that fell below the fold of the comment window).  </p></div></div>
+<div class="comment" id="comment-19631"><div class="by">Danny Bernstein, 2018-01-30 20:09 UTC</div><div class="text"><p>kefo:  both fcrepo-webapp and fcrepo-webapp-plus RC 2 wars have been updated. If you can just confirm that all looks good on your side,  and, if so, close this issue.  </p></div></div>
+<div class="comment" id="comment-19632"><div class="by">Jared Whiklo, 2018-01-31 14:14 UTC</div><div class="text"><p>I just downloaded the WAR file from <a href="https://github.com/fcrepo4/fcrepo4/releases/tag/fcrepo-4.7.5-RC-2" class="external-link" rel="nofollow noreferrer">here</a> and unzipped it and inside the <tt>WEB-INF/classes/spring/repo.xml</tt> I see</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xsi:schemaLocation="
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd"&gt;
+
+    &lt;!-- Context that supports the actual ModeShape JCR itself --&gt;
+
+    &lt;context:annotation-config/&gt;
+
+    &lt;bean name="modeshapeRepofactory"
+        class="org.fcrepo.kernel.modeshape.spring.ModeShapeRepositoryFactoryBean"
+        p:repositoryConfiguration="${fcrepo.modeshape.configuration}"/&gt;
+
+    &lt;bean class="org.modeshape.jcr.ModeShapeEngine" init-method="start"/&gt;
+
+    &lt;!-- For the time being, load annotation config here too --&gt;
+    &lt;bean class="org.fcrepo.metrics.MetricsConfig"/&gt;
+
+    &lt;bean id="connectionManager" class="org.apache.http.impl.conn.PoolingHttpClientConnectionManager" /&gt;
+&lt;/beans&gt;</pre>
+</div></div></div></div>
+<div class="comment" id="comment-19633"><div class="by">kefo, 2018-01-31 18:06 UTC</div><div class="text"><p>RC2 works now with mysql and postgres.  <del>Closing....</del>   I do not have the power to close...</p></div></div>
+<div class="comment" id="comment-19634"><div class="by">Danny Bernstein, 2018-01-31 22:14 UTC</div><div class="text"><p>This issue was related to environment variables that were interpolated at build time.  The war files in question were replaced.</p></div></div>
+<div class="comment" id="comment-19635"><div class="by">Danny Bernstein, 2018-01-31 22:15 UTC</div><div class="text"><p>kefo:  by the way,  to close I believe you must hit "Start work" before the "Close" button becomes available. But there may still be an issue with permissions.  Anyway something to keep in mind.</p></div></div>
+<div class="comment" id="comment-19636"><div class="by">kefo, 2018-01-31 22:24 UTC</div><div class="text"><p>OK, thanks. </p>
+
+<p>I take small issue with "cannot reproduce."  I think it was perfectly reproduceable, and had anyone tested the actual <b>published</b> WAR file they would have too.</p></div></div>
+<div class="comment" id="comment-19637"><div class="by">Danny Bernstein, 2018-01-31 22:32 UTC</div><div class="text"><p>fair point. I'll fix.</p></div></div>
+<div class="comment" id="comment-19638"><div class="by">Danny Bernstein, 2018-01-31 22:33 UTC</div><div class="text"><p>While the fix involved no code changes, it did require rebuilding the software and uploading new RC-2 war files. </p></div></div>
+<p><a href="data/FCREPO-2667.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

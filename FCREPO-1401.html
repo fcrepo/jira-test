@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1401 fcrepo-message-consumer HttpClient opens too many connections</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1401</span> fcrepo-message-consumer HttpClient opens too many connections</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Created</th><td>2015-03-13 14:26 UTC</td></tr><tr><th>Updated</th><td>2015-07-02 14:05 UTC</td></tr><tr><th>Resolved</th><td>2015-07-02 14:05 UTC</td></tr><tr><th>Components</th><td>f4-message-consumer</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Description</h2>
+<p>The fcrepo-message-consumer HttpClient instance currently disables all connection limits:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo-message-consumer/blob/master/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java#L208" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/blob/master/fcrepo-message-consumer-core/src/main/java/org/fcrepo/indexer/IndexerGroup.java#L208</a></p>
+
+<p>This means that indexing a large number of objects will result in a very large number of open connections.  This limit should be set to a more reasonable value and/or made configurable.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-13728"><div class="by">Former user, 2015-03-13 14:32 UTC</div><div class="text"><p>See <a href="https://github.com/fcrepo4/fcrepo-message-consumer/issues/79" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/issues/79</a></p>
+
+<p>The http.maxConnections system property would be a reasonable mechanism to configure the maximum number of connections.</p></div></div>
+<div class="comment" id="comment-13768"><div class="by">Howard Ding, 2015-03-19 18:41 UTC</div><div class="text"><p>I'm the initial reported of this on the Github tracker and have been looking into it a bit more (sorry, don't have a pull request at this time, don't know if I will).</p>
+
+<p>It's not enough to just set connection limits as described. In the classes such as JcrXmlRetriever one needs to explicitly call releaseConnection on the requests at some point (and some of them need to have the type declaration changed from HttpUriRequest to the actual type to make this method available). </p>
+
+<p>Doing both of these seems to fix the problem of having the connections pile up and exhausting the OS resources, but what I've done so far also makes two of the tests fail (both involving reindexing) and may be causing other problems (not sure yet, but I'm not sure that everything is actually getting indexed).</p></div></div>
+<div class="comment" id="comment-13769"><div class="by">Howard Ding, 2015-03-19 21:23 UTC</div><div class="text"><p>Okay, I think I was releasing the connections <em>too</em> soon. I've fixed that and now the tests pass and also my trial ingests seem to go correctly. I'm going to hit it with a trial of about 180000 records overnight and see how that goes.</p>
+
+<p>I'll try to put together a pull request for this and you can do as you like with it.</p></div></div>
+<div class="comment" id="comment-13770"><div class="by">Howard Ding, 2015-03-19 21:27 UTC</div><div class="text"><p>Maybe I spoke too soon - I just had a test failure without any changes in the code. Have to keep looking into it I guess.</p></div></div>
+<div class="comment" id="comment-13771"><div class="by">Howard Ding, 2015-03-19 21:44 UTC</div><div class="text"><p>An oddish situation. Sometimes the tests pass and sometimes they fail (in the IndexerGroupIT tests). Unfortunately I've not been able to get it to fail again. If I can arrange that I'll paste in the messages.</p></div></div>
+<div class="comment" id="comment-13781"><div class="by">Howard Ding, 2015-03-20 14:45 UTC</div><div class="text"><p>On my test run of 180K objects my patch resolves the connection problem, but only about a third of the objects seem to have gotten indexed. Don't have any idea why yet.</p></div></div>
+<div class="comment" id="comment-13782"><div class="by">Andrew Woods, 2015-03-20 15:01 UTC</div><div class="text"><p>Thanks, Howard Ding, that sounds like progress. If you find yourself completely blocked, feel free to attach your patch as a pull-request to this ticket and maybe someone else can put some eyes on it as well.<br/>
+Also, you should be aware that development energy is moving away from fcrepo-message-consumer towards fcrepo-camel. fcrepo-message-consumer will likely be deprecated in the not too distant future.</p></div></div>
+<div class="comment" id="comment-13783"><div class="by">Howard Ding, 2015-03-20 15:12 UTC</div><div class="text"><p>I should be able to get a pull request up today.</p>
+
+<p>I don't know that we care whether we use this or another method so long as everything winds up indexed in the end. I'm going to retry my ingest in smaller batches letting solr catch up between and see if it all goes that way or if perhaps something is getting overwhelmed when I do them all at once. I wouldn't think there would be any place where there should be a problem, but it's hard to know.</p></div></div>
+<div class="comment" id="comment-13784"><div class="by">Howard Ding, 2015-03-20 16:12 UTC</div><div class="text"><p>After looking at the docs a bit more I think the problems that I'm seeing with things not being indexed may have to do with the fact that the messaging isn't working exactly as my mental model would have suggested. It doesn't help either that I'm an AMQP person, not JMS. I don't necessarily think that it's my modifications that are causing the problem though.</p></div></div>
+<div class="comment" id="comment-13810"><div class="by">Andrew Woods, 2015-03-24 05:20 UTC</div><div class="text"><p>Notes from PR:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-message-consumer/pull/80" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-message-consumer/pull/80</a><br/>
+------------------------<br/>
+Make limits on maximum number of connections in pool.<br/>
+Release connections after they are used.</p>
+
+<p>This is regarding #79.</p>
+
+<p>It's not fully complete. The limits on the connection pool are currently just magic numbers; I assume you'd want to work that into configuration in whatever standard way you have of doing it.</p>
+
+<p>The tests pass at this point, and the connections do not pile up.</p>
+
+<p>I do, however (as noted in the JIRA ticket) now experience some items not being indexed. I don't know if this is because of problems in my code or if messages are being dropped somehow. I don't tend to see it until I start indexing around 5000-10000 things or so all at once.</p>
+
+<p>I don't know if I'll look further - it's been suggested that we look into using the Camel integration instead. But since I already had this might as well send it along.<br/>
+------------------------</p></div></div>
+<div class="comment" id="comment-13811"><div class="by">Andrew Woods, 2015-03-24 05:21 UTC</div><div class="text"><p>Howard Ding, it would be interesting to see if you are able to fulfill your use case with fcrepo-camel.</p></div></div>
+<div class="comment" id="comment-14625"><div class="by">Andrew Woods, 2015-07-02 14:05 UTC</div><div class="text"><p>fcrepo-message-consumer is deprecated in favor of fcrepo-camel-toolbox.</p></div></div>
+<p><a href="data/FCREPO-1401.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

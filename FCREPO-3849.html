@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3849 update docker images after changes in repository fcrepo-exts/fcrepo-docker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3849</span> update docker images after changes in repository fcrepo-exts/fcrepo-docker</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Thomas Bernhart</td></tr><tr><th>Assignee</th><td>Thomas Bernhart</td></tr><tr><th>Created</th><td>2022-09-29 15:01 UTC</td></tr><tr><th>Updated</th><td>2023-10-05 15:54 UTC</td></tr><tr><th>Resolved</th><td>2023-05-18 15:16 UTC</td></tr><tr><th>Components</th><td>fcrepo-docker</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3850.html">FCREPO-3850</a> regularly update docker images to include latest security fixes from base image tomcat:9-jdk11-openjdk</td></tr></table>
+<h2>Description</h2>
+<p><em>No description.</em></p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-22721"><div class="by">Thomas Bernhart, 2022-10-12 12:33 UTC</div><div class="text"><p>Proposal:</p>
+
+<p>Configure 1 Github workflow for <a href="https://github.com/fcrepo-exts/fcrepo-docker" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-docker</a>:</p>
+
+<ol>
+	<li>Define list of supported fcrepo releases</li>
+	<li>For each release: build docker image and run smoke test (on <tt>main</tt> and PRs)</li>
+	<li>If branch is <tt>main</tt> and smoke tests passed → push image docker</li>
+	<li>Run workflow on main branch every week to profit from changes in upstream Docker image</li>
+</ol>
+
+
+
+
+<p>Open questions:</p>
+
+<ul>
+	<li>List of supported fcrepo releases?</li>
+	<li>When/how to build/push SNAPSHOT images?</li>
+	<li>Who should be informed, when a scheduled run fails?</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-22767"><div class="by">Thomas Bernhart, 2022-11-17 16:36 UTC</div><div class="text"><p>Conclusion from Fedora Docker Conversation pt.2 (at beginning of Tech Meeting 17 november 2022):<br/>
+Range of images to build as of now:</p>
+
+<ul>
+	<li>fcrepo/fcrepo:6-tomcat9</li>
+	<li>fcrepo/fcrepo:6.2-tomcat9</li>
+	<li>fcrepo/fcrepo:6.2.0-tomcat9</li>
+</ul>
+
+
+<p>When 6.3.0 has been released:</p>
+
+<ul>
+	<li>fcrepo/fcrepo:6-tomcat9</li>
+	<li>fcrepo/fcrepo:6.3-tomcat9</li>
+	<li>fcrepo/fcrepo:6.3.0-tomcat9</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-22768"><div class="by">Thomas Bernhart, 2022-11-22 09:56 UTC</div><div class="text"><p>Summary of the discussion in the Fedora community:</p>
+
+<blockquote><p>To summarize the decisions made based on the following questions:</p>
+
+<p>Questions</p>
+
+<p>1. What range of Fcrepo images should we rebuild?<br/>
+→ Will build a docker image for the latest release, then supply tags for tag major, minor, and patch releases</p>
+
+<p>2. Range of images to build:<br/>
+--&gt; As of now:</p>
+<ul class="alternate" type="square">
+	<li>fcrepo/fcrepo:6-tomcat9</li>
+	<li>fcrepo/fcrepo:6.2-tomcat9</li>
+	<li>fcrepo/fcrepo:6.2.0-tomcat9<br/>
+--&gt; When 6.3.0 is released:</li>
+	<li>fcrepo/fcrepo:6-tomcat9</li>
+	<li>fcrepo/fcrepo:6.3-tomcat9</li>
+	<li>fcrepo/fcrepo:6.3.0-tomcat9</li>
+</ul>
+
+
+<p>3. When/how should we update the -SNAPSHOT images be built? Is daily enough?<br/>
+--&gt; When commits are merged into the main branch.</p>
+
+<p>4. Who should be informed, when a scheduled run fails?<br/>
+--&gt; Incoming Tech developer will be notified going forward</p>
+
+<p>5. Is it okay to replace an image if the base image has been changed?<br/>
+--&gt; Yes; rebuilds will happen on a schedule: weekly should be good enough.</p></blockquote>
+
+
+
+<p>Links to meeting notes:</p>
+
+<ol>
+	<li><a href="https://wiki.lyrasis.org/display/FF/2022-11-01+Fedora+Docker+Conversation" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FF/2022-11-01+Fedora+Docker+Conversation</a> (Recording of the discussion: <a href="https://youtu.be/x-oPy1QXQFA" title="smart-link" class="external-link" rel="nofollow noreferrer">https://youtu.be/x-oPy1QXQFA</a>)</li>
+	<li><a href="https://wiki.lyrasis.org/display/FF/2022-11-17+-+Fedora+Tech+Meeting" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FF/2022-11-17+-+Fedora+Tech+Meeting</a></li>
+</ol>
+</div></div>
+<div class="comment" id="comment-22845"><div class="by">Thomas Bernhart, 2023-05-11 15:43 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo-exts/fcrepo-docker/pull/17" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-docker/pull/17</a></p></div></div>
+<div class="comment" id="comment-22854"><div class="by">Dan Field, 2023-05-25 12:45 UTC</div><div class="text"><p>This looks good to me however I can’t merge the PR due to permissions</p></div></div>
+<div class="comment" id="comment-22888"><div class="by">Thomas Bernhart, 2023-10-05 15:54 UTC</div><div class="text"><p>PR has finally been merged.</p></div></div>
+<p><a href="data/FCREPO-3849.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

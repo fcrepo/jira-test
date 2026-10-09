@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1969 Create way to manually/automatically test Fedora Release Candidates</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1969</span> Create way to manually/automatically test Fedora Release Candidates</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-03-31 17:57 UTC</td></tr><tr><th>Updated</th><td>2017-08-21 15:43 UTC</td></tr><tr><th>Resolved</th><td>2017-02-09 02:27 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>tests</td></tr></table>
+<h2>Description</h2>
+<p>From a Fedora Tech Meeting on March 31st, 2016. </p>
+
+<p>The goal of this issue is to create a way to automatically test release candidates as well as have a subset of those tests be available to be done manually. The subset of the tests which could be manually performed would be available to help new users learn how to work with the Fedora4 API. </p>
+
+<p>The conversation focused creating a tool (TCK/script) that can be run to automatically test a release candidate, based on the list on the testing procedure pages <span class="error">&#91;1&#93;</span><span class="error">&#91;2&#93;</span>.</p>
+
+<p>Part of the tests in the tool could be exposed via some mechanism (HTML?) and made available for new users to learn how to use the Fedora4 API. </p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="https://wiki.duraspace.org/display/FF/Release+Testing+-+4.5.1" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Release+Testing+-+4.5.1</a><br/>
+<span class="error">&#91;2&#93;</span> <a href="https://wiki.duraspace.org/display/FF/Release+Testing+Procedures" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Release+Testing+Procedures</a></p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-16438"><div class="by">Jared Whiklo, 2016-04-01 00:33 UTC</div><div class="text"><p>Started with a couple small bash scripts, a lot of duplication in these but I think that helps with the understanding of what is being done when looking in the scripts.</p>
+
+<p><a href="https://github.com/whikloj/fedora4-tests" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fedora4-tests</a></p>
+
+<p>To try them you:<br/>
+1. Stand up a Fedora4 instance. Using vagrant, webapp-plus or one click.<br/>
+2. Clone the above repository. <br/>
+3. Change any variables in the <tt>config</tt> file.<br/>
+4. Run the individual shell scripts.</p>
+
+<p>It requires curl.</p>
+
+<p>Bethany Seeger could you try these out and let me know if they are a) too opaque, b) too simple or c) just right.</p>
+
+<p>Also, if you have any problems running them.</p></div></div>
+<div class="comment" id="comment-16439"><div class="by">Bethany Seeger, 2016-04-01 14:34 UTC</div><div class="text"><p>Jared Whiklo - I had no issues running the tests.  They are pretty straight forward and a good start.   Not sure if I'm a good judge of whether or not they are too opaque though, since I am a developer.  </p>
+
+<p>The only thing I'd change is to make the tests automatically clean up after themselves each time.  Really only matters in the case where I might want to run this on a repo that I don't plan on throwing away - ie, if a user decides to run this test suite on something other then a RC &#8211; which may happen if people use some of this to get an understanding of the API. </p></div></div>
+<div class="comment" id="comment-16443"><div class="by">Jared Whiklo, 2016-04-02 19:40 UTC</div><div class="text"><p>I've updated these tests quite a bit over the past couple of days. </p>
+
+<p>I was able to get the fixity test to verify the fixity test result, however I stored the sha-1 result in the test as different machines and OSs will have different ways to generate it.</p>
+
+<p>I added an indirect container test, which uses the pcdm:Collection example to test that the ldp:hasMemberRelation property is added to the ldp:membershipResource pointing to the correct resource.</p>
+
+<p>These matching tests are simple (using grep, sed and string ==) but they work... so far.</p>
+
+<p>Andrew Woods, Bethany Seeger, Esmé Cowles - Is there anything else you can think of that we would like to test in this fashion?</p></div></div>
+<div class="comment" id="comment-16491"><div class="by">Jared Whiklo, 2016-04-08 16:53 UTC</div><div class="text"><p>Throwing this (<a href="http://www.seleniumhq.org/projects/" class="external-link" rel="nofollow noreferrer">http://www.seleniumhq.org/projects/</a>) here as an possibility for writing comprehensive HTML UI tests in whatever language you like.</p></div></div>
+<div class="comment" id="comment-16495"><div class="by">Jared Whiklo, 2016-04-09 04:19 UTC</div><div class="text"><p>A very simple test using Selenium in Python3 with Firefox.<br/>
+<a href="https://github.com/whikloj/fedora4-tests/tree/html-ui-tests" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fedora4-tests/tree/html-ui-tests</a></p></div></div>
+<div class="comment" id="comment-17333"><div class="by">Jared Whiklo, 2016-09-01 19:07 UTC</div><div class="text"><p>Suggested to extend to:</p>
+<ul>
+	<li>check for serialization to disk</li>
+	<li>indexing to Solr</li>
+	<li>indexing to Triplestore</li>
+</ul>
+
+
+<p>Suggestion tooling for JSON interactions <br/>
+<a href="https://stedolan.github.io/jq/" class="external-link" rel="nofollow noreferrer">https://stedolan.github.io/jq/</a></p></div></div>
+<div class="comment" id="comment-17391"><div class="by">Jared Whiklo, 2016-09-06 21:50 UTC</div><div class="text"><p>PR for testing the solr and triplestore indexing<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-tests/pull/7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-tests/pull/7</a></p></div></div>
+<div class="comment" id="comment-17888"><div class="by">Andrew Woods, 2016-10-27 14:03 UTC</div><div class="text"><p>New test added in this PR does not pass.</p></div></div>
+<div class="comment" id="comment-18531"><div class="by">Jared Whiklo, 2017-02-08 17:39 UTC</div><div class="text"><p>Andrew Woods just coming back to this. I'll try running that PR against a vagrant setup of 4.7.1 and report back.</p></div></div>
+<div class="comment" id="comment-18539"><div class="by">Jared Whiklo, 2017-02-08 22:10 UTC</div><div class="text"><p>Andrew Woods, I just created a new vagrant box with 4.7.1 and was able to run this test either in OS X into the box, or right inside the vagrant box under Ubuntu linux without see the error you described.</p>
+
+<p>Can you give it another try and if there is any additional information please let me know.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>vagrant@fedora4:~/fcrepo4-tests$ ./camel_toolbox_tests.sh 
+
+Success may not be immediate, we will wait up to 30 seconds.
+
+Create an object
+201 == 201 (Pass)
+Checking for item in Solr...............
+http://localhost:8080/fcrepo/rest/test_camel/object_to_index == http://localhost:8080/fcrepo/rest/test_camel/object_to_index (Pass)
+Checking for item in Triplestore.....
+Object 1 == Object 1 (Pass)
+All tests completed
+Remove any test objects created? (Y/n) 
+Deleting http://localhost:8080/fcrepo/rest/test_camel
+vagrant@fedora4:~/fcrepo4-tests$ uname -a
+Linux fedora4 3.13.0-87-generic #133-Ubuntu SMP Tue May 24 18:32:09 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18541"><div class="by">Andrew Woods, 2017-02-09 02:27 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo4-tests/commit/f3a6393853c6cdd759fd42c2fcf03fd316c2db6b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-tests/commit/f3a6393853c6cdd759fd42c2fcf03fd316c2db6b</a></p></div></div>
+<p><a href="data/FCREPO-1969.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

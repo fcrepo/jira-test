@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3257 PUT on existing container should be 409</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3257</span> PUT on existing container should be 409</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-03-20 23:33 UTC</td></tr><tr><th>Updated</th><td>2020-10-21 12:56 UTC</td></tr><tr><th>Resolved</th><td>2020-10-21 12:56 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Description</h2>
+<p>When comparing Fedora 5 and Fedora 6 behavior, it is seen that PUTting onto an existing container has the following results:</p>
+<ul class="alternate" type="square">
+	<li>F5 = 409</li>
+	<li>F6 = 204</li>
+</ul>
+
+
+<p>The following command can be run on two the different versions of Fedora:<br/>
+curl -s -i -XPUT localhost:8080/rest/a | grep HTTP<br/>
+curl -s -i -XPUT localhost:8080/rest/a | grep HTTP</p>
+
+<p>Using the 5.1.0 jetty-console <a href="https://github.com/fcrepo4/fcrepo4/releases/download/fcrepo-5.1.0/fcrepo-webapp-5.1.0-jetty-console.jar" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/releases/download/fcrepo-5.1.0/fcrepo-webapp-5.1.0-jetty-console.jar</a> (note that you must be using a Java8 runtime)<br/>
+..and using the 6.0.0-SNAPSHOT jetty-console</p>
+
+<p>This ticket should also either resolve the following Fedora API Test Suite failures, or create follow-on tickets for their resolution:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://fedora.info/2018/11/22/spec/#http-put-ldprs" class="external-link" rel="nofollow noreferrer">https://fedora.info/2018/11/22/spec/#http-put-ldprs</a><br/>
+Any LDP-RS must support PUT to update statements that are not server-managed triples (as defined in <span class="error">&#91;LDP&#93;</span> 2). <span class="error">&#91;LDP&#93;</span> 4.2.4.1 and 4.2.4.3 remain in effect.</li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li><a href="https://fedora.info/2018/11/22/spec/#http-put-ldprs" class="external-link" rel="nofollow noreferrer">https://fedora.info/2018/11/22/spec/#http-put-ldprs</a><br/>
+The server must provide a corresponding response body containing information about which statements could not be persisted. (<span class="error">&#91;LDP&#93;</span> 4.2.4.4 should becomes must).</li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li><a href="https://fedora.info/2018/11/22/spec/#http-put-ldprs" class="external-link" rel="nofollow noreferrer">https://fedora.info/2018/11/22/spec/#http-put-ldprs</a><br/>
+In that response, the restrictions causing such a request to fail must be described in a resource indicated by a Link: rel="http://www.w3.org/ns/ldp#constrainedBy" response header per <span class="error">&#91;LDP&#93;</span> 4.2.1.6.</li>
+</ul>
+
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-21213"><div class="by">Jared Whiklo, 2020-05-21 15:49 UTC</div><div class="text"><p>Technically you can PUT on an existing container, this is more a question of what you are PUTting and whether it should conflict.</p></div></div>
+<div class="comment" id="comment-21214"><div class="by">Andrew Woods, 2020-05-21 16:13 UTC</div><div class="text"><p>In this test, we are PUTting an empty container twice. In any case, the semantics of PUT should be: whatever was there before, replace it with this.</p></div></div>
+<div class="comment" id="comment-21215"><div class="by">Jared Whiklo, 2020-05-21 16:58 UTC</div><div class="text"><p>I agree with your interpretation of the PUT semantics.</p>
+
+<p>I think the current 204 response is a false positive (ie. its not actually replacing the contents, but I'm not sure).</p>
+
+<p>But we need to add in our handling of server managed triples because in theory the correct response would be 204 unless you try to add a rdf:type with ldp: namespace or change the interaction model.</p>
+
+<p>Fedora 5 threw a lot of 409s on PUT related to people GETting and PUTting server managed triples. Once we start to silently ignore those triples we can reduce the 409s by a large extent.</p>
+
+<p>That said I don't know (and I can't find) a Jira ticket related to this new ignoring SMTs behaviour. Though I think this old ticket might be valid<br/>
+<a href="https://jira.lyrasis.org/browse/FCREPO-1416" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-1416</a></p></div></div>
+<div class="comment" id="comment-21505"><div class="by">Jared Whiklo, 2020-10-14 19:21 UTC</div><div class="text"><p>Fedora API Test Suite does not test this properly (does not currently allow for a failure) and being a generalized test suite I am not clear how it can tell what is a server managed triple. Even the URI for include/omit is implementation specific (<font color="#6a8759"><a href="http://fedora.info/definitions/v4/repository#ServerManaged" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#ServerManaged</a>)</font></p></div></div>
+<div class="comment" id="comment-21506"><div class="by">Jared Whiklo, 2020-10-14 19:25 UTC</div><div class="text"><p>Run the test manually it passes defined in the spec.</p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin -XPOST <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a> <br/>
+HTTP/1.1 201 Created<br/>
+Date: Wed, 14 Oct 2020 19:22:18 GMT<br/>
+Set-Cookie: JSESSIONID=node0xlnhqq04u88uxvjqfhak52fy820.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Tue, 13-Oct-2020 19:22:18 GMT<br/>
+ETag: W/"2EE636F4ADCCDAB7572168F241D3D265"<br/>
+X-State-Token: 2EE636F4ADCCDAB7572168F241D3D265<br/>
+Last-Modified: Wed, 14 Oct 2020 19:22:18 GMT<br/>
+Link: &lt;<a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d</a>&gt;; rel="timegate"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d</a>&gt;; rel="original"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d/fcr:versions</a>&gt;; rel="timemap"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Resource" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Resource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://fedora.info/definitions/v4/repository#Container" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Container</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d/fcr:acl</a>&gt;; rel="acl"<br/>
+Location: <a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d</a><br/>
+Content-Type: text/plain<br/>
+Content-Length: 63<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+<p><a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d</a></p>
+
+
+<p>&gt; curl -o body.txt -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d</a><br/>
+ % Total % Received % Xferd Average Speed Time Time Time Current<br/>
+ Dload Upload Total Spent Left Speed<br/>
+100 841 100 841 0 0 76454 0 -<del>:</del><del>:</del>- -<del>:</del><del>:</del>- -<del>:</del><del>:</del>- 76454</p>
+
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin -H"Content-type: text/turtle" -d "@body.txt" -XPUT <a href="http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/b7e3b82d-2ee6-4ace-9a21-8a10c2aaad9d</a><br/>
+HTTP/1.1 409 Conflict<br/>
+Date: Wed, 14 Oct 2020 19:23:21 GMT<br/>
+Set-Cookie: JSESSIONID=node018rms9yfeo9fk1mfhwx97ipftd824.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Tue, 13-Oct-2020 19:23:21 GMT<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Content-Type: text/plain;charset=utf-8<br/>
+Content-Length: 1104<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+<p>Changing this resource's interaction model to <a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a> is not allowed<br/>
+Changing this resource's interaction model to <a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a> is not allowed<br/>
+The server managed predicate (<a href="http://fedora.info/definitions/v4/repository#createdBy" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#createdBy</a>) cannot be modified by the client.<br/>
+The server managed predicate (<a href="http://fedora.info/definitions/v4/repository#created" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#created</a>) cannot be modified by the client.<br/>
+The server managed predicate (<a href="http://fedora.info/definitions/v4/repository#lastModified" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModified</a>) cannot be modified by the client.<br/>
+Changing this resource's interaction model to <a href="http://fedora.info/definitions/v4/repository#Resource" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Resource</a> is not allowed<br/>
+Changing this resource's interaction model to <a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a> is not allowed<br/>
+Changing this resource's interaction model to <a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a> is not allowed<br/>
+Changing this resource's interaction model to <a href="http://fedora.info/definitions/v4/repository#Container" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Container</a> is not allowed<br/>
+The server managed predicate (<a href="http://fedora.info/definitions/v4/repository#lastModifiedBy" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModifiedBy</a>) cannot be modified by the client.</p></div></div>
+<div class="comment" id="comment-21507"><div class="by">Jared Whiklo, 2020-10-14 19:38 UTC</div><div class="text"><p>Sorry the above is some work I tried, which I think is ugly. Current main does this</p>
+
+
+
+<p>HTTP/1.1 409 Conflict<br/>
+Date: Wed, 14 Oct 2020 19:37:01 GMT<br/>
+Set-Cookie: JSESSIONID=node01cf489uqzhngoaxj1jow8o18h3.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Tue, 13-Oct-2020 19:37:01 GMT<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Content-Type: text/plain;charset=utf-8<br/>
+Content-Length: 122<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+<p>The server managed predicate (<a href="http://fedora.info/definitions/v4/repository#lastModified" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModified</a>) cannot be modified by the client.</p>
+
+<p> </p>
+
+<p>The other way captures all the exceptions and I guess needs to build some response which includes all the messages and all the constrainedBy headers too.</p></div></div>
+<div class="comment" id="comment-21509"><div class="by">Jared Whiklo, 2020-10-15 18:32 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1779" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1779</a></p>
+
+<p>Let me know if this seems ok, or if we'd rather return the ConstraintViolationException.rdf link header.</p></div></div>
+<div class="comment" id="comment-21519"><div class="by">Peter Winckles, 2020-10-21 12:56 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/2ef669ae7a3af7e975c647fae697dab804d63d11" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/2ef669ae7a3af7e975c647fae697dab804d63d11</a></p></div></div>
+<p><a href="data/FCREPO-3257.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

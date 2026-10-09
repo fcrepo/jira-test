@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3280 Millisecond portion of fedora:created loses zeros</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3280</span> Millisecond portion of fedora:created loses zeros</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2020-04-22 14:02 UTC</td></tr><tr><th>Updated</th><td>2020-04-25 14:56 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.1.0</td></tr></table>
+<h2>Description</h2>
+<p>Fedora appears to be changing the millisecond portion of datetimes in RDF for fedora:created but not for dc:date. For example, it goes from "2012-03-22T14:18:22.800Z" to "2012-03-22T14:18:22.8Z". My understanding is that it should not make this change, but it is worth investigating.</p>
+
+<p>To test, you'll need to start fedora in relaxed mode:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+java -Dfcrepo.properties.management=relaxed -jar fcrepo-webapp-5.1.0-jetty-console.jar</pre>
+</div></div>
+<p>Create with fedora:created</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -XPOST -H<span class="code-quote">"Content-Type: text/turtle"</span> --data-binary "&lt;&gt; &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#created&gt;
+</span>                \<span class="code-quote">"2012-03-22T14:18:22.800Z\"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt;" http://localhost:8080/<span class="code-keyword">rest</span>/
+</span>
+
+curl http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/fcfa41c1-1519-41ef-8027-7ae200f8720d
+</span>#        fedora:created         <span class="code-quote">"2012-03-22T14:18:22.8Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;</span>
+</pre>
+</div></div>
+<p>Create with dc:date</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -XPOST -H<span class="code-quote">"Content-Type: text/turtle"</span> --data-binary "&lt;&gt; &lt;http:<span class="code-comment">//purl.org/dc/elements/1.1/date&gt;
+</span>                \<span class="code-quote">"2012-03-22T14:18:22.800Z\"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt;" http://localhost:8080/<span class="code-keyword">rest</span>/
+</span>
+
+curl http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/da83c0f8-c15f-4730-b2cc-396d0b033371
+</span>#         dc:date                <span class="code-quote">"2012-03-22T14:18:22.800Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;</span>
+</pre>
+</div></div>
+<p><a href="data/FCREPO-3280.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

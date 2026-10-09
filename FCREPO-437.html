@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-437 usage of HTTP proxy when getting external content</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-437</span> usage of HTTP proxy when getting external content</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2008-02-22 17:04 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-11-19 14:20 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Description</h2>
+<p>Trying to ingest an object into Fedora fails if the document contains a reference to an external resource and the Fedora server is only allowed to access that resource via a HTTP proxy.</p>
+
+<p>My first idea to solve this was to set the environment variable CATALINA_OPTS to something like</p>
+
+<p>CATALINA_OPTS="-Dhttp.proxyHost=proxy.fiz-karlsruhe.de -Dhttp.proxyPort=8888"</p>
+
+<p>and restart Tomcat.</p>
+
+<p>Unfortunately this isn't sufficient because the HTTPClient module which Fedora uses doesn't read that properties automatically.</p>
+
+<p>So the next step was to set the proxy parameters into the HTTPClient in WebClient.java just after a new instance of the HTTPClient was created (see attached file).</p>
+
+<p>That's all. Maybe someone else has the same problem.</p>
+
+<p>Best regards,</p>
+
+<p>AndrÃ©</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-437/10060_WebClient.java">WebClient.java</a>, 9020 bytes, added by Chris Wilper on 2009-06-30</li>
+</ul>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10403"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: andre_schenk<br/>
+Item #: 1899708<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1899708" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1899708</a></p></div></div>
+<div class="comment" id="comment-10965"><div class="by">Chris Wilper, 2009-06-30 13:34 UTC</div><div class="text"><p>orig attachment from sf.net</p></div></div>
+<div class="comment" id="comment-10966"><div class="by">Chris Wilper, 2009-06-30 13:37 UTC</div><div class="text"><p>Andre, thanks for the patch...looks like this should be included in the next Fedora release</p></div></div>
+<div class="comment" id="comment-11083"><div class="by">Former user, 2009-11-19 14:20 UTC</div><div class="text"><p>The proxy can be configured via the CATALINA_OPTS environment variable for tomcat.</p>
+
+<p>Configuration with only proxy host and port:<br/>
+export CATALINA_OPTS="-Dhttp.proxyHost=proxy.host.tld -Dhttp.proxyPort=8888"</p>
+
+<p>With username and password (both have to be non-empty if used):<br/>
+export CATALINA_OPTS="-Dhttp.proxyHost=proxy.host.tld -Dhttp.proxyPort=8888" -Dhttp.proxyUser=user -Dhttp.proxyPassword=password</p>
+
+<p>Most cases will probably also need a NonProxyHosts list, that is a list with hosts that are not proxied:<br/>
+export CATALINA_OPTS="-Dhttp.proxyHost=proxy.host.tld -Dhttp.proxyPort=8888" -Dhttp.proxyUser=user -Dhttp.proxyPassword=password -Dhttp.nonProxyHosts=localhost|*.otherhost.tld</p>
+
+</div></div>
+<div class="comment" id="comment-11187"><div class="by">Chris Wilper, 2009-12-18 11:45 UTC</div><div class="text"><p>Discovered while testing that proxy authentication wasn't working with original checkin due to typo; fix committed.</p>
+
+<p>Tested with Squid, with proxy authentication enabled and disabled, both work now.</p></div></div>
+<p><a href="data/FCREPO-437.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

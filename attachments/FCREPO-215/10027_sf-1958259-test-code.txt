@@ -1,0 +1,128 @@
+﻿private String pid = "demo:testObject";
+
+@Test
+public void testModifyDatastreamByReference()
+{
+	log.info("[ testModifyDatastreamByReference ]");
+
+	String filename01 = "data/bulbs.jpg";
+	String filename02 = "data/logo.gif";
+	try
+	{
+		String dsID = "IMAGE";
+		String[] altIDs = new String[0];
+		String dsLabel = "Test Image";
+		boolean versionable = true;
+		String mimeType = "image/jpg";
+		String formatURI = null;
+		String dsLocation = "http://localhost:8080/bulbs.jpg";
+		String controlGroup = "M";
+		String dsState = "A";
+		String checksumType = "MD5";
+		//String checksum = DataUtils.getHash(DataUtils.loadFile(filename01));
+		String checksum = null;
+		String logMessage = "test add datastream";
+		boolean force = false;
+
+		String actual = null;
+		String expected = null;
+
+		String dsidResult = apim.addDatastream(pid, dsID, altIDs, dsLabel, versionable, mimeType, formatURI,
+			dsLocation, controlGroup, dsState, checksumType, checksum, logMessage);
+
+		Assert.assertEquals("Failed to add datastream.", dsID, dsidResult);
+
+		Datastream img01 = apim.getDatastream(pid, dsID, null);
+		actual = img01.getChecksum();
+		expected = DataUtils.getHash(DataUtils.loadFile(filename01));
+
+		if (log.isDebugEnabled())
+		{
+			log.debug("add ds actual:   " + actual);
+			log.debug("add ds expected: " + expected);
+		}
+
+		Assert.assertEquals("Checksums after add do not match", expected, actual);
+
+		mimeType = "image/gif";
+		dsLocation = "http://localhost:8080/logo.gif";
+		String date = apim.modifyDatastreamByReference(pid, dsID, altIDs, dsLabel, mimeType, formatURI, dsLocation,
+			checksumType, checksum, logMessage, force);
+
+		Assert.assertTrue("Date was empty string", !"".equals(date));
+
+		Datastream img02 = apim.getDatastream(pid, dsID, null);
+		actual = img02.getChecksum();
+		expected = DataUtils.getHash(DataUtils.loadFile(filename02));
+
+		if (log.isDebugEnabled())
+		{
+			log.debug("modify ds actual:   " + actual);
+			log.debug("modify ds expected: " + expected);
+		}
+
+		Assert.assertEquals("Checksums after add do not match", expected, actual);
+
+		String[] dates = apim.purgeDatastream(pid, dsID, null, null, logMessage, false);
+
+		Assert.assertNotNull("Nothing was purged", dates);
+	}
+	catch (Exception e)
+	{
+		log.error(e);
+		Assert.fail(e.getMessage());
+	}
+}
+
+@Test
+public void testAddDatastream()
+{
+	log.info("[ testAddDatastream ]");
+
+	String filename = "data/test-datastream01.xml";
+	try
+	{
+		String dsID = "TESTDS";
+		String[] altIDs = new String[0];
+		String dsLabel = "Test Datastream";
+		boolean versionable = true;
+		String mimeType = "text/xml";
+		String formatURI = null;
+		String dsLocation = fedora.uploadFile(new File(filename));
+		String controlGroup = "X";
+		String dsState = "A";
+		String checksumType = "MD5";
+		String doc = new String(DataUtils.loadFile(filename), "UTF-8");
+		String checksum = DataUtils.getHash(DataUtils.fedoraXMLHashFormat(doc.getBytes("UTF-8")));
+		String logMessage = "test add datastream";
+
+		String dsidResult = apim.addDatastream(pid, dsID, altIDs, dsLabel, versionable, mimeType, formatURI,
+			dsLocation, controlGroup, dsState, checksumType, checksum, logMessage);
+
+		if (log.isDebugEnabled())
+			log.debug("Returned Datastream ID: " + dsidResult);
+
+		Assert.assertEquals("Unexpected result from addDatastream", dsID, dsidResult);
+
+		Datastream ds = apim.getDatastream(pid, dsID, null);
+		if (log.isDebugEnabled())
+			log.debug("[ Datastream ] " + ds.getID() + ": " + ds.getLabel() + " [ " + ds.getLocation() + " ]");
+
+		String actual = ds.getChecksum();
+
+		if (log.isDebugEnabled())
+		{
+			log.debug("actual checksum:   " + actual);
+			log.debug("expected checksum: " + checksum);
+		}
+
+		Assert.assertEquals("Actual != expected", checksum, actual);
+	}
+	catch (Exception e)
+	{
+		Assert.fail(e.getMessage());
+	}
+}
+
+
+ 	  	 

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4019 Unable to fixity check binary memento</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4019</span> Unable to fixity check binary memento</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2025-05-19 14:58 UTC</td></tr><tr><th>Updated</th><td>2026-03-26 15:27 UTC</td></tr><tr><th>Resolved</th><td>2026-03-26 15:07 UTC</td></tr><tr><th>Fix versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Description</h2>
+<p>Attempting to fixity check a binary memento is failing when run against fcrepo 6 running in jetty</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>% curl -ufedoraAdmin:fedoraAdmin http://localhost:8080/rest/5bf5ee06-a74e-4a34-80a4-6c2fad2bfa95/fcr:versions/20250519144423/fcr:fixity
+Invalid request for memento at /5bf5ee06-a74e-4a34-80a4-6c2fad2bfa95/fcr:versions/20250519144423/fcr:fixity</pre>
+</div></div>
+
+<p>This is despite the fact there is a passing IT that verifies the behavior:<br/>
+<a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraFixityIT.java#L168" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraFixityIT.java#L168</a> </p>
+
+<p>No error is logged normally, but if I add a stacktrace to where the response message is originating, I get the following (line ref is slightly off due to added debugging statements):</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>	at org.fcrepo.kernel.api.identifiers.FedoraId.processIdentifier(FedoraId.java:542)
+	at org.fcrepo.kernel.api.identifiers.FedoraId.&lt;init&gt;(FedoraId.java:117)
+	at org.fcrepo.kernel.api.identifiers.FedoraId.create(FedoraId.java:130)
+	at org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:218)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:117)</pre>
+</div></div>
+
+<p>So it appears that during <tt>WebACFilter</tt> <a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/identifiers/FedoraId.java#L538" class="external-link" rel="nofollow noreferrer">parsing the fedora id is failing</a> because the <tt>afterVersion</tt> portion of the id is <tt>/20250519144423/fcr:fixity</tt> and it can’t handle the fcr:fixity. The integration test may be passing due to webac not being active in that context. In the FedoraFixity controller, the ID it parses has the fcr:fixity suffix removed already by the controller.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-28448"><div class="by">Jared Whiklo, 2026-03-11 21:33 UTC</div><div class="text"><p>PR = <a href="https://github.com/fcrepo/fcrepo/pull/2299" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2299</a> </p></div></div>
+<div class="comment" id="comment-28514"><div class="by">Jared Whiklo, 2026-03-26 15:07 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/0472948f7b50f3a152e601e88998b2c367044481" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/0472948f7b50f3a152e601e88998b2c367044481</a> </p></div></div>
+<p><a href="data/FCREPO-4019.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

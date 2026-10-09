@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-478 No SPARQL Support for CONSTRUCT </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-478</span> No SPARQL Support for CONSTRUCT </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben O&#x27;Steen</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2009-04-20 12:44 UTC</td></tr><tr><th>Updated</th><td>2009-12-04 00:40 UTC</td></tr><tr><th>Resolved</th><td>2009-11-12 03:44 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1, Fedora 3.2, Fedora 3.2.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>Ubuntu JeOS Hardy Heron, JDK 1.5, run via included Tomcat - Fedora 3.1
+<h2>Description</h2>
+<p>Issuing a SPARQL query for a CONSTRUCT results in an empty response from the tuple query type service and a Exception is thrown when attempting to use the triples query service:</p>
+
+<p>(Via Tuples<br/>
+e.g. <a href="http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=sparql&amp;format=sparql&amp;type=tuples&amp;query=construct%20" class="external-link" rel="nofollow noreferrer">http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=sparql&amp;format=sparql&amp;type=tuples&amp;query=construct%20</a></p>
+{%20?x%20dc:title%20?name%20}
+<p>%20WHERE%20</p>
+{%20?x%20dc:title%20?name%20}
+
+<p>SPARQL query: </p>
+
+<p>CONSTRUCT </p>
+{ ?x dc:title ?title }
+<p>WHERE </p>
+{ ?x dc:title ?title }
+
+<p><span class="error">&#91;&#39; make a graph of all triples with dc:title as a predicate.&#39;&#93;</span></p>
+
+<p>Response:<br/>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br/>
+&lt;sparql xmlns="http://www.w3.org/2001/sw/DataAccess/rf1/result"&gt;<br/>
+  &lt;head&gt;<br/>
+    &lt;variable name="subject"/&gt;<br/>
+    &lt;variable name="predicate"/&gt;<br/>
+    &lt;variable name="object"/&gt;<br/>
+  &lt;/head&gt;<br/>
+  &lt;results&gt;<br/>
+  &lt;/results&gt;<br/>
+&lt;/sparql&gt;</p>
+
+<p>(regardless to how many dc:title triples are there: e.g. an spo query to pull up 10 dc:title matches - <a href="http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=spo&amp;format=RDF/XML&amp;type=triples&amp;limit=10&amp;query=*%20%3Cdc:title%3E%20*" class="external-link" rel="nofollow noreferrer">http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=spo&amp;format=RDF/XML&amp;type=triples&amp;limit=10&amp;query=*%20%3Cdc:title%3E%20*</a> )</p>
+
+<p>(Via Triples<br/>
+<a href="http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=sparql&amp;format=sparql&amp;type=triples&amp;query=construct%20" class="external-link" rel="nofollow noreferrer">http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=sparql&amp;format=sparql&amp;type=triples&amp;query=construct%20</a></p>
+{%20?x%20dc:title%20?name%20}
+<p>%20WHERE%20</p>
+{%20?x%20dc:title%20?name%20}
+
+<p>org.trippi.TrippiException: Unsupported triple query language: sparql<br/>
+	at org.trippi.impl.mulgara.MulgaraSession.findTriples(MulgaraSession.java:94)<br/>
+	at org.trippi.impl.base.ConcurrentTriplestoreReader.findTriples(ConcurrentTriplestoreReader.java:145)<br/>
+	at fedora.server.resourceIndex.ResourceIndexImpl.findTriples(ResourceIndexImpl.java:300)<br/>
+	at fedora.server.resourceIndex.ResourceIndexModule.findTriples(ResourceIndexModule.java:317)<br/>
+	at org.trippi.server.TrippiServer.find(TrippiServer.java:132)<br/>
+	at org.trippi.server.http.TrippiServlet.doFind(TrippiServlet.java:512)<br/>
+	at org.trippi.server.http.TrippiServlet.doGet(TrippiServlet.java:377)<br/>
+	at fedora.server.access.RISearchServlet.doGet(RISearchServlet.java:99)<br/>
+	at org.trippi.server.http.TrippiServlet.doGet(TrippiServlet.java:269)<br/>
+	at org.trippi.server.http.TrippiServlet.doPost(TrippiServlet.java:572)<br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:710)<br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:803)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:269)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+	at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:215)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+	at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:215)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+	at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:215)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:188)<br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:213)<br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:174)<br/>
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)<br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:127)<br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:117)<br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:108)<br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:174)<br/>
+	at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:874)<br/>
+	at org.apache.coyote.http11.Http11BaseProtocol$Http11ConnectionHandler.processConnection(Http11BaseProtocol.java:665)<br/>
+	at org.apache.tomcat.util.net.PoolTcpEndpoint.processSocket(PoolTcpEndpoint.java:528)<br/>
+	at org.apache.tomcat.util.net.LeaderFollowerWorkerThread.runIt(LeaderFollowerWorkerThread.java:81)<br/>
+	at org.apache.tomcat.util.threads.ThreadPool$ControlRunnable.run(ThreadPool.java:689)<br/>
+	at java.lang.Thread.run(Thread.java:619)</p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-10931"><div class="by">Chris Wilper, 2009-05-12 22:27 UTC</div><div class="text"><p>verified w/paul that construct is supported in mulgara</p></div></div>
+<div class="comment" id="comment-11033"><div class="by">eddie, 2009-10-20 17:13 UTC</div><div class="text"><p>CONSTRUCT appears to have been implemented for Mulgara 2.0.0:<br/>
+<a href="http://www.mulgara.org/trac/ticket/112" class="external-link" rel="nofollow noreferrer">http://www.mulgara.org/trac/ticket/112</a></p></div></div>
+<div class="comment" id="comment-11036"><div class="by">Benjamin Armintor, 2009-10-22 15:44 UTC</div><div class="text"><p>The exception message from Trippi is misleading, from what I can see in the 1.4.1 source.  MulgaraSession#findTriples(String lang, String queryText) is unimplemented; SPO queries are the only ones that apear to be processed at all.  This is also indicated in the single value of MulgaraSessionFactory/TRIPLE_LANGUAGES: "spo".</p>
+
+<p>The triple query aspect of the report is a Trippi issue, though finding a way for the risearch stylesheet to suppress non-SPO triple query options would be good in the meantime.</p></div></div>
+<div class="comment" id="comment-11037"><div class="by">Benjamin Armintor, 2009-10-22 16:12 UTC</div><div class="text"><p>RE: The tuples aspect: the query is successful with a from clause:<br/>
+construct </p>
+{ ?x &lt;dc:title&gt; ?name }
+<p> from &lt;#ri&gt; where </p>
+{ ?x &lt;dc:identifier&gt; ?name }
+
+<p>It would probably also work if &lt;#ri&gt; were passed in as the value of the "default-graph-uri" parameter to the Mulgara servlet; I'll try to test that later, but I think this is a minor issue.</p>
+
+<p>EDIT: Scratch that, that's from the Mulgara REST api, not Trippi.  The short answer is just to include the from clause.</p></div></div>
+<div class="comment" id="comment-11042"><div class="by">Benjamin Armintor, 2009-10-30 18:08 UTC</div><div class="text"><p>Working on Sparql triple support in the Mulgara connector, most of this will probably be in the Trippi codebase.</p></div></div>
+<div class="comment" id="comment-11043"><div class="by">Benjamin Armintor, 2009-10-30 23:41 UTC</div><div class="text"><p><a href="https://trippi.svn.sourceforge.net/svnroot/trippi/branches/FCREPO-478" class="external-link" rel="nofollow noreferrer">https://trippi.svn.sourceforge.net/svnroot/trippi/branches/FCREPO-478</a></p>
+
+<p>That branch adds support for Sparql triple queries to the Mulgara connector, and makes use of default graph uri's.  It passes integration tests (and preliminary desktop testing).  I'll request a review next week, but you should be able to build a drop-in replacement for Fedora's trippi jars in a pinch.</p></div></div>
+<div class="comment" id="comment-11060"><div class="by">eddie, 2009-11-10 06:37 UTC</div><div class="text"><p>Ben,</p>
+
+<p>Overall looks good. Thanks for taking this on. Couple points:</p>
+
+<p>1) What was the reason for overriding count() in MulgaraTupleIterator and MulgaraTripleIterator? CollapsedAnswer.getRowCount always throws an exception.</p>
+
+<p>2) When I saw you cutting &amp; pasting existing code for substituting &lt;# for &lt;m_serverURI in MulgaraSession, I was originally going to suggest pulling that out into a private function or possibly into doAliasReplacements, but actually, I think the whole substitution is unnecessary. Moreover it's incomplete: it's case sensitive, so something like FROM &lt;#foo&gt; won't get subbed out. It doesn't matter because Mulgara takes &lt;#foo&gt; just fine without our substitution. Not sure if this is something that has changed in Mulgara or we've just been doing unnecessarily all along. So I think you can safely pull it out of you updates (and we can see about cleaning up the rest at another point).</p></div></div>
+<div class="comment" id="comment-11061"><div class="by">Stephen Bayliss, 2009-11-10 09:43 UTC</div><div class="text"><p>Eddie</p>
+
+<p>Re point 2, the graph URI substition, this is a change in Mulgara - relative graph URIs such as &lt;#model&gt; will now work, there's no need to substitute for the full URI (versions 2.0.9 and 2.1.0)</p></div></div>
+<div class="comment" id="comment-11062"><div class="by">Benjamin Armintor, 2009-11-10 15:20 UTC</div><div class="text"><p>Eddie:<br/>
+  Thanks for checking it out.</p>
+
+<p>1) In a local trippi, my testing showed the Mulgara count to be faster (and I needed faster counts on big-ish result sets), but I merged the two changes incorrectly.  I'll fix it, and add an integration test for  count later today.</p>
+
+<p>EDIT: And the relative speed of the count technique is irrelevant if it never gets called.  The MulgaraTupleIterator is more heavily decorated than I expected.  I'll yank the count methods on the next rev.</p>
+
+<p>2) Point well taken.  When I update the tests, I'll make sure that relative uris are tested as well.</p></div></div>
+<div class="comment" id="comment-11063"><div class="by">Benjamin Armintor, 2009-11-11 01:09 UTC</div><div class="text"><p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-478" >
+                <a href="FCREPO-478.html" class="jira-issue-macro-key issue-link"  title="No SPARQL Support for CONSTRUCT " >
+            
+            FCREPO-478
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ branch rev 120 consolidates the base model substitutions into doAliasReplacements, removes the irrelevant count overrides, and adds a little test coverage.  On my development machine, Mulgara choked on IRIs like &lt;#ri-test&gt;: It tried to append them to default URIs, got a result string that had two hashes, and threw an exception trying to make a URI from it.  When I tried removing the hash, mulgara attempted to load a Jena class to parse the resulting RDF.  I decided the easiest way was to preserver the general logic of the existing substitution, with a slightly more flexible pattern match.</p></div></div>
+<div class="comment" id="comment-11064"><div class="by">eddie, 2009-11-11 09:38 UTC</div><div class="text"><p>I'll look into the graph uri substitution again after I update Mulgara. Thanks in particular for fleshing out the test case. Everything looks good to me so I say you should go ahead w/ merging with trunk.</p></div></div>
+<div class="comment" id="comment-11067"><div class="by">Benjamin Armintor, 2009-11-11 20:36 UTC</div><div class="text"><p>Changes merged into Trippi trunk.</p></div></div>
+<div class="comment" id="comment-11068"><div class="by">eddie, 2009-11-12 03:55 UTC</div><div class="text"><p>Will close this after updating Mulgara to 2.1.4 (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-580" >
+                <a href="FCREPO-580.html" class="jira-issue-macro-key issue-link"  title="Update Mulgara to 2.1.4" >
+            
+            FCREPO-580
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+)</p></div></div>
+<p><a href="data/FCREPO-478.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

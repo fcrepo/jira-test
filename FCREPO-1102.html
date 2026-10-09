@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1102 URL Escaping PIDs Returns 404s</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1102</span> URL Escaping PIDs Returns 404s</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jonathan Green</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2012-06-19 20:51 UTC</td></tr><tr><th>Updated</th><td>2013-03-08 17:10 UTC</td></tr><tr><th>Resolved</th><td>2012-06-22 23:03 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1187.html">FCREPO-1187</a> URL escaping PIDs for Relationships REST resource returns 404s</td></tr></table>
+<h2>Description</h2>
+<p>When testing the Fedora 3.6-preview against Islandora I noticed that Fedora doesn't seem to accept URL encoded PIDs anymore. Islandora URL encodes all the parameters sent to the Fedora REST API.</p>
+
+<p>This works:<br/>
+<a href="http://fedora36test:8080/fedora/objects/test:object" class="external-link" rel="nofollow noreferrer">http://fedora36test:8080/fedora/objects/test:object</a><br/>
+but this doesn't:<br/>
+<a href="http://fedora36test:8080/fedora/objects/test:object" class="external-link" rel="nofollow noreferrer">http://fedora36test:8080/fedora/objects/test:object</a></p>
+
+<p>Logs:<br/>
+WARN 2012-06-19 12:45:00.588 <span class="error">&#91;http-8080-2&#93;</span> (JAXRSUtils) No operation matching request path "/fedora/objects/test%3Aobject" is found, Relative Path: /test%3Aobject, HTTP Method: GET, ContentType: <b>/</b>, Accept: text/html,application/xhtml+xml,application/xml;q=0.9,<b>/</b>;q=0.8,. Please enable FINE/TRACE log level for more details.</p>
+
+<p>On ingest:<br/>
+This works:<br/>
+curl -u fedoraAdmin:fedoraAdmin -X POST <a href="http://fedora36test:8080/fedora/objects/test:object" class="external-link" rel="nofollow noreferrer">http://fedora36test:8080/fedora/objects/test:object</a><br/>
+But this doesn't:<br/>
+curl -u fedoraAdmin:fedoraAdmin -X POST <a href="http://fedora36test:8080/fedora/objects/test%3Aobject" class="external-link" rel="nofollow noreferrer">http://fedora36test:8080/fedora/objects/test%3Aobject</a></p>
+
+<p>Logs:<br/>
+WARN 2012-06-19 11:28:47.975 <span class="error">&#91;http-8080-1&#93;</span> (JAXRSUtils) No operation matching request path "/fedora/objects/test%3Aobject" is found, Relative Path: /test%3Aobject, HTTP Method: POST, ContentType: <b>/</b>, Accept: <b>/</b>,. Please enable FINE/TRACE log level for more details.</p>
+
+<p>This looks like a new issue in 3.6, the above examples work fine against 3.5 and 3.4.2</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-12326"><div class="by">Jonathan Green, 2012-06-19 20:58 UTC</div><div class="text"><p>Looks like I messed up copy and pasting here. First example should be:</p>
+
+<p>This works:<br/>
+<a href="http://fedora36test:8080/fedora/objects/test:object" class="external-link" rel="nofollow noreferrer">http://fedora36test:8080/fedora/objects/test:object</a><br/>
+but this doesn't:<br/>
+<a href="http://fedora36test:8080/fedora/objects/test%3Aobject" class="external-link" rel="nofollow noreferrer">http://fedora36test:8080/fedora/objects/test%3Aobject</a></p>
+
+<p>Logs:<br/>
+WARN 2012-06-19 12:45:00.588 <span class="error">&#91;http-8080-2&#93;</span> (JAXRSUtils) No operation matching request path "/fedora/objects/test%3Aobject" is found, Relative Path: /test%3Aobject, HTTP Method: GET, ContentType: <b>/</b>, Accept: text/html,application/xhtml+xml,application/xml;q=0.9,<b>/</b>;q=0.8,. Please enable FINE/TRACE log level for more details. </p></div></div>
+<div class="comment" id="comment-12327"><div class="by">Chris Wilper, 2012-06-19 21:10 UTC</div><div class="text"><p>Thanks for the report. I noticed this while testing 3.6 as well. Sounds like a regression that needs fixing.</p></div></div>
+<div class="comment" id="comment-12328"><div class="by">Jonathan Green, 2012-06-19 21:21 UTC</div><div class="text"><p>I'm going to hold out sanity testing gsearch until this is fixed, so I can run our islandora test suite against it. </p></div></div>
+<div class="comment" id="comment-12329"><div class="by">Jonathan Green, 2012-06-19 21:36 UTC</div><div class="text"><p>if that works for everyone.</p></div></div>
+<div class="comment" id="comment-12335"><div class="by">Chris Wilper, 2012-06-22 17:57 UTC</div><div class="text"><p>I have produced a test that exhibits this behavior and have dug in a bit into why it's happening.</p>
+
+<p>According to the spec, in JAX-RS, the value of the string given for a @PathParam is automatically URL-decoded. This can be prevented by specifying the @Encoded annotation for the argument. However, none of Fedora's REST code uses this annotation. So I wanted to find out: what would be causing CXF to fail to automatically decode these pid @PathParam values for us, when the spec says it should be?</p>
+
+<p>Looking at the code, I noticed as part of the move to CXF, the @Path("</p>
+{pid}") annotations where changed to specify a regular expression, like "{pid : (<span class="error">&#91;A-Za-z0-9&#93;</span>|<del>|\.)<ins>(<span class="error">&#91;A-Za-z0-9&#93;</span>)|</del>|\.|~|_|(%<span class="error">&#91;0-9A-F&#93;</span>{2}))</ins>}"<br/>
+<br/>
+Rolling this change back to use plain old "{pid}
+<p>" fixes the issue. But I want to understand the purpose of the introduction of the pid regex first.</p></div></div>
+<div class="comment" id="comment-12336"><div class="by">Chris Wilper, 2012-06-22 23:03 UTC</div><div class="text"><p>Fixed &amp; tested. Details at <a href="https://github.com/fcrepo/fcrepo/commit/2aa71e3db6f2aba5b66b22783594b035fbe0119d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/2aa71e3db6f2aba5b66b22783594b035fbe0119d</a></p></div></div>
+<p><a href="data/FCREPO-1102.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-937 Improve efficiency of RI&#x27;s interactions with Trippi</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-937</span> Improve efficiency of RI&#x27;s interactions with Trippi</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Benjamin Armintor</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2011-05-11 02:05 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.6, Fedora 3.6.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.7.1</td></tr></table>
+<h2>Description</h2>
+<p>Flow of adding a set of triple through RI:<br/>
+1. RI receives set of triples<br/>
+2. RI wraps the iterator of the received set with a localizing filter<br/>
+3. RI passes wrapped iterator to trippi<br/>
+4. ConcurrentTripleStoreWriter iterates through all items in iterator adding to a List&lt;Triple&gt; of default size<br/>
+5. ConcurrentTripleStoreWriter calls another public method to add the list</p>
+
+<p>The TripleStoreWriter and UpdateBuffer interfaces should be changed to accept Collection&lt;Triple&gt;, or have methods added to accept Set&lt;Triple&gt;.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-937/10127_fcrepo-937.patch">fcrepo-937.patch</a>, 2132 bytes, added by Benjamin Armintor on 2011-05-13</li>
+</ul>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-11953"><div class="by">Benjamin Armintor, 2011-05-11 02:07 UTC</div><div class="text"><p>Alternately, the Set&lt;Triple&gt; should be localized to a List&lt;Triple&gt;.  In either case, a lot of intermediate object creation could be eliminated.</p></div></div>
+<div class="comment" id="comment-11954"><div class="by">Benjamin Armintor, 2011-05-11 02:41 UTC</div><div class="text"><p>Or, UpdateBuffer could accept an Iterator of triples.</p></div></div>
+<div class="comment" id="comment-11957"><div class="by">Benjamin Armintor, 2011-05-13 02:04 UTC</div><div class="text"><p>This patch passes an array-backed list of triples to Trippi instead of an iterator; in context, it should always be a reasonably small list.</p></div></div>
+<div class="comment" id="comment-12368"><div class="by">eddie, 2012-08-08 09:44 UTC</div><div class="text"><p>Ben is still open? If so, can you update the affects version and fix version attributes so it's on the table for next release?</p></div></div>
+<div class="comment" id="comment-13116"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-937.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

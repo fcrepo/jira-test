@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3529 Transactions do not rollback cleanly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3529</span> Transactions do not rollback cleanly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-11-11 17:28 UTC</td></tr><tr><th>Updated</th><td>2020-12-18 07:54 UTC</td></tr><tr><th>Resolved</th><td>2020-11-25 21:17 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, fcrepo-6.0.0-alpha-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3130.html">FCREPO-3130</a> Complete implementation of OCFLPersistentStorageSession.rollback()</td></tr></table>
+<h2>Description</h2>
+<p>When a transaction is committed, a variety of DB tables are updated. Generally speaking, the way changes are made to the database is by accumulating changes in transaction tables, and then moving these changes from the transaction tables to the "real" tables when the transaction is committed.</p>
+
+<p>Rollback logic exists, but all it does is drop records from the transaction tables. It is unable to rollback records that have already been moved out of the transaction tables. This means that it is possible for the DB to be left in an inconsistent state if there's an exception in the middle of committing transaction tables.</p>
+
+<p>One solution to this problem is to ensure that all of the tables are updated within a single database transaction.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21744"><div class="by">Peter Winckles, 2020-11-24 18:08 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo/fcrepo/pull/1816" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1816</a></p></div></div>
+<div class="comment" id="comment-21751"><div class="by">Jared Whiklo, 2020-11-25 21:17 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/5ff1e9f806da91b1e3cdfb51061c5bf818f707c0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/5ff1e9f806da91b1e3cdfb51061c5bf818f707c0</a></p></div></div>
+<p><a href="data/FCREPO-3529.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

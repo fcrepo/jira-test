@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-594 DefaultDOManager - object not invalidated from doreader cache upon purge</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-594</span> DefaultDOManager - object not invalidated from doreader cache upon purge</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>David Kennedy</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-12-08 21:12 UTC</td></tr><tr><th>Updated</th><td>2009-12-08 22:15 UTC</td></tr><tr><th>Resolved</th><td>2009-12-08 22:15 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1, Fedora 3.2, Fedora 3.2.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Description</h2>
+<p>Using the DefaultDOManager, digital objects are not removed from the DOReaderCache when purged.  They are, however, removed from the DOReaderCache when added or modified.</p>
+
+<p>This results in cached copies of disseminations persisting and being served by Fedora, even after the purge has been committed.</p>
+
+<p>This is problematic for our repository.  We have set up external indexing to initiate immediately after changes to Fedora.  Our indexer uses Fedora services to retrieve information about digital objects for indexing.  Because of this error, our indexer is indexing purged objects immediately after they are purged, yet the indexer does not know that the object has been purged because Fedora is still serving stale services.</p>
+
+<p>Could this be fixed in the doCommit method of the DefaultDOManager class?</p>
+
+<p>From what I can tell, it looks as if something like the following clause could be added to the OBJECT REMOVAL section of code to resolve the problem:</p>
+
+<p>// INVALIDATE DOREADER CACHE<br/>
+if (m_readerCache != null) {<br/>
+  m_readerCache.remove(obj.getPid())<br/>
+}</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11148"><div class="by">Chris Wilper, 2009-12-08 21:38 UTC</div><div class="text"><p>David, thanks for the report.  Your suggested fix sounds exactly right and I am testing locally.</p></div></div>
+<div class="comment" id="comment-11149"><div class="by">Chris Wilper, 2009-12-08 22:15 UTC</div><div class="text"><p>Committed fix to trunk.  This will go out with Fedora 3.3.<br/>
+Verified failure with new test in TestRESTAPI, and verified the fix resolves it.<br/>
+Thanks again David.</p></div></div>
+<p><a href="data/FCREPO-594.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

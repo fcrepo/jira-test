@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-492 Allow DC, RELS-EXT, etc, to be Managed Content</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-492</span> Allow DC, RELS-EXT, etc, to be Managed Content</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-05-23 18:21 UTC</td></tr><tr><th>Updated</th><td>2012-01-09 06:51 UTC</td></tr><tr><th>Resolved</th><td>2010-06-21 11:18 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 3, Fedora 3.4</td></tr><tr><th>Required by</th><td><a href="FCREPO-686.html">FCREPO-686</a> Migration tool for migrating datastreams from one type (control group) to another</td></tr><tr><th>Depends on</th><td><a href="FCREPO-25.html">FCREPO-25</a> Option to store Audit Trail outside the object</td></tr><tr><th>Is related to</th><td><a href="FCREPO-718.html">FCREPO-718</a> Refactor management of temp and uploaded files</td></tr><tr><th>Addresses</th><td><a href="FCREPO-722.html">FCREPO-722</a> Allow ModifyDatastreamByValue to update managed content datastreams</td></tr><tr><th>Required by</th><td><a href="FCREPO-586.html">FCREPO-586</a> Add Soap method AddDatastreamByValue</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1045.html">FCREPO-1045</a> Error when attempting to modify a Managed RELS-EXT datastream&#x27;s properties</td></tr></table>
+<h2>Description</h2>
+<p>At the moment, all special datastreams for Fedora are assumed to be inline XML.  But it shouldn't matter to Fedora whether they're inline or managed.  In particular, if they're allowed to be managed content, memory requirements can be drastically reduced in situations where many revisions to such datastreams exist within an object.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-11044"><div class="by">Stephen Bayliss, 2009-10-31 09:41 UTC</div><div class="text"><p>Attention will be needed to validation - I've noticed a case where only "X" datastreams are validated (DefaultManagement.addDatastream)</p>
+
+<p>We probably need some integration tests for adding and modifying invalid datastreams to ensure they're validated.</p>
+
+<p>Also ValidationUtility.validateReservedDatastreams explicitly tests for control group "X".</p></div></div>
+<div class="comment" id="comment-11329"><div class="by">A. Soroka, 2010-04-26 11:46 UTC</div><div class="text"><p>Another part of the task might be provision of a simple migration tool.</p>
+
+<p>&#8212;<br/>
+A. Soroka<br/>
+Digital Research and Scholarship R &amp; D<br/>
+the University of Virginia Library</p>
+
+</div></div>
+<div class="comment" id="comment-11340"><div class="by">Stephen Bayliss, 2010-04-28 06:23 UTC</div><div class="text"><p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-686" >
+                <a href="FCREPO-686.html" class="jira-issue-macro-key issue-link"  title="Migration tool for migrating datastreams from one type (control group) to another" >
+            
+            FCREPO-686
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ created for the migration tool; if there is insufficient time to include 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-686" >
+                <a href="FCREPO-686.html" class="jira-issue-macro-key issue-link"  title="Migration tool for migrating datastreams from one type (control group) to another" >
+            
+            FCREPO-686
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ in release 3.4 we may consider a simple migration tool that does not migrate all datastream versions (only the latest)</p></div></div>
+<div class="comment" id="comment-11345"><div class="by">Stephen Bayliss, 2010-04-28 07:14 UTC</div><div class="text"><p>Consider doing 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-25" >
+                <a href="FCREPO-25.html" class="jira-issue-macro-key issue-link"  title="Option to store Audit Trail outside the object" >
+            
+            FCREPO-25
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ as part of this - allow AUDIT datastream to be managed content</p></div></div>
+<div class="comment" id="comment-11386"><div class="by">Aaron Birkland, 2010-05-23 18:47 UTC</div><div class="text"><p>The DC datastream will make this a little bit tricky.  DefaultDOManager silently modifies the DC datastream if it is is incorrect (e.g. does not have the fedora pid as dc:identifier), and adds it if it is not present.  There is the line:</p>
+
+<p> dc.xmlContent = dcf.getAsXML().getBytes("UTF-8");</p>
+
+<p>There is no equivalent for managed datastreams other than, say, modifying or replacing the contents of the temporary or uploaded file created by modifyDatastreamByReference().</p>
+
+<p>A simple hack might be to clone the datastream, with the new one containing a temp file containing the modified DC content.  The old datastream and associated temp file would be discarded.</p>
+
+<p>Otherwise.. we may consider having datastreams be able to update themselves by value or reference, or even move the DC modification code into Management and have the modification of DC create a new datastream version and an audit record entry.</p></div></div>
+<div class="comment" id="comment-11387"><div class="by">Aaron Birkland, 2010-05-23 18:56 UTC</div><div class="text"><p>The inline XML datastreams have an uncomfortable coupling with METS deserializers.  DatastreamXMLMetadata are the only datastreams that contain "DSInfoType" and "DSMDClass" properties, and determine if the datastream is wrapped in "techMD", "sourceMD", "rightsMD", or "digiprovMD" in METS.  This concept is irrelevant to the other serializers.</p></div></div>
+<div class="comment" id="comment-11388"><div class="by">Stephen Bayliss, 2010-05-23 19:34 UTC</div><div class="text"><p>Similarly SimpleDOWriter - purge/add relationship</p>
+
+<p>these require writing to datastream content - fine for DatastreamXMLMetadata, but currently not for DatastreamManagedContent.</p>
+
+<p>There are other places in code where DatastreamManagedContent does get updated by creating a new temp stream from the existing, and pointing DSLocation at the new one, it would seem to make sense to migrate that into DatastreamManagedContent itself.</p>
+
+<p>It would be useful to have an underlying type for DatastreamXMLMetadata and DatastreamManagedContent where we are dealing with XML Metadata datastreams that could be either of these, but that doesn't seem to slot in nicely with the existing Datastream class hierarchy (or the purpose of that hierarchy).</p></div></div>
+<div class="comment" id="comment-11434"><div class="by">Stephen Bayliss, 2010-06-21 11:18 UTC</div><div class="text"><p>Implemented for DC, RELS-EXT, RELS-INT.  </p>
+
+<p>Note that fedora.fcfg now has config options to specify default datastream control group for DC and RELS-* datastreams - ie control group to use when a datastream is created by Fedora, eg on adding a new relationship or on creating a new object where DC is not specified (in this case Fedora creates a minimal DC incuding a dc:identifier field).</p></div></div>
+<p><a href="data/FCREPO-492.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

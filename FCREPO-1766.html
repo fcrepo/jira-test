@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1766 Error on redefining namespace prefix</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1766</span> Error on redefining namespace prefix</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Monika Mevenkamp</td></tr><tr><th>Assignee</th><td>Nianli Ma</td></tr><tr><th>Created</th><td>2015-10-09 15:00 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:31 UTC</td></tr><tr><th>Resolved</th><td>2015-11-20 13:56 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>This task is to investigate and resolve the error scenario detailed below:</p>
+<ul class="alternate" type="square">
+	<li>Create a container resource in the HTML UI</li>
+	<li>Update a property on that resource:<br/>
+PREFIX pcdm: &lt;<a href="http://pcdm.org/models#" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#</a>&gt;<br/>
+INSERT 
+{ &lt;&gt; a pcdm:Object }
+<p> WHERE { }</p></li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>Update another property on that resource:<br/>
+PREFIX pcdm: &lt;<a href="http://garbage.com/models#" class="external-link" rel="nofollow noreferrer">http://garbage.com/models#</a>&gt;<br/>
+INSERT 
+{ &lt;&gt; a pcdm:Garbage }
+<p> WHERE { }</p></li>
+</ul>
+
+
+<p>Boom! notice error</p>
+
+<p>Ideally, the solution to this issue will consist of detecting that a namespace prefix has already been defined to reference a different namespace and an exception is thrown that comes back as an HTTP response to the user as a "409 Conflict" (<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.10" class="external-link" rel="nofollow noreferrer">http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.10</a>).</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1766/10240_Screen_Shot_2015-10-14_at_10.41.47_AM.png">Screen Shot 2015-10-14 at 10.41.47 AM.png</a>, 306148 bytes, added by Yinlin Chen on 2015-10-14</li>
+<li><a href="attachments/FCREPO-1766/10241_Screen_Shot_2015-10-14_at_10.45.18_AM.png">Screen Shot 2015-10-14 at 10.45.18 AM.png</a>, 113779 bytes, added by Yinlin Chen on 2015-10-14</li>
+</ul>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-15450"><div class="by">A. Soroka, 2015-10-14 13:21 UTC</div><div class="text"><p>I'm not sure this is a 409. It may be an ordinary 400.</p></div></div>
+<div class="comment" id="comment-15453"><div class="by">Andrew Woods, 2015-10-14 13:31 UTC</div><div class="text"><p>If 400 is more appropriate than 409 in this case, that works for me.</p></div></div>
+<div class="comment" id="comment-15459"><div class="by">Yinlin Chen, 2015-10-14 14:42 UTC</div><div class="text"><p>where to see the error,  nothing happened in both UI and log</p>
+
+<p>btw, can we upload file in comment?</p></div></div>
+<div class="comment" id="comment-15462"><div class="by">Andrew Woods, 2015-10-14 15:01 UTC</div><div class="text"><p>You can not add a file within a comment, but you can reference the filename of the attachment.<br/>
+The error is seen in the HTML UI if you follow the steps in the ticket description.</p></div></div>
+<div class="comment" id="comment-15465"><div class="by">Yinlin Chen, 2015-10-14 15:34 UTC</div><div class="text"><p>What I did:</p>
+
+<p>1. Create a container resource in the HTML UI <br/>
+2. update properties using the HTML UI<br/>
+PREFIX pcdm: &lt;<a href="http://pcdm.org/models#" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#</a>&gt; <br/>
+INSERT </p>
+{ &lt;&gt; a pcdm:Object }
+<p> WHERE { } <br/>
+3. update properties using the HTML UI<br/>
+PREFIX pcdm: &lt;<a href="http://garbage.com/models#" class="external-link" rel="nofollow noreferrer">http://garbage.com/models#</a>&gt; <br/>
+INSERT </p>
+{ &lt;&gt; a pcdm:Garbage }
+<p> WHERE { } </p>
+
+<p>No stracktrace in the browser, screenshots attached. </p></div></div>
+<div class="comment" id="comment-15470"><div class="by">Nianli Ma, 2015-10-14 18:59 UTC</div><div class="text"><p>Yinlin Chen I actually can duplicate the error. The error info is as below. I noticed that you have ns001:Object in your mixinType, but I don't have in mine. </p>
+
+<p>--------------------------------</p>
+
+<p>javax.jcr.NamespaceException: There is no namespace with prefix "ns001" at org.modeshape.jcr.JcrNamespaceRegistry.getURI(JcrNamespaceRegistry.java:171) at org.fcrepo.kernel.modeshape.FedoraResourceImpl.lambda$new$25(FedoraResourceImpl.java:419) at org.fcrepo.kernel.api.utils.UncheckedFunction.apply(UncheckedFunction.java:36) at java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:193) at java.util.stream.DistinctOps$1$2.accept(DistinctOps.java:175) at java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:193) at java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1374) at java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:481) at java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:471) at java.util.stream.ReduceOps$ReduceOp.evaluateSequential(ReduceOps.java:708) at java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) at java.util.stream.ReferencePipeline.collect(ReferencePipeline.java:499) at org.fcrepo.kernel.modeshape.FedoraResourceImpl.getTypes(FedoraResourceImpl.java:407) at org.fcrepo.kernel.modeshape.rdf.impl.TypeRdfContext.(TypeRdfContext.java:55) at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62) at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) at java.lang.reflect.Constructor.newInstance(Constructor.java:422) at org.fcrepo.kernel.modeshape.FedoraResourceImpl.getTriples(FedoraResourceImpl.java:470) at org.fcrepo.kernel.modeshape.FedoraResourceImpl.getTriples(FedoraResourceImpl.java:457) at org.fcrepo.http.api.ContentExposingResource.getTriples(ContentExposingResource.java:369) at org.fcrepo.http.api.ContentExposingResource.getTriples(ContentExposingResource.java:365) at org.fcrepo.http.api.ContentExposingResource.getResourceTriples(ContentExposingResource.java:218) at org.fcrepo.http.api.ContentExposingResource.getContent(ContentExposingResource.java:182) at org.fcrepo.http.api.FedoraLdp.describe(FedoraLdp.java:199) at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) at java.lang.reflect.Method.invoke(Method.java:497) at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81) at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:151) at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:171) at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:152) at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:104) at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:384) at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:342) at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:101) at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:271) at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271) at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267) at org.glassfish.jersey.internal.Errors.process(Errors.java:315) at org.glassfish.jersey.internal.Errors.process(Errors.java:297) at org.glassfish.jersey.internal.Errors.process(Errors.java:267) at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:297) at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:254) at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1030) at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:373) at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:381) at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:344) at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:221) at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:769) at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:585) at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143) at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:577) at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:223) at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1125) at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:515) at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185) at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1059) at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141) at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:215) at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:110) at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:97) at org.eclipse.jetty.server.Server.handle(Server.java:497) at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:311) at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:248) at org.eclipse.jetty.io.AbstractConnection$2.run(AbstractConnection.java:540) at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:610) at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:539) at java.lang.Thread.run(Thread.java:745)</p></div></div>
+<div class="comment" id="comment-15501"><div class="by">Nianli Ma, 2015-10-19 00:13 UTC</div><div class="text"><p>What I did right now is check if the prefix is registered for a namespace or not in FedoraResourceImpl &#8211; UpdateRepositories class. If yes, then throw IllegalArgumentException, so that user has the opportunity to make change and summit again. But the class that I used to check if the prefix used by a namespace is getNamespaceRegistry().getURI(). I wonder if anyone has good suggestion.</p></div></div>
+<div class="comment" id="comment-15502"><div class="by">A. Soroka, 2015-10-19 00:27 UTC</div><div class="text"><p>So you're catching the <tt>NamespaceException</tt> and rethrowing?</p>
+
+<ul class="alternate" type="square">
+	<li>You could invent something more specific than <tt>IllegalArgumentException</tt>, e.g. <tt>UndefinedNamespaceException</tt> or the like.</li>
+	<li>The JCR contract is ugly and I don't think you're horribly wrong to rethrow, but you <em>could</em> do <tt>Arrays.asList(getNamespaceRegistry().getPrefixes()).contains(myPrefix)</tt> to avoid putting a rethrow in what seems to me to be an "unexceptional" execution path. See what I did there?! "Unexceptional"‽ Oh, that was <em>rich</em>.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15503"><div class="by">Nianli Ma, 2015-10-19 01:03 UTC</div><div class="text"><p>A. Soroka Thanks for the suggestions! But for the IllegalArgumentException, I added error message "Prefix for the namespace has been used". Do I have to create a new one? </p></div></div>
+<div class="comment" id="comment-15505"><div class="by">A. Soroka, 2015-10-19 13:55 UTC</div><div class="text"><p>With a new independent exception type, we can use the exception-mapping system to provide some useful special behavior in the HTTP API. For example, we could offer an error screen that not only tells the user that she used an undefined namespace, but offers some way to correct that. While this is not part of your immediate ticket, you could without too much effort leave the door open by inventing a new exception. (And so doing shouldn't be very hard.)</p>
+
+<p>Short answer: you don't have to, but it would be nice and it should be very little effort. If you don't know where to begin, I'm happy to help.</p></div></div>
+<div class="comment" id="comment-15506"><div class="by">Andrew Woods, 2015-10-19 14:19 UTC</div><div class="text"><p>It is a good suggestion, A. Soroka. Thank you.</p></div></div>
+<div class="comment" id="comment-15509"><div class="by">A. Soroka, 2015-10-19 15:32 UTC</div><div class="text"><p>Thank you, Andrew Woods, for going above and beyond.</p></div></div>
+<div class="comment" id="comment-15511"><div class="by">Andrew Woods, 2015-10-19 17:43 UTC</div><div class="text"><p>...and thank you, A. Soroka, for always being a ray of sunshine on a cloudy day.</p></div></div>
+<div class="comment" id="comment-15562"><div class="by">Nianli Ma, 2015-10-26 14:56 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/921" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/921</a></p></div></div>
+<div class="comment" id="comment-15582"><div class="by">Andrew Woods, 2015-10-27 20:17 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-15877"><div class="by">Andrew Woods, 2015-11-29 14:31 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/805712449d8677a218faa490901a449fec3011e0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/805712449d8677a218faa490901a449fec3011e0</a></p></div></div>
+<p><a href="data/FCREPO-1766.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

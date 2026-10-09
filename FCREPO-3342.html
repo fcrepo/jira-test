@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3342 Purge leaves invalid OCFL storage hierarchy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3342</span> Purge leaves invalid OCFL storage hierarchy</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-06-04 20:48 UTC</td></tr><tr><th>Updated</th><td>2020-06-12 19:31 UTC</td></tr><tr><th>Resolved</th><td>2020-06-12 19:31 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3034.html">FCREPO-3034</a> Delete a tombstone resource for deleted  BasicContainer Resource</td></tr></table>
+<h2>Description</h2>
+<p>This bug can be seen in the following scenario:</p>
+<ul class="alternate" type="square">
+	<li>After creating, deleting and purging an atomic resource, the path to the purged OCFL object remains, which is invalid.<br/>
+```<br/>
+curl -i -XPUT -H"Content-Type: text/turtle" -d "&lt;&gt; &lt;<a href="http://example.org#title" class="external-link" rel="nofollow noreferrer">http://example.org#title</a>&gt; 'a title'" localhost:8080/rest/container<br/>
+curl -i localhost:8080/rest/container<br/>
+find /tmp/fcrepo.ocfl.storage.root.dir -name container<br/>
+curl -i -XDELETE localhost:8080/rest/container<br/>
+curl -i localhost:8080/rest/container/fcr:tombstone<br/>
+curl -i -XDELETE localhost:8080/rest/container/fcr:tombstone<br/>
+// Inspect path returned in the "find" command above... notice dangling directory<br/>
+```<br/>
+See: <a href="https://github.com/fcrepo4/fcrepo4/pull/1687#issuecomment-637912832" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1687#issuecomment-637912832</a></li>
+</ul>
+
+
+<p>This issue is also being tracked with: <a href="https://github.com/UW-Madison-Library/ocfl-java/issues/8" class="external-link" rel="nofollow noreferrer">https://github.com/UW-Madison-Library/ocfl-java/issues/8</a></p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-21272"><div class="by">Andrew Woods, 2020-06-12 19:31 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/bd01b67b07dabdfe4260e76b9d792d9a700c0c27" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/bd01b67b07dabdfe4260e76b9d792d9a700c0c27</a></p></div></div>
+<p><a href="data/FCREPO-3342.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

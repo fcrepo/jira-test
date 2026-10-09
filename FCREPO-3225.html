@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3225 IT: Restore FedoraRelaxedLdpIT tests</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3225</span> IT: Restore FedoraRelaxedLdpIT tests</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-02-13 23:09 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 16:46 UTC</td></tr><tr><th>Resolved</th><td>2021-02-12 18:29 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>This task is to restore the currently @Ignored tests in the class: FedoraRelaxedLdpIT<br/>
+Currently 7 @Ignored tests.</p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-21854"><div class="by">Jon Roby, 2020-12-23 19:51 UTC</div><div class="text"><p>should these tests succeed or fail? i'm finding it difficult to figure out if they should pass/fail and how to even debug theses things</p></div></div>
+<div class="comment" id="comment-21874"><div class="by">Jared Whiklo, 2021-01-11 18:47 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1846" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1846</a></p></div></div>
+<div class="comment" id="comment-21875"><div class="by">Jon Roby, 2021-01-11 19:17 UTC</div><div class="text"><p>was this report to just take the @ignore's off the tests or to take them off and fix them so they work? just asking for any future bugs I might do</p></div></div>
+<div class="comment" id="comment-21881"><div class="by">Jared Whiklo, 2021-01-12 19:38 UTC</div><div class="text"><p>Jon Roby normally these tests should always pass. In some special cases where an <tt>expected</tt> Exception is specified then you want the system to fail, but the test still passes.</p>
+
+<p>I just pulled off the <tt>@Ignore</tt> and ran the tests. They all passed which is nice and easy.</p>
+
+<p>If the tests were still failing then the work is to figure out if the actual test is broken (ie. the interaction has changed) or if there is a problem in the codebase.</p></div></div>
+<div class="comment" id="comment-21882"><div class="by">Jon Roby, 2021-01-12 19:54 UTC</div><div class="text"><p>..i'm confused. I've been working on these for a few weeks. tried taking the @ignore statements off and they failed, so i've spent more than a week trying to get them working</p></div></div>
+<div class="comment" id="comment-21883"><div class="by">Jared Whiklo, 2021-01-12 21:30 UTC</div><div class="text"><p>You may have uncovered a bigger problem. It appears tests that should fail are not stopping the build or even showing up. More discussion on slack in the bleeding-edge channel.</p></div></div>
+<div class="comment" id="comment-21894"><div class="by">Andrew Woods, 2021-01-13 14:42 UTC</div><div class="text"><p>After rebasing on `main`, these tests are failing again.</p></div></div>
+<div class="comment" id="comment-21895"><div class="by">Jared Whiklo, 2021-01-13 15:03 UTC</div><div class="text"><p>Alright Jon Roby I'm ready to hand this ticket back into your waiting hands. I've got a bunch of other ones to fix.</p></div></div>
+<div class="comment" id="comment-21896"><div class="by">Jon Roby, 2021-01-13 15:07 UTC</div><div class="text"><p>&lt;sarcasm&gt;cool, its like christmas all over again&lt;/sarcasm&gt;</p></div></div>
+<div class="comment" id="comment-21903"><div class="by">Jared Whiklo, 2021-01-13 20:32 UTC</div><div class="text"><p>If you want I'll take this one and you can take 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3230" >
+                <a href="FCREPO-3230.html" class="jira-issue-macro-key issue-link"  title="IT: Restore FedoraHtmlResponsesIT tests" >
+            
+            FCREPO-3230
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-21906"><div class="by">Jon Roby, 2021-01-13 21:45 UTC</div><div class="text"><p>No, its a good learning experience. I just have a question:</p>
+
+<p> </p>
+
+<p>In the tests, generally, it PUTs an item into the repository and then checks that it was added correctly. Some of the tests define the user and.or date used in the item.</p>
+
+<p> </p>
+
+<p>What i'm seeing is the tests are failing due to Server Managed Property Execptions, which i guess is that the server doesnt like parts of the metadata being set?? how do I remedy that?</p>
+
+<p> </p>
+
+<p>Thanks</p></div></div>
+<div class="comment" id="comment-21908"><div class="by">Jared Whiklo, 2021-01-13 22:04 UTC</div><div class="text"><p>That is the whole thing with "relaxed" mode. The server normally won't let you set a server managed triple (like createdBy or createdTime). But when the server is in "relaxed" mode it should allow that.</p>
+
+<p>It is possible the test is not actually getting the server into "relaxed" mode at all.</p>
+
+<p>Normally you'd just add <tt>-Dfcrepo.properties.management=relaxed</tt> to the JAVA_OPTS. You may need to ensure that is happening.</p></div></div>
+<div class="comment" id="comment-22022"><div class="by">Jared Whiklo, 2021-02-09 19:01 UTC</div><div class="text"><p>Hey Jon Roby , how is this ticket going? I just realized that for this to actually work there is changes needed in the HttpRdfService and SparqlVisitor as they currently either remove server managed triples (if we provide a <tt>Prefer: handling=lenient</tt> header or throw an Exception.</p>
+
+<p>Additional work is needed to check for the relaxed property and not remove the triples but also not throw an exception.</p></div></div>
+<div class="comment" id="comment-22030"><div class="by">Jon Roby, 2021-02-10 14:32 UTC</div><div class="text"><p>Hi, sorry, lots of things been going on, a lot of it not work related (did get a new laptop, so setting that up has been an experience)</p>
+
+<p>I figured there was an issue as I got as far as putting the server in relaxed mode and....it still didn't work, even though the server really thought it was in relaxed mode. And trying to figure out where to look in the server seems to be beyond me right now</p></div></div>
+<div class="comment" id="comment-22042"><div class="by">Jared Whiklo, 2021-02-12 18:29 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1869" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1869</a></p></div></div>
+<div class="comment" id="comment-22069"><div class="by">Ben Pennell, 2021-02-17 21:56 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/9b45caf1c223c7a9d115347df5a20b1cda11cb04" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/9b45caf1c223c7a9d115347df5a20b1cda11cb04</a></p></div></div>
+<p><a href="data/FCREPO-3225.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

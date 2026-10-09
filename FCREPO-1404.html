@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1404 Sonar Blocker: VersionsRdfContext.Version2Triples equals() diverges from hashCode()</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1404</span> Sonar Blocker: VersionsRdfContext.Version2Triples equals() diverges from hashCode()</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-03-16 13:41 UTC</td></tr><tr><th>Updated</th><td>2015-04-07 13:48 UTC</td></tr><tr><th>Resolved</th><td>2015-03-17 22:27 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>See:<br/>
+<a href="http://sonar.fcrepo.org/drilldown/issues/1?severity=BLOCKER" class="external-link" rel="nofollow noreferrer">http://sonar.fcrepo.org/drilldown/issues/1?severity=BLOCKER</a></p>
+
+<p>This issue was introduced with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/d9a596b8c12bd473038e9455ab83f5d8537f0194" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/d9a596b8c12bd473038e9455ab83f5d8537f0194</a></p>
+
+<p>It is most likely not a good idea to disable VersionsRdfContext.equals(). Instead, a proper equals() method should exist that with a hashCode() method that abides by the contract:<br/>
+<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html#equals-java.lang.Object-" class="external-link" rel="nofollow noreferrer">http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html#equals-java.lang.Object-</a></p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-13740"><div class="by">Osman Din, 2015-03-16 14:10 UTC</div><div class="text"><p>The introduced equals was for a private class with no fields. I've removed it in the following PR (to get your feedback). It's possible that Sonar would now give a different warning ("missing equals" or something). But  this is one of the cases, I think, where Sonar rule (not sure which one) should be disabled.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/749" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/749</a></p></div></div>
+<div class="comment" id="comment-13741"><div class="by">Osman Din, 2015-03-16 14:14 UTC</div><div class="text"><p>Also, just to clarify, it doesn't seem to me that VersionsRdfContext.equals() was disabled in the commit you mentioned. Could you point to the line if you did mean VersionsRdfContext and not the private  Versions2Triples class?</p></div></div>
+<div class="comment" id="comment-13742"><div class="by">Andrew Woods, 2015-03-16 14:24 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/commit/d9a596b8c12bd473038e9455ab83f5d8537f0194#diff-2734f92b70d470f23c0f03f13792562aR126" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/d9a596b8c12bd473038e9455ab83f5d8537f0194#diff-2734f92b70d470f23c0f03f13792562aR126</a></p></div></div>
+<div class="comment" id="comment-13743"><div class="by">Osman Din, 2015-03-16 14:31 UTC</div><div class="text"><p>L126 equals was added to the private class to quell a Sonar warning, so there was no VersionsRdfContext.equals(), as the issue description seems to suggest &#8211; unless I'm not seeing it. I've removed the introduced equals() the subsequent PR.</p></div></div>
+<div class="comment" id="comment-13746"><div class="by">Osman Din, 2015-03-16 18:49 UTC</div><div class="text"><p>Added a minor javadoc change to the PR.</p></div></div>
+<div class="comment" id="comment-13753"><div class="by">Andrew Woods, 2015-03-17 22:27 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/a78707c0768e567defd8eedede14a38a23da2182" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a78707c0768e567defd8eedede14a38a23da2182</a></p></div></div>
+<p><a href="data/FCREPO-1404.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

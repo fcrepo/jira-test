@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3827 NPE when fedoraUser tries to rollback transaction</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3827</span> NPE when fedoraUser tries to rollback transaction</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>amber</td></tr><tr><th>Assignee</th><td>Jon Roby</td></tr><tr><th>Created</th><td>2022-05-26 15:50 UTC</td></tr><tr><th>Updated</th><td>2023-05-01 18:42 UTC</td></tr><tr><th>Resolved</th><td>2023-05-01 18:42 UTC</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-3830.html">FCREPO-3830</a> Update root ACL to have transaction endpoint specific permissions</td></tr></table>
+<h2>Environment</h2>
+<h2>Description</h2>
+<p>From the mailing list (amber at yellresearch): </p>
+
+<p><a href="https://groups.google.com/g/fedora-tech/c/RPJt7LdywXs" title="smart-link" class="external-link" rel="nofollow noreferrer">https://groups.google.com/g/fedora-tech/c/RPJt7LdywXs</a> </p>
+
+<p>Hi, Does anyone encountered error when user with 'fedoraUser' tries to rollback a transaction?</p>
+
+<p> I have granted all users with read, write, append and control permissions, but to no avail. </p>
+
+<p>&#8212; </p>
+
+<p>HTTP Status 500 – Internal Server Error Type Exception Report Message java.lang.NullPointerException Description The server encountered an unexpected condition that prevented it from fulfilling the request. Exception javax.servlet.ServletException: java.lang.NullPointerException org.apache.shiro.web.servlet.AdviceFilter.cleanup(AdviceFilter.java:196) org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:148) org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125) org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:450) org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365) org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90) org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83) org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387) org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362) org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125) org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358) org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271) Root Cause java.lang.NullPointerException org.fcrepo.auth.webac.WebACFilter.isBinaryOrDescription(WebACFilter.java:753) org.fcrepo.auth.webac.WebACFilter.isAuthorizedForContainedResources(WebACFilter.java:804) org.fcrepo.auth.webac.WebACFilter.isAuthorized(WebACFilter.java:461) org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:231) org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119) org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:74) org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:26) org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:74) org.fcrepo.auth.common.ContainerRolesPrincipalProvider.doFilter(ContainerRolesPrincipalProvider.java:27) org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:74) org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:26) org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:77) org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:108) org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:137) org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125) org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66) org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:450) org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365) org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90) org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83) org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387) org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362) org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125) org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358) org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271) </p>
+
+<p>Note The full stack trace of the root cause is available in the server logs.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3827/10364_image-20220527-081542.png">image-20220527-081542.png</a>, 155546 bytes, added by amber on 2022-05-27</li>
+<li><a href="attachments/FCREPO-3827/10366_image-20220527-082342.png">image-20220527-082342.png</a>, 158850 bytes, added by amber on 2022-05-27</li>
+<li><a href="attachments/FCREPO-3827/10365_server.xml">server.xml</a>, 2884 bytes, added by amber on 2022-05-27</li>
+</ul>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-22646"><div class="by">amber, 2022-05-27 08:17 UTC</div><div class="text"><p>Hi Danny,</p>
+
+<p>I'm using Fedora version 6.1.0, runs in docker, using postgres database</p>
+
+<p>user: testera<br/>
+role: fedoraUser</p>
+
+<p>Steps to reproduce:</p>
+
+<ol>
+	<li>Create a transaction<br/>
+curl -i -u testera:password -X POST "<a href="http://localhost:8080/fcrepo/rest/fcr:tx%22" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/fcr:tx"</a></li>
+	<li>Rollback transaction<br/>
+curl -i -u testera:password -X DELETE "<a href="http://localhost:8080/fcrepo/rest/fcr:tx/7197e553-6466-4ed8-b248-2ef88ce854c7%22" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/fcr:tx/7197e553-6466-4ed8-b248-2ef88ce854c7"</a></li>
+</ol>
+
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3827/10364_image-20220527-081542.png" height="1039" width="1920" style="border: 0px solid black" /></span></p>
+
+<p>Attached tomcat server.xml for your reference</p>
+
+<p><span class="nobr"><a href="attachments/FCREPO-3827/10365_server.xml" title="server.xml attached to FCREPO-3827" data-attachment-type="file" data-attachment-name="server.xml" data-media-services-type="file" data-media-services-id="545c162d-c2a8-4c75-8d31-8c0d1032af8d" rel="noreferrer">server.xml</a></span></p>
+</div></div>
+<div class="comment" id="comment-22647"><div class="by">amber, 2022-05-27 08:25 UTC</div><div class="text"><p>Hi Danny,</p>
+
+<p>One more thing:<br/>
+I have also encountered error 500 while trying to remove tombstone using fedoraUser role</p>
+
+<p>Steps to reproduce:</p>
+
+<ol>
+	<li>create container<br/>
+curl -i -u tester:password -X PUT "<a href="http://localhost:8080/fcrepo/rest/test%22" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test"</a></li>
+	<li>delete container<br/>
+curl -i -u tester:password  -X DELETE "<a href="http://localhost:8080/fcrepo/rest/test%22" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test"</a></li>
+	<li>delete tombstone<br/>
+curl -i -u tester:password  -X DELETE "<a href="http://localhost:8080/fcrepo/rest/test/fcr:tombstone" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test/fcr:tombstone</a></li>
+</ol>
+
+
+<p>Appreciate if you could help with this issue too. </p>
+
+
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3827/10366_image-20220527-082342.png" height="1051" width="1920" style="border: 0px solid black" /></span></p>
+
+<p>&lt;&#33;doctype html&gt;&lt;html lang="en"&gt;&lt;head&gt;&lt;title&gt;HTTP Status 500 – Internal Server Error&lt;/title&gt;&lt;style type="text/css"&gt;body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP Status 500 – Internal Server Error&lt;/h1&gt;&lt;hr class="line" /&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt; Exception Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt; java.lang.NullPointerException&lt;/p&gt;&lt;p&gt;&lt;b&gt;Description&lt;/b&gt; The server encountered an unexpected condition that prevented it from fulfilling the request.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Exception&lt;/b&gt;&lt;/p&gt;&lt;pre&gt;javax.servlet.ServletException: java.lang.NullPointerException<br/>
+org.apache.shiro.web.servlet.AdviceFilter.cleanup(AdviceFilter.java:196)<br/>
+org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:148)<br/>
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:450)<br/>
+org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358)<br/>
+org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271)<br/>
+&lt;/pre&gt;&lt;p&gt;&lt;b&gt;Root Cause&lt;/b&gt;&lt;/p&gt;&lt;pre&gt;java.lang.NullPointerException<br/>
+java.base/java.net.URI$Parser.parse(URI.java:3104)<br/>
+java.base/java.net.URI.&lt;init&gt;(URI.java:600)<br/>
+java.base/java.net.URI.create(URI.java:881)<br/>
+java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:195)<br/>
+java.base/java.util.stream.Streams$StreamBuilderImpl.tryAdvance(Streams.java:397)<br/>
+java.base/java.util.stream.ReferencePipeline.forEachWithCancel(ReferencePipeline.java:127)<br/>
+java.base/java.util.stream.AbstractPipeline.copyIntoWithCancel(AbstractPipeline.java:502)<br/>
+java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:488)<br/>
+java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:474)<br/>
+java.base/java.util.stream.MatchOps$MatchOp.evaluateSequential(MatchOps.java:230)<br/>
+java.base/java.util.stream.MatchOps$MatchOp.evaluateSequential(MatchOps.java:196)<br/>
+java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)<br/>
+java.base/java.util.stream.ReferencePipeline.anyMatch(ReferencePipeline.java:528)<br/>
+org.fcrepo.auth.webac.WebACFilter.isResourceIndirectOrDirect(WebACFilter.java:572)<br/>
+org.fcrepo.auth.webac.WebACFilter.isAuthorizedForMembershipResource(WebACFilter.java:619)<br/>
+org.fcrepo.auth.webac.WebACFilter.isAuthorized(WebACFilter.java:457)<br/>
+org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:231)<br/>
+org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)<br/>
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:74)<br/>
+org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:26)<br/>
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:77)<br/>
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:108)<br/>
+org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:137)<br/>
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:450)<br/>
+org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358)<br/>
+org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271)<br/>
+&lt;/pre&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt; The full stack trace of the root cause is available in the server logs.&lt;/p&gt;&lt;hr class="line" /&gt;&lt;h3&gt;Apache Tomcat/9.0.54&lt;/h3&gt;&lt;/body&gt;&lt;/html&gt;</p></div></div>
+<div class="comment" id="comment-22648"><div class="by">Danny Bernstein, 2022-05-27 18:22 UTC</div><div class="text"><p>Thank you amber &#33;  We’ll take a look.</p></div></div>
+<div class="comment" id="comment-22652"><div class="by">Jared Whiklo, 2022-06-02 14:05 UTC</div><div class="text"><p>So the main issue with this NPE on rollback is the permissions on the transactions. Currently we allow any user to create a new transaction, but can any user commit/rollback any transaction they have an ID for? We don’t track whom started a transaction, so if we want to limit that we’d need to make some changes. Alternatively, we can just allow any user to commit/rollback any transaction that they have the UUID for.</p></div></div>
+<div class="comment" id="comment-22653"><div class="by">Jared Whiklo, 2022-06-02 15:33 UTC</div><div class="text"><p>Discussion at the June 2, 2022 Tech Call resulted in a decision to open PUT/DELETE access to the transaction endpoints for fedoraUser to mimic the POST access. </p>
+
+<p>This could conceivably result in a user guessing a transaction ID and commit/rolling back a transaction for the fun of it. There will be a follow-on ticket for this issue.</p></div></div>
+<div class="comment" id="comment-22673"><div class="by">Jon Roby, 2022-07-29 15:35 UTC</div><div class="text"><p>I tried the examples with version 6.2.0 and instead of getting a 500 error code and stack trace, I got a 403 status code and no stack trace. I’m not sure if its been fixed or not but if not, I will keep working on this, I’d just like a secondary verification please</p></div></div>
+<div class="comment" id="comment-22674"><div class="by">Jared Whiklo, 2022-07-29 17:54 UTC</div><div class="text"><p>I just tried this out on main and I am also just getting a 403 Forbidden code, but we’d still like the user to be able to rollback or commit the transaction. </p></div></div>
+<div class="comment" id="comment-22734"><div class="by">Jon Roby, 2022-10-18 19:17 UTC</div><div class="text"><p>just tried my bug scripts again:</p>
+
+<p>scenario 1 (PUT/DELETE/DELETE)</p>
+
+<p>PUT generates a 201</p>
+
+<p>DELETE generates a 204</p>
+
+<p>DELETE (tombstone) generates a 204</p>
+
+<p>no stack trace is created</p>
+
+
+
+<p>scenario 2 (POST/DELETE)</p>
+
+<p>POST generates a 201</p>
+
+<p>DELETE generates a 403</p>
+
+<p>no stack trace is created</p></div></div>
+<div class="comment" id="comment-22834"><div class="by">Jared Whiklo, 2023-05-01 18:42 UTC</div><div class="text"><p>Addressed by linked ticket</p></div></div>
+<p><a href="data/FCREPO-3827.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

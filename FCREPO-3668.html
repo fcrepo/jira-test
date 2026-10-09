@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3668 Slugs should be treated as URL encoded values</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3668</span> Slugs should be treated as URL encoded values</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2021-03-10 19:09 UTC</td></tr><tr><th>Updated</th><td>2021-06-03 19:06 UTC</td></tr><tr><th>Resolved</th><td>2021-03-15 21:35 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>6.0.0-rc1</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>Currently, Fedora 6 treats the value of the Slug header as an un-encoded string. However, per the spec, it should be treated as a url encoded value.</p>
+
+<p><a href="https://fedora.info/2018/11/22/spec/#http-post" class="external-link" rel="nofollow noreferrer">https://fedora.info/2018/11/22/spec/#http-post</a><br/>
+<a href="https://www.w3.org/TR/ldp/#h-ldpc-post-slug" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#h-ldpc-post-slug</a><br/>
+<a href="https://tools.ietf.org/html/rfc5023#section-9.7" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc5023#section-9.7</a></p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+echo <span class="code-quote">"hello world"</span> | curl -ufedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/ -H<span class="code-quote">'Link: &lt;http://www.w3.org/ns/ldp#NonRDFSource&gt;; rel=<span class="code-quote">"type"</span>'</span> -H<span class="code-quote">"Slug: %C3%A4bc3"</span> --data-binary @- -XPOST -v</span>
+</pre>
+</div></div>
+
+<p>Should create the resource "äbc3", but it actually creates the resource "%C3%A4bc3"</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22144"><div class="by">Peter Winckles, 2021-03-12 20:33 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1889" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1889</a></p></div></div>
+<div class="comment" id="comment-22146"><div class="by">Danny Bernstein, 2021-03-15 21:35 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo/fcrepo/commit/55634df48fc2c1ed58e70f636a7f6396ca48f256" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/55634df48fc2c1ed58e70f636a7f6396ca48f256</a></p></div></div>
+<p><a href="data/FCREPO-3668.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

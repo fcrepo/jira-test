@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1213 ConnectionPool may spuriously set database connections to read-only</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1213</span> ConnectionPool may spuriously set database connections to read-only</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Kåre Fiedler Christiansen</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2014-06-30 14:26 UTC</td></tr><tr><th>Updated</th><td>2014-08-15 03:51 UTC</td></tr><tr><th>Resolved</th><td>2014-08-14 23:59 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk, Fedora 3.6.2, Fedora 3.7.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.0</td></tr></table>
+<h2>Description</h2>
+<p>When releasing a connection from the SQL connection pool, and SQL exception may cause the connection to never be read/write again.</p>
+
+<p>The offending code is in org.fcrepo.server.storage.ConnectionPool where this method is:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">    <span class="code-keyword">private</span> void setConnectionReadOnly(Connection connection, <span class="code-object">boolean</span> readOnly) {
+        <span class="code-keyword">if</span> (supportsReadOnly) {
+            <span class="code-keyword">try</span> {
+                connection.setReadOnly(readOnly);
+            } <span class="code-keyword">catch</span> (Throwable th) {
+                logger.info(<span class="code-quote">"Read-only connections not supported ("</span> + th.getMessage() + <span class="code-quote">")"</span>);
+                supportsReadOnly = <span class="code-keyword">false</span>;
+            }
+        }
+    }
+</pre>
+</div></div>
+
+<p>Note that on any exception it is never tried again to change the mode of the connection. And since the default is that connections are read only in the pool, the connection will never again be read/write.<br/>
+The log message is erronous too, it seems to claim that the problem is in setting a connection read only, but it might as well be in setting it read write.</p>
+
+<p>This may happen in a real world scenario, where the exception you try to set to readWrite or readOnly is closed. You will get an exception with "connection is closed". You will have this scenario if you call free twice:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">    <span class="code-keyword">public</span> void free(Connection connection) {
+        <span class="code-keyword">try</span> {
+            <span class="code-comment">// ensure connections returned to pool as read-only
+</span>            setConnectionReadOnly(connection, <span class="code-keyword">true</span>);
+            <span class="code-keyword">if</span> (!connection.isClosed()) connection.close();
+        } <span class="code-keyword">catch</span> (SQLException sqle) {
+            logger.warn(<span class="code-quote">"Unable to close connection"</span>, sqle);
+        } <span class="code-keyword">finally</span> {
+            <span class="code-keyword">if</span> (logger.isDebugEnabled()) {
+                logger.debug(<span class="code-quote">"Returned connection to pool ("</span> + toString() + <span class="code-quote">")"</span>);
+            }
+        }
+    }
+</pre>
+</div></div>
+<p>because free tries to set the connection to readOnly.</p>
+
+<p>We think this happens if an SQL query is expired, while still delivering data. The connection will then be freed twice: First when expired, second when the result is finally ready.</p>
+
+<p>We have had this situation happen to us twice in 24 hours, and it makes Fedora unwritable but responsive to reads.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12623"><div class="by">Benjamin Armintor, 2014-08-14 23:59 UTC</div><div class="text"><p><a href="https://github.com/fcrepo3/fcrepo/commit/19894bc6dd39851df255e442c8560b5acb8ae9e0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/19894bc6dd39851df255e442c8560b5acb8ae9e0</a></p></div></div>
+<p><a href="data/FCREPO-1213.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

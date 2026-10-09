@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1238 OAIProvider - Allow admins to manage descriptive content about the repository and make the content available</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1238</span> OAIProvider - Allow admins to manage descriptive content about the repository and make the content available</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2014-12-01 21:38 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:22 UTC</td></tr><tr><th>Resolved</th><td>2014-12-05 00:11 UTC</td></tr><tr><th>Components</th><td>f4-oaiprovider</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to review and clean up: <a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/6</a></p>
+
+<p>See: <a href="https://www.pivotaltracker.com/story/show/81482904" class="external-link" rel="nofollow noreferrer">https://www.pivotaltracker.com/story/show/81482904</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1238/10187_pivotal-ticket-0.png">pivotal-ticket-0.png</a>, 154404 bytes, added by Andrew Woods on 2014-12-03</li>
+<li><a href="attachments/FCREPO-1238/10188_pivotal-ticket-1.png">pivotal-ticket-1.png</a>, 139084 bytes, added by Andrew Woods on 2014-12-03</li>
+<li><a href="attachments/FCREPO-1238/10189_pivotal-ticket-2.png">pivotal-ticket-2.png</a>, 58273 bytes, added by Andrew Woods on 2014-12-03</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-12670"><div class="by">Situ, Longshou, 2014-12-03 20:22 UTC</div><div class="text"><p>I got error "You are not allowed to view the requested page." when accessing <a href="https://www.pivotaltracker.com/story/show/81482904" class="external-link" rel="nofollow noreferrer">https://www.pivotaltracker.com/story/show/81482904</a>, so I can't read the original ticket for this task. But from the PR above, I think the following hardcoded fields should be retrieved from Spring configuration, the oaiProviderService bean in oai.xml: <br/>
+        id.setProtocolVersion("2.0");<br/>
+        id.setRepositoryName("Fedora 4");<br/>
+        id.getAdminEmail().add(0,"admin@example.com");<br/>
+        ...<br/>
+        desc.setAny(new JAXBElement&lt;String&gt;(new QName("general"), String.class, "An example repository description"));</p>
+
+<p>I see another constant value "INSTALL_DATE" in code id.setEarliestDatestamp("INSTALL_DATE"). Do you know what's the text INSTALL_DATE mean here?</p>
+
+<p>I'll create a new PR for this ticket but I see some conflicts with my works in <a href="https://jira.duraspace.org/browse/FCREPO-1237" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1237</a>, so I'll start this task once the PR in ticket 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1237" >
+                <a href="FCREPO-1237.html" class="jira-issue-macro-key issue-link"  title="OAIProvider SPARQL/JQL Refactoring" >
+            
+            FCREPO-1237
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is merged.</p></div></div>
+<div class="comment" id="comment-12671"><div class="by">Andrew Woods, 2014-12-03 20:50 UTC</div><div class="text"><p>See attached screenshots of original Pivotal Ticket.</p></div></div>
+<div class="comment" id="comment-12672"><div class="by">Andrew Woods, 2014-12-03 20:51 UTC</div><div class="text"><p>I can guess what the INSTALL_DATE means, but frank asseg wrote the code.</p></div></div>
+<div class="comment" id="comment-12678"><div class="by">Situ, Longshou, 2014-12-05 00:11 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/10" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/pull/10</a></p></div></div>
+<div class="comment" id="comment-12681"><div class="by">Andrew Woods, 2014-12-05 18:04 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-12682"><div class="by">Situ, Longshou, 2014-12-05 18:59 UTC</div><div class="text"><p>Andrew Woods, I've fixed the mistake on setting the protocol version property, and updated to register the "oai" namespace only when it's not registered. Also the change for testing of the project version property that is set in oai.xml during maven build is included. See <a href="https://github.com/lsitu/fcrepo4-oaiprovider/commit/f786cb7e57adead42d62336f25a2c9d9231a4c5c" class="external-link" rel="nofollow noreferrer">https://github.com/lsitu/fcrepo4-oaiprovider/commit/f786cb7e57adead42d62336f25a2c9d9231a4c5c</a> </p></div></div>
+<div class="comment" id="comment-12683"><div class="by">Andrew Woods, 2014-12-05 22:33 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/dc171c05bea436b7bef4aab79b5385d80b4f5194" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/dc171c05bea436b7bef4aab79b5385d80b4f5194</a></p></div></div>
+<p><a href="data/FCREPO-1238.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

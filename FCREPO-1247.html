@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1247 Fixity of versions fails due to jersey URL mapping</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1247</span> Fixity of versions fails due to jersey URL mapping</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Adam Wead</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2014-12-03 16:37 UTC</td></tr><tr><th>Updated</th><td>2017-06-21 16:36 UTC</td></tr><tr><th>Resolved</th><td>2017-06-21 13:24 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>This task is to determine why "fcr%3aversions" is not being decoded and interpreted in the example detailed here:<br/>
+<a href="https://groups.google.com/d/msg/fedora-tech/qw3GlptWBQw/CaGXHMuiRXIJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/qw3GlptWBQw/CaGXHMuiRXIJ</a></p>
+
+<p>Then, likely update the logic to decode the URL but recognize the "fcr" prefix and treat it differently.</p>
+
+<p>*<b>Background of issue (by Jared)</b>*<br/>
+The issue is that we map URLs based on their structure and in Jersey if you have a URL <br/>
+<a href="http://localhost:8080/base/action1/action2/action3" class="external-link" rel="nofollow noreferrer">http://localhost:8080/base/action1/action2/action3</a><br/>
+and mappings<br/>
+Path = .*/action1<br/>
+Path = .*/action2<br/>
+Path = .*/action3</p>
+
+<p>Then Jersey acts on the path match closest to the hostname first (action1 in my example), then the next one (action2) and so on (action3).</p>
+
+<p>So in our case we are matching on fcr:versions first and trying to perform this action. FedoraVersions doesn't handle fcr:fixity (nor expects it to be in the URL) so it fails. My assumption is that if this had succeeded then Fedora would have attempted to perform the fcr:fixity tasks next.</p>
+
+<p>My solution was to alter the fcr:versions @Path matching to <em>not</em> match if the URL has fcr:versions but ends with fcr:fixity.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-12660"><div class="by">Michael Durbin, 2014-12-03 17:14 UTC</div><div class="text"><p>Since supporting fixity checks on historic versions is a feature we support we should ensure that there's an integration test in our code base.  This ticket might be a good opportunity to sure that up.</p></div></div>
+<div class="comment" id="comment-12661"><div class="by">Andrew Woods, 2014-12-03 17:33 UTC</div><div class="text"><p>See: <a href="https://jira.duraspace.org/browse/FCREPO-1245" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1245</a></p></div></div>
+<div class="comment" id="comment-16274"><div class="by">Ralf Claussnitzer, 2016-03-04 08:42 UTC</div><div class="text"><p><a href="https://groups.google.com/d/msg/fedora-tech/qw3GlptWBQw/Pmly99yHoDIJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/qw3GlptWBQw/Pmly99yHoDIJ</a> says:</p>
+
+<blockquote><p>the odd part is why the URL encoding is not being decoded in the path interpretation. But under the circumstances, it is a good thing. The logic should probably be to decode the URL but recognize the "fcr" prefix and treat it differently.</p></blockquote>
+
+<p>I'm not sure it is clear what the desired behavior should be. I presume it's about interpreting <tt>localhost:8080/rest/collection/image/fcr:versions/v0/fcr:fixity</tt> as a <tt>fcr:fixity</tt> directive without having to encode <tt>fcr:versions</tt> into <tt>fcr%3Aversions</tt> to prevent it from being taken for a directive?</p></div></div>
+<div class="comment" id="comment-19128"><div class="by">jrochkind, 2017-06-20 13:14 UTC</div><div class="text"><p>fcrepo is actually <em>delivering</em> URLs that can't be resolved.  If you look at the HTML version (or a triple version) of a page with fixity, it will contain URLs like "localhost:8080/rest/collection/image/fcr:versions/v0/fcr:fixity", that, if you click on them, give you an error. You have to yourself modify the URL to change "fcr:versions" to "fcr%3Aversions". </p>
+
+<p>Surely this is a bug one way or the other, whichever is the 'correct' URI, the URI returned in a response ought to be resolvable without external transformation. </p>
+
+<p>It makes it much more difficult to deal with the platform that I can't take a URI returned by it and assume it's resolvable – I need to apply some not entirely specified transformations to it to make it resolvable. ("fcr:versions" whenever it appears? Or sometimes not?  Any other strings? Etc.). </p></div></div>
+<div class="comment" id="comment-19138"><div class="by">Jared Whiklo, 2017-06-20 18:58 UTC</div><div class="text"><p>I have confirmed this behaviour and it seems to be because based on the Jersey <tt>@Path</tt> parameter, the <tt>fcr:versions</tt> is handled before the <tt>fcr:fixity</tt>.</p>
+
+<p>Andrew Woods suggested URL-encoding the fcr:versions in the Link Header (ie. Link &lt;<a href="http://localhost:8080/rest/this_thing/fcr%3Aversions/v0/fcr:fixity;rel=" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/this_thing/fcr%3Aversions/v0/fcr:fixity;rel=</a>"hasFixityService"&gt;), which would work because Jersey would no longer match the <tt>fcr:versions</tt> path, but does seem odd compared to the other Link headers.</p>
+
+<p>Also the error will still occur, just that we have changed the URI for the versions fixity service.</p>
+
+<p>The only other alternative I can think of is to modify FedoraVersions to not match if the Request URI ends with <tt>fcr:fixity</tt> and allow it to fall through to FedoraFixity.</p>
+
+<p>I'm experimenting with the Jersey <tt>@Path</tt> parameter, if anyone has a suggestion I'll take it.</p></div></div>
+<div class="comment" id="comment-19141"><div class="by">Jared Whiklo, 2017-06-20 20:43 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1203" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1203</a></p></div></div>
+<div class="comment" id="comment-19144"><div class="by">Andrew Woods, 2017-06-21 13:24 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/f5c979dc8f1d8301aaf9081d4930e5343c86fc9b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f5c979dc8f1d8301aaf9081d4930e5343c86fc9b</a></p></div></div>
+<div class="comment" id="comment-19145"><div class="by">Benjamin Armintor, 2017-06-21 14:09 UTC</div><div class="text"><p>I'm only peripherally following this, but I gather this is not exactly a URL decoding issue - Jared Whiklo would you mind updating the description on this ticket to something more relevant to the identified problem and solution for future us?</p></div></div>
+<div class="comment" id="comment-19146"><div class="by">jrochkind, 2017-06-21 14:18 UTC</div><div class="text"><p>Andrew Woods Nice!  Question:  There is lots of software already doing things like `.gsub("fcr:versions", "fcr%3Aversions")` as a workaround. Since this problem has existed for at least two and a half years, the workaround has become embedded in lots of client code. Will the fix break this code, being effectively a backwards compat problem? That is, will the "fcr%3Aversions" version of the URI still be resolvable?  Is there any way to maybe make a switch or something to at least temporarily make it so, to avoid breaking all the software that has been working around the problem for a couple years?</p></div></div>
+<div class="comment" id="comment-19147"><div class="by">Jared Whiklo, 2017-06-21 14:58 UTC</div><div class="text"><p>jrochkind URL Encoding the colon in fcr:versions effectively does the same thing as my change, it causes the Jersey Path matcher to <em>not</em> match and so it passes through to the fcr:fixity which does match. This means that this change <em>should</em> have no effect on your workflow, other than you no longer need to URL encode the fcr:versions in the URL.</p>
+
+<p>I'd (of course) suggest you give it a test to make sure, but as this is a single line change and does not affect how either versions or fixity operates I think the impact should be negligible.</p></div></div>
+<p><a href="data/FCREPO-1247.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3123 Perform locking on ocfl objects during commit</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3123</span> Perform locking on ocfl objects during commit</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2019-11-12 15:16 UTC</td></tr><tr><th>Updated</th><td>2020-12-18 07:52 UTC</td></tr><tr><th>Resolved</th><td>2020-12-04 15:10 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, fcrepo-6.0.0-alpha-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Required by</th><td><a href="FCREPO-3223.html">FCREPO-3223</a> IT: Restore FedoraLdpIT tests</td></tr><tr><th>Addresses</th><td><a href="FCREPO-3271.html">FCREPO-3271</a> Handle conflicts during transaction commits</td></tr></table>
+<h2>Description</h2>
+<p>In order to prevent multiple persistence sessions from simultaneously trying to modify an OCFL object, we need to perform locking of all OCFL objects affected by a transaction during commit.</p>
+
+<p>To avoid deadlock or excessive failure when two sessions try to modify some of the same resources, it may be best to take an approach with an externalized lock manager like the following:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+/*
+ * Licensed to DuraSpace under one or more contributor license agreements.
+ * See the NOTICE file distributed with <span class="code-keyword">this</span> work <span class="code-keyword">for</span> additional information
+ * regarding copyright ownership.
+ *
+ * DuraSpace licenses <span class="code-keyword">this</span> file to you under the Apache License,
+ * Version 2.0 (the <span class="code-quote">"License"</span>); you may not use <span class="code-keyword">this</span> file except in
+ * compliance with the License.  You may obtain a copy of the License at
+ *
+ *     http:<span class="code-comment">//www.apache.org/licenses/LICENSE-2.0
+</span> *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an <span class="code-quote">"AS IS"</span> BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License <span class="code-keyword">for</span> the specific language governing permissions and
+ * limitations under the License.
+ */
+<span class="code-keyword">package</span> org.fcrepo.persistence.ocfl.api;
+
+<span class="code-keyword">import</span> java.util.Collection;
+
+/**
+ * Manages and acquires locks to OCFL objects
+ *
+ * @author bbpennel
+ */
+<span class="code-keyword">public</span> <span class="code-keyword">interface</span> OCFLObjectLockManager {    /**
+     * Acquire a lock on all the specified OCFL objects <span class="code-keyword">for</span> the given
+     * persistence session.
+     *
+     * If any objects are locked by another session, then block the current
+     * thread until all of the object locks may be acquired or the thread is
+     * interrupted.
+     *
+     * @param sessionId identifier <span class="code-keyword">for</span> the persistent session obtaining the lock
+     * @param objectIds
+     */
+    void acquireLocks(<span class="code-object">String</span> sessionId, Collection&lt;<span class="code-object">String</span>&gt; objectIds);    /**
+     * Release all of the object locks held by provided session.
+     *
+     * @param sessionId identifier <span class="code-keyword">for</span> the persistent session
+     */
+    void releaseLocks(<span class="code-object">String</span> sessionId);
+}
+</pre>
+</div></div>
+<p> </p>
+
+<p> </p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-21512"><div class="by">Jared Whiklo, 2020-10-19 17:43 UTC</div><div class="text"><p>There is a test in FedoraLdpIT called testConcurrentPatches() that seems to fail due to this.</p>
+
+<p>Of 4 PATCH requests occurring at the same moment, only one succeeds (returning a 204) the other 3 return a 500.</p>
+
+<p>Digging in here is the stacktrace that is returned.</p>
+
+<p>ERROR 12:39:23.585 (TransactionImpl) Failed to commit transaction: ca4b0f52-5475-482d-a97a-cd0ee80c6620<br/>
+org.fcrepo.persistence.api.exceptions.PersistentStorageException: Failed to commit object &lt;info:fedora/086b047c-e1c0-4a0a-8e8c-abcec78b0265&gt; in session &lt;ca4b0f52-5475-482d-a97a-cd0ee80c6620&gt;<br/>
+ at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.commitObjectSessions(OcflPersistentStorageSession.java:299)<br/>
+ at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.commit(OcflPersistentStorageSession.java:279)<br/>
+ at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSessionMetrics.lambda$commit$5(OcflPersistentStorageSessionMetrics.java:103)<br/>
+ at io.micrometer.core.instrument.composite.CompositeTimer.record(CompositeTimer.java:79)<br/>
+ at org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSessionMetrics.commit(OcflPersistentStorageSessionMetrics.java:102)<br/>
+ at org.fcrepo.kernel.impl.TransactionImpl.commit(TransactionImpl.java:88)<br/>
+ at org.fcrepo.kernel.impl.TransactionImpl.commitIfShortLived(TransactionImpl.java:191)<br/>
+ at org.fcrepo.http.api.FedoraLdp.updateSparql(FedoraLdp.java:531)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21679"><div class="by">Andrew Woods, 2020-11-18 14:25 UTC</div><div class="text"><p>Important for Beta.</p></div></div>
+<div class="comment" id="comment-21781"><div class="by">Peter Winckles, 2020-12-02 18:18 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1823" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1823</a><br/>
+<a href="https://github.com/fcrepo/fcrepo-storage-ocfl/pull/25" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/pull/25</a></p></div></div>
+<div class="comment" id="comment-21797"><div class="by">Jared Whiklo, 2020-12-04 15:10 UTC</div><div class="text"><p>Resolved with - <a href="https://github.com/fcrepo/fcrepo/commit/edf919a5aa9677daa94ca53defb39a29a9c8e31c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/edf919a5aa9677daa94ca53defb39a29a9c8e31c</a> and <a href="https://github.com/fcrepo/fcrepo-storage-ocfl/commit/826d0d635ade5464b8766593f378d8e928c9d8be" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/commit/826d0d635ade5464b8766593f378d8e928c9d8be</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21811"><div class="by">Peter Winckles, 2020-12-04 21:01 UTC</div><div class="text"><p>Migration utils update: <a href="https://github.com/fcrepo-exts/migration-utils/pull/133" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/pull/133</a></p></div></div>
+<div class="comment" id="comment-21812"><div class="by">Andrew Woods, 2020-12-04 21:02 UTC</div><div class="text"><p>Related commit:<br/>
+<a href="https://github.com/fcrepo-exts/migration-utils/commit/ba75fbd75aa8d766a97d704604caada8504d28d4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/ba75fbd75aa8d766a97d704604caada8504d28d4</a></p></div></div>
+<p><a href="data/FCREPO-3123.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

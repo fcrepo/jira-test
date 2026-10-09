@@ -1,0 +1,91 @@
+--- ./fcrepo-src-3.5/fcrepo-server/src/main/java/org/fcrepo/server/oai/FedoraOAIProvider.java	2011-08-17 16:27:14.000000000 +0200
++++ ./patched-fcrepo-src-3.5/fcrepo-server/src/main/java/org/fcrepo/server/oai/FedoraOAIProvider.java	2012-01-12 17:01:37.031688001 +0100
+@@ -78,7 +78,7 @@ public class FedoraOAIProvider
+     private static Set s_emptySet = new HashSet();
+ 
+     private static String[] s_headerFields =
+-            new String[] {"pid", "dcmDate"};
++        new String[] {"pid", "mDate" ,"dcmDate"};
+ 
+     private static String[] s_headerAndDCFields =
+             new String[] {"pid", "dcmDate", "title", "creator",
+@@ -86,6 +86,9 @@ public class FedoraOAIProvider
+                     "date", "type", "format", "identifier", "source",
+                     "language", "relation", "coverage", "rights"};
+ 
++    private String earliestDate = "2001-01-01";
++    private Date earliestDatestamp = null;
++
+     public FedoraOAIProvider(String repositoryName,
+                              String repositoryDomainName,
+                              String localname,
+@@ -157,7 +160,17 @@ public class FedoraOAIProvider
+     }
+ 
+     public Date getEarliestDatestamp() {
+-        return new Date();
++        if( earliestDatestamp == null )
++        {
++            SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
++            try{
++                earliestDatestamp = dfm.parse( earliestDate ); 
++            }
++            catch(java.text.ParseException e){
++                earliestDatestamp = new Date();
++            }
++        }
++        return earliestDatestamp;
+     }
+ 
+     public DeletedRecordSupport getDeletedRecordSupport() {
+@@ -197,7 +210,7 @@ public class FedoraOAIProvider
+                                          new FieldSearchQuery(Condition
+                                                  .getConditions("pid='"
+                                                          + pid
+-                                                         + "' dcmDate>'2000-01-01'")))
++                                                         + String.format( "' dcmDate>'%s'", earliestDate))))
+                             .objectFieldsList();
+         } catch (ServerException se) {
+             throw new RepositoryException(se.getClass().getName() + ": "
+@@ -246,7 +259,7 @@ public class FedoraOAIProvider
+                             .findObjects(s_headerAndDCFields,
+                                          (int) getMaxRecords(),
+                                          new FieldSearchQuery(Condition
+-                                                 .getConditions("dcmDate>'2000-01-01'"
++                                                 .getConditions(String.format( "' dcmDate>'%s'", earliestDate)
+                                                          + getDatePart(from,
+                                                                        until))));
+             l = fsr.objectFieldsList();
+@@ -331,12 +344,12 @@ public class FedoraOAIProvider
+         SimpleDateFormat formatter =
+                 new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+         if (from != null) {
+-            out.append(" dcmDate>='");
++            out.append(" mDate>='");
+             out.append(formatter.format(from));
+             out.append("'");
+         }
+         if (until != null) {
+-            out.append(" dcmDate<='");
++            out.append(" mDate<='");
+             out.append(formatter.format(until));
+             out.append("'");
+         }
+@@ -360,7 +373,7 @@ public class FedoraOAIProvider
+                             .findObjects(s_headerFields,
+                                          (int) getMaxHeaders(),
+                                          new FieldSearchQuery(Condition
+-                                                 .getConditions("dcmDate>'2000-01-01'"
++                                                 .getConditions(String.format("dcmDate>'%s'", earliestDate)
+                                                          + getDatePart(from,
+                                                                        until))));
+             l = fsr.objectFieldsList();
+@@ -464,7 +477,7 @@ public class FedoraOAIProvider
+                                          new FieldSearchQuery(Condition
+                                                  .getConditions("pid='"
+                                                          + pid
+-                                                         + "' dcmDate>'2000-01-01'")))
++                                                         + String.format(" dcmDate>'%s'", earliestDate))))
+                             .objectFieldsList();
+         } catch (ServerException se) {
+             throw new RepositoryException(se.getClass().getName() + ": "

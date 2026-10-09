@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3311 PATCH requests are not parsed with the HttpRdfService so internal identifiers are not stored.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3311</span> PATCH requests are not parsed with the HttpRdfService so internal identifiers are not stored.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-05-09 01:18 UTC</td></tr><tr><th>Updated</th><td>2020-09-08 20:47 UTC</td></tr><tr><th>Resolved</th><td>2020-09-08 20:47 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>loose-end</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>When PATCHing with a statement like</p>
+
+<p><font color="#6a8759">prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt;</font><br/>
+<font color="#6a8759">DELETE { &lt;&gt; ldp:membershipResource ?o }</font><br/>
+<font color="#6a8759">INSERT { &lt;&gt; ldp:membershipResource &lt;/rest/someResource</font><font color="#6a8759">&gt; }</font><br/>
+<font color="#6a8759">WHERE { &lt;&gt; ldp:membershipResource ?o }</font></p>
+
+<p><font color="#172b4d">The final graph contains</font></p>
+
+<p><font color="#172b4d">(triple &lt;<a href="http://localhost:59512/rest/f7407624-da02-4617-acca-3b5d30e3a70b/322fd97b-3b0d-4237-86f2-9ff98ce86b85" class="external-link" rel="nofollow noreferrer">http://localhost:59512/rest/f7407624-da02-4617-acca-3b5d30e3a70b/322fd97b-3b0d-4237-86f2-9ff98ce86b85</a>&gt; &lt;<a href="http://www.w3.org/ns/ldp#membershipResource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#membershipResource</a>&gt; &lt;info:/rest/someResource&gt;)</font></p>
+
+<p><font color="#172b4d">There is soon to be code in the HttpIdentifierConverter to account for these as external Ids and correctly convert them to internal IDs.</font></p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-21413"><div class="by">Jared Whiklo, 2020-09-06 13:55 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1746" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1746</a></p></div></div>
+<div class="comment" id="comment-21414"><div class="by">Andrew Woods, 2020-09-08 15:49 UTC</div><div class="text"><p>In trying to reproduce the issue described in this ticket, I perform the following steps:<br/>
+1. Create basic container<br/>
+$ curl -i -XPUT -H'Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;; rel="type"' -H"Content-type: text/turtle" --data-binary @body.rdf localhost:8080/rest/box</p>
+<ul class="alternate" type="square">
+	<li>Where body.rdf is:<br/>
+```<br/>
+&lt;&gt; &lt;<a href="http://awoods.com#title" class="external-link" rel="nofollow noreferrer">http://awoods.com#title</a>&gt; "A title"<br/>
+```</li>
+</ul>
+
+
+<p>2. Verify the user-triple was created<br/>
+$ curl localhost:8080/rest/box</p>
+
+<p>3. Update the container with a new triple<br/>
+$ curl -i -XPATCH -H"Content-type: application/sparql-update" --data-binary @update.su localhost:8080/rest/box</p>
+<ul class="alternate" type="square">
+	<li>Where update.su is:<br/>
+```<br/>
+INSERT 
+{ &lt;&gt; &lt;http://awoods.com#relation&gt; &lt;http://localhost:8080/rest/someOtherResource&gt; }
+<p> WHERE {}<br/>
+```</p></li>
+</ul>
+
+
+<p>4. Verify the triple was inserted<br/>
+$ curl localhost:8080/rest/box</p>
+
+<p>..all is well. Should the test be different to demonstrate the issue?</p>
+
+</div></div>
+<div class="comment" id="comment-21415"><div class="by">Andrew Woods, 2020-09-08 19:24 UTC</div><div class="text"><p>Looks good. Pending response to code review.</p></div></div>
+<div class="comment" id="comment-21416"><div class="by">Andrew Woods, 2020-09-08 20:47 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/3e25823d34d7068d1d9f639ea6b77d6191de4699" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/3e25823d34d7068d1d9f639ea6b77d6191de4699</a></p></div></div>
+<p><a href="data/FCREPO-3311.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

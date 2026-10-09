@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1921 Replace RdfContext enum with interfaces</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1921</span> Replace RdfContext enum with interfaces</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2016-02-19 15:09 UTC</td></tr><tr><th>Updated</th><td>2016-03-02 18:51 UTC</td></tr><tr><th>Resolved</th><td>2016-03-02 18:51 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>As part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1312" >
+                <a href="FCREPO-1312.html" class="jira-issue-macro-key issue-link"  title="Rewrite RDF generation framework for Java 8" >
+            
+            FCREPO-1312
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, an RdfContext enum was introduced in order to specify the kinds of RDF generation that a kernel implementation must support and decouple the HTTP layers from the ModeShape implementation. In particular, the FedoraResource::getTriples method now accepts values from this RdfContext enum. While this works, it prevents extending the existing set of RdfContexts.</p>
+
+<p>Instead of having FedoraResource::getTriples accept one or more enum values, it should use a system of interfaces, which would make it possible to extend the set of RDF generation contexts.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-16205"><div class="by">A. Soroka, 2016-02-24 16:08 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/989" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/989</a></p></div></div>
+<div class="comment" id="comment-16209"><div class="by">Unknown, 2016-02-25 14:08 UTC</div><div class="text"><p>This is very good, and in my opinion it would be even better if there were no <tt>MINIMAL</tt> element in this <tt>enum</tt>. That will clearly depend on what sort of response should be associated with a <tt>Prefer: return=minimal</tt> request: whether it should contain triples or not, and if so, which triples.</p></div></div>
+<div class="comment" id="comment-16211"><div class="by">A. Soroka, 2016-02-25 14:59 UTC</div><div class="text"><p>Yeah, I agree. I don't feel like we've gotten closure on the discussion of what minimal is, tho'. Did we? I know we had a long conversation with Esmé Cowles and Benjamin Armintor about that, and everyone liked Esmé Cowles's design, which I think was <tt>return=minimal</tt> means no triples, but the absence of <tt>Prefer</tt> means "return an URI", but I can't remember the details. Any help?</p></div></div>
+<div class="comment" id="comment-16213"><div class="by">A. Soroka, 2016-02-25 15:16 UTC</div><div class="text"><p>For compatibility: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/57" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/57</a></p></div></div>
+<div class="comment" id="comment-16214"><div class="by">Esmé Cowles, 2016-02-25 16:00 UTC</div><div class="text"><p>For creates, we are returning no triples with a return=minimal, returning the URI of the created resource by default, and returning the RDF for the resource with return=representation (see <a href="https://github.com/fcrepo4/fcrepo4/commit/34b50e13f249a575d2b0fa23788e11d120ebd45e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/34b50e13f249a575d2b0fa23788e11d120ebd45e</a>).  But we didn't talk about how that translates to GETs.  Does return=minimal mean return nothing when you're doing a GET?  Isn't that just a HEAD then?</p></div></div>
+<div class="comment" id="comment-16215"><div class="by">A. Soroka, 2016-02-25 16:28 UTC</div><div class="text"><p>Yeah, I'm not sure how that makes sense. I think <tt>Prefer=minimal</tt> for <tt>GET</tt> is maybe just "omit server-managed"? Or maybe it's a certain subset of triples? See 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1929" >
+                <a href="FCREPO-1929.html" class="jira-issue-macro-key issue-link"  title="A GET request with Prefer=minimal should return all user-persisted information of relevance" >
+            
+            FCREPO-1929
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-16242"><div class="by">Unknown, 2016-03-02 14:30 UTC</div><div class="text"><p>Merged via <a href="https://github.com/fcrepo4/fcrepo4/commit/864f85e7b49989ee6a53b0df305139dfd745ce95" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/864f85e7b49989ee6a53b0df305139dfd745ce95</a><br/>
+and <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/32015b3f504c751daa97269f40fdd097b3577ffe" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/32015b3f504c751daa97269f40fdd097b3577ffe</a></p></div></div>
+<div class="comment" id="comment-16249"><div class="by">Andrew Woods, 2016-03-02 17:41 UTC</div><div class="text"><p>Related impact PRs: </p>
+<ul>
+	<li><a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/48" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/pull/48</a></li>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/9" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/9</a></li>
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-audit/pull/30" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/pull/30</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-16251"><div class="by">Unknown, 2016-03-02 18:51 UTC</div><div class="text"><p>Merged via:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/37d9dd4c7128d32c97478d940e6e7c5015396907" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-xacml/commit/37d9dd4c7128d32c97478d940e6e7c5015396907</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-transform/commit/6b38bacf8b00f888147a31efae720bf5cc414e93" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/commit/6b38bacf8b00f888147a31efae720bf5cc414e93</a><br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-audit/commit/ddb36844948e0c6dbc4a9ee612662e30d6dd0334" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-audit/commit/ddb36844948e0c6dbc4a9ee612662e30d6dd0334</a></p></div></div>
+<p><a href="data/FCREPO-1921.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

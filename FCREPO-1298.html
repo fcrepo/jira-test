@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1298 Concurrent API-A-LITE get requests fail</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1298</span> Concurrent API-A-LITE get requests fail</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Doron Shalvi</td></tr><tr><th>Assignee</th><td>Scott Prater</td></tr><tr><th>Created</th><td>2015-01-22 00:14 UTC</td></tr><tr><th>Updated</th><td>2015-04-02 18:11 UTC</td></tr><tr><th>Resolved</th><td>2015-04-02 18:11 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.8.0</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.1</td></tr></table>
+<h2>Description</h2>
+<p>There is a concurrency bug in the API-A-LITE "get" APIs in Fedora 3.8, which potentially results in a server exception and failure to properly respond to the following methods:</p>
+
+<p>getDatastreamDissemination<br/>
+getDissemination<br/>
+getObjectProfile<br/>
+getObjectHistory</p>
+
+<p>The bug is in class org.fcrepo.server.access.FedoraAccessServlet.java, in which the instance variable requestURI is used in the processing logic.  As this is an instance variable it is not thread-safe, resulting in unexpected values for a given thread and exceptions during processing.  </p>
+
+<p>Here is the code snippet:<br/>
+--------------------------------<br/>
+public class FedoraAccessServlet<br/>
+	...		<br/>
+    /** Portion of initial request URL from protocol up to query string */<br/>
+    private String requestURI = null;<br/>
+    ...	<br/>
+    public void doGet(HttpServletRequest request, HttpServletResponse response)<br/>
+            throws ServletException, IOException {<br/>
+    ...<br/>
+        requestURI = request.getQueryString() != null ?<br/>
+                request.getRequestURL().toString() + "?" + request.getQueryString()<br/>
+                : request.getRequestURL().toString();<br/>
+        logger.info("Got request: {}", requestURI);<br/>
+		...<br/>
+        String[] URIArray = requestURI.substring(0, request.getRequestURL().length()).split("/");<br/>
+--------------------------------</p>
+
+<p>It appears that this instance variable has been around since at least Fedora 3.3, but it had been used only for logging.  So previous errors may have been limited to logging an incorrect requestURI.</p>
+
+<p>It looks like Fedora 3.8 has a great deal of code cleanup and optimizations - thanks much for the hard work and the release!  However, I guess that this bug was introduced during some of the cleanup.</p>
+
+<p>In our system, we process many requests simultaneously through this servlet in order to provide many images at once for search results or page thumbnails.  In our system the error manifests in several ways, about 0.5% of the time:</p>
+
+<p>1. DatastreamNotFoundException, because requestURI.substring is called with the shorter length of a different request, resulting in truncated datastream names:<br/>
+org.fcrepo.server.errors.DatastreamNotFoundException: <span class="error">&#91;DefaulAccess&#93;</span> No datastream could be returned. Either there is no datastream for the digital object "nlm:nlmuid-101539482-pgimg-11" with datastream ID of "THUM "  OR  there are no datastreams that match the specified date/time value of "null "  .<br/>
+        at org.fcrepo.server.access.DefaultAccess.getDatastreamDissemination(DefaultAccess.java:1124) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAccessServlet.getDatastreamDissemination(FedoraAccessServlet.java:594) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAccessServlet.doGet(FedoraAccessServlet.java:447) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span></p>
+
+<p>2. StringIndexOutOfBoundsException, because requestURI.substring is called with the longer length of a different request:<br/>
+java.lang.StringIndexOutOfBoundsException: String index out of range: 62<br/>
+        at java.lang.String.substring(String.java:1907)<br/>
+        at org.fcrepo.server.access.FedoraAccessServlet.doGet(FedoraAccessServlet.java:208)</p>
+
+<p>3. Incorrect logging - threads log that they are processing a different URI than they actually are.  Here, three different threads report on the processing of page 11 (should be processed by one thread in our system):<br/>
+INFO 2015-01-16 10:11:51.960 <span class="error">&#91;http-bio-8080-exec-10&#93;</span> (FedoraAccessServlet) Got request: <a href="http://localhost:8080/fedora/get/nlm:nlmuid-63510860R-pgimg-11/THUMB" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/get/nlm:nlmuid-63510860R-pgimg-11/THUMB</a><br/>
+ERROR 2015-01-16 10:11:52.081 <span class="error">&#91;http-bio-8080-exec-8&#93;</span> (FedoraAccessServlet) Datastream not found for request: <a href="http://localhost:8080/fedora/get/nlm:nlmuid-63510860R-pgimg-11/THUMB" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/get/nlm:nlmuid-63510860R-pgimg-11/THUMB</a> (actionLabel=Access)<br/>
+org.fcrepo.server.errors.DatastreamNotFoundException: <span class="error">&#91;DefaulAccess&#93;</span> No datastream could be returned. Either there is no datastream for the digital object "nlm:nlmuid-63510860R-pgimg-11" with datastream ID of "THUM "  OR  there are no datastreams that match the specified date/time value of "null "  .<br/>
+        at org.fcrepo.server.access.DefaultAccess.getDatastreamDissemination(DefaultAccess.java:1124) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAccessServlet.getDatastreamDissemination(FedoraAccessServlet.java:594) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAccessServlet.doGet(FedoraAccessServlet.java:447) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span><br/>
+ERROR 2015-01-16 10:11:52.095 <span class="error">&#91;http-bio-8080-exec-16&#93;</span> (FedoraAccessServlet) Datastream not found for request: <a href="http://localhost:8080/fedora/get/nlm:nlmuid-63510860R-pgimg-11/THUMB" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/get/nlm:nlmuid-63510860R-pgimg-11/THUMB</a> (actionLabel=Access)<br/>
+org.fcrepo.server.errors.DatastreamNotFoundException: <span class="error">&#91;DefaulAccess&#93;</span> No datastream could be returned. Either there is no datastream for the digital object "nlm:nlmuid-63510860R-pgimg-11" with datastream ID of "THUM "  OR  there are no datastreams that match the specified date/time value of "null "  .<br/>
+        at org.fcrepo.server.access.DefaultAccess.getDatastreamDissemination(DefaultAccess.java:1124) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAccessServlet.getDatastreamDissemination(FedoraAccessServlet.java:594) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span><br/>
+        at org.fcrepo.server.access.FedoraAccessServlet.doGet(FedoraAccessServlet.java:447) ~<span class="error">&#91;fcrepo-server-3.8.0.jar:na&#93;</span></p>
+
+<p>We have patched this class in our system by making this variable a local variable:<br/>
+// Portion of initial request URL from protocol up to query string<br/>
+// Moved to a local variable to be thread-safe<br/>
+      String requestURI = request.getQueryString() != null ?<br/>
+              request.getRequestURL().toString() + "?" + request.getQueryString()<br/>
+              : request.getRequestURL().toString();</p>
+
+<p>This proposed fix is attached.</p>
+
+<p>We have tested the patch in our Fedora 3.8 system and it seems to be OK.  Converting this variable to local also seems to be OK given the intent of this variable and the rest of the code in this class, but it would be helpful to have confirmation given the effort that has gone into optimizing this class and code.</p>
+
+<p>I understand also that this API has been deprecated since Fedora 3.4-RC1, so an alternative solution would be to just use the REST API.  However, this code was adjusted for Fedora 3.8, so perhaps it is still common for many organizations to use this API.  We do still use it in parts of our system.</p>
+
+<p>Thanks again for all of the work in code cleanup, optimizations and other enhancements in this large release!</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1298/10197_FedoraAccessServlet.java">FedoraAccessServlet.java</a>, 41499 bytes, added by Doron Shalvi on 2015-01-22</li>
+</ul>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-13170"><div class="by">Andrew Woods, 2015-01-22 14:42 UTC</div><div class="text"><p>Doron Shalvi, We can not make any promises yet about at 3.8.1, but it would be easier to evaluate and merge your "patch" if you can submit it as a pull-request against the "master" branch of: <a href="https://github.com/fcrepo3/fcrepo" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo</a></p></div></div>
+<div class="comment" id="comment-13171"><div class="by">Doron Shalvi, 2015-01-22 15:54 UTC</div><div class="text"><p>Pull request created.</p></div></div>
+<div class="comment" id="comment-13199"><div class="by">Scott Prater, 2015-01-23 22:16 UTC</div><div class="text"><p>Doron Shalvi:  Please submit tests to accompany the patch.</p></div></div>
+<div class="comment" id="comment-13200"><div class="by">Scott Prater, 2015-01-23 22:18 UTC</div><div class="text"><p>Pull request:  <a href="https://github.com/fcrepo3/fcrepo/pull/22" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/pull/22</a></p></div></div>
+<div class="comment" id="comment-13863"><div class="by">Benjamin Armintor, 2015-04-02 18:11 UTC</div><div class="text"><p><a href="https://github.com/fcrepo3/fcrepo/commit/51a3a0e9a74abb65d60942eff351959f0fef8b57" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/commit/51a3a0e9a74abb65d60942eff351959f0fef8b57</a></p></div></div>
+<p><a href="data/FCREPO-1298.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

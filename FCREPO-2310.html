@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2310 Permit use of multiple fcrepo-camel instances</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2310</span> Permit use of multiple fcrepo-camel instances</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Created</th><td>2016-11-15 17:02 UTC</td></tr><tr><th>Updated</th><td>2016-11-27 00:46 UTC</td></tr><tr><th>Resolved</th><td>2016-11-27 00:46 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>fcrepo-camel-toolbox-4.6.1</td></tr></table>
+<h2>Description</h2>
+<p>It is not possible to use multiple instances of fcrepo-camel.  </p>
+
+<p>We had used one installation of Karaf to route traffic from two different instances of fcrepo (dev and test).  This is no longer possible.</p>
+
+<p>This problem/enhancement was anticipated when this feature was originally proposed.</p>
+
+<p><a href="https://jira.duraspace.org/browse/FCREPO-2088?focusedCommentId=50979&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-50979" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2088?focusedCommentId=50979&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-50979</a></p>
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-17998"><div class="by">Andrew Woods, 2016-11-15 22:56 UTC</div><div class="text"><p>Have you tried the suggestion in the following comment? <a href="https://jira.duraspace.org/browse/FCREPO-2088?focusedCommentId=50980&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-50980" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2088?focusedCommentId=50980&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-50980</a></p></div></div>
+<div class="comment" id="comment-18000"><div class="by">Unknown, 2016-11-16 14:53 UTC</div><div class="text"><p>I am unclear on what the intention of this ticket is. There never has been a restriction on the number of fcrepo-camel instances running in Karaf (nor is there one now). There <em>is</em> a restriction on the number of fcrepo-camel-toolbox applications that can be deployed &#8211; e.g. one instance of a given version of fcrepo-reindexer or fcrepo-indexing-triplestore, but there has <em>always</em> been that restriction. If you are writing custom camel routes, then this is, again, not an issue &#8211; you can point camel at however many different fedora instances as you want.</p></div></div>
+<div class="comment" id="comment-18003"><div class="by">kefo, 2016-11-16 16:16 UTC</div><div class="text"><p>Close</p></div></div>
+<div class="comment" id="comment-18009"><div class="by">scossu, 2016-11-16 17:29 UTC</div><div class="text"><p>From the conversation on <a href="https://jira.duraspace.org/browse/FCREPO-2088" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2088</a> it sounds like this is possible by configuration, but it is not clear about how to do it. </p>
+
+<p>What we need to do is using the same route with two different Fedora endpoints, possibly not duplicating the whole workflow. Our test Camel instance is used to update both our test and development environments and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2088" >
+                <a href="FCREPO-2088.html" class="jira-issue-macro-key issue-link"  title="Move use of fcrepo-camel into a shared OSGi service in fcrepo-camel-toolbox" >
+            
+            FCREPO-2088
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ breaks this. </p>
+
+<p>Can someone add some documentation in this regard (provided my assumption that this is attainable by configuration is correct)? </p></div></div>
+<div class="comment" id="comment-18010"><div class="by">Unknown, 2016-11-16 18:02 UTC</div><div class="text"><p>The conversation in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2088" >
+                <a href="FCREPO-2088.html" class="jira-issue-macro-key issue-link"  title="Move use of fcrepo-camel into a shared OSGi service in fcrepo-camel-toolbox" >
+            
+            FCREPO-2088
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is somewhat orthogonal to this, but once fcrepo-camel 4.5.0 is released, it will be completely moot. By way of explanation, the current camel infrastructure uses JMS headers that consist of an identifier and a baseUrl. By assembling these, a Fedora URL can be constructed for a resource. And mostly, the baseURL is assumed to be equivalent to the fcrepo-camel endpoint URI. With fcrepo-camel 4.5.0 that structure will still be supported, but users will be encouraged to make use of a single URI. This is all in line with the draft messaging specification. As such, a single route can access any number of Fedora instances like so:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+from(<span class="code-quote">"activemq:queue:fedora"</span>).routeId(<span class="code-quote">"FedoraRouter"</span>)
+    .process(<span class="code-keyword">new</span> EventProcessor())
+    .choose()
+        .when(header(FCREPO_URI).startsWith(<span class="code-quote">"http:<span class="code-comment">//test-repo.example.org"</span>))
+</span>            .to(<span class="code-quote">"direct:test-stuff"</span>)
+        .when(header(FCREPO_URI).startsWith(<span class="code-quote">"http:<span class="code-comment">//dev-repo.example.org"</span>))
+</span>            .to(<span class="code-quote">"direct:dev-stuff"</span>)
+        .when(header(FCREPO_URI).startsWith(<span class="code-quote">"http:<span class="code-comment">//repo.example.org"</span>))
+</span>            .to(<span class="code-quote">"direct:production-stuff"</span>);
+
+from(<span class="code-quote">"direct:test-stuff"</span>)
+    .filter(not(header(FCREPO_EVENT_TYPE).contains(DELETED)))
+        .to(<span class="code-quote">"fcrepo:localhost?authUsername=testUser&amp;authPassword=testPass"</span>)
+        .to(<span class="code-quote">"direct:something-<span class="code-keyword">else</span>"</span>);
+
+from(<span class="code-quote">"direct:production-stuff"</span>)
+    .filter(not(header(FCREPO_EVENT_TYPE).contains(DELETED)))
+        .to(<span class="code-quote">"fcrepo:localhost?authUsername=productionUser&amp;authPassword=productionPass"</span>)
+        .to(<span class="code-quote">"direct:something-<span class="code-keyword">else</span>"</span>);
+</pre>
+</div></div>
+
+</div></div>
+<div class="comment" id="comment-18043"><div class="by">Unknown, 2016-11-27 00:46 UTC</div><div class="text"><p>Closing this, based on kefo's comment above.</p></div></div>
+<p><a href="data/FCREPO-2310.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2899 Must disallow PATCH of Indirect Containers updating SMTs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2899</span> Must disallow PATCH of Indirect Containers updating SMTs</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2018-10-08 19:35 UTC</td></tr><tr><th>Updated</th><td>2018-10-12 23:34 UTC</td></tr><tr><th>Resolved</th><td>2018-10-12 21:58 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2895.html">FCREPO-2895</a> Must Disallow PATCH of &quot;ldp:contains&quot; as (In)Direct ldp:hasMemberRelation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1976.html">FCREPO-1976</a> ldp:contains can be asserted via hasMemberRelation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1889.html">FCREPO-1889</a> Direct/Indirect Containers allow writing arbitrary triples to any resource, despite access controls</td></tr></table>
+<h2>Description</h2>
+<p>Currently, Indirect Containers can be configured to update the SMTs of other resources...this should be prevented.</p>
+
+<p>For example (and the following example can be reproduced with most, if not all, SMTs):</p>
+<ol>
+	<li>Create a resource<br/>
+&gt; curl -i -u fedoraAdmin:fedoraAdmin -XPUT <a href="http://localhost:8080/rest/resource" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/resource</a></li>
+</ol>
+
+
+<ol>
+	<li>Create an  Indirect Container:<br/>
+&gt; curl -i -u fedoraAdmin:fedoraAdmin -XPUT <a href="http://localhost:8080/rest/i" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/i</a> -H "Link: &lt;<a href="http://www.w3.org/ns/ldp#IndirectContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#IndirectContainer</a>&gt;;rel=\"type\"" </li>
+</ol>
+
+
+<ol>
+	<li>Add Indirect Container triples to the new container:<br/>
+&gt; curl -i -u fedoraAdmin:fedoraAdmin -XPATCH <a href="http://localhost:8080/rest/i" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/i</a> -H "Content-Type: application/sparql-update" --data-binary @danger.su<br/>
+...where danger.su is:<br/>
+```<br/>
+INSERT 
+{ 
+ &lt;&gt; &lt;http://www.w3.org/ns/ldp#membershipResource&gt; &lt;/rest/resource&gt; ;
+  &lt;http://www.w3.org/ns/ldp#hasMemberRelation&gt; &lt;http://fedora.info/definitions/v4/repository#createdBy&gt; ;
+  &lt;http://www.w3.org/ns/ldp#insertedContentRelation&gt; &lt;http://www.openarchives.org/ore/terms/proxyFor&gt;
+}
+<p>WHERE {}<br/>
+```<br/>
+The above PATCH should fail because "ldp:hasMemberRelation" is set to an SMT ("fedora:createdBy" in this case)</p></li>
+</ol>
+
+
+<ol>
+	<li>Add a child to the Indirect Container<br/>
+&gt; curl -i -u fedoraAdmin:fedoraAdmin -XPUT -H"Content-Type: text/turtle" --data-binary @proxy.ttl localhost:8080/rest/i/child<br/>
+...where proxy.ttl is:<br/>
+```<br/>
+&lt;&gt; &lt;<a href="http://www.openarchives.org/ore/terms/proxyFor" class="external-link" rel="nofollow noreferrer">http://www.openarchives.org/ore/terms/proxyFor</a>&gt; "Andrew Woods" .<br/>
+```</li>
+</ol>
+
+
+<p>In the current broken state, you will see that a new `fedora:createdBy` triple has been added to /rest/resource (BAD)</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20429"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-10-12 18:16 UTC</div><div class="text"><p>Completed with PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1453" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1453</a></p></div></div>
+<div class="comment" id="comment-20431"><div class="by">Andrew Woods, 2018-10-12 21:42 UTC</div><div class="text"><p>Pending response to code review.</p></div></div>
+<div class="comment" id="comment-20436"><div class="by">Andrew Woods, 2018-10-12 23:34 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/99a57a3c53544ebfa253ffe8ab4bb1b25e0344dd" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/99a57a3c53544ebfa253ffe8ab4bb1b25e0344dd</a></p></div></div>
+<p><a href="data/FCREPO-2899.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

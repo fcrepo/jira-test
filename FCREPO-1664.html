@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1664 remove direct dependencies on javax.servlet</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1664</span> remove direct dependencies on javax.servlet</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-07-30 19:13 UTC</td></tr><tr><th>Updated</th><td>2017-01-03 21:33 UTC</td></tr><tr><th>Resolved</th><td>2016-12-23 15:48 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>osgi</td></tr><tr><th>Addresses</th><td><a href="FCREPO-1676.html">FCREPO-1676</a> update servlet-api version</td></tr></table>
+<h2>Description</h2>
+<p>The fedora http modules rely on both javax.ws.rs.core and javax.servlet.http classes. It seems to make sense to consolidate these around javax.ws.rs.core</p>
+
+<p>Also, the metrics module depends on a javax.servlet.annotation class. We should evaluate whether this is necessary.</p>
+
+<p>At present, the maven configuration downgrades the servlet-api version to 3.0.1 (even though modeshape depends on 3.1.0). This causes some messiness for OSGi, and it would be good to straighten this out. (Removing the direct dependency may be the easiest approach)</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-14879"><div class="by">A. Soroka, 2015-07-30 20:31 UTC</div><div class="text"><p>This is an excellent idea. Our major dependency seems to be on <tt>javax.servlet.http.HttpServletResponse</tt> and as Unknown pointed out in IRC, we can shift that to <tt>javax.ws.rs.core.Response</tt>.</p></div></div>
+<div class="comment" id="comment-14880"><div class="by">Unknown, 2015-07-30 20:36 UTC</div><div class="text"><p>From some initial investigation, it does appear that the metrics module does require the javax.servlet.annotation package, though in using this annotation (i.e. WebListener), it is also using a deprecated Dropwizard class: com.codahale.metrics.servlets.AdminServletContextListener. Some cleanup here is certainly possible.</p></div></div>
+<div class="comment" id="comment-14881"><div class="by">A. Soroka, 2015-07-30 20:38 UTC</div><div class="text"><p>Can we isolate the Metrics-related cleanup or do they all hang together? I have reservations about the value of the Metrics-driven services anyway.</p></div></div>
+<div class="comment" id="comment-14882"><div class="by">Unknown, 2015-07-30 20:46 UTC</div><div class="text"><p>Yes, it seems possible to isolate the Metrics cleanup (i.e. javax.servlet.annotation) from the rest (i.e. javax.servlet.http)</p></div></div>
+<div class="comment" id="comment-16949"><div class="by">Unknown, 2016-07-04 10:56 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1061" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1061</a></p>
+
+<p>Please re-open this ticket after merging the above PR.</p></div></div>
+<div class="comment" id="comment-17016"><div class="by">Andrew Woods, 2016-07-12 16:10 UTC</div><div class="text"><p>PR merged: <a href="https://github.com/fcrepo4/fcrepo4/commit/a58f5a05392820014eee995e9079d6e0c19bc4e2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a58f5a05392820014eee995e9079d6e0c19bc4e2</a></p>
+
+<p>Work to be continued on this ticket.</p></div></div>
+<div class="comment" id="comment-18317"><div class="by">Unknown, 2016-12-23 15:48 UTC</div><div class="text"><p>This ticket was based on the idea that the http-commons module was to be independent of JAX-RS, but I no longer see that as a realistic goal.</p></div></div>
+<p><a href="data/FCREPO-1664.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

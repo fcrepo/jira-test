@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-640 Some IPv6 loopback addresses fail to match for default policies</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-640</span> Some IPv6 loopback addresses fail to match for default policies</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-02-18 09:06 UTC</td></tr><tr><th>Updated</th><td>2012-02-08 17:08 UTC</td></tr><tr><th>Resolved</th><td>2010-02-18 09:51 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.4, Fedora 3.1, Fedora 3.2, Fedora 3.2.1, Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-581.html">FCREPO-581</a> Default XACML policies involving localhost don&#x27;t work in IPv6 environments</td></tr></table>
+<h2>Description</h2>
+<p>Although ::1 has been verified to work in IPv6 environments (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-581" >
+                <a href="FCREPO-581.html" class="jira-issue-macro-key issue-link"  title="Default XACML policies involving localhost don&#39;t work in IPv6 environments" >
+            
+            FCREPO-581
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+), the default policies deny-apim-if-not-localhost and deny-reloadPolicies-if-not-localhost will not work as expected (authorization fails) in environments where the client IP address comes in as a long-form IPv6 loopback address.  The long form of the IPv6 loopback address is 0:0:0:0:0:0:0:1, and can also be provided as 0:0:0:0:0:0:0:1%0 (the latter is the case on my mac, when using Firefox to hit a local Fedora repository instance).</p>
+
+<p>These default policies should be updated to work in such cases.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11240"><div class="by">Chris Wilper, 2010-02-18 09:51 UTC</div><div class="text"><p>Fixed in trunk and maintenance-3.3, but unsure under what conditions the trailing '%0' is given in the client ip address.</p>
+
+<p>See <a href="http://www.fedora-commons.org/confluence/display/DEV/mail/14353387" class="external-link" rel="nofollow noreferrer">http://www.fedora-commons.org/confluence/display/DEV/mail/14353387</a></p></div></div>
+<div class="comment" id="comment-11241"><div class="by">Chris Wilper, 2010-02-18 22:51 UTC</div><div class="text"><p>As Steve pointed out in the thread, the %0 specifies the optional zone index.  Policies now do matching via wildcard, since the zone index can take several possible forms (not just %0, but %eth0, etc).</p>
+
+<p>References:<br/>
+<a href="http://en.wikipedia.org/wiki/IPv6_address#Link-local_addresses_and_zone_indices" class="external-link" rel="nofollow noreferrer">http://en.wikipedia.org/wiki/IPv6_address#Link-local_addresses_and_zone_indices</a><br/>
+<a href="http://tools.ietf.org/html/rfc4007#section-6" class="external-link" rel="nofollow noreferrer">http://tools.ietf.org/html/rfc4007#section-6</a><br/>
+<a href="http://tools.ietf.org/html/rfc3484#section-2.1" class="external-link" rel="nofollow noreferrer">http://tools.ietf.org/html/rfc3484#section-2.1</a></p></div></div>
+<p><a href="data/FCREPO-640.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

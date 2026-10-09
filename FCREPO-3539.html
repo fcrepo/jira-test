@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3539 Spaces in IDs create problems when working with RDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3539</span> Spaces in IDs create problems when working with RDF</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-11-19 17:15 UTC</td></tr><tr><th>Updated</th><td>2020-12-04 19:58 UTC</td></tr><tr><th>Resolved</th><td>2020-12-04 19:58 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Required by</th><td><a href="FCREPO-3223.html">FCREPO-3223</a> IT: Restore FedoraLdpIT tests</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3537.html">FCREPO-3537</a> Enforce Fedora ID restrictions</td></tr></table>
+<h2>Description</h2>
+<p>We rewrite RDF to contain internal Fedora IDs. However, this breaks when the ID contains spaces because a URI with spaces is invalid. To reproduce:</p>
+
+<p>curl -i -ufedoraAdmin:fedoraAdmin -XPOST -H"Slug: spaces 2" "http://localhost:8080/rest"</p>
+
+<p>curl -i -ufedoraAdmin:fedoraAdmin -XPATCH -H"Content-type: application/sparql-update" -d "INSERT </p>
+{ &lt;&gt; &lt;http://purl.org/dc/elements/1.1/title&gt; \"test\" }
+<p> WHERE { }" <a href="http://localhost:8080/rest/spaces%202" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/spaces%202</a></p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-21727"><div class="by">Andrew Woods, 2020-11-19 18:30 UTC</div><div class="text"><p>Maybe this ticket is a placeholder for what I understood the solution to be: disallow spaces in slugs.</p>
+
+<p>Is that your understanding, Peter Winckles?</p></div></div>
+<div class="comment" id="comment-21728"><div class="by">Peter Winckles, 2020-11-19 19:22 UTC</div><div class="text"><p>Andrew Woods, the issue isn't with slugs. You can create a resource with a space in the id without using a slug.</p></div></div>
+<div class="comment" id="comment-21729"><div class="by">Andrew Woods, 2020-11-19 19:29 UTC</div><div class="text"><p>I am inclined to disallow spaces in resource IDs.</p></div></div>
+<div class="comment" id="comment-21741"><div class="by">Jared Whiklo, 2020-11-23 21:57 UTC</div><div class="text"><p>Actually I don't think you can PUT a URI with a space. It gets rejected by Jersey. So the only practical place this appears is in the Slug. But the bigger issue (as defined in this ticket) is that spaces in Fedora IDs cause problems when dealing with RDF.</p></div></div>
+<div class="comment" id="comment-21742"><div class="by">Andrew Woods, 2020-11-23 23:03 UTC</div><div class="text"><p>Is there any reason why we should not simply disallow spaces in resource IDs?</p></div></div>
+<div class="comment" id="comment-21743"><div class="by">Jared Whiklo, 2020-11-24 16:35 UTC</div><div class="text"><p>Other than the fact that spaces are allowed in URIs and our IDs are directly linked to our URIs? Or were you thinking that external URIs and internal IDs would be more transformed than just replacing the hostname and context with the internal prefix?</p></div></div>
+<div class="comment" id="comment-21746"><div class="by">Andrew Woods, 2020-11-25 00:59 UTC</div><div class="text"><p>I was thinking that we might consider disallowing spaces in Fedora resource URLs.</p></div></div>
+<div class="comment" id="comment-21764"><div class="by">Peter Winckles, 2020-11-30 13:20 UTC</div><div class="text"><p>You can PUT to a URI with a space if the space is percent (or plus) encoded. The end result is the same. Jersey decodes it to a space and the space makes Fedora blow up.</p></div></div>
+<div class="comment" id="comment-21766"><div class="by">Andrew Woods, 2020-11-30 15:34 UTC</div><div class="text"><p>Yes... shall we simply forbid spaces in Fedora resource IDs?</p></div></div>
+<div class="comment" id="comment-21792"><div class="by">Andrew Woods, 2020-12-03 16:27 UTC</div><div class="text"><p>Approach decision: </p>
+<ul class="alternate" type="square">
+	<li>We should be permissive with respect to characters that are problematic in URIs (such as spaces).</li>
+	<li>This ticket should encode characters that are not permissible.</li>
+</ul>
+
+
+<p>The encoding should happen prior to inserting IDs/URIs into RDF documents.</p>
+
+<p>It would be valuable to investigate Jena and the URI spec to have clarity on which characters are problematic.</p></div></div>
+<div class="comment" id="comment-21796"><div class="by">Jared Whiklo, 2020-12-04 01:25 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/1829" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1829</a></p></div></div>
+<div class="comment" id="comment-21808"><div class="by">Peter Winckles, 2020-12-04 19:58 UTC</div><div class="text"><p>Commit: <a href="https://github.com/fcrepo/fcrepo/commit/27e1a984d14c4cdbda784dc4d61a7720f622ce84" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/27e1a984d14c4cdbda784dc4d61a7720f622ce84</a></p></div></div>
+<p><a href="data/FCREPO-3539.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

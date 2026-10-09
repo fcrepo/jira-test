@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-454 Extensible object and datastream states</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-454</span> Extensible object and datastream states</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bill Branan</td></tr><tr><th>Created</th><td>2009-02-26 19:20 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-09-01 17:13 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>In response to <a href="http://article.gmane.org/gmane.comp.cms.fedora-commons.devel/1066" class="external-link" rel="nofollow noreferrer">http://article.gmane.org/gmane.comp.cms.fedora-commons.devel/1066</a><br/>
+Bill wrote:</p>
+
+<p>&gt; It occurs to me with this request that the states we use currently use for<br/>
+&gt; objects in Fedora are primarily for user convenience. Is there anything<br/>
+&gt; stopping us from allowing a repository admin to define the states in which<br/>
+&gt; an object can exist? This is a long way from being workflow, but I could see<br/>
+&gt; it facilitating the creation of a simple customized workflow on top of<br/>
+&gt; Fedora, especially with the ability to do access control based on state.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10853"><div class="by">Chris Wilper, 2009-02-26 19:28 UTC</div><div class="text"><p>I think this is worth some more thought/community feedback.</p>
+
+<p>The way people do this kind of thing now is by 1) having a special datastream to hold state, and 2) holding such info in a custom predicate in RELS-EXT.   Here are a couple advantages I can think of to having extensible states:</p>
+
+<ul class="alternate" type="square">
+	<li>For simple cases, people don't need to define a special format just to hold this state value</li>
+	<li>Even when using RELS-EXT (or RELS-INT down the road) with a custom predicate, it's still relatively expensive to make a small change, because ultimately the whole datastream's content must be modified.  It gets worse if versioning is enabled.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-10867"><div class="by">Chris Wilper, 2009-03-03 16:14 UTC</div><div class="text"><p>Reviewed in today's committer meeting, is candidate for discussion in special topics meeting 3/10</p>
+
+<p>People who might be interested:<br/>
+  Hydra folks (lightweight workflow)<br/>
+  Asger (using states to support content model rules)</p>
+
+<p>See also 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-424" >
+                <a href="FCREPO-424.html" class="jira-issue-macro-key issue-link"  title="Workflow Engine Integration" >
+            
+            FCREPO-424
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ (Workflow integration)</p></div></div>
+<div class="comment" id="comment-10871"><div class="by">Chris Wilper, 2009-03-13 17:50 UTC</div><div class="text"><p>We discussed this in the special topic meeting on 3/13:</p>
+
+<p><a href="http://fedora-commons.org/confluence/x/4YSv" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/confluence/x/4YSv</a></p>
+
+<p>There was general agreement that we should have either A) extensible state values for the STATE attribute, or B) an additional attribute for tracking workflow state.  A is simple and easy to do, but B might give people a better separation between "Availability/Visibility" state and "Workflow" state.  The group didn't come to a strong conclusion on this.  We will therefore solicit more input from workflow-savvy people.</p></div></div>
+<div class="comment" id="comment-10993"><div class="by">Stephen Bayliss, 2009-08-24 12:13 UTC</div><div class="text"><p>I can see the following potential options:</p>
+
+<p>1) leave it to a workflow engine to manage (the workflow engine would be responsible for persisting state)<br/>
+2) use the existing state attribute (extend the values permitted)<br/>
+3) have a new state attribute<br/>
+4) have generic methods for adding and manipulating custom object and datastream properties (repository developers can then define their own state attribute(s) as required)<br/>
+5) do it in RELS-EXT/RELS-INT</p>
+
+<p>I would tend to favour (4) as it doesn't prescribe how state should be modeled and persisted wrt workflow, but gives developers the ability to implement whatever they need.  However there does seem to be potential overlap with RELS-EXT/RELS-INT in this approach.</p>
+
+<p>Also, we currently have in FOXML optional extproperty elements to store "custom" properties - but no API methods to manipulate them - perhaps adding API methods for these would suffice at this stage?  (The original reporter only seems to mention tracking "state" at the object, rather than datastream, level)</p></div></div>
+<div class="comment" id="comment-11001"><div class="by">Chris Wilper, 2009-09-01 17:13 UTC</div><div class="text"><p>Decided 9/1/09, need improved docs on relationship API, see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-528" >
+                <a href="FCREPO-528.html" class="jira-issue-macro-key issue-link"  title="Better Documentation/Examples on relationship API" >
+            
+            FCREPO-528
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.  Consensus was that workflow state management is not a central concern of the repository and we need real use cases to motivate changing Fedora's definition of STATE to go beyond (Active, Inactive, Deleted).  Possible future special topic meeting if motivated by a group doing workflow who wants to see a change to Fedora to facilitate this.</p></div></div>
+<p><a href="data/FCREPO-454.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

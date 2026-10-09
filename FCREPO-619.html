@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-619 ServiceDeployment WSDL cannot specify relative URIs in http:address</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-619</span> ServiceDeployment WSDL cannot specify relative URIs in http:address</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Gregory Jansen</td></tr><tr><th>Created</th><td>2009-12-28 21:17 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3</td></tr></table>
+<h2>Environment</h2>Ubuntu 9.10, Redhat EL 5
+<h2>Description</h2>
+<p>I've developed a report servlet that implements a service deployment.  This servlet is deployed on the same Tomcat with Fedora.  It happens to be deployed within the Fedora context, but for the purposes of this bug it could be anywhere on the same server.  I was trying to make the service deployment's WSDL more portable by specifying the http:address with a relative URI.</p>
+
+<p>  &lt;wsdl:service name="StorageReport"&gt;<br/>
+    &lt;wsdl:port binding="this:StorageReport_http" name="StorageReport_port"&gt;<br/>
+      &lt;http:address location="/fedora/storagereport"/&gt;<br/>
+    &lt;/wsdl:port&gt;<br/>
+  &lt;/wsdl:service&gt;</p>
+
+<p>This use of relative URIs seems acceptable according to the WSDL spec:<br/>
+<a href="http://www.w3.org/TR/wsdl#_Toc492291094" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/wsdl#_Toc492291094</a></p>
+
+<p>I guess I would have expected the relative URI to resolve against the Fedora context URI or perhaps the REST URI of the service operation itself (probably not needed).  What I found is that relative URIs cause a NPE in some utility code.  If a resolve step were added at the top of ServerUtility.isURLFedoraServer(String url) it would fix this issue.</p>
+
+<p>java.lang.NullPointerException<br/>
+	at fedora.server.utilities.ServerUtility.isURLFedoraServer(ServerUtility.java:130)<br/>
+	at fedora.server.access.dissemination.DisseminationService.assembleDissemination(DisseminationService.java:669)<br/>
+	at fedora.server.access.DefaultAccess.getDissemination(DefaultAccess.java:447)<br/>
+	at fedora.server.access.FedoraAccessServlet.getDissemination(FedoraAccessServlet.java:742)<br/>
+	at fedora.server.access.FedoraAccessServlet.doGet(FedoraAccessServlet.java:449)<br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:617)<br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:717)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:234)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:234)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:234)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)<br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)<br/>
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)<br/>
+	at org.apache.catalina.valves.RequestFilterValve.process(RequestFilterValve.java:269)<br/>
+	at org.apache.catalina.valves.RemoteHostValve.invoke(RemoteHostValve.java:81)<br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128)<br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)<br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)<br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:286)<br/>
+	at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:845)<br/>
+	at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:583)<br/>
+	at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:447)<br/>
+	at java.lang.Thread.run(Thread.java:619)</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11203"><div class="by">Chris Wilper, 2010-01-05 18:06 UTC</div><div class="text"><p>Workaround for now: Use <a href="http://local.fedora.server/" class="external-link" rel="nofollow noreferrer">http://local.fedora.server/</a> in your URLs.</p></div></div>
+<div class="comment" id="comment-11298"><div class="by">Stephen Bayliss, 2010-04-11 18:54 UTC</div><div class="text"><p>From the original report, it sounds like this should be relatively trivial to implement.</p></div></div>
+<div class="comment" id="comment-13024"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-619.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

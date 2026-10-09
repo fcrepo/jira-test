@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1542 Create utility to migrate technical metadata properties</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1542</span> Create utility to migrate technical metadata properties</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-05-15 15:08 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:38 UTC</td></tr><tr><th>Resolved</th><td>2015-07-08 00:33 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>upgrade</td></tr></table>
+<h2>Description</h2>
+<p>Recent changes to 4.2-SNAPSHOT have changed the properties used to store technical metadata for files/NonRDFSources, such as the SHA-1 checksum, mime type, and file name:</p>
+
+<p>fedora:digest =&gt; premis:hasMessageDigest<br/>
+fedora:mimeType =&gt; ebucore:mimeType<br/>
+premis:hasOriginalName =&gt; ebucore:filename</p>
+
+<p>Develop a utility that will traverse a repository and migrate these properties.</p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-14280"><div class="by">Andrew Woods, 2015-05-15 15:11 UTC</div><div class="text"><p>I think it will be common that we have "upgrade" utilities from release to release.<br/>
+Please create a new fcrepo4-labs repository that will hold these appropriately named utilities.</p></div></div>
+<div class="comment" id="comment-14331"><div class="by">Andrew Woods, 2015-05-26 13:36 UTC</div><div class="text"><p>Former user, are you working this? Or should Jon Roby pick it up?<br/>
+If the latter, please provide some more notes in this ticket on how you had envisioned this utility working to help with Jon Roby's implementation.</p></div></div>
+<div class="comment" id="comment-14334"><div class="by">Former user, 2015-05-26 13:47 UTC</div><div class="text"><p>If Jon Roby can pick it up, that would be great &#8211; I don't expect to have time to work on it this week, but should have time next week if it's not wrapped up by then.</p>
+
+<p>My expectation is that we would create a JAR package with dependencies bundled, so users could download a single runnable JAR file.  Operation would be by running the JAR file (optionally with the --dryrun parameter to just show what would be done).  We will need to pick up the repository configuration and should allow providing a custom configuration by System property like we do with the WAR artifacts.</p></div></div>
+<div class="comment" id="comment-14453"><div class="by">Former user, 2015-06-04 15:54 UTC</div><div class="text"><p>Andrew Woods: here's my branch: <a href="https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils</a> &#8211; it currently builds a JAR and pulls in most of the dependencies and Spring config, but doesn't pull in the core JCR classes, and I'm not sure how the Spring context should be setup (should we be running a Spring context loader, or update the class to explicitly load beans?)</p></div></div>
+<div class="comment" id="comment-14464"><div class="by">Andrew Woods, 2015-06-04 20:25 UTC</div><div class="text"><p>Give this a shot, Former user<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils/pull/2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils/pull/2</a></p></div></div>
+<div class="comment" id="comment-14465"><div class="by">Andrew Woods, 2015-06-04 20:27 UTC</div><div class="text"><p>p.s. I would suggest changing the top-level package name from:<br/>
+package org.fcrepo.utils<br/>
+to:<br/>
+package org.fcrepo.upgrade.utils</p></div></div>
+<div class="comment" id="comment-14474"><div class="by">Former user, 2015-06-05 19:08 UTC</div><div class="text"><p>Andrew Woods, I've merged #2 and moved the package to org.fcrepo.upgrade.utils.  I've also added the Spring machinery to load beans from the command-line.  This seems to be almost working, but fails with an error about not being able to load the namespace handler for the "p" namespace.  This looks like it's related to a bug in the maven assembly plugin, and people recommend different plugins (e.g., maven-shade-plugin):</p>
+
+<p><a href="http://stackoverflow.com/questions/3335203/yet-another-unable-to-locate-spring-namespacehandler-error" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/3335203/yet-another-unable-to-locate-spring-namespacehandler-error</a></p>
+
+<p>I'm out of time to work on this, but I think it's very close.</p></div></div>
+<div class="comment" id="comment-14475"><div class="by">Andrew Woods, 2015-06-05 19:18 UTC</div><div class="text"><p>Can you move this ticket to "Start Work" so it is on my radar?</p></div></div>
+<div class="comment" id="comment-14566"><div class="by">Andrew Woods, 2015-06-24 23:01 UTC</div><div class="text"><p>Former user, This PR gets you further... but additional error-handling is required when running it against an actual repository:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils/pull/3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils/pull/3</a></p></div></div>
+<div class="comment" id="comment-14639"><div class="by">Former user, 2015-07-06 16:45 UTC</div><div class="text"><p>Andrew Woods, I've updated fcrepo4-upgrade-utils to improve the error handling, remove some redundant logging, and use jcr:mimeType instead of fedora:mimeType.  I also added a call to session.save() so non-dryrun operation now actually updates the repository.</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils/commit/f238239e127c3e43c9760af4401deb36df839337" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-upgrade-utils/commit/f238239e127c3e43c9760af4401deb36df839337</a></p>
+
+<p>This now successfully migrates the metadata on files for me, and when I apply the PR 790 and the updated PR 791, newly-created files have the same properties as the migrated ones.</p>
+
+<p>I assume the next steps for this will be to load a larger number of files and test running the migration at scale?</p></div></div>
+<div class="comment" id="comment-14641"><div class="by">Andrew Woods, 2015-07-06 16:56 UTC</div><div class="text"><p>If you have a larger migration with which to test, that would be great. Once you have done that, please push this ticket into Review and we can hopefully include it in the release scheduled for the week of the 20th.</p></div></div>
+<div class="comment" id="comment-14651"><div class="by">Former user, 2015-07-08 00:33 UTC</div><div class="text"><p>I have loaded 935K files in a local fcrepo 4.1.1 repository and run TechnicalMetadataMigrator to migrate the technical metadata properties.  It took about 53 minutes to process the files, at a rate of about 17K files/minute.  So I feel confident that the tool scales well to large numbers of files.</p></div></div>
+<div class="comment" id="comment-14697"><div class="by">Andrew Woods, 2015-07-11 01:24 UTC</div><div class="text"><p>Update committed without PR.</p></div></div>
+<p><a href="data/FCREPO-1542.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

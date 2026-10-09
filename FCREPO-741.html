@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-741 REST endpoint getRelationships throws &quot;Unsupported output format: Sparql&quot;</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-741</span> REST endpoint getRelationships throws &quot;Unsupported output format: Sparql&quot;</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2010-07-14 10:59 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>When executing the request:  "GET /fedora/objects/fedora-system:FedoraObject-3.0/relationships?format=sparql" the following stack trace is thrown: </p>
+
+<p>javax.ws.rs.WebApplicationException: org.trippi.TrippiException: Unsupported output format: Sparql<br/>
+	at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:168)<br/>
+	at org.fcrepo.server.rest.RelationshipResource.getRelationships(RelationshipResource.java:103)<br/>
+	at sun.reflect.GeneratedMethodAccessor66.invoke(Unknown Source)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:597)<br/>
+	at com.sun.jersey.server.impl.model.method.dispatch.AbstractResourceMethodDispatchProvider$ResponseOutInvoker._dispatch(AbstractResourceMethodDispatchProvider.java:175)<br/>
+	at com.sun.jersey.server.impl.model.method.dispatch.ResourceJavaMethodDispatcher.dispatch(ResourceJavaMethodDispatcher.java:67)<br/>
+	at com.sun.jersey.server.impl.uri.rules.HttpMethodRule.accept(HttpMethodRule.java:163)<br/>
+	at com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:71)<br/>
+	at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)<br/>
+	at com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:63)<br/>
+	at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:689)<br/>
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:647)<br/>
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:638)<br/>
+	at com.sun.jersey.spi.container.servlet.WebComponent.service(WebComponent.java:309)<br/>
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:425)<br/>
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:590)<br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:717)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.fcrepo.server.security.servletfilters.FilterRestApiFlash.doFilter(FilterRestApiFlash.java:79)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.fcrepo.server.security.jaas.AuthFilterJAAS.doFilter(AuthFilterJAAS.java:287)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)<br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)<br/>
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)<br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128)<br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)<br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)<br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:293)<br/>
+	at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:849)<br/>
+	at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:583)<br/>
+	at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:454)<br/>
+	at java.lang.Thread.run(Thread.java:637)<br/>
+Caused by: org.trippi.TrippiException: Unsupported output format: Sparql<br/>
+	at org.trippi.TripleIterator.toStream(TripleIterator.java:150)<br/>
+	at org.trippi.TripleIterator.toStream(TripleIterator.java:116)<br/>
+	at org.fcrepo.server.rest.RelationshipResource.getRelationships(RelationshipResource.java:98)<br/>
+	... 35 more</p>
+
+<p>All other formats (xml, rdf/xml, turtle, n-triples) seem to work.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11485"><div class="by">eddie, 2010-07-26 07:12 UTC</div><div class="text"><p>tripleiterator doesn't actually support sparql (see trippi). So this is actually a documentation error unless reimplemented to use tupleiterator.</p></div></div>
+<div class="comment" id="comment-11486"><div class="by">Benjamin Armintor, 2010-07-26 19:21 UTC</div><div class="text"><p>It would be pretty easy, I think, to put together a SparqlTripleWriter.  Granted, it would just treat the triples as SPO, and mimic the TupleWriter.  Worth it?</p></div></div>
+<div class="comment" id="comment-12916"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-741.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

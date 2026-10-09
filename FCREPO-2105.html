@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2105 Retrieving the description of an object with many reference properties is slow</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2105</span> Retrieving the description of an object with many reference properties is slow</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-08-04 19:07 UTC</td></tr><tr><th>Updated</th><td>2017-06-20 19:38 UTC</td></tr><tr><th>Resolved</th><td>2017-04-09 17:31 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>performance</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2112.html">FCREPO-2112</a> Refactor reference property value retrieval to use indexed MODE queries</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2111.html">FCREPO-2111</a> Refactor URI translator chain to allow use without Jcr Node</td></tr></table>
+<h2>Description</h2>
+<p>I have been testing the performance of Fedora objects that link to many other repository objects (for example a collection with many members, or a book that contains many pages).</p>
+
+<p>I've written up some of my findings in the Fedora wiki<span class="error">&#91;1&#93;</span>.  But the TL;DR version is that it's reasonably fast for small numbers of members, but gets progressively slower for larger numbers of members.  And the move from LevelDB to a relational database for storing metadata looks like it's adding to this issue.  So a book with 500+ pages or a collection that contains thousands of objects slows down to 30+ seconds to read the RDF from Fedora.</p>
+
+<p>I mostly wanted to let people know about this issue so it can be a factor in discussions about modeling, performance, etc.</p>
+
+<p>-Esmé</p>
+
+<p>1. <a href="https://wiki.duraspace.org/display/FF/Real+World+Performance#RealWorldPerformance-many_members" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Real+World+Performance#RealWorldPerformance-many_members</a></p>
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-18627"><div class="by">Danny Bernstein, 2017-03-14 00:45 UTC</div><div class="text"><p>To verify the performance increases:  (make sure you're running on a quadcore).</p>
+
+<p>1.  run fcrepo-webapp with the jdbc-postgres repository.json modeshape config.<br/>
+2.  git clone <a href="https://github.com/dbernstein/fcrepo-performance-test-scripts.git" class="external-link" rel="nofollow noreferrer">https://github.com/dbernstein/fcrepo-performance-test-scripts.git</a><br/>
+3.  execute ./n-members.sh 10000; <br/>
+4.  Note the elapsed times.<br/>
+5.  execute ./n-memberof.sh 10000; <br/>
+6.  Note the elapsed times.</p>
+
+<p>7. Clear the fcrepo-data directory and your postgresql fcrepo database.<br/>
+8. copy fcrepo4/fcrepo-config/src/main/resources/config/jdbc-postgresql/respository.json to /any/path/repository.json.<br/>
+9. open the file and changed the cacheSize value to 500000.<br/>
+10.   run fcrepo-webapp with the -Dfcrepo.modeshape.configuration=/any/path/repository.json and add -Dfcrepo.enable-parallel-streaming-by-default=true.<br/>
+11.  Rerun 3 - 6.</p>
+
+<p>You should see 5-10x speed increases.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1177" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1177</a></p>
+</div></div>
+<div class="comment" id="comment-18628"><div class="by">A. Soroka, 2017-03-14 00:55 UTC</div><div class="text"><blockquote><p>(make sure you're running on a quadcore)</p></blockquote>
+
+<p>Why? Why is this important?</p></div></div>
+<div class="comment" id="comment-18629"><div class="by">Danny Bernstein, 2017-03-14 15:21 UTC</div><div class="text"><p>Because the the optimization in part involves turning on parallel stream processing.   Quadcore is not necessary, but I wouldn't expect to see the most dramatic results on a single core.</p></div></div>
+<div class="comment" id="comment-18630"><div class="by">A. Soroka, 2017-03-14 16:35 UTC</div><div class="text"><p>So this doesn't actually address the problem of retrieving/using JCR nodes instead of identifiers?</p></div></div>
+<div class="comment" id="comment-18631"><div class="by">Danny Bernstein, 2017-03-14 16:55 UTC</div><div class="text"><p>No it does not. I did not achieve success going down that road.  It appeared to me that jcr nodes were getting loaded under the hood anyway I tried it.</p></div></div>
+<div class="comment" id="comment-18632"><div class="by">A. Soroka, 2017-03-14 16:56 UTC</div><div class="text"><p>Okay, then I would leave this issue open or reopen it after merge, just in case someone else wants to tackle the underlying problem.</p></div></div>
+<div class="comment" id="comment-18633"><div class="by">Esmé Cowles, 2017-03-15 15:07 UTC</div><div class="text"><p>Danny Bernstein, this looks very promising!</p>
+
+<p>I've done some testing of this and do see dramatic improvement of the 10k members test script.  I tried the cacheSize config change and was still seeing ~30 seconds to edit one our largest objects (which has 1296 members, and both membership proxies and a separate resource encoding table-of-contents hierarchy of the members using hash URI resources in a single Fedora resource).  I think the difference here might be that Hydra does some inefficient things (like destroying and rebuilding that table-of-contents resource with every update to the main object).  I'm ingesting a large test object on our staging server now so I can more thoroughly test the parallel retrieval change too.</p></div></div>
+<div class="comment" id="comment-18640"><div class="by">Andrew Woods, 2017-03-22 02:50 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-18641"><div class="by">Andrew Woods, 2017-03-22 14:12 UTC</div><div class="text"><p>Additionally, I am getting test failures when running:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+mvn -Dfcrepo.enable-parallel-streaming-by-<span class="code-keyword">default</span>=<span class="code-keyword">true</span> clean install
+</pre>
+</div></div>
+<p>..specifically:<br/>
+Failed tests: <br/>
+  ReferencesRdfContextTest.testStrongReferences:120 null<br/>
+  ReferencesRdfContextTest.testWeakReferences:129 null</p></div></div>
+<div class="comment" id="comment-18651"><div class="by">Danny Bernstein, 2017-03-27 22:02 UTC</div><div class="text"><p>The tests pass with the latest update, but I did not do a full regression to test that the changes did not affect performance.</p></div></div>
+<div class="comment" id="comment-18652"><div class="by">Danny Bernstein, 2017-03-27 22:04 UTC</div><div class="text"><p>Andrew Woods : If you're satisified with the change,  hold off on merging until I confirm that the performance gains are still valid with the unit test fix.</p></div></div>
+<div class="comment" id="comment-18653"><div class="by">Danny Bernstein, 2017-03-27 22:56 UTC</div><div class="text"><p>Andrew Woods:  FYI performance gains still hold with the last commit.</p></div></div>
+<div class="comment" id="comment-18656"><div class="by">Andrew Woods, 2017-03-28 05:32 UTC</div><div class="text"><p>Regarding performance, that is good... albeit surprising, to hear. Does it make sense to you that we would still be seeing the performance gains despite turning off parallelism in exactly the code that was believed to be the source of the issue?</p></div></div>
+<div class="comment" id="comment-18659"><div class="by">Danny Bernstein, 2017-03-29 18:49 UTC</div><div class="text"><p>Andrew Woods : That's an excellent point.  I didn't realize that I turned it off right where  I had turned it on.   So yes it is surprising.  I did a quick check to make sure that the performance was still good, but I did not check it with the exact conditions of my previous tests.  So it is possible that I wasn't getting the same performance I was getting before with caching and parallel=true against postgres.  I will check again and if necessary keep working it.</p></div></div>
+<div class="comment" id="comment-18661"><div class="by">Danny Bernstein, 2017-03-30 22:29 UTC</div><div class="text"><p>Andrew Woods:  I reverted the previous two commits and fixed the problem correctly this time.   See the latest changes to <a href="https://github.com/fcrepo4/fcrepo4/pull/1177" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1177</a></p></div></div>
+<div class="comment" id="comment-18662"><div class="by">Andrew Woods, 2017-04-02 03:31 UTC</div><div class="text"><p>Danny Bernstein: Looks good. Here is some minor clean-up:</p>
+
+<p><a href="https://github.com/dbernstein/fcrepo4/pull/2" class="external-link" rel="nofollow noreferrer">https://github.com/dbernstein/fcrepo4/pull/2</a></p></div></div>
+<div class="comment" id="comment-18665"><div class="by">Esmé Cowles, 2017-04-09 17:31 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/cd5b69e2b8e85f13651fe7e88e88c6d7154105c6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/cd5b69e2b8e85f13651fe7e88e88c6d7154105c6</a></p></div></div>
+<div class="comment" id="comment-18667"><div class="by">A. Soroka, 2017-04-09 17:38 UTC</div><div class="text"><p>The issue of retrieving nodes vs. retrieving IDs has not been resolved, has it?</p></div></div>
+<div class="comment" id="comment-18668"><div class="by">Esmé Cowles, 2017-04-09 23:43 UTC</div><div class="text"><p>A. Soroka, no — the resolution here was to make better use of Modeshape's node cache and parallelize RDF generation, so at least we're not retrieving each node and producing triples in sequence.  Refactoring triple generation to completely avoid loading the nodes is a much larger task, and one that Benjamin Armintor and Unknown both put a lot of effort towards, but neither of those efforts was completed.  Do you want to create a follow-on ticket to revisit that?</p>
+
+<p>I am of two minds about that myself.  Part of me thinks it would be very good for the long-term health of Fedora-on-Modeshape to do that.  But the other part thinks that putting effort into alternate implementations might be a better use of our limited resources.</p></div></div>
+<div class="comment" id="comment-18669"><div class="by">A. Soroka, 2017-04-10 12:42 UTC</div><div class="text"><p>I would open a new ticket to describe what Danny Bernstein did here and keep this one open. Danny's work is excellent, but it doesn't solve the problem at the root of this ticket. I'm perfectly well aware that some of the best people who have worked on this software failed to solve that problem. That's why I would want to leave this ticket open-- as a warning.</p>
+
+<p> </p></div></div>
+<p><a href="data/FCREPO-2105.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

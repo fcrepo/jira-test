@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3859 Non default (&lt;&gt;) subject statements misrepresented in binary resources </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3859</span> Non default (&lt;&gt;) subject statements misrepresented in binary resources </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Quinn Hart</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2022-10-24 17:59 UTC</td></tr><tr><th>Updated</th><td>2022-11-16 20:00 UTC</td></tr><tr><th>Resolved</th><td>2022-11-16 20:00 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.2.0, Fedora 6.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.3.0</td></tr></table>
+<h2>Environment</h2>docker  (2022-10-24)<br/>
+fcrepo/fcrepo:6.2.0<br/>
+fcrepo/fcrepo:6.3.0-SNAPSHOT<br/>
+fcrepo/fcrepo:latest 
+<h2>Description</h2>
+<p>The LDP specification indicates that any subject should allowed as statements in any LDP Resource (LDPR).  This functionality isn't consistent between containers (which seem to work) and binary resources (which don't).  In particular, binary resources seem to transfer all statements from a metadata record into the subject of the resource itself.</p>
+
+<p>This example applies the same metadata, that includes a label for an subject term, to both a container and a binary resource:</p>
+
+<p>However, the underlying <sub>ashley.art~fcr-desc.nt</sub> seems correct.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>     version=6.3.0-SNAPSHOT
+     docker image pull fcrepo/fcrepo:$version
+     docker image list fcrepo/fcrepo:$version
+     echo -e "\n\n"
+
+     docker run --rm --name=fcrepo --publish 8666:8080 fcrepo/fcrepo:latest 2&gt;fcrepo.err &gt;fcrepo.log &amp;
+     sleep 5
+
+     info_fedora='http://localhost:8666/fcrepo/rest'
+     ttl='
+         @prefix ldp:   &lt;http://www.w3.org/ns/ldp#&gt; .
+         @prefix schema: &lt;http://schema.org/&gt; .
+         @prefix wiki: &lt;http://en.wikipedia.org/&gt; .
+         &lt;&gt;  schema:name "Ashley";
+             schema:about wiki:Cat;
+              .
+
+         wiki:Cat schema:name "Cat".
+         ';
+
+     ashley='
+          \    /\
+           )  ( `)
+          (  /  )
+           \(__)|
+     ';
+     curl -XPUT -u fedoraAdmin:fedoraAdmin -H'Content-type:text/turtle' --data-binary "@-" $info_fedora/ashley &lt;&lt;&lt; "$ttl"
+     curl -XPUT -u fedoraAdmin:fedoraAdmin -H'Content-type:text/x-ascii-art' --data-binary "@-" $info_fedora/ashley.art &lt;&lt;&lt; "$ashley"
+     curl -XPUT -u fedoraAdmin:fedoraAdmin -H'Content-type:text/turtle' --data-binary "@-" $info_fedora/ashley.art/fcr:metadata &lt;&lt;&lt; "$ttl"
+
+     echo -e "\n========= LDP ========\n"
+     for i in ashley.art ashley.art/fcr:metadata ashley; do
+         echo "========== $i =========="
+         curl -u fedoraAdmin:fedoraAdmin -H'PREFER:return=representation; omit="http://fedora.info/definitions/fcrepo#ServerManaged"' $info_fedora/$i
+         echo -e "========== $i ==========\n"
+
+     done
+     echo -e "\n========= OCFL ========\n"
+     echo "========== ashley.art~fcr-desc.nt =========="
+     docker exec fcrepo cat fcrepo-home/data/ocfl-root/889/c1a/e3f/889c1ae3f46c7952fd40cd139ee5a6225654f659913aba5d2de2533c1841d3fa/v2/content/ashley.art~fcr-desc.nt
+     echo -e "========== ashley.art~fcr-desc.nt ==========\n"
+
+     docker stop fcrepo &gt; /dev/null
+</pre>
+</div></div>
+
+<p>Results in </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>   6.3.0-SNAPSHOT: Pulling from fcrepo/fcrepo
+   Digest: sha256:747fd4dc20f4cf953d655b0c46ef13c695e8a68e4e63106645135b0bc961da00
+   Status: Downloaded newer image for fcrepo/fcrepo:6.3.0-SNAPSHOT
+   docker.io/fcrepo/fcrepo:6.3.0-SNAPSHOT
+   REPOSITORY      TAG              IMAGE ID       CREATED      SIZE
+   fcrepo/fcrepo   6.3.0-SNAPSHOT   03e0a35dacf6   3 days ago   750MB
+
+
+
+   http://localhost:8666/fcrepo/rest/ashleyhttp://localhost:8666/fcrepo/rest/ashley.art
+   ========= LDP ========
+
+   ========== ashley.art ==========
+
+        \    /\
+         )  ( `)
+        (  /  )
+         \(__)|
+
+   ========== ashley.art ==========
+
+   ========== ashley.art/fcr:metadata ==========
+   &lt;http://localhost:8666/fcrepo/rest/ashley.art&gt;
+           &lt;http://schema.org/about&gt;  &lt;http://en.wikipedia.org/Cat&gt; ;
+           &lt;http://schema.org/name&gt;   "Ashley" ;
+           &lt;http://schema.org/name&gt;   "Cat" .
+   ========== ashley.art/fcr:metadata ==========
+
+   ========== ashley ==========
+   &lt;http://localhost:8666/fcrepo/rest/ashley&gt;
+           &lt;http://schema.org/about&gt;  &lt;http://en.wikipedia.org/Cat&gt; ;
+           &lt;http://schema.org/name&gt;   "Ashley" .
+
+   &lt;http://en.wikipedia.org/Cat&gt;
+           &lt;http://schema.org/name&gt;  "Cat" .
+   ========== ashley ==========
+
+
+   ========= OCFL ========
+
+   ========== ashley.art~fcr-desc.nt ==========
+   &lt;info:fedora/ashley.art&gt; &lt;http://schema.org/name&gt; "Ashley" .
+   &lt;info:fedora/ashley.art&gt; &lt;http://schema.org/about&gt; &lt;http://en.wikipedia.org/Cat&gt; .
+   &lt;http://en.wikipedia.org/Cat&gt; &lt;http://schema.org/name&gt; "Cat" .
+   ========== ashley.art~fcr-desc.nt ==========
+</pre>
+</div></div>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-22738"><div class="by">Jared Whiklo, 2022-10-25 17:36 UTC</div><div class="text"><p>Hi Quinn, you are correct. I have no excuse but would draw your attention to the PR where we did some discussion about this and outlined our reasoning. <a href="https://github.com/fcrepo/fcrepo/pull/1988" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1988</a></p>
+
+<p>If you’d like to come to the call this Thursday at 10am ET we’d love to hear your use case. <a href="https://wiki.lyrasis.org/display/FF/2022-10-27+-+Fedora+Tech+Meeting" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FF/2022-10-27+-+Fedora+Tech+Meeting</a></p></div></div>
+<div class="comment" id="comment-22739"><div class="by">Quinn Hart, 2022-10-25 22:53 UTC</div><div class="text"><p>Hi Jared, </p>
+
+<p>Thanks for the comment.  I’ll add that meeting to my schedule and try to attend.  I did read the PR before and while personally, I’m a little concerned about how <tt>&lt;&gt;</tt> and <tt>&lt;.&gt;</tt> can seem to represent different things based on what your {{PUT}}ing to, for this issue, I’m more concerned that for the binary resource</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> &lt;http://en.wikipedia.org/Cat&gt; &lt;http://schema.org/name&gt; "Cat" .</pre>
+</div></div>
+
+<p>in the ~<tt>ashley.art~fcr-desc.nt</tt> is instead represented as: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>  &lt;http://localhost:8666/fcrepo/rest/ashley.art&gt; &lt;http://schema.org/name&gt;   "Cat" .</pre>
+</div></div>
+
+<p>in the GET request, which I don’t see how that’s part of the discussion for in  that previous PR.</p></div></div>
+<div class="comment" id="comment-22740"><div class="by">Jared Whiklo, 2022-10-26 14:24 UTC</div><div class="text"><p>Ohhhhh, sorry I must have missed that. Okay I see what you are saying, I’ll have a look.</p></div></div>
+<div class="comment" id="comment-22741"><div class="by">Jared Whiklo, 2022-10-27 19:31 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo/pull/2011" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2011</a></p></div></div>
+<div class="comment" id="comment-22751"><div class="by">Danny Bernstein, 2022-11-03 20:41 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo/fcrepo/commit/e06850a38a9e3a2cfd2527b2eb7ef6b2019f17d6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/e06850a38a9e3a2cfd2527b2eb7ef6b2019f17d6</a></p></div></div>
+<p><a href="data/FCREPO-3859.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

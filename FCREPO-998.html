@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-998 RI Module fails to start if log level is set to DEBUG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-998</span> RI Module fails to start if log level is set to DEBUG</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-09-15 12:20 UTC</td></tr><tr><th>Updated</th><td>2012-01-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2012-01-03 14:41 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr><tr><th>Depends on</th><td><a href="FCREPO-702.html">FCREPO-702</a> Update version of Mulgara</td></tr></table>
+<h2>Environment</h2>RI enabled, FeSL disabled or enabled, XACML disabled (not tested with it enabled)
+<h2>Description</h2>
+<p>If the log level is set to DEBUG, the resource index module fails to start.  Also once the server has started in this state it fails to shutdown cleanly.</p>
+
+<p>Exceptions reported:</p>
+
+<p>Tomcat log:</p>
+
+<p>**************************</p>
+<ul>
+	<li>
+	<ul>
+		<li>FEDORA STARTUP ERROR **<br/>
+**************************</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>Fedora startup failed<br/>
+org.fcrepo.server.errors.ModuleInitializationException: Error initializing<br/>
+RI<br/>
+         at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexModule.postInitModule(Re<br/>
+sourceIndexModule.java:127)<br/>
+         at org.fcrepo.server.Server.&lt;init&gt;(Server.java:644)<br/>
+         at org.fcrepo.server.BasicServer.&lt;init&gt;(BasicServer.java:41)<br/>
+         at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native<br/>
+Method)</p>
+
+<p>         at<br/>
+sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstruct<br/>
+orAccessorImpl.java:39)<br/>
+         at<br/>
+sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingC<br/>
+onstructorAccessorImpl.java:27)<br/>
+         at java.lang.reflect.Constructor.newInstance(Constructor.java:513)<br/>
+         at org.fcrepo.server.Server.getInstance(Server.java:1239)<br/>
+         at<br/>
+org.fcrepo.server.ServerController.init(ServerController.java:403)<br/>
+         at javax.servlet.GenericServlet.init(GenericServlet.java:212)<br/>
+         at<br/>
+org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.<br/>
+java:1173)<br/>
+         at<br/>
+org.apache.catalina.core.StandardWrapper.load(StandardWrapper.java:99<br/>
+3)<br/>
+         at<br/>
+org.apache.catalina.core.StandardContext.loadOnStartup(StandardContex<br/>
+t.java:4350)<br/>
+         at<br/>
+org.apache.catalina.core.StandardContext.start(StandardContext.java:4<br/>
+659)<br/>
+         at<br/>
+org.apache.catalina.core.ContainerBase.addChildInternal(ContainerBase<br/>
+.java:791)<br/>
+         at<br/>
+org.apache.catalina.core.ContainerBase.addChild(ContainerBase.java:77<br/>
+1)<br/>
+         at<br/>
+org.apache.catalina.core.StandardHost.addChild(StandardHost.java:546)</p>
+
+<p>         at<br/>
+org.apache.catalina.startup.HostConfig.deployDescriptor(HostConfig.ja<br/>
+va:637)<br/>
+         at<br/>
+org.apache.catalina.startup.HostConfig.deployDescriptors(HostConfig.j<br/>
+ava:563)<br/>
+         at<br/>
+org.apache.catalina.startup.HostConfig.deployApps(HostConfig.java:498<br/>
+)<br/>
+         at<br/>
+org.apache.catalina.startup.HostConfig.start(HostConfig.java:1277)<br/>
+         at<br/>
+org.apache.catalina.startup.HostConfig.lifecycleEvent(HostConfig.java<br/>
+:321)<br/>
+         at<br/>
+org.apache.catalina.util.LifecycleSupport.fireLifecycleEvent(Lifecycl<br/>
+eSupport.java:119)<br/>
+         at<br/>
+org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1053)</p>
+
+<p>         at<br/>
+org.apache.catalina.core.StandardHost.start(StandardHost.java:785)<br/>
+         at<br/>
+org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1045)</p>
+
+<p>         at<br/>
+org.apache.catalina.core.StandardEngine.start(StandardEngine.java:445<br/>
+)<br/>
+         at<br/>
+org.apache.catalina.core.StandardService.start(StandardService.java:5<br/>
+19)<br/>
+         at<br/>
+org.apache.catalina.core.StandardServer.start(StandardServer.java:710<br/>
+)<br/>
+         at org.apache.catalina.startup.Catalina.start(Catalina.java:581)<br/>
+         at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+         at<br/>
+sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.<br/>
+java:39)<br/>
+         at<br/>
+sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAcces<br/>
+sorImpl.java:25)<br/>
+         at java.lang.reflect.Method.invoke(Method.java:597)<br/>
+         at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:289)<br/>
+         at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:414)<br/>
+Caused by: java.lang.UnsupportedOperationException: This MulgaraConnector is<br/>
+rea<br/>
+d-only!<br/>
+         at<br/>
+org.trippi.impl.mulgara.MulgaraConnector.getWriter(MulgaraConnector.j<br/>
+ava:104)<br/>
+         at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexImpl.&lt;init&gt;(ResourceInde<br/>
+xImpl.java:74)<br/>
+         at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexModule.postInitModule(Re<br/>
+sourceIndexModule.java:120)<br/>
+         ... 35 more</p>
+
+
+
+
+<p>Fedora log:</p>
+
+<p>DEBUG 2011-09-14 18:11:41.036 <span class="error">&#91;main&#93;</span> (DefaultListableBeanFactory) Finished<br/>
+creating instance of bean 'org.fcrepo.server.resourceIndex.TripleGenerator'<br/>
+DEBUG 2011-09-14 18:11:41.067 <span class="error">&#91;main&#93;</span> (SessionFactoryFinder) Attempting to<br/>
+connect via RMI<br/>
+DEBUG 2011-09-14 18:11:42.177 <span class="error">&#91;main&#93;</span> (SessionFactoryFinder) Failed to<br/>
+connect via RMI<br/>
+javax.naming.ServiceUnavailableException: null<br/>
+  at<br/>
+com.sun.jndi.rmi.registry.RegistryContext.lookup(RegistryContext.java:101)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+com.sun.jndi.rmi.registry.RegistryContext.lookup(RegistryContext.java:107)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at javax.naming.InitialContext.lookup(InitialContext.java:392)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+org.mulgara.server.driver.SessionFactoryFinder.newSessionFactory(SessionFact<br/>
+oryFinder.java:147) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+  at<br/>
+org.trippi.impl.mulgara.MulgaraSessionFactory.&lt;init&gt;(MulgaraSessionFactory.j<br/>
+ava:75) <span class="error">&#91;trippi-mulgara-1.5.4.jar:na&#93;</span><br/>
+  at org.trippi.impl.mulgara.MulgaraConnector.open(MulgaraConnector.java:242)<br/>
+<span class="error">&#91;trippi-mulgara-1.5.4.jar:na&#93;</span><br/>
+  at<br/>
+org.trippi.impl.mulgara.MulgaraConnector.getWriter(MulgaraConnector.java:97)<br/>
+<span class="error">&#91;trippi-mulgara-1.5.4.jar:na&#93;</span><br/>
+  at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexImpl.&lt;init&gt;(ResourceIndexImpl.j<br/>
+ava:74) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexModule.postInitModule(ResourceI<br/>
+ndexModule.java:120) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at org.fcrepo.server.Server.&lt;init&gt;(Server.java:644)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at org.fcrepo.server.BasicServer.&lt;init&gt;(BasicServer.java:41)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAcces<br/>
+sorImpl.java:39) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstruc<br/>
+torAccessorImpl.java:27) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.lang.reflect.Constructor.newInstance(Constructor.java:513)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at org.fcrepo.server.Server.getInstance(Server.java:1239)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at org.fcrepo.server.ServerController.init(ServerController.java:403)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at javax.servlet.GenericServlet.init(GenericServlet.java:212)<br/>
+<span class="error">&#91;servlet-api.jar:2.5.MR2&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:11<br/>
+73) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardWrapper.load(StandardWrapper.java:993)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.StandardContext.loadOnStartup(StandardContext.java:<br/>
+4350) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.StandardContext.start(StandardContext.java:4659)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.ContainerBase.addChildInternal(ContainerBase.java:7<br/>
+91) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.ContainerBase.addChild(ContainerBase.java:771)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardHost.addChild(StandardHost.java:546)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.startup.HostConfig.deployDescriptor(HostConfig.java:637)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.startup.HostConfig.deployDescriptors(HostConfig.java:563<br/>
+) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.HostConfig.deployApps(HostConfig.java:498)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.HostConfig.start(HostConfig.java:1277)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.startup.HostConfig.lifecycleEvent(HostConfig.java:321)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.util.LifecycleSupport.fireLifecycleEvent(LifecycleSuppor<br/>
+t.java:119) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1053)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardHost.start(StandardHost.java:785)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1045)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardEngine.start(StandardEngine.java:445)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardService.start(StandardService.java:519)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardServer.start(StandardServer.java:710)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.Catalina.start(Catalina.java:581)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39<br/>
+) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl<br/>
+.java:25) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:289)<br/>
+<span class="error">&#91;bootstrap.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:414)<br/>
+<span class="error">&#91;bootstrap.jar:6.0.29&#93;</span><br/>
+Caused by: java.rmi.ConnectException: Connection refused to host: localhost;<br/>
+nested exception is:<br/>
+  java.net.ConnectException: Connection refused: connect<br/>
+  at sun.rmi.transport.tcp.TCPEndpoint.newSocket(TCPEndpoint.java:601)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.transport.tcp.TCPChannel.createConnection(TCPChannel.java:198)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.transport.tcp.TCPChannel.newConnection(TCPChannel.java:184)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.server.UnicastRef.newCall(UnicastRef.java:322) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.registry.RegistryImpl_Stub.lookup(Unknown Source) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+com.sun.jndi.rmi.registry.RegistryContext.lookup(RegistryContext.java:97)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  ... 43 common frames omitted<br/>
+Caused by: java.net.ConnectException: Connection refused: connect<br/>
+  at java.net.PlainSocketImpl.socketConnect(Native Method) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.PlainSocketImpl.doConnect(PlainSocketImpl.java:333)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.PlainSocketImpl.connectToAddress(PlainSocketImpl.java:195)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.PlainSocketImpl.connect(PlainSocketImpl.java:182) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:366) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.connect(Socket.java:525) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.connect(Socket.java:475) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.&lt;init&gt;(Socket.java:372) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.&lt;init&gt;(Socket.java:186) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.rmi.transport.proxy.RMIDirectSocketFactory.createSocket(RMIDirectSocketF<br/>
+actory.java:22) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.rmi.transport.proxy.RMIMasterSocketFactory.createSocket(RMIMasterSocketF<br/>
+actory.java:128) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.transport.tcp.TCPEndpoint.newSocket(TCPEndpoint.java:595)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  ... 48 common frames omitted<br/>
+DEBUG 2011-09-14 18:11:42.239 <span class="error">&#91;main&#93;</span> (SessionFactoryFinder) Attempting to<br/>
+fallback to local<br/>
+javax.naming.ServiceUnavailableException: null<br/>
+  at<br/>
+com.sun.jndi.rmi.registry.RegistryContext.lookup(RegistryContext.java:101)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+com.sun.jndi.rmi.registry.RegistryContext.lookup(RegistryContext.java:107)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at javax.naming.InitialContext.lookup(InitialContext.java:392)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+org.mulgara.server.driver.SessionFactoryFinder.newSessionFactory(SessionFact<br/>
+oryFinder.java:147) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+  at<br/>
+org.trippi.impl.mulgara.MulgaraSessionFactory.&lt;init&gt;(MulgaraSessionFactory.j<br/>
+ava:75) <span class="error">&#91;trippi-mulgara-1.5.4.jar:na&#93;</span><br/>
+  at org.trippi.impl.mulgara.MulgaraConnector.open(MulgaraConnector.java:242)<br/>
+<span class="error">&#91;trippi-mulgara-1.5.4.jar:na&#93;</span><br/>
+  at<br/>
+org.trippi.impl.mulgara.MulgaraConnector.getWriter(MulgaraConnector.java:97)<br/>
+<span class="error">&#91;trippi-mulgara-1.5.4.jar:na&#93;</span><br/>
+  at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexImpl.&lt;init&gt;(ResourceIndexImpl.j<br/>
+ava:74) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexModule.postInitModule(ResourceI<br/>
+ndexModule.java:120) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at org.fcrepo.server.Server.&lt;init&gt;(Server.java:644)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at org.fcrepo.server.BasicServer.&lt;init&gt;(BasicServer.java:41)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAcces<br/>
+sorImpl.java:39) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstruc<br/>
+torAccessorImpl.java:27) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.lang.reflect.Constructor.newInstance(Constructor.java:513)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at org.fcrepo.server.Server.getInstance(Server.java:1239)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at org.fcrepo.server.ServerController.init(ServerController.java:403)<br/>
+<span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+  at javax.servlet.GenericServlet.init(GenericServlet.java:212)<br/>
+<span class="error">&#91;servlet-api.jar:2.5.MR2&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:11<br/>
+73) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardWrapper.load(StandardWrapper.java:993)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.StandardContext.loadOnStartup(StandardContext.java:<br/>
+4350) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.StandardContext.start(StandardContext.java:4659)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.core.ContainerBase.addChildInternal(ContainerBase.java:7<br/>
+91) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.ContainerBase.addChild(ContainerBase.java:771)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardHost.addChild(StandardHost.java:546)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.startup.HostConfig.deployDescriptor(HostConfig.java:637)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.startup.HostConfig.deployDescriptors(HostConfig.java:563<br/>
+) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.HostConfig.deployApps(HostConfig.java:498)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.HostConfig.start(HostConfig.java:1277)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.startup.HostConfig.lifecycleEvent(HostConfig.java:321)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at<br/>
+org.apache.catalina.util.LifecycleSupport.fireLifecycleEvent(LifecycleSuppor<br/>
+t.java:119) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1053)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardHost.start(StandardHost.java:785)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1045)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardEngine.start(StandardEngine.java:445)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardService.start(StandardService.java:519)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.core.StandardServer.start(StandardServer.java:710)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.Catalina.start(Catalina.java:581)<br/>
+<span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39<br/>
+) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl<br/>
+.java:25) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:289)<br/>
+<span class="error">&#91;bootstrap.jar:6.0.29&#93;</span><br/>
+  at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:414)<br/>
+<span class="error">&#91;bootstrap.jar:6.0.29&#93;</span><br/>
+Caused by: java.rmi.ConnectException: Connection refused to host: localhost;<br/>
+nested exception is:<br/>
+  java.net.ConnectException: Connection refused: connect<br/>
+  at sun.rmi.transport.tcp.TCPEndpoint.newSocket(TCPEndpoint.java:601)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.transport.tcp.TCPChannel.createConnection(TCPChannel.java:198)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.transport.tcp.TCPChannel.newConnection(TCPChannel.java:184)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.server.UnicastRef.newCall(UnicastRef.java:322) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.registry.RegistryImpl_Stub.lookup(Unknown Source) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+com.sun.jndi.rmi.registry.RegistryContext.lookup(RegistryContext.java:97)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  ... 43 common frames omitted<br/>
+Caused by: java.net.ConnectException: Connection refused: connect<br/>
+  at java.net.PlainSocketImpl.socketConnect(Native Method) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.PlainSocketImpl.doConnect(PlainSocketImpl.java:333)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.PlainSocketImpl.connectToAddress(PlainSocketImpl.java:195)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.PlainSocketImpl.connect(PlainSocketImpl.java:182) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:366) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.connect(Socket.java:525) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.connect(Socket.java:475) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.&lt;init&gt;(Socket.java:372) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at java.net.Socket.&lt;init&gt;(Socket.java:186) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.rmi.transport.proxy.RMIDirectSocketFactory.createSocket(RMIDirectSocketF<br/>
+actory.java:22) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at<br/>
+sun.rmi.transport.proxy.RMIMasterSocketFactory.createSocket(RMIMasterSocketF<br/>
+actory.java:128) <span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  at sun.rmi.transport.tcp.TCPEndpoint.newSocket(TCPEndpoint.java:595)<br/>
+<span class="error">&#91;na:1.6.0_17&#93;</span><br/>
+  ... 48 common frames omitted</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-12141"><div class="by">Stephen Bayliss, 2011-12-06 15:12 UTC</div><div class="text"><p>Would seem sensible to try and resolve this as part of upgrading to a newer version of Mulgara</p></div></div>
+<div class="comment" id="comment-12156"><div class="by">Stephen Bayliss, 2011-12-12 17:44 UTC</div><div class="text"><p>Looks like this is due to an NPE thrown only in DEBUG by org.mulgara.store.xa.FreeList.Phase</p>
+
+<p>Method use() attempts to append to stack, which is set to null on construction.</p>
+
+<p>Reported on Mulgara lists.</p>
+
+<p><a href="http://lists.mulgara.org/pipermail/mulgara-general/2011-December/001222.html" class="external-link" rel="nofollow noreferrer">http://lists.mulgara.org/pipermail/mulgara-general/2011-December/001222.html</a></p></div></div>
+<div class="comment" id="comment-12157"><div class="by">Stephen Bayliss, 2011-12-12 17:45 UTC</div><div class="text"><p>Work-around is to make sure logging is not set to DEBUG for that package, if it is set to DEBUG elsewhere.  </p>
+
+<p>So in logback.xml, have:</p>
+
+<p>  &lt;logger name="org.mulgara.store.xa" additivity="false" level="WARN"&gt;<br/>
+    &lt;appender-ref ref="FEDORA"/&gt;<br/>
+  &lt;/logger&gt;</p>
+
+<p>Should we maybe include that in the distribution, until the Mulgara NPE is fixed?</p></div></div>
+<div class="comment" id="comment-12163"><div class="by">Stephen Bayliss, 2011-12-15 03:30 UTC</div><div class="text"><p>Looks like there will be a new version of Mulgara out very shortly with this fixed, so probably should upgrade to that for 3.6</p></div></div>
+<div class="comment" id="comment-12181"><div class="by">Stephen Bayliss, 2012-01-03 14:41 UTC</div><div class="text"><p>Mulgara issue - fixed by upgrading to Mulgara 2.1.12</p></div></div>
+<p><a href="data/FCREPO-998.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

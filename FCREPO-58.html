@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-58 Invalid POLICY datastreams make objects inaccessible</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-58</span> Invalid POLICY datastreams make objects inaccessible</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-02-19 20:10 UTC</td></tr><tr><th>Updated</th><td>2009-03-03 01:14 UTC</td></tr><tr><th>Resolved</th><td>2009-03-03 01:14 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2, Fedora 2.2.1, Fedora 3.0b1, Fedora 2.2.2, Fedora 3.0b2, Fedora 3.0, Fedora 2.2.3, Fedora 2.2.4, Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.2</td></tr></table>
+<h2>Description</h2>
+<p>Validation for POLICY datastreams only occurs when they're read for the purpose of enforcement (after they're ingested).  This makes it possible to ingest a non-schema-valid POLICY datastream, which then makes it impossible to access the object at all due to validation failures for every subsequence API operation involving the object.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10094"><div class="by">Chris Wilper, 2007-03-12 20:24 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: sjw46<br/>
+Logged In: YES <br/>
+user_id=1709161<br/>
+Originator: YES</p>
+
+<p>This problem manifests itself when policy enforcement is active and you ingest <br/>
+an object that contains a malformed/invalid policy in the object's POLICY <br/>
+datastream. The object will ingest without any errors, but once ingested you <br/>
+are unable to access the object by either API-A or API-M because of an <br/>
+authZException.</p>
+
+<p>The authZException is actually masking the underlying cause of the exception <br/>
+which is a ValidationException thrown by the parser when unable to <br/>
+successfully parse the malformed policy. Repository wide policies are <br/>
+validated at server startup, but policies embedded in an object's POLICY <br/>
+datastream are not parsed until an attempt is made to access the object.</p>
+
+<p>A temporary workaround should this occur is:</p>
+
+<p>1) shutdown the Fedora server<br/>
+2) edit fedora.fcfg and set the "ENFORCE-MODE" parameter to "permit-all-<br/>
+requests"<br/>
+3) restart the server<br/>
+4) edit/remove the object with the malformed policy<br/>
+5) shutdown the server<br/>
+6) edit fedora.fcfg and set "ENFORCE-MODE" parameter back to "enforce-policies"<br/>
+7) restart the server</p>
+
+<p>------- Additional Comment #1 From Ross Wayland 2006-04-21 17:18 <span class="error">&#91;reply&#93;</span> ------- <br/>
+The proper fix for this problem is probably to just parse POLICY datastream <br/>
+policies at the time of ingest and throw an exception if the policy is <br/>
+invalid. Catching the problem at ingest time would prevent the object from <br/>
+being added to the repository.</p>
+
+<p>This will have some impact on ingest performance, so needs to be evaluated <br/>
+before implementing a permanent fix.</p></div></div>
+<div class="comment" id="comment-10095"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: sjw46<br/>
+Item #: 1663745<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1663745" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1663745</a></p></div></div>
+<div class="comment" id="comment-10863"><div class="by">Chris Wilper, 2009-03-03 01:14 UTC</div><div class="text"><p>Now POLICY datastreams are validated on ingest/add/modify.  This catches such problems up-front.</p></div></div>
+<p><a href="data/FCREPO-58.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

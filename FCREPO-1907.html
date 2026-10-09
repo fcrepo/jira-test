@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1907 Removing federated-directory results in NullPointerException</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1907</span> Removing federated-directory results in NullPointerException</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2016-02-11 20:09 UTC</td></tr><tr><th>Updated</th><td>2017-02-15 15:48 UTC</td></tr><tr><th>Resolved</th><td>2017-02-15 15:48 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>Once fedora is started with federation configured:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-javascript">
+<span class="code-quote">"federated-directory"</span> : {
+            <span class="code-quote">"classname"</span> : <span class="code-quote">"org.fcrepo.connector.file.FedoraFileSystemConnector"</span>,
+            <span class="code-quote">"directoryPath"</span> : <span class="code-quote">"/mnt/ingested"</span>,
+            <span class="code-quote">"projections"</span> : [ <span class="code-quote">"<span class="code-keyword">default</span>:/federated =&gt; /"</span> ],
+            <span class="code-quote">"contentBasedSha1"</span> : <span class="code-quote">"<span class="code-keyword">true</span>"</span>,
+            <span class="code-quote">"readonly"</span> : <span class="code-keyword">false</span>,
+            <span class="code-quote">"extraPropertiesStorage"</span> : <span class="code-quote">"none"</span>,
+            <span class="code-quote">"cacheTtlSeconds"</span> : 5
+        }
+</pre>
+</div></div>
+<p>Then once nodes under the federated node were visited via the browser and then fedora is restarted without the federation configured.</p>
+
+<p>Then visiting: <tt><a href="http://localhost:8983/fedora/rest/federated/" class="external-link" rel="nofollow noreferrer">http://localhost:8983/fedora/rest/federated/</a></tt> results in a Java <tt>NullPointerExeption</tt> ("java.lang.NullPointerException at org.modeshape.jcr.JcrSession.node...") as opposed to a 404 not found.</p>
+
+<p>Visiting any node below the federated node(<tt><a href="http://localhost:8983/fedora/rest/federated/subfolder" class="external-link" rel="nofollow noreferrer">http://localhost:8983/fedora/rest/federated/subfolder</a></tt>) results in a similar <tt>NullPointerException</tt> (java.lang.NullPointerException at org.modeshape.jcr.JcrSession.cachedNode...)* I'm not sure if this is simply because the ".../federated/..." node isn't available or if fedora kept some extra reference to the subfolder node around too.</p>
+
+<p>*see attached file(s) for full trace <br/>
+See: <a href="https://github.com/fcrepo4/fcrepo4/issues/980" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/980</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1907/10256_federated.txt">federated.txt</a>, 5526 bytes, added by A. Soroka on 2016-02-11</li>
+<li><a href="attachments/FCREPO-1907/10257_subfolder.txt">subfolder.txt</a>, 5532 bytes, added by A. Soroka on 2016-02-11</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-16294"><div class="by">A. Soroka, 2016-03-10 16:46 UTC</div><div class="text"><p>Esmé Cowles, is the tombstoning mechanism applicable here? It seems more like a <tt>410 Gone</tt> than a 404.</p></div></div>
+<div class="comment" id="comment-16298"><div class="by">Esmé Cowles, 2016-03-10 18:39 UTC</div><div class="text"><p>I agree that 410 Gone might be more appropriate than 404 Not Found for this.  But I'm not sure how much of the federation state is around.  Would be know if a particular path in the former federation space used to exist?  404 Not Found seems safer in that case.  But for the top level of the federation, 410 Gone seems good.</p></div></div>
+<div class="comment" id="comment-16329"><div class="by">A. Soroka, 2016-03-12 22:16 UTC</div><div class="text"><p>That's true. We just can't know.</p></div></div>
+<div class="comment" id="comment-17809"><div class="by">Unknown, 2016-10-12 20:08 UTC</div><div class="text"><p>Given that modeshape federation has been moved out of core, can we close this ticket?</p></div></div>
+<p><a href="data/FCREPO-1907.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

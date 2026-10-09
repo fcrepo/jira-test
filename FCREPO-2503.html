@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2503 Export versions does not work: </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2503</span> Export versions does not work: </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2017-05-26 22:19 UTC</td></tr><tr><th>Updated</th><td>2017-07-14 21:34 UTC</td></tr><tr><th>Resolved</th><td>2017-05-27 20:42 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>To reproduce: </p>
+
+<p>1. fire up fcrep4: </p>
+
+<p>java -Dfcrepo.dynamic.jms.port=61717 -Dfcrepo.dynamic.stomp.port=61713 -jar fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar --port 8686 --headless --contextPath /f4</p>
+
+<p>2.  Create a container and add a binary.  (test/binary1)</p>
+
+<p>3. create a version  (v1)</p>
+
+<p>4.  create a second version (v2)</p>
+
+<p>5.  Do an export:  <br/>
+(commit 7f0d76)<br/>
+java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -d ~/import-export-sprint-3/data-export-versioned-binaries  -a -m export  -r <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a> -b -V</p>
+
+<p>6.  Verify that the importer outputs the following error: </p>
+
+<p>ERROR 15:17:27.170 (ImportExportDriver) Error performing import/export: Export operation failed: unexpected status 500 for <a href="http://localhost:8686/f4/rest/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest/fcr:versions</a></p>
+
+<p>Fcrepo4 puts out the following: </p>
+
+<p>ERROR 15:17:27.165 (WildcardExceptionMapper) Exception intercepted by WildcardExceptionMapper: 1</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19028"><div class="by">Andrew Woods, 2017-05-26 23:37 UTC</div><div class="text"><p>I see that it is even simpler to reproduce this error:</p>
+<ol>
+	<li>Start an empty fedora</li>
+	<li>Create a container 
+	<ol>
+		<li>curl -i -XPUT localhost:8686/f4/rest/test</li>
+	</ol>
+	</li>
+	<li>Version the container
+	<ol>
+		<li>curl -i -XPOST -H"slug: v0" localhost:8686/f4/rest/test/fcr:versions</li>
+	</ol>
+	</li>
+	<li>Export the repository
+	<ol>
+		<li>java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -m export -b -d data -r <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a> -V
+		<ol>
+			<li>BOOM!</li>
+		</ol>
+		</li>
+	</ol>
+	</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-19043"><div class="by">Ben Pennell, 2017-05-27 17:54 UTC</div><div class="text"><p>Boom indeed!  Totally hadn't accounted for it checking for fcr:versions on the root.  Both cases should work now in this PR:</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/101" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/101</a></p></div></div>
+<div class="comment" id="comment-19044"><div class="by">Andrew Woods, 2017-05-27 18:40 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19045"><div class="by">Ben Pennell, 2017-05-27 20:42 UTC</div><div class="text"><p>Cleaned up issues and responded to comments</p></div></div>
+<div class="comment" id="comment-19050"><div class="by">Andrew Woods, 2017-05-30 15:12 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/6882637576e9da9649f8246b9970f7af299a4941" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/6882637576e9da9649f8246b9970f7af299a4941</a></p></div></div>
+<p><a href="data/FCREPO-2503.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

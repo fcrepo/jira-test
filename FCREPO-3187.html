@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3187 migration-utils 4.4.1 does not complete specified limit during testing</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3187</span> migration-utils 4.4.1 does not complete specified limit during testing</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Calvin Xu</td></tr><tr><th>Created</th><td>2020-01-27 15:02 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 16:39 UTC</td></tr><tr><th>Resolved</th><td>2020-03-20 21:41 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-utils-4.5.0, Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-3191.html">FCREPO-3191</a> migration-utils fails with &quot;unable to delete directory&quot; exception</td></tr></table>
+<h2>Description</h2>
+<p>During high volume testing migration-utils did not complete specified limit switch object setting values. During one test of Akruba sourcetype, flat layout test where the limit was set to 4,000,000 the resume.txt file indicate only 554,695 object completed, and another test of 4 million Akruba sourcetype and pairtree layout 144,168 were completed.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-20976"><div class="by">Andrew Woods, 2020-01-27 15:22 UTC</div><div class="text"><p>For each of the runs, were any errors seen in at the console or in the logs?</p></div></div>
+<div class="comment" id="comment-20988"><div class="by">Doron Shalvi, 2020-01-27 20:09 UTC</div><div class="text"><p>It looks like the 144K run failed due to the "unable to delete staging" error noted in #sprint-migrate on Jan. 27.  See stack trace below.  Perhaps this is due to attempting to delete the staging directory while resources within this directory are still in process of being copied?</p>
+
+<p> </p>
+
+<p>DEBUG 14:35:07.056 (OCFLFedora4Client) createOrUpdateNonRDFResource: nlm:icid-40400541340-cit/DC, application/octet-stream<br/>
+Unable to delete directory /xxx/1_25/staging/nlm:icid-40400541340-cit.<br/>
+java.io.IOException: Unable to delete directory /xxx/1_25/staging/nlm:icid-40400541340-cit.<br/>
+ at org.apache.commons.io.FileUtils.deleteDirectory(FileUtils.java:1541)<br/>
+ at org.apache.commons.io.FileUtils.forceDelete(FileUtils.java:2270)<br/>
+ at org.apache.commons.io.FileUtils.cleanDirectory(FileUtils.java:1653)<br/>
+ at org.apache.commons.io.FileUtils.deleteDirectory(FileUtils.java:1535)<br/>
+ at org.fcrepo.migration.PicocliMigrator.call(PicocliMigrator.java:261)<br/>
+ at org.fcrepo.migration.PicocliMigrator.call(PicocliMigrator.java:62)<br/>
+ at picocli.CommandLine.executeUserObject(CommandLine.java:1743)<br/>
+ at picocli.CommandLine.access$900(CommandLine.java:145)<br/>
+ at picocli.CommandLine$RunLast.handle(CommandLine.java:2101)<br/>
+ at picocli.CommandLine$RunLast.handle(CommandLine.java:2068)<br/>
+ at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:1935)<br/>
+ at picocli.CommandLine.execute(CommandLine.java:1864)<br/>
+ at org.fcrepo.migration.PicocliMigrator.main(PicocliMigrator.java:134)</p></div></div>
+<div class="comment" id="comment-20999"><div class="by">Scott Prater, 2020-01-29 15:44 UTC</div><div class="text"><p>Underlying cause may be in <a href="https://jira.lyrasis.org/projects/FCREPO/issues/FCREPO-3191" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/projects/FCREPO/issues/FCREPO-3191</a></p></div></div>
+<div class="comment" id="comment-21011"><div class="by">Andrew Woods, 2020-01-30 18:27 UTC</div><div class="text"><p>Doron Shalvi / Calvin Xu: now that a fix for the related ticket has been committed to 'master' (<a href="https://jira.lyrasis.org/browse/FCREPO-3191" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3191</a>), would you be able to test if the issue in this ticket has also been resolved?</p></div></div>
+<div class="comment" id="comment-21108"><div class="by">Calvin Xu, 2020-03-20 16:00 UTC</div><div class="text"><p>yes, the issue seems to be fixed after we tested with the latest migration utility. We also added more inodes on our filesystem during the last round of testing. So far we have tested 8 million objects migration without issue in both akurba and legacy type.</p></div></div>
+<p><a href="data/FCREPO-3187.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

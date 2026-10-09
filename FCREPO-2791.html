@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2791 RDF of a memento of a binary description contains incorrect describes link</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2791</span> RDF of a memento of a binary description contains incorrect describes link</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-05-04 22:08 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-05-08 15:55 UTC</td></tr><tr><th>Components</th><td>versioning</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2793.html">FCREPO-2793</a> Description response should return describedby property</td></tr></table>
+<h2>Description</h2>
+<p>It appears that an untranslated URI is appearing in the response: <b>ns001:describes          &lt;fedora:uribase/versioned_resource&gt; ;</b></p>
+
+<p>Also it is not clear why the iana prefix is not used since it should be a built in prefix.</p>
+
+<p> </p>
+
+<p>To reproduce: </p>
+
+<p>1.create a versioned resource with a memento:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ 
+#create binary resource
+curl -i -XPOST  -H <span class="code-quote">"Slug: versioned_resource"</span> -H <span class="code-quote">"Link: &lt;http:<span class="code-comment">//mementoweb.org/ns#OriginalResource&gt;; rel=\"</span>type\<span class="code-quote">"" "</span>http://localhost:8080/<span class="code-keyword">rest</span><span class="code-quote">" -H "</span>Content-Type: text/plain<span class="code-quote">" --data-binary "</span>Test";
+</span>#create memento:
+curl -v -X POST  <span class="code-quote">"http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/versioned_resource/fcr:versions"</span></span>
+</pre>
+</div></div>
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+
+<p>2. retrieve the description memento: </p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -X GET http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/versioned_resource/fcr:metadata/fcr:versions/&lt;memento&gt;</span></pre>
+</div></div>
+<p>3. confirm two triples in the response: </p>
+
+<p><b>ns001:describes          &lt;fedora:uribase/versioned_resource&gt; ;</b></p>
+
+<p>and</p>
+
+<p><b>ns001:describes          &lt;<a href="http://localhost:8080/rest/versioned_resource" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioned_resource</a>&gt; .</b></p>
+
+<p><b>(full response)</b></p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/versioned_resource&gt;
+</span> rdf:type ldp:NonRDFSource ;
+ rdf:type fedora:NonRdfSourceDescription ;
+ rdf:type fedora:Binary ;
+ rdf:type fedora:Resource ;
+ ns001:describes &lt;fedora:uribase/versioned_resource&gt; ;
+ fedora:created <span class="code-quote">"2018-05-04T21:47:02.192Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span> fedora:writable <span class="code-keyword">true</span> ;
+ premis:hasSize <span class="code-quote">"4"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#<span class="code-object">long</span>&gt; ;
+</span> ebucore:hasMimeType <span class="code-quote">"text/plain"</span> ;
+ fedora:lastModified <span class="code-quote">"2018-05-04T21:47:02.192Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span> premis:hasMessageDigest &lt;urn:sha1:640ab2bae07bedc4c163f679a746f7ab7fb5d1fa&gt; ;
+ ebucore:filename "" ;
+ fedora:lastModifiedBy <span class="code-quote">"bypassAdmin"</span> ;
+ fedora:createdBy <span class="code-quote">"bypassAdmin"</span> ;
+ rdf:type ldp:NonRDFSource ;
+ fedora:writable <span class="code-keyword">true</span> ;
+ ns001:describes &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/versioned_resource&gt; .</span></pre>
+</div></div>
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-19995"><div class="by">Ben Pennell, 2018-05-08 15:55 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1355" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1355</a></p></div></div>
+<div class="comment" id="comment-20000"><div class="by">Danny Bernstein, 2018-05-08 20:44 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/49dc383178b125b105b313ec0c34f6546798135a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/49dc383178b125b105b313ec0c34f6546798135a</a></p></div></div>
+<p><a href="data/FCREPO-2791.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

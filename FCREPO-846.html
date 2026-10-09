@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-846 Concurrency issues with DBXML</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-846</span> Concurrency issues with DBXML</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-01-09 04:05 UTC</td></tr><tr><th>Updated</th><td>2011-04-19 00:48 UTC</td></tr><tr><th>Resolved</th><td>2011-01-12 04:47 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.4, Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Description</h2>
+<p>Reported by Nigel Thomas</p>
+
+<p>Concurrent policy modifications and reads cause deadlocks with DBXML.  </p>
+
+<p>The current FeSL code does not manage deadlocks (or even attempt to detect them).</p>
+
+<p>This can result in a corrupt policy index, or a "permanent deadlock" state where restarting the Fedora server fails to clear the DBXML deadlock - so first access to the repository never completes.</p>
+
+<p>Attached are amended versions of DbXmlManager and DbXmlPolicyIndex that include wrapping operations in transactions, detection of deadlocks and transaction abortion when deadlocks occur (against release 3.4.1).</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-846/10118_DbXmlManager.java">DbXmlManager.java</a>, 10450 bytes, added by Stephen Bayliss on 2011-01-09</li>
+<li><a href="attachments/FCREPO-846/10119_DbXmlPolicyIndex.java">DbXmlPolicyIndex.java</a>, 32762 bytes, added by Stephen Bayliss on 2011-01-09</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11757"><div class="by">Stephen Bayliss, 2011-01-09 23:59 UTC</div><div class="text"><ul>
+	<li>Added integration test for this (multiple concurrent threads modifying and reading), verified issue exists (leaves Fedora unusable/locked)</li>
+	<li>Implemented Nigel's patch - this leaves DBXML in a useable state, but can result in the policy index being out of step with the policies, as operations fail if there is a deadlock</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11758"><div class="by">Stephen Bayliss, 2011-01-10 03:35 UTC</div><div class="text"><ul>
+	<li>Implemented configurable retry for operations where deadlock failure occurs.<br/>
+(all code in local repo, not pushed to github)</li>
+</ul>
+
+
+<p>Refs:<br/>
+<a href="http://etutorials.org/XML/xml+data+management/Part+II+Native+XML+Databases/Chapter+4.+Embedded+XML+Databases/4.4+Building+Applications+for+Embedded+XML+Databases/" class="external-link" rel="nofollow noreferrer">http://etutorials.org/XML/xml+data+management/Part+II+Native+XML+Databases/Chapter+4.+Embedded+XML+Databases/4.4+Building+Applications+for+Embedded+XML+Databases/</a> for info on handling deadlocks.<br/>
+<a href="http://download.oracle.com/docs/cd/E17276_01/html/gsg_xml_txn/java/blocking_deadlocks.html#deadlocks" class="external-link" rel="nofollow noreferrer">http://download.oracle.com/docs/cd/E17276_01/html/gsg_xml_txn/java/blocking_deadlocks.html#deadlocks</a><br/>
+<a href="http://download.oracle.com/docs/cd/E17276_01/html/gsg_xml_txn/java/lockingsubsystem.html#configdeadlkdetect" class="external-link" rel="nofollow noreferrer">http://download.oracle.com/docs/cd/E17276_01/html/gsg_xml_txn/java/lockingsubsystem.html#configdeadlkdetect</a><br/>
+<a href="http://download.oracle.com/docs/cd/E17276_01/html/gsg_xml_txn/java/lockingsubsystem.html#deadlockresolve" class="external-link" rel="nofollow noreferrer">http://download.oracle.com/docs/cd/E17276_01/html/gsg_xml_txn/java/lockingsubsystem.html#deadlockresolve</a></p></div></div>
+<div class="comment" id="comment-11759"><div class="by">Nigel Thomas, 2011-01-11 18:12 UTC</div><div class="text"><p>I would encourage sharing the final code on oracle support, they may be willing to help optimize it further.<br/>
+<a href="http://forums.oracle.com/forums/forum.jspa?forumID=274&amp;start=0" class="external-link" rel="nofollow noreferrer">http://forums.oracle.com/forums/forum.jspa?forumID=274&amp;start=0</a></p></div></div>
+<div class="comment" id="comment-11766"><div class="by">Stephen Bayliss, 2011-01-12 04:03 UTC</div><div class="text"><p>We can dispense with transactions altogether, so long as we have single-threaded updates.</p>
+
+<p>Implemented this, it means catching errors on reads, and retrying operations (ie doing what dbxml deadlock detection would do, but a simpler version).  </p>
+
+<p>(there would be a more elegant way of doing this, by blocking read threads if a write is in progress and vice-versa, but allowing multi-thread reading but only single-thread writing.  to be revisited as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-576" >
+                <a href="FCREPO-576.html" class="jira-issue-macro-key issue-link"  title="Remove dbxml or make it an optional dependency" >
+            
+            FCREPO-576
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, added a note to that issue to cover this)</p>
+
+<p>Load-tested this with 10 concurrent update threads, 50 concurrent write threads, update threads each perform updates (adds, reads, deletes) to a set of 200 policy objects - no errors.</p></div></div>
+<p><a href="data/FCREPO-846.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

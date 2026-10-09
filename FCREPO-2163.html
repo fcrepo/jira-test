@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2163 Support http authorization when exporting and importing</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2163</span> Support http authorization when exporting and importing</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Justin Simpson</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2016-09-02 15:52 UTC</td></tr><tr><th>Updated</th><td>2016-09-09 01:47 UTC</td></tr><tr><th>Resolved</th><td>2016-09-08 21:15 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr></table>
+<h2>Description</h2>
+<p>Running the export tool does not currently work when the Resource you are trying to export requires http authentication.  There is no error or warning printed to stdout either.  </p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-17362"><div class="by">Andrew Woods, 2016-09-02 19:10 UTC</div><div class="text"><p>Note: This is necessary functionality, but pure bonus if it gets into this sprint as it was not previously identified as a Phase 1 requirement.</p></div></div>
+<div class="comment" id="comment-17366"><div class="by">Andrew Woods, 2016-09-02 22:00 UTC</div><div class="text"><p>Note: When implementing this, the integration-tests will need the following configuration:</p>
+
+<p>ExampleIT.java</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+        client = FcrepoClient.client().credentials(<span class="code-quote">"fedoraAdmin"</span>, <span class="code-quote">"password"</span>).authScope(<span class="code-quote">"localhost"</span>).build();
+</pre>
+</div></div>
+
+<p>web.xml</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+   &lt;!--filter to add test auth to grizzly --&gt;
+  &lt;filter&gt;
+    &lt;filter-name&gt;TestAuth&lt;/filter-name&gt;
+    &lt;filter-<span class="code-keyword">class&</span>gt;org.fcrepo.http.commons.test.util.TestAuthenticationRequestFilter&lt;/filter-<span class="code-keyword">class&</span>gt;
+  &lt;/filter&gt;
+
+  &lt;filter-mapping&gt;
+    &lt;filter-name&gt;TestAuth&lt;/filter-name&gt;
+    &lt;url-pattern&gt;/<span class="code-keyword">rest</span>/*&lt;/url-pattern&gt;
+  &lt;/filter-mapping&gt;
+</pre>
+</div></div>
+
+<p>test-repository.json</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+    <span class="code-quote">"security"</span> : {
+        <span class="code-quote">"anonymous"</span> : {
+            <span class="code-quote">"roles"</span> : [<span class="code-quote">"readonly"</span>,<span class="code-quote">"readwrite"</span>,<span class="code-quote">"admin"</span>],
+            <span class="code-quote">"useOnFailedLogin"</span> : <span class="code-keyword">false</span>
+        },
+        <span class="code-quote">"providers"</span> : [
+            { <span class="code-quote">"classname"</span> : <span class="code-quote">"org.fcrepo.auth.common.ServletContainerAuthenticationProvider"</span> }
+        ]
+    },
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17438"><div class="by">Andrew Woods, 2016-09-08 19:04 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/26" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/26</a></p></div></div>
+<div class="comment" id="comment-17443"><div class="by">Andrew Woods, 2016-09-08 19:30 UTC</div><div class="text"><p>Looks good, pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-17448"><div class="by">Michael Durbin, 2016-09-08 21:14 UTC</div><div class="text"><p>Nastiest rebase ever... I think it's ready for another review.</p></div></div>
+<div class="comment" id="comment-17450"><div class="by">Andrew Woods, 2016-09-09 01:46 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/e7dc46bfb88ff1dfadba6e438a9f3aecf00f4f73" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/e7dc46bfb88ff1dfadba6e438a9f3aecf00f4f73</a></p></div></div>
+<p><a href="data/FCREPO-2163.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

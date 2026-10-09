@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3700 Unicode filenames inconsistent encoding</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3700</span> Unicode filenames inconsistent encoding</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2021-04-15 21:09 UTC</td></tr><tr><th>Updated</th><td>2021-10-01 21:13 UTC</td></tr><tr><th>Resolved</th><td>2021-10-01 16:20 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0, Fedora 5.1.1</td></tr><tr><th>Fix versions</th><td>Fedora 6.1.0</td></tr></table>
+<h2>Description</h2>
+<p>While trying to determine if Fedora supported unicode in binary filenames, I have seen some inconsistent behaviors. This applies to fedora 5 and 6.</p>
+
+<p>Putting some chinese characters directly in as the filename gives good results in the response Content-Disposition, but not the binary description:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -H<span class="code-quote">'Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#NonRDFSource&gt;; rel=<span class="code-quote">"type"</span>'</span> --data-binary @README.md -H<span class="code-quote">'Content-Disposition: attachment; filename=<span class="code-quote">"浅顶软呢帽岩石"</span>'</span> -H<span class="code-quote">"Content-type: text/plain"</span> -XPOST http://localhost:8080/<span class="code-keyword">rest</span>/ -ufedoraAdmin:fedoraAdmin
+</span>
+curl -I http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/90703ac5-191e-48d8-84a9-17300e490520 -ufedoraAdmin:fedoraAdmin
+</span>
+# Content-Disposition: attachment; filename=<span class="code-quote">"浅顶软呢帽岩石"</span>; creation-date=<span class="code-quote">"Thu, 15 Apr 2021 21:00:28 GMT"</span>; modification-date=<span class="code-quote">"Thu, 15 Apr 2021 21:00:28 GMT"</span>; size=4719
+
+curl http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/90703ac5-191e-48d8-84a9-17300e490520/fcr:metadata -ufedoraAdmin:fedoraAdmin
+</span>
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/90703ac5-191e-48d8-84a9-17300e490520&gt;
+</span>        ebucore:filename         "æµé¡¶è½¯å&lsquo;¢å¸½å²©ç³" ;
+</pre>
+</div></div>
+<p>You are supposed to be able to define the encoding of the filename using "Content-Disposition: attachment; filename*=UTF-8..." form (note, it is filename* rather than filename), but this is simply ignored by fedora. In FedoraLdp it actually parses within the contentDisposition object, but the filename* value is stored as a parameter instead of as the filename, so its not found by the controller code.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -H<span class="code-quote">'Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#NonRDFSource&gt;; rel=<span class="code-quote">"type"</span>'</span> --data-binary @README.md -H<span class="code-quote">"Content-Disposition: attachment; filename*=UTF-8''%e6%b5%85%e9%a1%b6%e8%bd%af%e5%91%a2%e5%b8%bd%e5%b2%a9%e7%9f%b3"</span> -H<span class="code-quote">"Content-type: text/plain"</span> -XPOST http://localhost:8080/<span class="code-keyword">rest</span>/ -ufedoraAdmin:fedoraAdmin
+</span>
+curl -I http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/058ac0ce-ecf6-4afe-9b18-f68e5c8e5da3 -ufedoraAdmin:fedoraAdmin
+</span>
+# Content-Disposition: attachment; creation-date=<span class="code-quote">"Thu, 15 Apr 2021 21:07:16 GMT"</span>; modification-date=<span class="code-quote">"Thu, 15 Apr 2021 21:07:16 GMT"</span>; size=4719
+</pre>
+</div></div>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22507"><div class="by">Peter Winckles, 2021-10-01 16:20 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1945" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1945</a></p></div></div>
+<div class="comment" id="comment-22510"><div class="by">Ben Pennell, 2021-10-01 21:13 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/b11ccfaac417de58185fc648e6bbc56c167012b6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/b11ccfaac417de58185fc648e6bbc56c167012b6</a></p></div></div>
+<p><a href="data/FCREPO-3700.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

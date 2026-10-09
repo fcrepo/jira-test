@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-768 Installer defaults to Akubra if no option is specified in an install.properties file</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-768</span> Installer defaults to Akubra if no option is specified in an install.properties file</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2010-08-17 20:52 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Is related to</th><td><a href="FCREPO-735.html">FCREPO-735</a> Test config files are out-of-date</td></tr></table>
+<h2>Environment</h2>Installing with an install.properties file from a prior release
+<h2>Description</h2>
+<p>If Fedora is installed with an install.properties file from a prior release (which does not have a property for the LLStore implementaiton), Akubra will be used by default.</p>
+
+<p>Potentially this could affect users upgrading to this release from 3.3 or before, who may wish to use their existing install.properties during installation.  In this case they almost certainly wouldn't want to be using Akubra, so using the default is dangerous.</p>
+
+<p>We need to show a warning during installation if the property is not present in install.properties.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-11534"><div class="by">Stephen Bayliss, 2010-08-17 20:55 UTC</div><div class="text"><p>We will also need to add this option to our system test install.properties files.</p></div></div>
+<div class="comment" id="comment-11537"><div class="by">Chris Wilper, 2010-08-18 00:41 UTC</div><div class="text"><p>I think showing a warning is fine, but I wonder how common this will actually be.  The upgrade instructions haven't ever suggested that one should try to use a prior version's install.properties when upgrading to a new release.  But I recognize the risk that someone might try it.  In this case, the downside would be mainly that they'd be confused when it came time to point LLStore at their old data, as part of the upgrade process.</p>
+
+<p>To me, this issue raises the question of what to do in other, similar cases.  For example, we introduce a new, required module that must be configured. Or we change what the default value is for an existing module.  It seems like trying to manage this on an individual module basis, for each upgrade, could get pretty complicated.</p>
+
+<p>Another, simpler idea is to a) explicitly recommend against using a different version's install.properties file, and b) give a big warning at install time if it's attempted.  Implementing b) would require that when writing install.properties, we persist the version of Fedora that was installed.  Then the installer can check this property against the actual version of Fedora in order to decide whether it needs to throw up the warning.</p></div></div>
+<div class="comment" id="comment-11538"><div class="by">Stephen Bayliss, 2010-08-18 12:21 UTC</div><div class="text"><p>In practice people may have been using install.properties even though we haven't explicitly documented it.  Personally I find it quite useful, especially for repeatability of configurations between different releases.</p>
+
+<p>Agreed that in any case users <b>should</b> pick this up later on in the process when they come to edit fedora.fcfg and point at their old data since there'd be nowhere to specify that.  Although that might be a bit of an annoyance.</p>
+
+<p>My take on this would be:</p>
+<ul class="alternate" type="square">
+	<li>no properties file: as it is currently</li>
+	<li>properties file: never use defaults - always warn if an expected property is not found.</li>
+	<li>version check would be good as a top-level check, gives an option of quitting at that stage rather than getting half-way through and then having to run it again.</li>
+</ul>
+
+
+<p>I don't think changing default values between releases is particularly an issue, I think it is implicit that as part of upgrading release notes should be read and configuration should be upgraded should there be anything that someone wants to make use of in the new release.  If there is a new module, it should result in the behaviour above - the user will be aware that there is something new that needs configuring.</p>
+
+<p>It does actually raise the issue of what the default values "mean" - are they the preferred option, recommended option, most common option users want?  I think this varies on a property-by-property basis.</p>
+
+<p>This is something that has caught us out in testing - a combination of system test properties files not being updated, and a bug in the installer not picking up the default option resulted in FeSL AuthN not being used as the default prior to the RC1 release in our testing, this was discovered very late in the day and resulted in some last-minute fixes.</p></div></div>
+<div class="comment" id="comment-11563"><div class="by">Stephen Bayliss, 2010-08-20 12:01 UTC</div><div class="text"><p>Moving to 3.5 on the basis that the release note now contain an emboldened warning on upgrading existing repositories.  Tackle what we want to do about re-using existing install.properties when upgrading in 3.5.</p></div></div>
+<div class="comment" id="comment-11822"><div class="by">Chris Wilper, 2011-02-22 22:55 UTC</div><div class="text"><p>Agreed: We should fail the install consistently if a property that has a default value in the newer version is not defined in the given install.properties.  This is the safest approach.</p></div></div>
+<div class="comment" id="comment-11956"><div class="by">Stephen Bayliss, 2011-05-12 14:00 UTC</div><div class="text"><p>As part of this, write out the llstore configuration in install.properties.  The install.properties from our integration tests don't contain this option.</p></div></div>
+<div class="comment" id="comment-12455"><div class="by">frank asseg, 2012-09-28 12:04 UTC</div><div class="text"><p>couldn't we version the install properties files themselves? <br/>
+and then have the installer check for the version of the installer.properties file and spit out a warning and ask the user if he want's to continue...So it's kinda in his responsibility to execute an install with an old version of the file.</p></div></div>
+<div class="comment" id="comment-13123"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-768.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

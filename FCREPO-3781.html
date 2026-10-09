@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3781 Create a means for allowing users to drop in custom service jars that extend the Camel Toolbox</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3781</span> Create a means for allowing users to drop in custom service jars that extend the Camel Toolbox</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Low</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2021-10-05 22:30 UTC</td></tr><tr><th>Updated</th><td>2022-02-17 07:09 UTC</td></tr><tr><th>Components</th><td>fcrepo-camel-toolbox</td></tr></table>
+<h2>Description</h2>
+<p>The idea is to provide a means that users can add new services to the camel toolbox by simply linking an external jar containing an @Configuration tagged java class.   </p>
+
+<p>Perhaps it could work by dropping the jar in a specific directory or something like that. </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-22592"><div class="by">Ralf Claussnitzer, 2022-02-04 08:22 UTC</div><div class="text"><p>I’m not absolutely sure how Spring Boot looks for components, but I think a drop-in directory that contains JARs should be possible to some extend.</p>
+
+<p>This brings up some more intricate questions:</p>
+
+<ul>
+	<li>What must be provided for the development of such extensions (provided dependencies)?</li>
+	<li>What is the packaging format for extensions, if they themselves depend on other libraries (SpringBoot format)?</li>
+	<li>Security considerations</li>
+</ul>
+
+
+<p>The Karaf OSGI runtime had this covered. What’s the solution for Spring Boot?</p></div></div>
+<div class="comment" id="comment-22599"><div class="by">Ralf Claussnitzer, 2022-02-16 14:14 UTC</div><div class="text"><p>From looking at how the Driver application is configured I assume that all extensions simply had to be JARs on the classpath. These would provide the annotated classes (<tt>@Configuration</tt>) and a RouteBuilder for being picked up by the Spring classpath scanner. All that's needed for this to work is changing the Java command in <tt>entrypoint.sh</tt> to pick-up additional JARs. They could for example reside in <tt>camel-toolbox-config/</tt>.</p>
+
+<p>It’s still unclear to me what dependencies would be required for developing and testing extensions outside of the <tt>fcrepo-camel-toolbox</tt> project.</p></div></div>
+<div class="comment" id="comment-22603"><div class="by">Danny Bernstein, 2022-02-17 06:47 UTC</div><div class="text"><p>Hi Ralf Claussnitzer :  I think this sounds about right.    I could imagine providing a list of package names in the properties file that would be passed to the @Configuration annotation.  But your question about what dependencies would be required for developing and testing extensions outside of the CTB is also not completely clear to me.  Perhaps it would help to approach by discussing your use case and then try to generalize from there.  Also, what security considerations did you have in mind?</p></div></div>
+<div class="comment" id="comment-22604"><div class="by">Ralf Claussnitzer, 2022-02-17 07:09 UTC</div><div class="text"><p>My use case is a service that watches container updates to generate RDF tuples from XML-binaries and update them in a Fedora container. It’s an XPath based indexing job basically but the target system is Fedora itself.</p>
+
+<p>Security considerations was just a guess. I’m assuming they exist. Somebody could manage to inject malicious code or open up arbitrary HTTP endpoints. We might want to limit what people can do. But I’m not sure if this in scope at the moment.</p></div></div>
+<p><a href="data/FCREPO-3781.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

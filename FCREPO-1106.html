@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1106 Fedora Returns &quot;400 Bad Request&quot; When Calling ModifyDatastream REST Call on DC</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1106</span> Fedora Returns &quot;400 Bad Request&quot; When Calling ModifyDatastream REST Call on DC</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jonathan Green</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2012-06-26 02:13 UTC</td></tr><tr><th>Updated</th><td>2012-09-03 18:59 UTC</td></tr><tr><th>Resolved</th><td>2012-09-03 18:59 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr></table>
+<h2>Description</h2>
+<p>When I run this command:</p>
+
+<p>curl -XPUT -u fedoraAdmin:fedoraAdmin <a href="http://vm1:8080/fedora/objects/test:pid/datastreams/testdsid?dsLabel=" class="external-link" rel="nofollow noreferrer">http://vm1:8080/fedora/objects/test:pid/datastreams/testdsid?dsLabel=</a>"wallawalla"</p>
+
+<p>I get back a datastream profile and everything is fine. </p>
+
+<p>When I run:<br/>
+curl -XPUT -u fedoraAdmin:fedoraAdmin <a href="http://vm1:8080/fedora/objects/test:pid/datastreams/DC?dsLabel=" class="external-link" rel="nofollow noreferrer">http://vm1:8080/fedora/objects/test:pid/datastreams/DC?dsLabel=</a>"wallawalla"</p>
+
+<p>I get back:<br/>
+InputStream cannot be null</p>
+
+<p>Full output from the --trace-ascii flag to curl:<br/>
+00cd: 1.4 OpenSSL/0.9.8r zlib/1.2.5<br/>
+00ec: Host: vm1:8080<br/>
+00fc: Accept: <b>/</b><br/>
+0109:<br/>
+&lt;= Recv header, 26 bytes (0x1a)<br/>
+0000: HTTP/1.1 400 Bad Request<br/>
+&lt;= Recv header, 27 bytes (0x1b)<br/>
+0000: Server: Apache-Coyote/1.1<br/>
+&lt;= Recv header, 71 bytes (0x47)<br/>
+0000: Set-Cookie: JSESSIONID=6BDA7864B37383FC01F13D4E372EC71D; Path=/f<br/>
+0040: edora<br/>
+&lt;= Recv header, 37 bytes (0x25)<br/>
+0000: Date: Mon, 25 Jun 2012 20:19:53 GMT<br/>
+&lt;= Recv header, 26 bytes (0x1a)<br/>
+0000: Content-Type: text/plain<br/>
+&lt;= Recv header, 20 bytes (0x14)<br/>
+0000: Content-Length: 26<br/>
+&lt;= Recv header, 19 bytes (0x13)<br/>
+0000: Connection: close<br/>
+&lt;= Recv header, 2 bytes (0x2)<br/>
+0000:<br/>
+&lt;= Recv data, 26 bytes (0x1a)<br/>
+0000: InputStream cannot be null<br/>
+== Info: Closing connection #0</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-12337"><div class="by">Jonathan Green, 2012-06-26 02:14 UTC</div><div class="text"><p>This is using fedora 3.6-preview</p></div></div>
+<div class="comment" id="comment-12342"><div class="by">Jonathan Green, 2012-06-28 01:07 UTC</div><div class="text"><p>This also happens when trying to change the label of the DC Datastream through the flash client. </p>
+
+<p>WARN 2012-06-27 17:34:02.912 <span class="error">&#91;http-8080-9&#93;</span> (BaseRestResource) Bad request; unable to fulfill REST API request<br/>
+java.lang.IllegalArgumentException: InputStream cannot be null<br/>
+	at javax.xml.parsers.SAXParser.parse(SAXParser.java:194) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at org.fcrepo.server.utilities.DCFields.&lt;init&gt;(DCFields.java:92) ~<span class="error">&#91;fcrepo-server-3.6-SNAPSHOT.jar:na&#93;</span><br/>
+	at org.fcrepo.server.management.DefaultManagement.modifyDatastreamByValue(DefaultManagement.java:919) ~<span class="error">&#91;fcrepo-server-3.6-SNAPSHOT.jar:na&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at java.lang.reflect.Method.invoke(Method.java:597) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at org.fcrepo.server.messaging.NotificationInvocationHandler.invoke(NotificationInvocationHandler.java:76) ~<span class="error">&#91;fcrepo-server-3.6-SNAPSHOT.jar:na&#93;</span><br/>
+	at $Proxy7.modifyDatastreamByValue(Unknown Source) ~<span class="error">&#91;na:na&#93;</span><br/>
+	at org.fcrepo.server.management.ManagementModule.modifyDatastreamByValue(ManagementModule.java:420) ~<span class="error">&#91;fcrepo-server-3.6-SNAPSHOT.jar:na&#93;</span><br/>
+	at org.fcrepo.server.rest.DatastreamResource.addOrUpdateDatastream(DatastreamResource.java:523) <span class="error">&#91;fcrepo-server-3.6-SNAPSHOT.jar:na&#93;</span><br/>
+	at org.fcrepo.server.rest.DatastreamResource.modifyDatastream(DatastreamResource.java:332) <span class="error">&#91;fcrepo-server-3.6-SNAPSHOT.jar:na&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at java.lang.reflect.Method.invoke(Method.java:597) ~<span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:180) <span class="error">&#91;cxf-api-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:96) <span class="error">&#91;cxf-api-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:167) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:94) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:58) <span class="error">&#91;cxf-api-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:94) <span class="error">&#91;cxf-api-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:262) <span class="error">&#91;cxf-api-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:122) <span class="error">&#91;cxf-api-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:211) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.ServletController.invokeDestination(ServletController.java:213) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.ServletController.invoke(ServletController.java:154) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.CXFNonSpringServlet.invoke(CXFNonSpringServlet.java:129) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.AbstractHTTPServlet.handleRequest(AbstractHTTPServlet.java:187) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.AbstractHTTPServlet.doPost(AbstractHTTPServlet.java:110) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:637) <span class="error">&#91;servlet-api.jar:na&#93;</span><br/>
+	at org.apache.cxf.transport.servlet.AbstractHTTPServlet.service(AbstractHTTPServlet.java:166) <span class="error">&#91;cxf-bundle-2.6.1.jar:2.6.1&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:369) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.fcrepo.server.security.jaas.AuthFilterJAAS.doFilter(AuthFilterJAAS.java:329) <span class="error">&#91;fcrepo-security-jaas-3.6-SNAPSHOT.jar:na&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:381) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.security.web.access.channel.ChannelProcessingFilter.doFilter(ChannelProcessingFilter.java:109) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:381) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:168) <span class="error">&#91;spring-security-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:237) <span class="error">&#91;spring-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:167) <span class="error">&#91;spring-web-3.0.7.RELEASE.jar:3.0.7.RELEASE&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:127) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:298) <span class="error">&#91;catalina.jar:6.0.29&#93;</span><br/>
+	at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:857) <span class="error">&#91;tomcat-coyote.jar:6.0.29&#93;</span><br/>
+	at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:588) <span class="error">&#91;tomcat-coyote.jar:6.0.29&#93;</span><br/>
+	at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:489) <span class="error">&#91;tomcat-coyote.jar:6.0.29&#93;</span><br/>
+	at java.lang.Thread.run(Thread.java:662) <span class="error">&#91;na:1.6.0_24&#93;</span></p></div></div>
+<div class="comment" id="comment-12343"><div class="by">Jonathan Green, 2012-06-28 18:21 UTC</div><div class="text"><p>Pull request here: <br/>
+<a href="https://github.com/fcrepo/fcrepo/pull/7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/7</a></p></div></div>
+<div class="comment" id="comment-12409"><div class="by">frank asseg, 2012-08-23 15:37 UTC</div><div class="text"><p>Hmm wouldn't the label for the DC datastream have to be set to "Dublin Core Record for this object" since this is the DC datastreams label?<br/>
+because i can do this and it works (+ is for url encoded spaces):<br/>
+curl -XPUT -u fedoraAdmin:fed <a href="http://localhost:8080/fedora/objects/test:1/datastreams/DC?dsLabel=Dublin+Core+Record+for+this+object" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/test:1/datastreams/DC?dsLabel=Dublin+Core+Record+for+this+object</a></p></div></div>
+<div class="comment" id="comment-12410"><div class="by">frank asseg, 2012-08-23 15:41 UTC</div><div class="text"><p>hmm and i don't get an exception when im trying to update the label via the flash client. Has this already been fixed and pushed to master?</p></div></div>
+<div class="comment" id="comment-12411"><div class="by">frank asseg, 2012-08-23 15:41 UTC</div><div class="text"><p>ah yes know i see the merges from ben...guess will have to close this</p></div></div>
+<div class="comment" id="comment-12434"><div class="by">frank asseg, 2012-08-27 12:11 UTC</div><div class="text"><p>closed and set affected versions and fix version as discussed in the committer meeting</p></div></div>
+<div class="comment" id="comment-12446"><div class="by">Benjamin Armintor, 2012-09-03 18:59 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/c4829db944796da4daed22a489b342e1ceb05b4a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/c4829db944796da4daed22a489b342e1ceb05b4a</a></p></div></div>
+<p><a href="data/FCREPO-1106.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

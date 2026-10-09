@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-959 Rebuilder does not start when using embedded Derby</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-959</span> Rebuilder does not start when using embedded Derby</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2011-06-28 14:56 UTC</td></tr><tr><th>Updated</th><td>2011-06-28 15:58 UTC</td></tr><tr><th>Resolved</th><td>2011-06-28 15:58 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr></table>
+<h2>Environment</h2>Embedded Derby, OS X, quick install
+<h2>Description</h2>
+<p>Immediately after a fresh install of 3.5-SNAPSHOT, I started, then stopped Fedora, then attempted to run the rebuilder. It paused for a few seconds, then exited with the following error:</p>
+
+<p>org.fcrepo.server.errors.ModuleInitializationException: Error while attempting to check for and create non-existing table(s): org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (Failed to start database '/Users/cwilper/fedora/derby/fedora3' with class loader org.fcrepo.server.utilities.rebuild.cli.CLILoader@59bca5f1, see the next exception for details.)<br/>
+        at org.fcrepo.server.utilities.rebuild.RebuildDOManager.postInitModule(RebuildDOManager.java:128)<br/>
+        at org.fcrepo.server.Server.&lt;init&gt;(Server.java:644)<br/>
+        at org.fcrepo.server.Server.&lt;init&gt;(Server.java:697)<br/>
+        at org.fcrepo.server.utilities.rebuild.RebuildServer.&lt;init&gt;(RebuildServer.java:55)<br/>
+        at org.fcrepo.server.utilities.rebuild.RebuildServer.getRebuildInstance(RebuildServer.java:141)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getServer(Rebuild.java:212)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.getRebuilder(Rebuild.java:263)<br/>
+        at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:446)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)<br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)<br/>
+        at java.lang.reflect.Method.invoke(Method.java:597)<br/>
+        at org.fcrepo.server.utilities.rebuild.cli.CLILoader.main(CLILoader.java:77)</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11988"><div class="by">Chris Wilper, 2011-06-28 15:07 UTC</div><div class="text"><p>NOTE: After this happens once, the rebuilder is subsequently able to start.</p>
+
+<p>After modifying RebuildDOManager to <b>not</b> swallow the cause of the exception in this case, I got the following additional detail:</p>
+
+<p>Caused by: org.apache.derby.impl.jdbc.EmbedSQLException: Another instance of Derby may have already booted the database /Users/cwilper/fedora/derby/fedora3.<br/>
+        at org.apache.derby.impl.jdbc.SQLExceptionFactory.getSQLException(Unknown Source) <span class="error">&#91;derby-10.7.1.1.jar:na&#93;</span><br/>
+        at org.apache.derby.impl.jdbc.SQLExceptionFactory40.wrapArgsForTransportAcrossDRDA(Unknown Source) <span class="error">&#91;derby-10.7.1.1.jar:na&#93;</span><br/>
+        at org.apache.derby.impl.jdbc.SQLExceptionFactory40.getSQLException(Unknown Source) <span class="error">&#91;derby-10.7.1.1.jar:na&#93;</span><br/>
+        at org.apache.derby.impl.jdbc.Util.generateCsSQLException(Unknown Source) <span class="error">&#91;derby-10.7.1.1.jar:na&#93;</span><br/>
+        ... 27 common frames omitted</p>
+
+<p>But Fedora was definitely stopped at this point. Derby may <b>think</b> another process is currently using the embedded db because it left a lockfile open or something. Perhaps the embedded Derby isn't being shut down properly in the Fedora webapp's context listener?</p></div></div>
+<div class="comment" id="comment-11990"><div class="by">Chris Wilper, 2011-06-28 15:58 UTC</div><div class="text"><p>Fixed in master. This was indeed caused by a failure to properly shut down the embedded Derby database. The problem was introduced in March of this year, as part of the merge of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-504" >
+                <a href="FCREPO-504.html" class="jira-issue-macro-key issue-link"  title="Allow Fedora to be deployed as a generic WAR" >
+            
+            FCREPO-504
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+. As part of that commit, the reference to the embedded driver class was changed to the wrong value, which ultimately prevented the ConnectionPool.close() method from detecting that we were running the embedded db...so it didn't attempt to shut it down as it should have.</p></div></div>
+<p><a href="data/FCREPO-959.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

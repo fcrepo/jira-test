@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1377 Vagrant F4 for Training</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1377</span> Vagrant F4 for Training</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-02-24 18:41 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-03-21 17:15 UTC</td></tr><tr><th>Components</th><td>f4-core, f4-message-consumer</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>This task is to create a Vagrant setup that can be used in F4 one-day trainings, like the upcoming training in D.C.<br/>
+<a href="https://wiki.duraspace.org/display/FF/Training+-+DC+Area+Fedora+User+Group+Meeting%3A+31+March+-+1+April+2015" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Training+-+DC+Area+Fedora+User+Group+Meeting%3A+31+March+-+1+April+2015</a></p>
+
+<p>Ideally, this Vagrant setup would include:</p>
+<ul class="alternate" type="square">
+	<li>Tomcat7</li>
+	<li>Fedora4</li>
+	<li>Solr</li>
+	<li>Fuseki</li>
+</ul>
+
+
+<p>Here is a good starting point:<br/>
+<a href="https://github.com/Islandora-Labs/islandora/blob/7.x-2.x/install/Vagrantfile" class="external-link" rel="nofollow noreferrer">https://github.com/Islandora-Labs/islandora/blob/7.x-2.x/install/Vagrantfile</a></p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-13591"><div class="by">Jared Whiklo, 2015-03-02 21:04 UTC</div><div class="text"><p>Do you also want either fcrepo-message-consumer or fcrepo-camel installed and configured to allow messages to be interpreted by the Solr and/or Fuseki apps? </p></div></div>
+<div class="comment" id="comment-13617"><div class="by">Andrew Woods, 2015-03-05 15:40 UTC</div><div class="text"><p>This may also be of interest:<br/>
+<a href="https://groups.google.com/d/msg/fedora-tech/-7PzQU3BBGA/agcsgMHK4eoJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/-7PzQU3BBGA/agcsgMHK4eoJ</a></p></div></div>
+<div class="comment" id="comment-13630"><div class="by">Jared Whiklo, 2015-03-05 22:20 UTC</div><div class="text"><p>Added fcrepo-message-consumer and configured for both Solr and Fuseki. <br/>
+Updated Fuseki configuration to use persistent storage location. </p>
+
+<p>Tested on my MacBook using the normal Sparql recipes and got 3 records in Solr and a bunch of triples in Fuseki along with the actual objects in Fedora.</p>
+
+<p><a href="https://github.com/whikloj/fedora4-vm" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fedora4-vm</a></p></div></div>
+<div class="comment" id="comment-13653"><div class="by">Andrew Woods, 2015-03-08 22:28 UTC</div><div class="text"><p>After I fix the error mentioned in the README, I get the following error:<br/>
+===================<br/>
+fedora4-vm$ vagrant up<br/>
+Bringing machine 'default' up with 'virtualbox' provider...<br/>
+<span class="error">&#91;default&#93;</span> Clearing any previously set forwarded ports...<br/>
+<span class="error">&#91;default&#93;</span> Clearing any previously set network interfaces...<br/>
+<span class="error">&#91;default&#93;</span> Preparing network interfaces based on configuration...<br/>
+<span class="error">&#91;default&#93;</span> Forwarding ports...<br/>
+<span class="error">&#91;default&#93;</span> &#8211; 22 =&gt; 2222 (adapter 1)<br/>
+<span class="error">&#91;default&#93;</span> &#8211; 8080 =&gt; 8080 (adapter 1)<br/>
+<span class="error">&#91;default&#93;</span> &#8211; 3030 =&gt; 3030 (adapter 1)<br/>
+<span class="error">&#91;default&#93;</span> Running 'pre-boot' VM customizations...<br/>
+<span class="error">&#91;default&#93;</span> Booting VM...<br/>
+<span class="error">&#91;default&#93;</span> Waiting for machine to boot. This may take a few minutes...<br/>
+The guest machine entered an invalid state while waiting for it<br/>
+to boot. Valid states are 'starting, running'. The machine is in the<br/>
+'poweroff' state. Please verify everything is configured<br/>
+properly and try again.</p>
+
+<p>If the provider you're using has a GUI that comes with it,<br/>
+it is often helpful to open that and watch the machine, since the<br/>
+GUI often has more helpful error messages than Vagrant can retrieve.<br/>
+For example, if you're using VirtualBox, run `vagrant up` while the<br/>
+VirtualBox GUI is open.<br/>
+===================<br/>
+...probably a BIOS setting on my end.</p></div></div>
+<div class="comment" id="comment-13654"><div class="by">Jared Whiklo, 2015-03-08 22:36 UTC</div><div class="text"><p>I should just make a Vagrant version of &gt; 1.6.0 a requirement.</p></div></div>
+<div class="comment" id="comment-13655"><div class="by">Nick Ruest, 2015-03-08 23:06 UTC</div><div class="text"><p>Everything builds fine on my end. I'm on Ubuntu 14.04 and running Vagrant 1.6.5.</p></div></div>
+<div class="comment" id="comment-13690"><div class="by">Yinlin Chen, 2015-03-10 16:33 UTC</div><div class="text"><p>Can this run in Amazon EC2 instance, like Ubuntu?</p></div></div>
+<div class="comment" id="comment-13697"><div class="by">Jared Whiklo, 2015-03-10 18:26 UTC</div><div class="text"><p>Theoretically, that should be possible. If you are looking for a quick way to provision a server, this might not be the best solution though.</p></div></div>
+<div class="comment" id="comment-13772"><div class="by">Andrew Woods, 2015-03-20 04:56 UTC</div><div class="text"><p>This looks good...<br/>
+Please merge following PR if it works for you:<br/>
+<a href="https://github.com/whikloj/fedora4-vm/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fedora4-vm/pull/1</a></p></div></div>
+<div class="comment" id="comment-13788"><div class="by">Jared Whiklo, 2015-03-21 00:41 UTC</div><div class="text"><p>Ok, I merged your PR.</p>
+
+<p>I updated the Sparql recipes wiki page including modifying some queries and results. These are common between in-memory and persistent storage from all my trials.</p>
+
+<p>Lastly I updated the fedora4 VM to cache the downloaded files to make a rebuild faster,</p></div></div>
+<div class="comment" id="comment-13791"><div class="by">Andrew Woods, 2015-03-21 17:15 UTC</div><div class="text"><p>Nicely done, Jared Whiklo.<br/>
+I have forked your project to its new home in fcrepo4-labs:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-vagrant" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-vagrant</a></p></div></div>
+<p><a href="data/FCREPO-1377.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

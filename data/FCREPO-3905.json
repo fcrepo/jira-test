@@ -1,0 +1,706 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "After some testing, I was able to reproduce the issue, but also was able to avoid the problem without any code changes. ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "I had a fedora 5 instance running at localhost:8043, did the export as follows:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "java -jar fcrepo-import-export-1.1.0.jar \\\n  --dir fcrepo-5-export \\\n  --user fedora_admin:fedora_admin \\\n  --mode export \\\n  --repositoryRoot http://localhost:8043/fcrepo/rest \\\n  --resource http://localhost:8043/fcrepo/rest \\\n  --binaries \\\n  --versions",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "Then ran the upgrade util as follows:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "java -jar fcrepo-upgrade-utils-6.2.0.jar \\\n  --input-dir fcrepo-5-export \\\n  --output-dir fcrepo-6-home \\\n  --source-version 5+ \\\n  --target-version 6+ \\\n  --base-uri http://localhost:8043/fcrepo/rest",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "and then inspected the generated OCFL. The binary descriptions with extra triples had the correct “info:fedora/” prefix in subject URIs. I then brought fedora 6 up on port 8880 so that the port would not match the original server with:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "java -Dfcrepo.home=fcrepo-6-home -jar fcrepo-webapp-6.4.1-jetty-console.jar",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "Inspecting the binary descriptions in the UI, the properties belong to the binary rather than to a separate resource like originally observed.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "If I do the same steps, but when running the upgrade util provide a different base-uri that doesn’t match the fedora 5 server (for example, “",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "http://localhost:8880/fcrepo/rest",
+          "type": "text"
+         },
+         {
+          "text": "\"), then I get the issue observed in this ticket: triples in the binary description rdf in the OCFL will have subjects with the old “",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://localhost:8043/”"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://localhost:8043/”",
+          "type": "text"
+         },
+         {
+          "text": " prefix, and when viewed in the web interface the properties will appear in the Other Resources section. ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "This behavior makes sense however, since there is not actually an import step. The upgrade util transforms the fedora 5 export into OCFL format, and while doing so it also transforms the URIs in the RDF, replacing all subject and object URIs that contain the ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "code"
+           }
+          ],
+          "text": "base-uri",
+          "type": "text"
+         },
+         {
+          "text": " with the host agnostic “info:fedora/”. And then fedora 6 is started with the generated OCFL as its data directory, with the transformed URIs in the RDF if the correct fedora 5 base-uri was provided.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "So as long as the base-uri matches the URI in the fedora 5 export, the upgrade util appears to work as expected when migrating to a new host since the generated OCFL contains URIs that use the generic “info:fedora/” prefix.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-01-03T12:44:58.987-0400",
+     "id": "22936",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13808/comment/22936",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2024-01-03T12:44:58.987-0400"
+    },
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "I’ve updated ",
+          "type": "text"
+         },
+         {
+          "attrs": {
+           "url": "https://wiki.lyrasis.org/display/FEDORA6x/Migrate+to+Fedora+6"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": "  to add an FAQ about this problem, and also added a note under the upgrade util command to clarify what the base-uri option is:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://wiki.lyrasis.org/pages/diffpagesbyversion.action?pageId=195168144&selectedPageVersions=62&selectedPageVersions=61"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://wiki.lyrasis.org/pages/diffpagesbyversion.action?pageId=195168144&selectedPageVersions=62&selectedPageVersions=61",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-01-03T13:02:49.900-0400",
+     "id": "22937",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13808/comment/22937",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2024-01-03T13:02:49.900-0400"
+    }
+   ],
+   "maxResults": 2,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13808/comment",
+   "startAt": 0,
+   "total": 2
+  },
+  "components": [
+   {
+    "id": "10051",
+    "name": "fcrepo-upgrade-utils",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/component/10051"
+   }
+  ],
+  "created": "2023-09-08T19:37:17.074-0300",
+  "creator": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|103cuo:",
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": null,
+  "customfield_10025": "1_*:*_1_*:*_9851153310_*|*_3_*:*_1_*:*_4964924_*|*_10002_*:*_1_*:*_0_*|*_10003_*:*_1_*:*_232626393",
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "When migrating data from a fedora 4 to 6 repository using the following steps:",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "attrs": {
+        "url": "https://wiki.lyrasis.org/display/FEDORA6x/Migrate+to+Fedora+6#MigratetoFedora6-TheFedora4%E2%86%926MigrationPath"
+       },
+       "type": "inlineCard"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "If the fedora 4 instance being exported does not have the same hostname as the fedora 6 instance being migrated to, it will result in triples being created in Fedora 6 with the original Fedora 4 URL as the subject. The result is that the triples are not directly describing the Fedora 6 resource, and will display in the “Other resources” section.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "The issue is that fcrepo-import-export tool exports RDF with the original subjects, but the fcrepo-upgrade-util does not have a way to remap those URLs for the new fcrepo 6 instance. Since the subjects are from another base url, fcrepo 6 does not interpret them as referring to the resource being created.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "We could address this by adding a base url remapping option to fcrepo-upgrade-utils, similar to the fcrepo-import-export tools --map option.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": null,
+  "fixVersions": [],
+  "issuelinks": [],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10300,
+   "description": "Documentation for a feature, code, etc. (Migrated on 28 Apr 2021 18:14 UTC)",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10300?size=medium",
+   "id": "10012",
+   "name": "Documentation",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10012",
+   "subtask": false
+  },
+  "labels": [],
+  "lastViewed": null,
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/high_new.svg",
+   "id": "2",
+   "name": "High",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/2"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "A fix for this issue is checked into the tree and tested.",
+   "id": "10004",
+   "name": "Fixed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10004"
+  },
+  "resolutiondate": "2024-01-03T13:03:01.608-0400",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": "2024-01-18T12:32:50.596-0400",
+  "subtasks": [],
+  "summary": "Upgrade util should support destination host that does not match source",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2024-01-18T12:32:50.592-0400",
+  "versions": [],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-3905/votes",
+   "votes": 0
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-3905/watchers",
+   "watchCount": 1
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "13808",
+ "key": "FCREPO-3905",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>After some testing, I was able to reproduce the issue, but also was able to avoid the problem without any code changes. </p>\n\n<p>I had a fedora 5 instance running at localhost:8043, did the export as follows:</p>\n\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre>java -jar fcrepo-import-export-1.1.0.jar \\\n  --dir fcrepo-5-export \\\n  --user fedora_admin:fedora_admin \\\n  --mode export \\\n  --repositoryRoot http://localhost:8043/fcrepo/rest \\\n  --resource http://localhost:8043/fcrepo/rest \\\n  --binaries \\\n  --versions</pre>\n</div></div>\n\n<p>Then ran the upgrade util as follows:</p>\n\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre>java -jar fcrepo-upgrade-utils-6.2.0.jar \\\n  --input-dir fcrepo-5-export \\\n  --output-dir fcrepo-6-home \\\n  --source-version 5+ \\\n  --target-version 6+ \\\n  --base-uri http://localhost:8043/fcrepo/rest</pre>\n</div></div>\n\n<p>and then inspected the generated OCFL. The binary descriptions with extra triples had the correct “info:fedora/” prefix in subject URIs. I then brought fedora 6 up on port 8880 so that the port would not match the original server with:</p>\n\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre>java -Dfcrepo.home=fcrepo-6-home -jar fcrepo-webapp-6.4.1-jetty-console.jar</pre>\n</div></div>\n\n<p>Inspecting the binary descriptions in the UI, the properties belong to the binary rather than to a separate resource like originally observed.</p>\n\n<p>If I do the same steps, but when running the upgrade util provide a different base-uri that doesn’t match the fedora 5 server (for example, “<tt><a href=\"http://localhost:8880/fcrepo/rest\" class=\"external-link\" rel=\"nofollow noreferrer\">http://localhost:8880/fcrepo/rest</a></tt>\"), then I get the issue observed in this ticket: triples in the binary description rdf in the OCFL will have subjects with the old “<a href=\"http://localhost:8043/”\" class=\"external-link\" rel=\"nofollow noreferrer\">http://localhost:8043/”</a> prefix, and when viewed in the web interface the properties will appear in the Other Resources section. </p>\n\n<p>This behavior makes sense however, since there is not actually an import step. The upgrade util transforms the fedora 5 export into OCFL format, and while doing so it also transforms the URIs in the RDF, replacing all subject and object URIs that contain the <tt>base-uri</tt> with the host agnostic “info:fedora/”. And then fedora 6 is started with the generated OCFL as its data directory, with the transformed URIs in the RDF if the correct fedora 5 base-uri was provided.</p>\n\n<p>So as long as the base-uri matches the URI in the fedora 5 export, the upgrade util appears to work as expected when migrating to a new host since the generated OCFL contains URIs that use the generic “info:fedora/” prefix.</p>",
+     "created": "03/Jan/24 12:44 PM",
+     "id": "22936",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13808/comment/22936",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "03/Jan/24 12:44 PM"
+    },
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>I’ve updated <a href=\"https://wiki.lyrasis.org/display/FEDORA6x/Migrate+to+Fedora+6\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://wiki.lyrasis.org/display/FEDORA6x/Migrate+to+Fedora+6</a>  to add an FAQ about this problem, and also added a note under the upgrade util command to clarify what the base-uri option is:</p>\n\n<p><a href=\"https://wiki.lyrasis.org/pages/diffpagesbyversion.action?pageId=195168144&amp;selectedPageVersions=62&amp;selectedPageVersions=61\" class=\"external-link\" rel=\"nofollow noreferrer\">https://wiki.lyrasis.org/pages/diffpagesbyversion.action?pageId=195168144&amp;selectedPageVersions=62&amp;selectedPageVersions=61</a></p>",
+     "created": "03/Jan/24 1:02 PM",
+     "id": "22937",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13808/comment/22937",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "03/Jan/24 1:02 PM"
+    }
+   ],
+   "maxResults": 2,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13808/comment",
+   "startAt": 0,
+   "total": 2
+  },
+  "components": null,
+  "created": "08/Sep/23 7:37 PM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": null,
+  "customfield_10025": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p>When migrating data from a fedora 4 to 6 repository using the following steps:</p>\n\n<p><a href=\"https://wiki.lyrasis.org/display/FEDORA6x/Migrate+to+Fedora+6#MigratetoFedora6-TheFedora4%E2%86%926MigrationPath\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://wiki.lyrasis.org/display/FEDORA6x/Migrate+to+Fedora+6#MigratetoFedora6-TheFedora4%E2%86%926MigrationPath</a> </p>\n\n<p>If the fedora 4 instance being exported does not have the same hostname as the fedora 6 instance being migrated to, it will result in triples being created in Fedora 6 with the original Fedora 4 URL as the subject. The result is that the triples are not directly describing the Fedora 6 resource, and will display in the “Other resources” section.</p>\n\n<p>The issue is that fcrepo-import-export tool exports RDF with the original subjects, but the fcrepo-upgrade-util does not have a way to remap those URLs for the new fcrepo 6 instance. Since the subjects are from another base url, fcrepo 6 does not interpret them as referring to the resource being created.</p>\n\n<p>We could address this by adding a base url remapping option to fcrepo-upgrade-utils, similar to the fcrepo-import-export tools --map option.</p>",
+  "duedate": null,
+  "environment": "",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "03/Jan/24 1:03 PM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": "18/Jan/24 12:32 PM",
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "18/Jan/24 12:32 PM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13808"
+}

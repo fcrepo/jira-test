@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1034 Support soapUI requests to Fedora web services</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1034</span> Support soapUI requests to Fedora web services</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Olivier Narat</td></tr><tr><th>Created</th><td>2011-11-25 13:45 UTC</td></tr><tr><th>Updated</th><td>2011-11-29 22:14 UTC</td></tr><tr><th>Resolved</th><td>2011-11-29 22:14 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr></table>
+<h2>Description</h2>
+
+<p>Get 'Did not understand "MustUnderstand" header(s)' in the response when calling a Fedora web service with soapUI 4.0.1: </p>
+
+<p>Request: <br/>
+--------<br/>
+&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://www.fedora.info/definitions/1/0/types/"&gt;<br/>
+    &lt;soapenv:Header&gt;&lt;wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"&gt;&lt;wsu:Timestamp wsu:Id="Timestamp-75" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"&gt;&lt;wsu:Created&gt;2011-11-23T16:58:42Z&lt;/wsu:Created&gt;&lt;wsu:Expires&gt;2011-11-23T17:32:02Z&lt;/wsu:Expires&gt;&lt;/wsu:Timestamp&gt;&lt;wsse:UsernameToken wsu:Id="UsernameToken-74" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"&gt;&lt;wsse:Username&gt;xxxxxxxx&lt;/wsse:Username&gt;&lt;wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText"&gt;xxxxxxxx&lt;/wsse:Password&gt;&lt;wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary"&gt;w3uon59dmR08T14EovDj3Q==&lt;/wsse:Nonce&gt;&lt;wsu:Created&gt;2011-11-23T16:58:42.843Z&lt;/wsu:Created&gt;&lt;/wsse:UsernameToken&gt;&lt;/wsse:Security&gt;&lt;/soapenv:Header&gt;<br/>
+    &lt;soapenv:Body&gt;<br/>
+       &lt;typ:listDatastreams&gt;<br/>
+          &lt;pid&gt;demo:12&lt;/pid&gt;<br/>
+          &lt;asOfDateTime/&gt;<br/>
+       &lt;/typ:listDatastreams&gt;<br/>
+    &lt;/soapenv:Body&gt;<br/>
+&lt;/soapenv:Envelope&gt;</p>
+
+<p>Response: <br/>
+---------<br/>
+&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;<br/>
+   &lt;soapenv:Body&gt;<br/>
+      &lt;soapenv:Fault&gt;<br/>
+         &lt;faultcode&gt;soapenv:MustUnderstand&lt;/faultcode&gt;<br/>
+         &lt;faultstring&gt;Did not understand "MustUnderstand" header(s):&lt;/faultstring&gt;<br/>
+         &lt;detail&gt;<br/>
+            &lt;ns1:hostname xmlns:ns1="http://xml.apache.org/axis/"&gt;domU-12-31-39-09-F6-32&lt;/ns1:hostname&gt;<br/>
+         &lt;/detail&gt;<br/>
+      &lt;/soapenv:Fault&gt;<br/>
+   &lt;/soapenv:Body&gt;<br/>
+&lt;/soapenv:Envelope&gt;</p>
+
+<p>soapUI request format should be supported by Fedora. </p>
+
+<p>Rationale: </p>
+
+<p>soapUI is an easy-to-use tool to quickly create test cases for web services. </p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1034/10142_soapUI_screenshot_successful_request.PNG">soapUI_screenshot_successful_request.PNG</a>, 94999 bytes, added by Olivier Narat on 2011-11-25</li>
+<li><a href="attachments/FCREPO-1034/10141_soapUI_screenshot.PNG">soapUI_screenshot.PNG</a>, 84862 bytes, added by Olivier Narat on 2011-11-25</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12133"><div class="by">Olivier Narat, 2011-11-25 16:01 UTC</div><div class="text"><p>Found a workaround to get the expected response: WSS-Password Type and WSS TimeToLive must be left empty in soapUI. </p>
+
+<p>Response: <br/>
+--------- <br/>
+&lt;soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;<br/>
+   &lt;soapenv:Body&gt;<br/>
+      &lt;listDatastreamsResponse xmlns="http://www.fedora.info/definitions/1/0/types/"&gt;<br/>
+         &lt;datastreamDef xmlns=""&gt;<br/>
+            &lt;ID&gt;DC&lt;/ID&gt;<br/>
+            &lt;label&gt;Dublin Core Record for this object&lt;/label&gt;<br/>
+            &lt;MIMEType&gt;text/xml&lt;/MIMEType&gt;<br/>
+         &lt;/datastreamDef&gt;<br/>
+         &lt;datastreamDef xmlns=""&gt;<br/>
+            &lt;ID&gt;RELS-EXT&lt;/ID&gt;<br/>
+            &lt;label&gt;RDF Statements about this object&lt;/label&gt;<br/>
+            &lt;MIMEType&gt;application/rdf+xml&lt;/MIMEType&gt;<br/>
+         &lt;/datastreamDef&gt;<br/>
+         &lt;datastreamDef xmlns=""&gt;<br/>
+            &lt;ID&gt;METHODMAP&lt;/ID&gt;<br/>
+            &lt;label&gt;Abstract Method Map&lt;/label&gt;<br/>
+            &lt;MIMEType&gt;text/xml&lt;/MIMEType&gt;<br/>
+         &lt;/datastreamDef&gt;<br/>
+      &lt;/listDatastreamsResponse&gt;<br/>
+   &lt;/soapenv:Body&gt;<br/>
+&lt;/soapenv:Envelope&gt;</p>
+</div></div>
+<p><a href="data/FCREPO-1034.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

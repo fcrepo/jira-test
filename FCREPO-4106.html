@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4106 Deleting and purging a resource in a TX causes missed cleanup</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4106</span> Deleting and purging a resource in a TX causes missed cleanup</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2026-09-10 19:21 UTC</td></tr><tr><th>Updated</th><td>2026-09-24 15:30 UTC</td></tr><tr><th>Resolved</th><td>2026-09-24 15:26 UTC</td></tr><tr><th>Affects versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Description</h2>
+<p>If a resource is both deleted and its tombstone cleaned up in the same fedora transaction, then containment table entries related to the purged resource are not cleaned up. This blocks purging of tombstones of any ancestors of the object. I am able to replicate the issue with the following commands:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -XPUT http://localhost:8088/rest/my -ufedoraAdmin:fedoraAdmin -v
+curl -XPUT http://localhost:8088/rest/my/path -ufedoraAdmin:fedoraAdmin
+TXLOCATION=$(curl -s -ufedoraAdmin:fedoraAdmin -D - -X POST "http://localhost:8088/rest/fcr:tx" -o /dev/null | grep -i '^Location:' | awk '{print $2}' | tr -d '\r')
+curl -XDELETE http://localhost:8088/rest/my/path -ufedoraAdmin:fedoraAdmin -v -H "Atomic-ID: $TXLOCATION"
+curl -XDELETE http://localhost:8088/rest/my/path/fcr:tombstone -ufedoraAdmin:fedoraAdmin -v  -H "Atomic-ID: $TXLOCATION"
+curl -ufedoraAdmin:fedoraAdmin -XPUT "$TXLOCATION"
+curl -XDELETE http://localhost:8088/rest/my -ufedoraAdmin:fedoraAdmin -v
+curl -XDELETE http://localhost:8088/rest/my/fcr:tombstone -ufedoraAdmin:fedoraAdmin -v</pre>
+</div></div>
+
+<p>All of the commands succeed except for the last one, which fails with 04 <tt>Error: Resource /my/path not found</tt>. If you look in the containment table afterwards, there are still entries for both <tt>/my/path</tt> and <tt>/my</tt>, with end dates indicating that they were soft deleted but not purged. However, the OCFL object for <tt>/my/path</tt> is gone at this point.</p>
+
+<p>Reindexing would probably resolve the issue if it comes up for anyone, or deleting the leftover entries from the DB. </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-29076"><div class="by">Ben Pennell, 2026-09-11 17:39 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/2334" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2334</a> </p></div></div>
+<div class="comment" id="comment-29113"><div class="by">David Novák, 2026-09-24 15:19 UTC</div><div class="text"><p>Ben Pennell Dan Field Please, is there any idea when this lands into production release? It turned out to be a real blocker for us as we wanted to include F7 in our next major repository app release and this kills some of the workflows we have running on F6…</p></div></div>
+<div class="comment" id="comment-29114"><div class="by">Dan Field, 2026-09-24 15:26 UTC</div><div class="text"><p>David Novák I’m hoping to put out 7.0.1 within a few days. </p></div></div>
+<div class="comment" id="comment-29115"><div class="by">David Novák, 2026-09-24 15:30 UTC</div><div class="text"><p>Dan Field Perfect!!!</p></div></div>
+<p><a href="data/FCREPO-4106.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

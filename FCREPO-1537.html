@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1537 500 and stacktrace with empty path element</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1537</span> 500 and stacktrace with empty path element</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>justin</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-05-14 14:16 UTC</td></tr><tr><th>Updated</th><td>2015-07-28 15:58 UTC</td></tr><tr><th>Resolved</th><td>2015-07-21 19:47 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1, Fedora 4.2.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>javax.jcr.RepositoryException: The path "/test/me/mb/er/s//members/9528a300-22da-40f2-bf3c-5b345d71affb" is not valid because it contains an empty segment at </p>
+
+<p>How about a 4xx error? "not a valid path"</p>
+
+<p>See: <a href="https://github.com/fcrepo4/fcrepo4/issues/793" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/793</a></p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-14715"><div class="by">Andrew Woods, 2015-07-14 13:50 UTC</div><div class="text"><p>justin, what is the scenario here? GET? PUT? something else?</p></div></div>
+<div class="comment" id="comment-14716"><div class="by">justin, 2015-07-14 14:22 UTC</div><div class="text"><p>curl -X HEAD -i <a href="http://fedoraAdmin:fedoraAdmin@localhost:8983/fedora/rest/test/me/mb/er/s//members/9528a300-22da-40f2-bf3c-5b345d71affb" class="external-link" rel="nofollow noreferrer">http://fedoraAdmin:fedoraAdmin@localhost:8983/fedora/rest/test/me/mb/er/s//members/9528a300-22da-40f2-bf3c-5b345d71affb</a><br/>
+HTTP/1.1 500 Internal Server Error<br/>
+Content-Type: text/html;charset=ISO-8859-1<br/>
+Cache-Control: must-revalidate,no-cache,no-store<br/>
+Content-Length: 1462</p></div></div>
+<div class="comment" id="comment-14729"><div class="by">Andrew Woods, 2015-07-14 21:03 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/840" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/840</a></p></div></div>
+<div class="comment" id="comment-14730"><div class="by">A. Soroka, 2015-07-15 12:32 UTC</div><div class="text"><p>Hang on-- do we just want to elide that empty segment? That seems a bit more friendly. Would that be too inexact and cause problems later...?</p></div></div>
+<div class="comment" id="comment-14731"><div class="by">Andrew Woods, 2015-07-15 12:48 UTC</div><div class="text"><p>In general, we have taken the position of <b>not</b> modifying user requests. justin submitted this issue and seems to be expecting a client error status. <br/>
+Thoughts, A. Soroka? justin?</p></div></div>
+<div class="comment" id="comment-14732"><div class="by">A. Soroka, 2015-07-15 12:50 UTC</div><div class="text"><p>Yeah, I think you're right. I just wanted to throw the idea out. But playing it conservatively is the right thing to do here.</p></div></div>
+<div class="comment" id="comment-14733"><div class="by">A. Soroka, 2015-07-15 13:01 UTC</div><div class="text"><p>See comments in PR.</p></div></div>
+<div class="comment" id="comment-14778"><div class="by">Andrew Woods, 2015-07-21 18:20 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/840" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/840</a> has been updated.<br/>
+Note: These commits should be squashed before merged into master.</p></div></div>
+<div class="comment" id="comment-14779"><div class="by">A. Soroka, 2015-07-21 19:47 UTC</div><div class="text"><p>Fixed with:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/01305e29d102a49c2059483eb3b8af5a6439c3f3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/01305e29d102a49c2059483eb3b8af5a6439c3f3</a></p></div></div>
+<div class="comment" id="comment-14781"><div class="by">Andrew Woods, 2015-07-21 21:00 UTC</div><div class="text"><p>Related PR for impacts on fcrepo-module-auth-rbacl: <br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/17" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-rbacl/pull/17</a></p></div></div>
+<p><a href="data/FCREPO-1537.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

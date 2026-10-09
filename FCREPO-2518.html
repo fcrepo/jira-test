@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2518 Import Export:  Root container is Lossy on Roundtrip</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2518</span> Import Export:  Root container is Lossy on Roundtrip</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2017-06-07 23:05 UTC</td></tr><tr><th>Updated</th><td>2017-07-14 19:54 UTC</td></tr><tr><th>Resolved</th><td>2017-06-22 17:38 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>When I export repo A and then import into a repo B (that is running in relaxed mode)  the fedora:lastModified  values of the root containers of do not match between A and B.</p>
+
+<p>To reproduce: </p>
+
+<p>1. In one shell run:<br/>
+java -Dfcrepo.properties.management="relaxed" -Dfcrepo.dynamic.jms.port=61717 -Dfcrepo.dynamic.stomp.port=61713 -jar fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar --port 8686 --headless --contextPath /f4</p>
+
+<p>1.1. create a container named "test"   <br/>
+curl -X POST "http://localhost:8686/f4/rest" -H "Slug: test"</p>
+
+<p>2. In a second shell run: </p>
+
+<p>java -Dfcrepo.properties.management="relaxed" -Dfcrepo.dynamic.jms.port=61718 -Dfcrepo.dynamic.stomp.port=61714 -jar fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar --port 8687 --headless --contextPath /f4</p>
+
+<p>3. build fcrepo-import-export r 6b5641</p>
+
+<p>4. mkdir export</p>
+
+<p>5. Run the export: </p>
+
+<p> java -jar fcrepo-import-export-0.1.1-SNAPSHOT.jar -d export -a -m export -r <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a> -b --writeConfig export-config.yml</p>
+
+<p>6. Run the importer:</p>
+
+<p>java -jar fcrepo-import-export-0.1.1-SNAPSHOT.jar -d export -a -m import -r <a href="http://localhost:8687/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8687/f4/rest</a> -b --writeConfig import-config.yml -M <a href="http://localhost:8686/f4/rest,http://localhost:8687/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest,http://localhost:8687/f4/rest</a></p>
+
+<p>7.  Curl the root container on each: <br/>
+curl <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a>;  <br/>
+curl <a href="http://localhost:8687/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8687/f4/rest</a>;</p>
+
+<p>8. Verify that the fedora:lastModified's for the two uri's differ.</p>
+
+
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-19099"><div class="by">Michael Durbin, 2017-06-08 14:08 UTC</div><div class="text"><p>I suspect this is because the importer imports the container first, then the children.  Addition of children updates the modification date of parent resources.  A solution to this might be to rework the import code to do a first pass that creates placeholder nodes for everything that is to be imported and then work from leaf to root.  One should evaluate such a change in approach to see if it might also address the challenges associated with <a href="https://jira.duraspace.org/browse/FCREPO-2459" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2459</a> and for performance implications.</p>
+
+<p> </p>
+
+<p>An approach that would involve less reworking would be simply to patch parents with the correct dates after all children are added when doing a lossless import. </p></div></div>
+<div class="comment" id="comment-19158"><div class="by">Michael Durbin, 2017-06-22 17:38 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/107" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/107</a></p></div></div>
+<div class="comment" id="comment-19200"><div class="by">Danny Bernstein, 2017-07-14 18:31 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/99fbe46a65b977e5f5b02ebc8dc33f571c447ba4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/99fbe46a65b977e5f5b02ebc8dc33f571c447ba4</a></p></div></div>
+<p><a href="data/FCREPO-2518.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

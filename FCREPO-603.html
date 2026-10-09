@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-603 Standalone, reusable, Java client library for Fedora</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-603</span> Standalone, reusable, Java client library for Fedora</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2009-12-16 18:22 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2011-02-22 22:39 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-751.html">FCREPO-751</a> Identify a &quot;recommended&quot; Java client library for the 3.4 release</td></tr><tr><th>Is related to</th><td><a href="FCREPO-831.html">FCREPO-831</a> Consistently use the new fedora-client in all code (test and server) that REST API is exercised</td></tr></table>
+<h2>Description</h2>
+<p>We've had various forms of Java-based Fedora Clients in the past.  The most obvious ones in the current codebase are "DemoSOAPClient" (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-602" >
+                <a href="FCREPO-602.html" class="jira-issue-macro-key issue-link"  title="DemoSOAPClient depends on demo objects that no longer exist" >
+            
+            FCREPO-602
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) to "FedoraClient".</p>
+
+<p>The purpose of a standalone java Fedora client would be to give Java developers a way to interact with a Fedora repository's web service (REST/SOAP) APIs in their own code, without needing to set up the SOAP and/or REST interactions themselves.</p>
+
+<p>The current class, fedora.client.FedoraClient is not adequate for this job, because it is currently intertwined with the Fedora Admin GUI, both at build time (fcrepo-client-admin), and at runtime (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-601" >
+                <a href="FCREPO-601.html" class="jira-issue-macro-key issue-link"  title="Client scripts steal focus in OS X" >
+            
+            FCREPO-601
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-11204"><div class="by">Chris Wilper, 2010-01-05 18:09 UTC</div><div class="text"><p>Asger: Could start with divorcing FedoraClient from Fedora Admin GUI.</p></div></div>
+<div class="comment" id="comment-11210"><div class="by">Chris Wilper, 2010-01-11 20:54 UTC</div><div class="text"><p>I talked with Rick Moore today and he's planning on working on a Java client for Fedora's REST api, similar to his Python and Jython rest clients, available here:</p>
+
+<p><a href="https://fedora-commons.org/confluence/display/FEDORACREATE/PyFedoREST" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/confluence/display/FEDORACREATE/PyFedoREST</a><br/>
+<a href="https://fedora-commons.org/confluence/display/FEDORACREATE/JyFedoREST" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/confluence/display/FEDORACREATE/JyFedoREST</a></p>
+
+<p>We should keep an eye on what he's doing here as a possible candidate for something that gets rolled into the official source tree.  For now, his work will be happening somewhere in svn under the "incubator" tree:</p>
+
+<p><a href="http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/incubator/" class="external-link" rel="nofollow noreferrer">http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/incubator/</a></p></div></div>
+<div class="comment" id="comment-11303"><div class="by">Stephen Bayliss, 2010-04-11 19:12 UTC</div><div class="text"><p>We should at least address the SOAP side of this by implementing Asger's suggestion to divorce FedoraClient from the Admin GUI.  People do use FedoraClient.</p></div></div>
+<div class="comment" id="comment-11323"><div class="by">Chris Wilper, 2010-04-20 16:28 UTC</div><div class="text"><p>Discussed on April 20th 2010 call: concern around using non-native java for this task.  Performance, dependencies, familiarity were all listed as concerns.</p></div></div>
+<div class="comment" id="comment-11347"><div class="by">Chris Wilper, 2010-05-03 15:38 UTC</div><div class="text"><p>Update: Rick's <b>Java</b> REST API client is available here: <a href="http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/incubator/restapi-clients/trunk/fcrepo-client-restapi/" class="external-link" rel="nofollow noreferrer">http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/incubator/restapi-clients/trunk/fcrepo-client-restapi/</a></p></div></div>
+<div class="comment" id="comment-11407"><div class="by">eddie, 2010-05-30 04:37 UTC</div><div class="text"><p>Another Java implementation that works against the REST API: <a href="http://mediashelf.github.com/fedora-client/" class="external-link" rel="nofollow noreferrer">http://mediashelf.github.com/fedora-client/</a></p></div></div>
+<div class="comment" id="comment-11490"><div class="by">Stephen Bayliss, 2010-07-28 14:16 UTC</div><div class="text"><p>Discussed at 2010-07-27 committer meeting.  Point folks at a "recommended" client library for 3.4, consider making this the "official" client library in a later release (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-751" >
+                <a href="FCREPO-751.html" class="jira-issue-macro-key issue-link"  title="Identify a &quot;recommended&quot; Java client library for the 3.4 release" >
+            
+            FCREPO-751
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).  </p></div></div>
+<div class="comment" id="comment-11704"><div class="by">eddie, 2010-11-24 01:09 UTC</div><div class="text"><p>can we close this?</p></div></div>
+<div class="comment" id="comment-11809"><div class="by">Chris Wilper, 2011-02-15 22:38 UTC</div><div class="text"><p>This will be closed soon unless we get word that another one is available, the current recommendation is to use the MediaShelf-developed client as per 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-751" >
+                <a href="FCREPO-751.html" class="jira-issue-macro-key issue-link"  title="Identify a &quot;recommended&quot; Java client library for the 3.4 release" >
+            
+            FCREPO-751
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<p><a href="data/FCREPO-603.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

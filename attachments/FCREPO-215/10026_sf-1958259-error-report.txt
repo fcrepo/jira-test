@@ -1,0 +1,87 @@
+Nishen Naidoo <nishen@melcoe.mq.edu.au>  Sat, Apr 12, 2008 at 11:41 PM  
+Reply-To: nishen@melcoe.mq.edu.au 
+To: fedora-commons-developers@lists.sourceforge.net  
+
+
+Hi folks,
+
+Using Fedora 3.0b1 and the associated client package, when I add a datastream to an object that is of type 'X' (inline XML), pre-computing the checksum and adding it as part of the call works fine. The Fedora computed checksum and mine are both the same and the datastream gets added without any issues.
+
+However, when adding a datastream to an object that is of type 'M', pre-computing the checksum and adding it as part of the call generates the following exception in the Fedora log:
+
+INFO 2008-04-13 13:28:07.187 [http-8080-1] (DefaultManagement) Entered addDatastream
+WARN 2008-04-13 13:28:07.203 [http-8080-1] (Datastream) IOException reading datastream to generate checksum
+INFO 2008-04-13 13:28:07.203 [http-8080-1] (DefaultManagement) Exiting addDatastream
+ERROR 2008-04-13 13:28:07.203 [http-8080-1] (FedoraAPIMBindingSOAPHTTPImpl) Error adding datastream
+fedora.server.errors.ValidationException: Checksum Mismatch: ExceptionReadingStream
+    at fedora.server.management.DefaultManagement.addDatastream(DefaultManagement.java:523)
+    at fedora.server.management.FedoraAPIMBindingSOAPHTTPImpl.addDatastream(FedoraAPIMBindingSOAPHTTPImpl.java:265)
+    at fedora.server.management.FedoraAPIMBindingSOAPHTTPSkeleton.addDatastream(FedoraAPIMBindingSOAPHTTPSkeleton.java:427)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+    at java.lang.reflect.Method.invoke(Method.java:585)
+    at org.apache.axis.providers.java.RPCProvider.invokeMethod(RPCProvider.java:397)
+    at org.apache.axis.providers.java.RPCProvider.processMessage(RPCProvider.java:186)
+    at org.apache.axis.providers.java.JavaProvider.invoke(JavaProvider.java:323)
+    at org.apache.axis.strategies.InvocationStrategy.visit(InvocationStrategy.java:32)
+    at org.apache.axis.SimpleChain.doVisiting(SimpleChain.java:118)
+    at org.apache.axis.SimpleChain.invoke(SimpleChain.java:83)
+    at org.apache.axis.handlers.soap.SOAPService.invoke(SOAPService.java:453)
+    at org.apache.axis.server.AxisServer.invoke(AxisServer.java:281)
+    at org.apache.axis.transport.http.AxisServlet.doPost(AxisServlet.java:699)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:710)
+    at org.apache.axis.transport.http.AxisServletBase.service(AxisServletBase.java:327)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:803)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+    at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+    at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+    at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+    at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+    at fedora.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+    at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)
+    at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:175)
+    at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)
+    at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128)
+    at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)
+    at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)
+    at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:263)
+    at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:844)
+    at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:584)
+    at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:447)
+    at java.lang.Thread.run(Thread.java:595)
+
+
+For the inline datastream, I am using the fedora client's 'upload' method to upload the datastream first.
+For the 'M', I am passing the datastream as an http location.
+
+If I use 'null' for the checksum when making the call everything works fine except for the fact that there is not checksum comparison done.
+
+
+Thanks,
+Nish
+
+
+-- 
+
+--------------------------------------------------------------------------------
+Nishen Naidoo
+Research Coordinator
+Macquarie E-Learning Centre of Excellence (MELCOE)
+http://www.melcoe.mq.edu.au/
+E-Mail: nishen@melcoe.mq.edu.au
+Phone (W): +61 2 98506531
+Phone (M): +61 4 30006783
+Phone (F): +61 2 98506527
+ 	  	 

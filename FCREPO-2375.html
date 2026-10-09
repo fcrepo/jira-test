@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2375 Change in behavior with removal of &#x27;test&#x27; namespace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2375</span> Change in behavior with removal of &#x27;test&#x27; namespace</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-12-22 19:16 UTC</td></tr><tr><th>Updated</th><td>2017-01-25 03:28 UTC</td></tr><tr><th>Resolved</th><td>2017-01-06 14:58 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.1</td></tr><tr><th>Labels</th><td>housekeeping, undo-breaking-change</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2247.html">FCREPO-2247</a> Review fedora-specific namespaces defined in the modeshape CND</td></tr></table>
+<h2>Description</h2>
+<p>With Fedora 4.7.0, when I do a HEAD request on a non-existent repository URI with an invalid namespace, I get a 404:</p>
+
+<p>$ curl -I <a href="http://localhost:8080/rest/invalid:foo" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/invalid:foo</a><br/>
+HTTP/1.1 400 Bad Request<br/>
+Date: Thu, 22 Dec 2016 19:14:39 GMT<br/>
+Content-Type: text/plain<br/>
+Content-Length: 38<br/>
+Server: Jetty(9.2.3.v20140905)</p>
+
+<p>(An error about the invalid namespace prefix is logged to the server log, but not displayed to the user in any way).</p>
+
+<p>With 4.7.1-RC-1, I get a 400 Bad Request:</p>
+
+<p>$ curl -I <a href="http://localhost:8080/rest/invalid:foo" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/invalid:foo</a><br/>
+HTTP/1.1 400 Bad Request<br/>
+Date: Thu, 22 Dec 2016 19:15:53 GMT<br/>
+Content-Type: text/plain<br/>
+Content-Length: 38<br/>
+Server: Jetty(9.2.3.v20140905)</p>
+<h2>Comments (18)</h2>
+<div class="comment" id="comment-18298"><div class="by">Andrew Woods, 2016-12-22 19:39 UTC</div><div class="text"><p>What is the desired outcome of this ticket? to document the change in behavior or to return to the previous 404 behavior?</p></div></div>
+<div class="comment" id="comment-18300"><div class="by">Esmé Cowles, 2016-12-22 19:41 UTC</div><div class="text"><p>Unless there is a specific reason for the change, I think we should revert to the old behavior.</p></div></div>
+<div class="comment" id="comment-18302"><div class="by">Esmé Cowles, 2016-12-22 19:43 UTC</div><div class="text"><p>And just to make sure we're on the same page here — I think both this change and 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2374" >
+                <a href="FCREPO-2374.html" class="jira-issue-macro-key issue-link"  title="Change in datatype behavior for strings in RDF output" >
+            
+            FCREPO-2374
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ are very minor, unintentional changes, but that they are nonetheless breaking changes, so they shouldn't be included in 4.7.1.</p></div></div>
+<div class="comment" id="comment-18309"><div class="by">Andrew Woods, 2016-12-22 21:17 UTC</div><div class="text"><p>Esmé Cowles, the description in this ticket mentions getting a 404 with Fedora 4.7.0. But your example shows getting a 400 with both Fedora 4.7.0 and 4.7.1-RC... which is what I am seeing as well.<br/>
+Can you verify which version of Fedora responds with a 404?</p></div></div>
+<div class="comment" id="comment-18310"><div class="by">Esmé Cowles, 2016-12-22 21:24 UTC</div><div class="text"><p>Andrew Woods, I would swear I was seeing a 404 before, but I am now testing with various older versions of Fedora and seeing a 400 Bad Request response in all of them.  It's possible that there was a change in client behavior or something else that caused the test failures I was seeing (<a href="https://gist.github.com/escowles/50eaf62b45e3de313622dcef705496bf" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/50eaf62b45e3de313622dcef705496bf</a>).</p></div></div>
+<div class="comment" id="comment-18349"><div class="by">kefo, 2017-01-05 17:22 UTC</div><div class="text"><p>Since you - Esmé Cowles - may return to this, I reran my quick tests.  All against tomcat7 and postgres9.4:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># FCREPO 4.6.0
+curl -I http://192.168.99.100:8080/fcrepo/rest/invalid:foo
+HTTP/1.1 400 Bad Request
+Server: Apache-Coyote/1.1
+Content-Type: text/plain
+Content-Length: 38
+Date: Thu, 05 Jan 2017 17:01:01 GMT
+Connection: close
+
+# FCREPO 4.6.1
+curl -I http://192.168.99.100:8080/fcrepo/rest/invalid:foo
+HTTP/1.1 400 Bad Request
+Server: Apache-Coyote/1.1
+Content-Type: text/plain
+Content-Length: 38
+Date: Thu, 05 Jan 2017 17:05:30 GMT
+Connection: close
+
+# FCREPO 4.7.0
+curl -I http://192.168.99.100:8080/fcrepo/rest/invalid:foo
+HTTP/1.1 400 Bad Request
+Server: Apache-Coyote/1.1
+Content-Type: text/plain
+Content-Length: 38
+Date: Thu, 05 Jan 2017 17:08:56 GMT
+Connection: close
+
+# FCREPO 4.7.1-rc1
+curl -I http://192.168.99.100:8080/fcrepo/rest/invalid:foo
+HTTP/1.1 400 Bad Request
+Server: Apache-Coyote/1.1
+Content-Type: text/plain
+Content-Length: 38
+Date: Thu, 05 Jan 2017 17:10:29 GMT
+Connection: close
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18355"><div class="by">Esmé Cowles, 2017-01-05 20:35 UTC</div><div class="text"><p>I think the key issue here is that invalid namespace handling hasn't change — but the test: namespace used to be registered, but was removed between 4.7.0 and 4.7.1-RC-1:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/48010a20a13645977d4641cb987c939f6e2522b8#diff-f793c1dd76ef43f9673963a55a86fd8cL37" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/48010a20a13645977d4641cb987c939f6e2522b8#diff-f793c1dd76ef43f9673963a55a86fd8cL37</a></p>
+
+<p>Can we reinstate the test namespace prefix, and remove it in a later major release?</p></div></div>
+<div class="comment" id="comment-18356"><div class="by">Aaron Birkland, 2017-01-05 21:05 UTC</div><div class="text"><p>I'm a little confused - what is the relationship between performing a HEAD on <a href="http://192.168.99.100:8080/fcrepo/rest/invalid:foo" class="external-link" rel="nofollow noreferrer">http://192.168.99.100:8080/fcrepo/rest/invalid:foo</a> and the absence of registered test: prefix?  </p></div></div>
+<div class="comment" id="comment-18357"><div class="by">Esmé Cowles, 2017-01-05 21:12 UTC</div><div class="text"><p>Aaron Birkland  — the ActiveFedora test that led to this issue was doing a HEAD on the URL <a href="http://localhost:8986/rest/test/test:123" class="external-link" rel="nofollow noreferrer">http://localhost:8986/rest/test/test:123</a>.  In 4.7.0, that returns a 404 (because the test: prefix is registered), but in 4.7.1-RC-1, it returns a 410 (because test: was removed).</p>
+
+<p>I incorrectly thought it was the namespace handling that had changed.  But in fact, it was the removal of the test: prefix that caused the change in behavior.</p></div></div>
+<div class="comment" id="comment-18358"><div class="by">Aaron Birkland, 2017-01-05 21:32 UTC</div><div class="text"><p>Esmé Cowles <br/>
+OK, so with 4.7.0, I get:<br/>
+404: <a href="http://localhost:8080/fcrepo/rest/test:123" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test:123</a><br/>
+400: <a href="http://localhost:8080/fcrepo/rest/TEST:123" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/TEST:123</a></p>
+
+<p>So with 4.7.1-RC, I get:<br/>
+400: <a href="http://localhost:8080/fcrepo/rest/test:123" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test:123</a><br/>
+400: <a href="http://localhost:8080/fcrepo/rest/TEST:123" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/TEST:123</a></p>
+
+<p>Would the correct behavior be:<br/>
+404: <a href="http://localhost:8080/fcrepo/rest/test:123" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test:123</a><br/>
+404: <a href="http://localhost:8080/fcrepo/rest/TEST:123" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/TEST:123</a><br/>
+(since both URIs don't actually resolve to a web resource that exists)?</p></div></div>
+<div class="comment" id="comment-18359"><div class="by">Esmé Cowles, 2017-01-05 21:36 UTC</div><div class="text"><p>Aaron Birkland, I think 4.7.1 should have the same behavior as 4.7.0.  After that, I'm fine with removing the test: prefix so that we'd return 400 for anything that used it.</p></div></div>
+<div class="comment" id="comment-18362"><div class="by">Aaron Birkland, 2017-01-05 22:13 UTC</div><div class="text"><p>I think there may be two issues here: </p>
+
+<p>1) the removal of "test:" prefix in the cnd file.  This has implications beyond the 400/404 issue, so it makes sense to keep "test:" around for the 4.7.x series in its own right</p>
+
+<p>2) Fedora's response code to URIs that look like <a href="http://path/to/resource/prefix:whatever" class="external-link" rel="nofollow noreferrer">http://path/to/resource/prefix:whatever</a>. Should the http response codes be affected by the contents of the cnd file at all?  Shouldn't they just be 404s (resource does not exist) rather than 400 (you're not interacting with this resource correctly)?</p></div></div>
+<div class="comment" id="comment-18363"><div class="by">kefo, 2017-01-05 22:37 UTC</div><div class="text"><p>+1 to retaining the current behavior in 4.7.x</p>
+
+<p>As for '2', I don't see why it should be affected by the 'cnd' file unless the cnd file defines that specific node (not the namespace), such that it <b>should</b> exist.  It seems to me that, if, for example, <a href="http://192.168.99.100:8080/fcrepo/rest/invalid:foo" class="external-link" rel="nofollow noreferrer">http://192.168.99.100:8080/fcrepo/rest/invalid:foo</a> doesn't exist, then it should return a 404.  If, however, it does exist - or it is a service that should exist - and you are interacting with it incorrectly, it would be a 400 (or Bad Request) or possibly a 405 (depending).</p>
+
+
+</div></div>
+<div class="comment" id="comment-18364"><div class="by">Aaron Birkland, 2017-01-05 23:01 UTC</div><div class="text"><p>kefo Esmé Cowles Agreed.  It seems that addressing (1) by adding back the test namespace to the cnd file will restore the 4.7.0 behavior described in this ticket. </p>
+
+<p>I think that (2) should probably be a separate ticket, and should not be considered a blocker for 4.7.1.  If the end solution is 404s universally, then that shouldn't break Hydra tests as it's looking for a 404 anyway  </p>
+
+<p>Esmé Cowles By the way, just out of curiosity, why is ActiveFedora making requests to a URI like <a href="http://localhost:8986/rest/test/test:123" class="external-link" rel="nofollow noreferrer">http://localhost:8986/rest/test/test:123</a> in the first place?  Are the tests intentionally trying to provoke a 404 from Fedora by using a random URI that shouldn't exist?</p></div></div>
+<div class="comment" id="comment-18365"><div class="by">Andrew Woods, 2017-01-05 23:14 UTC</div><div class="text"><p>Aaron Birkland? kefo? Esmé Cowles? Would one of you be interested in submitting a PR?</p></div></div>
+<div class="comment" id="comment-18369"><div class="by">Esmé Cowles, 2017-01-06 01:07 UTC</div><div class="text"><p>I've put in a PR to restore the test namespace: <a href="https://github.com/fcrepo4/fcrepo4/pull/1153" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1153</a></p></div></div>
+<div class="comment" id="comment-18372"><div class="by">Esmé Cowles, 2017-01-06 01:15 UTC</div><div class="text"><p>Aaron Birkland, yes, that's it exactly.  The test in question was doing head and get requests for objects it expected not to exist, to make sure it got the correct error from the LDP client in that situation.  I think the test: prefix was a holdover from Fedora 3 days, and happened to keep working because it was also defined in the CND file.</p></div></div>
+<div class="comment" id="comment-18373"><div class="by">Andrew Woods, 2017-01-06 14:58 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/6a0bcda5ed1d3fc93375302091aa20fe80b7bfc3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/6a0bcda5ed1d3fc93375302091aa20fe80b7bfc3</a></p></div></div>
+<p><a href="data/FCREPO-2375.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

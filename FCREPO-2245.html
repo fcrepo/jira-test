@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2245 Integrate fcrepo-walker code into import/export test tool</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2245</span> Integrate fcrepo-walker code into import/export test tool</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Joshua Allan Westgard</td></tr><tr><th>Created</th><td>2016-09-27 14:37 UTC</td></tr><tr><th>Updated</th><td>2016-12-05 17:41 UTC</td></tr><tr><th>Resolved</th><td>2016-09-30 17:07 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Labels</th><td>import-export-phase-1, verification</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2284.html">FCREPO-2284</a> Consolidate verification tools</td></tr></table>
+<h2>Description</h2>
+<p>The goal of this ticket is to integrate this code: </p>
+
+<p><a href="https://github.com/jwestgard/fcrepo-sample-dataset-tests/blob/master/walk_fcrepo.py" class="external-link" rel="nofollow noreferrer">https://github.com/jwestgard/fcrepo-sample-dataset-tests/blob/master/walk_fcrepo.py</a>  </p>
+
+<p>into this code: </p>
+
+<p><a href="https://github.com/bseeger/fcrepo-sample-dataset-tests/blob/master/fcrepo-import-export-tests/verify/source.py" class="external-link" rel="nofollow noreferrer">https://github.com/bseeger/fcrepo-sample-dataset-tests/blob/master/fcrepo-import-export-tests/verify/source.py</a> </p>
+
+<p>Specifically in the HttpSource class (which is an iterator already, or at least attempts to be . </p>
+
+<p>There may be some need to tweak the main code once this integration happens.  Please feel free to contact Bethany Seeger for help with this. </p>
+
+<h2>Comments (19)</h2>
+<div class="comment" id="comment-17655"><div class="by">Youn Noh, 2016-09-27 20:00 UTC</div><div class="text"><p>If there were a transitive containment property, it could make walking the resources in a Fedora repository easier.</p>
+
+<p>It might be useful to store pairs of resources being compared, before and after import or export, in a dictionary.</p>
+
+<p>It might be worthwhile to consider implementing options for verification implemented for BagIt, e.g.:<br/>
+<a href="https://github.com/LibraryOfCongress/bagit-java" class="external-link" rel="nofollow noreferrer">https://github.com/LibraryOfCongress/bagit-java</a></p></div></div>
+<div class="comment" id="comment-17662"><div class="by">A. Soroka, 2016-09-28 14:03 UTC</div><div class="text"><p>Are you suggesting that Fedora should create its own transitive containment property independent of LDP?</p></div></div>
+<div class="comment" id="comment-17663"><div class="by">A. Soroka, 2016-09-28 14:04 UTC</div><div class="text"><blockquote><p>It might be useful to store pairs of resources being compared, before and after import or export, in a dictionary.</p></blockquote>
+
+<p>By that you presumably mean the <em>identifiers</em> of such resources?</p></div></div>
+<div class="comment" id="comment-17668"><div class="by">Youn Noh, 2016-09-28 16:09 UTC</div><div class="text"><p>Transitive versions of containment properties could be useful for SPARQL queries with aggregate functions or with restrictions on descendants.</p>
+
+<p>I reviewed some of the prior discussion with interest:<br/>
+<a href="https://groups.google.com/forum/#!msg/hydra-tech/gEEfQ4-ctUE/mZx9rMgOAgAJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/forum/#!msg/hydra-tech/gEEfQ4-ctUE/mZx9rMgOAgAJ</a></p>
+
+<p>The issue is also discussed in Semantic Web for the Working Ontologist (Chp. 8).</p>
+
+<p>I think there are some contexts in which containment should not be problematic: file paths, spatial, temporal, ...</p>
+
+<p>I don't know if there are other means to achieve the same result in Fedora or if there would be negative consequences.</p></div></div>
+<div class="comment" id="comment-17669"><div class="by">Youn Noh, 2016-09-28 16:10 UTC</div><div class="text"><p>Yes, the identifiers. Thanks for the clarification.</p></div></div>
+<div class="comment" id="comment-17696"><div class="by">Bethany Seeger, 2016-09-30 17:07 UTC</div><div class="text"><p>I updated the code base to integrate Joshua Allan Westgard's code. Also cleaned the code up a bit. </p>
+
+<p>I created a PR for this and merged it already, so if someone wants to see exactly what I changed, you can: <a href="https://github.com/bseeger/fcrepo-sample-dataset-tests/pull/3" class="external-link" rel="nofollow noreferrer">https://github.com/bseeger/fcrepo-sample-dataset-tests/pull/3</a></p>
+
+<p>It would be great if someone else can run this tool and test out the instructions in the README. </p></div></div>
+<div class="comment" id="comment-17697"><div class="by">Joshua Allan Westgard, 2016-09-30 19:28 UTC</div><div class="text"><p>Hi Bethany Seeger, a quick question: does your earlier comment about this not yet working against binaries still apply?  I running this against a set of sample rdf + binaries and getting some errors. In particular I get an error: </p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ TypeError: iter() returned non-iterator of type <span class="code-quote">'FileSource'</span>".  
+</pre>
+</div></div>
+
+<p>This may be something python3 specific as I am running under 3 (after converting with the 2to3 utility, and then changing ConfigParser to configparser &#8211; not sure why that name change is not caught by the converter).  Anyway, long story short, I wasn't able to install all the dependencies under 2 so was trying under 3, but in light of the issues maybe I will revert to 2.</p></div></div>
+<div class="comment" id="comment-17698"><div class="by">Bethany Seeger, 2016-09-30 19:32 UTC</div><div class="text"><p>Hi Joshua Allan Westgard, </p>
+
+<p>I went so far as to install python3, but haven't run this code with it yet.  I'll try that now. </p>
+
+<p>Testing binaries is now functional  - this is probably a python 2 to 3 issue.    (I hope. </p></div></div>
+<div class="comment" id="comment-17699"><div class="by">Joshua Allan Westgard, 2016-09-30 19:37 UTC</div><div class="text"><p>OK. I will revert to testing in 2.  For some reason I cannot get rdflib to install correctly under a v2 virtualenv, so was trying to get around that, but that was probably a bad idea since it introduces other potential for problems.</p></div></div>
+<div class="comment" id="comment-17700"><div class="by">Bethany Seeger, 2016-09-30 19:39 UTC</div><div class="text"><p>Joshua Allan Westgard - I have a commit I just pushed &#8211; so you can stay with three.  Just fetch master again. </p></div></div>
+<div class="comment" id="comment-17701"><div class="by">Bethany Seeger, 2016-09-30 19:41 UTC</div><div class="text"><p>That configparser thing is a pain though - that makes it very specific to either python 2 or 3.  What do people do about that?  Right now I left it as the python3 version. </p></div></div>
+<div class="comment" id="comment-17702"><div class="by">Bethany Seeger, 2016-09-30 19:42 UTC</div><div class="text"><p>Joshua Allan Westgard - and thank you for testing it!  I'm not proud of that code, but it functions.  </p></div></div>
+<div class="comment" id="comment-17703"><div class="by">Joshua Allan Westgard, 2016-09-30 20:29 UTC</div><div class="text"><p>Success!  I have successfully verified an export under Python 3!  This is great &#8211; I particularly like the logging feature.</p>
+
+<p>I'm getting all 100 binary checksums not matching, though.  Is this your experience too?  You mentioned earlier that you had discovered binary corruption issues upon export.</p>
+
+<p>I'm also still hitting the "TypeError" mentioned above when I run "both".  I suspect that this could be some error in the data that is not being caught in time and leads to the type error.</p></div></div>
+<div class="comment" id="comment-17704"><div class="by">Bethany Seeger, 2016-09-30 20:34 UTC</div><div class="text"><p>Great!  Are you using the latest version of the import-export tool?  There was corruption upon export at one point, but it was fixed a while back, so binaries should work fine.  That being said, I've only worked with jpegs and png files - what mimetype are your binaries? </p>
+
+<p>And now that I think of it, I didn't test any binaries today, so I could have had a regression in the code. I was using the LUBM dataset for testing today.  I'll look into this over the weekend (feel free too, if you have the time). </p></div></div>
+<div class="comment" id="comment-17705"><div class="by">Joshua Allan Westgard, 2016-09-30 20:41 UTC</div><div class="text"><p>Cool. I'll keep testing and tinkering.  <del>My binaries are PDFs.</del>  EDIT: in the plant patents there are external resources (i.e. MIME type message external body), and those are the resources that are causing the error.  I will check with the developer team about what the expected behavior is there.</p>
+
+<p>I thought I had the latest import/export tool, but will double-check. </p>
+</div></div>
+<div class="comment" id="comment-17706"><div class="by">Bethany Seeger, 2016-10-01 00:43 UTC</div><div class="text"><p>Great test - I had not tested that scenario nor accounted for it at all in the code.   I think the binary file is a placeholder for these external resources (<a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/41" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/41</a>) - perhaps the test needs to work around it, but we can see what folks say on the tech list.  </p></div></div>
+<div class="comment" id="comment-17707"><div class="by">Youn Noh, 2016-10-01 01:30 UTC</div><div class="text"><p>Were you able to run import on LUBM_02? Export worked fine.</p></div></div>
+<div class="comment" id="comment-18065"><div class="by">Joshua Allan Westgard, 2016-12-05 17:28 UTC</div><div class="text"><p>This ticket has been overtaken by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2284" >
+                <a href="FCREPO-2284.html" class="jira-issue-macro-key issue-link"  title="Consolidate verification tools" >
+            
+            FCREPO-2284
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ in that the consolidated verification tool will already integrate a walker like the one described in this ticket.</p></div></div>
+<div class="comment" id="comment-18067"><div class="by">Andrew Woods, 2016-12-05 17:40 UTC</div><div class="text"><p>Resolved by: <a href="https://jira.duraspace.org/browse/FCREPO-2284" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2284</a></p></div></div>
+<p><a href="data/FCREPO-2245.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-874 ServerInitializationException: Failed to ingest system object(s), while upgrading from 3.3.1 to 3.4.2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-874</span> ServerInitializationException: Failed to ingest system object(s), while upgrading from 3.3.1 to 3.4.2</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Foudil Bretel</td></tr><tr><th>Created</th><td>2011-03-10 23:05 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Environment</h2>Linux 2.6.35.11-83.fc14.i686.PAE Fedora 14 i686 
+<h2>Description</h2>
+<p>1. have a previous 3.3.1 installation in /usr/local/fedora-3.3.1<br/>
+  have /usr/local/fedora-3.4.2 directory created<br/>
+  have /usr/local/fedora -&gt; fedora-3.4.2<br/>
+  have $FEDORA_HOME set to /usr/local/fedora</p>
+
+<p>2. follow instructions "Upgrading from 3.x to 3.4.2" on <a href="https://wiki.duraspace.org/display/FCR30/Upgrading+from+3.x:" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FCR30/Upgrading+from+3.x:</a><br/>
+  (2.a) modify /usr/local/fedora-3.4.2/server/config/fedora.fcfg (fedora_db = DB for 3.3.1 instance):<br/>
+    &lt;param name="jdbcURL" value="jdbc:mysql://localhost/fedora_db?useUnicode=true&amp;amp;characterEncoding=UTF-8&amp;amp;autoReconnect=true"&gt;<br/>
+  (2.b) modify /usr/local/fedora-3.4.2/server/config/fedora.fcfg:<br/>
+   &lt;module role="org.fcrepo.server.storage.lowlevel.ILowlevelStorage" class="org.fcrepo.server.storage.lowlevel.DefaultLowlevelStorageModule"&gt;<br/>
+    &lt;param name="object_store_base" value="../fedora-3.3.1/data/objects" isFilePath="true"&gt;<br/>
+    &lt;param name="datastream_store_base" value="../fedora-3.3.1/data/datastreams" isFilePath="true"&gt;</p>
+
+<p>3. starting the new repository fails:</p>
+
+<p>org.fcrepo.server.errors.ServerInitializationException: Failed to ingest system object(s)<br/>
+...<br/>
+Caused by: org.fcrepo.server.errors.LowlevelStorageException: file /usr/local/fedora-3.4.2/data/objects/2010/1005/15/54/fedora-system_ContentModel-3.0doesn't exist for reading</p>
+
+<p>COMMENTS:</p>
+<ul>
+	<li>using full-paths doesn't work either (value="/usr/local/fedora-3.3.1/data/objects")</li>
+	<li>possible solution: rebuild MySQL (and Resource Index ?) using fedora-rebuild.sh</li>
+</ul>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-874/10123_fcrepo_bugreport.log">fcrepo_bugreport.log</a>, 5796 bytes, added by Foudil Bretel on 2011-03-10</li>
+<li><a href="attachments/FCREPO-874/10124_install.properties">install.properties</a>, 1033 bytes, added by Foudil Bretel on 2011-03-10</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11833"><div class="by">Stephen Bayliss, 2011-03-10 23:25 UTC</div><div class="text"><p>Looking at the error message, it is looking for file /usr/local/fedora-3.4.2/data/objects/2010/1005/15/54/fedora-system_ContentModel-3.0</p>
+
+<p>This looks like a path to your 3.4.2 objects, not 3.3.1.</p>
+
+<p>Fedora picks up the path from the SQL database, so it looks like it is not looking at the 3.3.1 database, but the 3.4.2 version.</p></div></div>
+<div class="comment" id="comment-11834"><div class="by">Foudil Bretel, 2011-03-11 15:31 UTC</div><div class="text"><p>I see. No, actually Fedora does look at the 3.3.1 database (as indicated in the documentation, I haven't created a new DB for 3.4.2), which contains objectPaths like "/usr/local/fedora/data/objects/2011/0208/17/26/bil-fiche_FOUDIL46.1". But since /usr/local/fedora is now a link to fedora-3.4.2, Fedora is looking at an non-existent path.</p>
+
+<p>I find it misleading not having param "object_store_base" in fedora.fcfg taken into account by Fedora at startup, or maybe the documentation should state that the directory/filesystem itself should point to previous 3.x locations.</p></div></div>
+<div class="comment" id="comment-11869"><div class="by">Chris Wilper, 2011-03-15 20:43 UTC</div><div class="text"><p>TBD: Document the workaround(s) we discussed on the March 15th committer call. Note that Akubra-fs does not store canonical paths so would seem to help with this kind of issue in the future.</p></div></div>
+<div class="comment" id="comment-13003"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-874.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

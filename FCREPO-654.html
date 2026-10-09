@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-654 Add REST API methods for exposing and manipulating relationships</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-654</span> Add REST API methods for exposing and manipulating relationships</h1>
+<table class="meta"><tr><th>Type</th><td>Technical task</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2010-03-08 20:49 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-06-30 12:26 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 3, Fedora 3.4</td></tr><tr><th>Parent</th><td><a href="FCREPO-688.html">FCREPO-688</a> REST API completion (3.4)</td></tr></table>
+<h2>Description</h2>
+<p>see <a href="http://fedora-commons.org/confluence/display/FCREPO/Supporting+the+Semantic+Web+and+Linked+Data" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/confluence/display/FCREPO/Supporting+the+Semantic+Web+and+Linked+Data</a></p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11336"><div class="by">Stephen Bayliss, 2010-04-27 16:41 UTC</div><div class="text"><p>Need to define how to implement this</p>
+
+<p>Also need to consider the proposals for semantic web/linked data, and make sure we don't implement something that would conflict with that</p></div></div>
+<div class="comment" id="comment-11374"><div class="by">Stephen Bayliss, 2010-05-18 15:53 UTC</div><div class="text"><p>Suggest that a Fedora 3.4 implementation should at least replicate the functionality available via the SOAP API methods addRelationship, deleteRelationship, getRelationships.</p>
+
+<p>Note that the SOAP API conceptually treats all relationships for an object as a whole - there's no differentiation between RELS-INT and RELS-EXT relationships (potentially this could be extended in the future to modify eg DC relationships).  (The API calls currently perform some mediation based on the subject to determine if a relationship is in/for RELS-INT or RELS-EXT).</p>
+
+<p>REST implementation</p>
+
+<p>Resource URI:<br/>
+/fedora/objects/</p>
+{pid}/relationships<br/>
+<br/>
+This identifies all relationships for the object (RELS-EXT, RELS-INT, DC, object properties, datastream properties).<br/>
+<br/>
+This is effectively the URI of a collection of relationships.<br/>
+<br/>
+Potentially individual relationships could be identified using a syntax such as <br/>
+/fedora/objects/{pid}
+<p>/relationships/subject/predicate/object/objectType<br/>
+But this would get pretty ugly with URI encoding, so this is not proposed.</p>
+
+<p>HTTP Verbs:</p>
+
+<p>GET</p>
+<ul class="alternate" type="square">
+	<li>return all relationships</li>
+	<li>return a subset of relationships by providing query parameters eg for Subject, Subject + Predicate<br/>
+Q: Is this an acceptable use of REST and GET (using query parameters in this way?)</li>
+	<li>provide query parameter for the format of the results (initially RDF/XML, could extend to other formats)</li>
+</ul>
+
+
+<p>PUT</p>
+<ul class="alternate" type="square">
+	<li>the intended use of PUT seems to be replace everything at the URI - so this would not seem applicable</li>
+</ul>
+
+
+<p>POST</p>
+<ul class="alternate" type="square">
+	<li>from Wikipedia, this is "create a new entry in the collection", but elsewhere the definition seems quite a lot broader (see for example <a href="http://www.elharo.com/blog/software-development/web-development/2005/12/08/post-vs-put/" class="external-link" rel="nofollow noreferrer">http://www.elharo.com/blog/software-development/web-development/2005/12/08/post-vs-put/</a>)</li>
+	<li>it would seem therefore to be acceptable to use this for adding and deleting relationships</li>
+</ul>
+
+
+<p>Format for updates:</p>
+<ul class="alternate" type="square">
+	<li>POSTing an RDF/XML document (specifying content type) would add</li>
+	<li>would we want to support POSTing an RDF/XML document for deletions, for instance by specifying a query parameter?</li>
+	<li>POSTing SPARQL/UPDATE (<a href="http://www.w3.org/Submission/SPARQL-Update/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/Submission/SPARQL-Update/</a>)
+	<ul class="alternate" type="square">
+		<li>suggest we only implement INSERT DATA and DELETE DATA (specifying explicit triples to add and delete)</li>
+		<li>what content type to use for the POSTed data?</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>DELETE</p>
+<ul class="alternate" type="square">
+	<li>delete entire collection - don't implement</li>
+</ul>
+
+
+<p>Still to think about</p>
+<ul class="alternate" type="square">
+	<li>HTTP response codes</li>
+	<li>responses from the methods</li>
+</ul>
+
+
+<p>Implementation</p>
+<ul class="alternate" type="square">
+	<li>aim for some generic implementation code that could be used (writeable methods for example) to perform generic updates on RDF datastreams</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11381"><div class="by">eddie, 2010-05-19 19:15 UTC</div><div class="text"><p>On yesterday's call, we talked about supporting something like the following for the request syntax:</p>
+
+<p><a href="http://localhost:8080/fedora/objects/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/</a></p>
+{pid}
+<p>/relationships/</p>
+{subject}
+<p>/</p>
+{predicate}
+<p>/</p>
+{object}
+
+<p>I had assumed URL encoding the path params would be sufficient to accommodate this, but then I came across:<br/>
+<a href="http://tomcat.apache.org/security-6.html#Fixed_in_Apache_Tomcat_6.0.10" class="external-link" rel="nofollow noreferrer">http://tomcat.apache.org/security-6.html#Fixed_in_Apache_Tomcat_6.0.10</a></p>
+
+<p>So in order to support this request syntax, Tomcat users would need to set <br/>
+org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH to true (false by default)</p>
+
+<p>So, setting this param to true lets us have the request syntax we want at the cost of: 1) the potential security issue this fix was supposed to address and 2) minor hassle of having to set an additional system property (e.g. add it to JAVA_OPTS along w/ the ssl props)</p>
+
+<p>I don't know what the situation is w/ other containers.</p></div></div>
+<div class="comment" id="comment-11382"><div class="by">Stephen Bayliss, 2010-05-19 19:48 UTC</div><div class="text"><p>See here for a discussion on this:  <a href="http://www.pubbs.net/200904/tomcat/55784-using-encoded-slashes-safely.html" class="external-link" rel="nofollow noreferrer">http://www.pubbs.net/200904/tomcat/55784-using-encoded-slashes-safely.html</a></p>
+
+<p>Actually I'm not clear here on what the exact functionality is - the implication from that discussion is that with the parameter set to true, A URL containing the path<br/>
+/some%2Fpath/</p>
+
+<p>would actually be decoded and interpreted as /some/path/  (ie, incorrectly according to the URI spec as the above discussion points out)</p>
+
+<p>And with the parameter set to false - does this simply mean that a %2F within the path would just be rejected as an error?</p></div></div>
+<div class="comment" id="comment-11384"><div class="by">eddie, 2010-05-20 02:20 UTC</div><div class="text"><p>I saw that discussion too. As far as I can tell the reporter never did open an issue (did a few searches on the Tomcat Bugzilla). I've also seen reports of this same behavior in Glassfish and Grizzly.</p>
+
+<p>In Tomcat, if ALLOW_ENCODED_SLASH is false, the servlet never sees the request. Setting it to true at least passes the request through, but as noted, already decoded. I did have a functioning workaround by double-encoding the slash, e.g. "info:fedora/demo:1" as "info:fedora%252Fdemo:1" but that's just silly and would be mangled in a correctly behaving container.</p>
+
+<p>For the time being, I've committed a strawman impl that uses query params in lieu of path params.</p></div></div>
+<div class="comment" id="comment-11385"><div class="by">Stephen Bayliss, 2010-05-20 08:58 UTC</div><div class="text"><p>How annoying...</p>
+
+<p>This means that there's also a problem with the LITE APIs - as PIDs allow octet-encoded characters (the example being converting a Handle to a PID, encoding a slash as %2F), and the LITE APIs require the PIDs in the path not to be escaped.</p>
+
+<p>So with Tomcat, path parameters will never work (unless they fix this behaviour) - either the slash (and request) will be disallowed, or it will be incorrectly decoded by Tomcat into a path separator.</p>
+
+<p>And the only Tomcat-friendly path parameter solution would be some alternative non-standard encoding.  Double-encoding I don't like either... Base64 encoding?  Replace slashes by octet-encoded backslashes?  All starts to become a bit hack-ish.</p>
+
+<p>Going with query parameters is probably the best way to go for now, as it means we can get this useful functionality out there - the most important thing.</p>
+
+<p>We can always add a more REST-ful implementation in the future.  Not going with path parameters, but allowing POST/PUT of documents to the objects/pid/relationships URI, containing specification triples to add/delete etc.</p>
+
+<p>I guess I'm a bit uncomfortable with using query parameters and POST/PUT/DELETE-ing to the relationships resource as it starts becoming less REST-ful - specifically what's the resource being addressed by GET/PUT/POST/DELETE when the SPO is specified by query parameters?</p>
+
+<p>I wonder if we should make an explicit non-REST-ful statement with this implementation: possibly introduce non-REST-ful endpoints, maybe a relationships/modify for POST/PUT/DELETE, and relationships/query URI for GET.  </p>
+
+<p>Or maybe we just make it clear in the documentation that using SPO query parameters on the relationships resource is not strictly REST-ful and that a more REST-ful addition to the implementation is to follow...</p></div></div>
+<p><a href="data/FCREPO-654.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

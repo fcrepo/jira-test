@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1027 Storage errors are not correctly reported</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1027</span> Storage errors are not correctly reported</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2011-11-17 17:09 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.4, Fedora 3.5, Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Description</h2>
+<p>Errors in the ILowLevelStorage are not correctly reported.</p>
+
+<p>A couple of examples:</p>
+
+<p>A) Managed content datastream file missing</p>
+<ul class="alternate" type="square">
+	<li>create an object</li>
+	<li>add a managed content datastream</li>
+	<li>locate in the Akubra datastream store</li>
+	<li>delete the file</li>
+	<li>do a REST API delete<br/>
+result: 200 reported, WARN in the log file.  This I think should be a 500 and an ERROR (or even FAIL)</li>
+</ul>
+
+
+<p>B) FOXML file missing</p>
+<ul class="alternate" type="square">
+	<li>create an object</li>
+	<li>locate the FOXML file in the Akubra object store</li>
+	<li>delete the file</li>
+	<li>do a REST API delete<br/>
+result: 404 reported, WARN in the log file.  Again I think this should be a 500 and an ERROR or FAIL</li>
+</ul>
+
+
+<p>Suggest implementation of some test cases for this based on "wrapping" the Akubra implementation in such a way that exceptions can be configurably forced (eg pass parameter to the storage layer that specifies "throw an exception if trying to read object ns:pid/dsid") then test various API methods to ensure that 500 errors are reported (and ERROR/FAIL logged) when there has been a failure in the storage layer.</p>
+
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-12126"><div class="by">Stephen Bayliss, 2011-11-22 22:49 UTC</div><div class="text"><p>For B, this is difficult to detect.  Suggestion on the committer call is, if the FOXML is not found, then check the registry to determine if it is a genuine "404" or a missing file.</p></div></div>
+<div class="comment" id="comment-12315"><div class="by">frank asseg, 2012-06-04 19:13 UTC</div><div class="text"><p>Im not sure how to handle operations that come before the actual deletion of the file via akubra:<br/>
+Should the operation prior to the file deletion execute normally (e.g. ResourceIndex deletion) and as soon as fedora hits an inexistant file return a 500 or should  fedora check if all the binary data exists it it supposed to delete before any other operations?</p></div></div>
+<div class="comment" id="comment-12428"><div class="by">frank asseg, 2012-08-24 18:29 UTC</div><div class="text"><p>as discussed in the committer call a 500 will be bubbled up to the user.</p></div></div>
+<div class="comment" id="comment-12429"><div class="by">frank asseg, 2012-08-24 19:19 UTC</div><div class="text"><p>Hmm we have a problem here, since these are all handled via BaseRestResource.handleException():160<br/>
+and ObjectNotInLowLevelStorageExceptions are mapped to a 404. changing this to a 500 will possibly impact other parts of the REST Api.<br/>
+As it is now, a 404 would be returned if a nonexistant datastream is purged.<br/>
+How to go on here? Should i introduce logic to differ between datastreams and objects so that for one a 404 can be returned while the other one returns a 500?<br/>
+or leave it like this?</p></div></div>
+<div class="comment" id="comment-13115"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1027.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2389 Refactor fcrepo-webapp-plus around externalized Spring configuration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2389</span> Refactor fcrepo-webapp-plus around externalized Spring configuration</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2017-01-20 20:47 UTC</td></tr><tr><th>Updated</th><td>2017-08-16 15:15 UTC</td></tr><tr><th>Resolved</th><td>2017-07-11 04:45 UTC</td></tr><tr><th>Components</th><td>f4-webapp-plus</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>configuration</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2384.html">FCREPO-2384</a> Add optional AppleTrees</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2393.html">FCREPO-2393</a> Consolidate Spring Configuration</td></tr></table>
+<h2>Description</h2>
+<p>This task is to update fcrepo-webapp-plus such that there is only one maven profile that is not active by default.<br/>
+This profile turns web.xml configuration of AuthZ on.</p>
+
+<p>The other components (audit, webac, rbacl, xacml, mint) should have example spring.xml configuration(s) along with documentation for describing:</p>
+<ul class="alternate" type="square">
+	<li>how to enable these components and</li>
+	<li>how to reference such a configuration via system properties.</li>
+</ul>
+
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-18496"><div class="by">Jared Whiklo, 2017-01-26 14:36 UTC</div><div class="text"><p>Andrew Woods Is the task here to provide a bunch of different spring configurations in different folders that someone can copy over the default and build to get their desired setup or is it to just document the sections of the various configuration files that need to be edited to enable the various features?</p></div></div>
+<div class="comment" id="comment-18497"><div class="by">Andrew Woods, 2017-01-26 15:09 UTC</div><div class="text"><p>I was thinking about consolidating the various spring configuration files into a single one, with commented out sections for various modules. This would also be accompanied by some documentation, potentially in the fcrepo-webapp-plus readme.md, that describes who the meaning of the configuration elements and how/why to enable them.</p>
+
+<p>I would like to:<br/>
+1. get away from having to generate build artifacts for the permutations of optional modules, and<br/>
+2. highlight to the community a more flexible approach to site-specific wiring of components.</p>
+
+<p>I will also note that the actual implementation of this ticket may take on a different flavor once the details surface in the course of the work.</p></div></div>
+<div class="comment" id="comment-18498"><div class="by">Unknown, 2017-01-26 15:11 UTC</div><div class="text"><p>Just as an FYI, here is a project that builds the Fedora webapp using a single spring XML file. Feel free to use this as inspiration: <a href="https://gitlab.amherst.edu/acdc/amherst-fedora-webapp" class="external-link" rel="nofollow noreferrer">https://gitlab.amherst.edu/acdc/amherst-fedora-webapp</a></p></div></div>
+<div class="comment" id="comment-18499"><div class="by">Andrew Woods, 2017-01-26 15:16 UTC</div><div class="text"><p>nice</p></div></div>
+<div class="comment" id="comment-18503"><div class="by">Jared Whiklo, 2017-01-26 22:32 UTC</div><div class="text"><p>Very cool Unknown, I will have a look at that and see if I can make this happen.</p></div></div>
+<div class="comment" id="comment-18505"><div class="by">Jared Whiklo, 2017-01-27 19:03 UTC</div><div class="text"><p>Would I also be providing a default <tt>repository.json</tt> in the fcrepo-webapp-plus to allow for the configuration you need there (specifically around authentication)?</p></div></div>
+<div class="comment" id="comment-18506"><div class="by">Andrew Woods, 2017-01-27 19:09 UTC</div><div class="text"><p>I was thinking that this task is to update fcrepo-webapp-plus such that there is only one maven profile that is not active by default. This profile turns web.xml configuration of AuthZ on.<br/>
+Would it make sense to have two repository.json files for the AuthZ and non-AuthZ scenarios?</p></div></div>
+<div class="comment" id="comment-18507"><div class="by">Jared Whiklo, 2017-01-27 19:26 UTC</div><div class="text"><p>Also, should I move the optional dependencies up in pom.xml...and comment them out or leave them in like the new AppleTree one?</p></div></div>
+<div class="comment" id="comment-18508"><div class="by">Andrew Woods, 2017-01-27 19:31 UTC</div><div class="text"><p>Probably make them included all of the time... unless there are specific AuthZ dependencies that can stay in the profile.</p></div></div>
+<div class="comment" id="comment-18509"><div class="by">Jared Whiklo, 2017-01-27 20:02 UTC</div><div class="text"><p>Andrew Woods Ok, so...we can do that. Would the AuthZ enabled web.xml refer to the same <tt>configuration.xml</tt> as the non-AuthZ enabled web.xml? But before you build it you need to open and change the configuration in it?</p>
+
+<p>Here is what I have for the config files so you can see what I'm doing.</p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...whikloj:FCREPO-2389?expand=1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...whikloj:FCREPO-2389?expand=1</a></p></div></div>
+<div class="comment" id="comment-18512"><div class="by">Andrew Woods, 2017-01-27 21:16 UTC</div><div class="text"><p>What you have in the code diff looks good.<br/>
+The web.xml actually points to a <tt>repository.xml</tt> that is configured to potentially use a user-provided <tt>configuration.xml</tt>:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...whikloj:FCREPO-2389?expand=1#diff-62faf366056ce148613dc8d031b9c86aR8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/compare/master...whikloj:FCREPO-2389?expand=1#diff-62faf366056ce148613dc8d031b9c86aR8</a></p>
+
+<p>I trust your judgement over if it makes more sense to have another example <tt>configuration.xml</tt> for AuthZ, or if commented sections are sufficient. </p>
+
+<p>In any case, the high-level recommendation for users will be to use their own, externalized <tt>configuration.xml</tt>.</p></div></div>
+<div class="comment" id="comment-18516"><div class="by">Jared Whiklo, 2017-02-03 18:51 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/55" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/55</a></p></div></div>
+<div class="comment" id="comment-18517"><div class="by">Andrew Woods, 2017-02-03 22:51 UTC</div><div class="text"><p>Thanks for your patience, Jared Whiklo, as we iterator on this a couple of times... but what you have here looks great.</p></div></div>
+<div class="comment" id="comment-18518"><div class="by">Jared Whiklo, 2017-02-04 05:11 UTC</div><div class="text"><p>Tried to make the changes requested. Let me know if anything is unclear. </p>
+
+<p>I edited the logback, and was thinking about not providing one and just let the one from fcrepo-webapp get carried through. However that one also has entries for transform and connector still in it. </p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/55" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/55</a></p></div></div>
+<div class="comment" id="comment-18519"><div class="by">Andrew Woods, 2017-02-06 16:06 UTC</div><div class="text"><p>This looks good, with some minor code review comments.<br/>
+Once we close this ticket, the natural follow-on is to provide a similar consolidated configuration pattern for the core webapp: <a href="https://jira.duraspace.org/browse/FCREPO-2393" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2393</a></p></div></div>
+<div class="comment" id="comment-18520"><div class="by">Jared Whiklo, 2017-02-06 16:43 UTC</div><div class="text"><p>New commit on <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/55" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/55</a></p></div></div>
+<div class="comment" id="comment-18521"><div class="by">Andrew Woods, 2017-02-06 18:04 UTC</div><div class="text"><p>One last minor code review comment... then this should be good to go.</p></div></div>
+<div class="comment" id="comment-18523"><div class="by">Andrew Woods, 2017-02-06 21:16 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/17c7836368fbcb350c177db4be6fdd1bb81aa3eb" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/17c7836368fbcb350c177db4be6fdd1bb81aa3eb</a></p></div></div>
+<div class="comment" id="comment-19179"><div class="by">Andrew Woods, 2017-07-11 04:19 UTC</div><div class="text"><p>PR for 4.7-maintenance: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/59" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/59</a></p></div></div>
+<div class="comment" id="comment-19180"><div class="by">Danny Bernstein, 2017-07-11 04:45 UTC</div><div class="text"><p>Resolved on 4.7-maintanence with <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/bbe8abae786f1e3e850818a684a4e4e68e19e8cd" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/bbe8abae786f1e3e850818a684a4e4e68e19e8cd</a></p></div></div>
+<p><a href="data/FCREPO-2389.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

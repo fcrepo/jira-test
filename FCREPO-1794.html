@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1794 Implement acl:Update and acl:Delete modes in WebAC</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1794</span> Implement acl:Update and acl:Delete modes in WebAC</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-10-26 16:06 UTC</td></tr><tr><th>Updated</th><td>2016-01-30 15:10 UTC</td></tr><tr><th>Resolved</th><td>2015-10-30 17:34 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Labels</th><td>webac</td></tr></table>
+<h2>Description</h2>
+<p>Implement two new permissions for the WebAC framework. Both of these will currently be implemented on resources and not properties (at this time).</p>
+
+<p>See <a href="https://wiki.duraspace.org/display/FF/Semantics+of+ACL+Modes" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Semantics+of+ACL+Modes</a> for more information on the WebAC modes.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-15586"><div class="by">Jared Whiklo, 2015-10-28 03:52 UTC</div><div class="text"><p>PR for the webac ontology changes:<br/>
+<a href="https://github.com/fcrepo4/fcrepo-webac-ontology/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-webac-ontology/pull/1</a></p>
+
+<p>Unknown, looking at your implementation of rolesHavePermissions in WebACAuthorizationDelegate.</p>
+
+<p>It seems to rely on only one action for each permission, but with Update, Delete and Append these will overlap Write. Or at least they would in my mind. So I am looking at your logic <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/blob/master/src/main/java/org/fcrepo/auth/webac/WebACAuthorizationDelegate.java#L113-L117" class="external-link" rel="nofollow noreferrer">here</a>.</p>
+
+<p>Would it be adequate to reverse the flow and compare the roles provided to see if they give the actions requested (instead of the current opposite)?</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/compare/master...whikloj:fcrepo-1794?expand=1" class="external-link" rel="nofollow noreferrer">Here is a link</a> to the comparison of my changes so far. The important one is how we manage the actionMap?</p></div></div>
+<div class="comment" id="comment-15593"><div class="by">Unknown, 2015-10-28 16:05 UTC</div><div class="text"><p>Jared Whiklo we discussed holding off on implementing these modes (acl:Update and acl:Delete) for now. They are not part of the w3c document.</p></div></div>
+<div class="comment" id="comment-15639"><div class="by">Jared Whiklo, 2015-10-30 17:34 UTC</div><div class="text"><p>Based on the <a href="https://wiki.duraspace.org/display/FF/Design+-+WebAccessControl+Authorization+Delegate#Design-WebAccessControlAuthorizationDelegate-Phase1" class="external-link" rel="nofollow noreferrer">Phase 1 stakeholder use cases</a>, there is no need for these two modes to be added at this time</p></div></div>
+<p><a href="data/FCREPO-1794.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

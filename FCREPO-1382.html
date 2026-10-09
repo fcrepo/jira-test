@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1382 PUT with bad RDF should have better message</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1382</span> PUT with bad RDF should have better message</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Yinlin Chen</td></tr><tr><th>Created</th><td>2015-02-25 19:32 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-03-05 14:48 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>When creating a container resource with an RDF body, if the RDF is invalid in some way, it would be helpful if the message found in the internal logging would be sanitized and returned to the client.</p>
+
+<p>curl -i -XPUT --data-binary @body.rdf -H"Content-Type: text/turtle" localhost:8080/rest/test</p>
+
+<p>Where "body.rdf" can be any of the attached "body.*.rdf" documents.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1382/10211_body.junk.characters.rdf">body.junk.characters.rdf</a>, 239 bytes, added by Andrew Woods on 2015-02-25</li>
+<li><a href="attachments/FCREPO-1382/10212_body.missing.prefix.rdf">body.missing.prefix.rdf</a>, 278 bytes, added by Andrew Woods on 2015-02-25</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-13599"><div class="by">Yinlin Chen, 2015-03-03 21:08 UTC</div><div class="text"><p>Curretly it is show the message "RDF was not parsable" to the client. What is the better message?<br/>
+how about "There are syntax errors in the RDF file"?</p>
+
+<p>Regards to internal logging, do you mean add a LOGGER.debug() ?</p></div></div>
+<div class="comment" id="comment-13613"><div class="by">Andrew Woods, 2015-03-04 21:35 UTC</div><div class="text"><p>The solution to this ticket may be similar to: <a href="https://jira.duraspace.org/browse/FCREPO-1368" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1368</a> , but likely requires digging into the code to find where the specific exception message is being nested inside of the more general MalformedRdfException.</p></div></div>
+<div class="comment" id="comment-13614"><div class="by">Yinlin Chen, 2015-03-04 23:34 UTC</div><div class="text"><p>Will it be better? </p>
+
+<p>RDF was not parsable: <span class="error">&#91;line: 7, col: 29&#93;</span> Undefined prefix: ore</p>
+
+<p>RDF was not parsable: <span class="error">&#91;line: 5, col: 1 &#93;</span> Unknown char: `(96;0x0060)</p>
+</div></div>
+<div class="comment" id="comment-13615"><div class="by">Andrew Woods, 2015-03-05 01:47 UTC</div><div class="text"><p>Yes, the messages you note would be more helpful for clients.</p></div></div>
+<div class="comment" id="comment-13616"><div class="by">Yinlin Chen, 2015-03-05 14:48 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/742" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/742</a></p></div></div>
+<div class="comment" id="comment-13638"><div class="by">Andrew Woods, 2015-03-06 17:58 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/bd5b35a42e20ff3e81f4ffa35a6a05abea8c2da1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/bd5b35a42e20ff3e81f4ffa35a6a05abea8c2da1</a></p></div></div>
+<p><a href="data/FCREPO-1382.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

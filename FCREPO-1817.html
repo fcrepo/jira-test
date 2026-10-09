@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1817 JCR leakage in version creation location</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1817</span> JCR leakage in version creation location</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-11-04 22:24 UTC</td></tr><tr><th>Updated</th><td>2016-04-29 21:47 UTC</td></tr><tr><th>Resolved</th><td>2016-03-18 21:34 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>When creating a version, the returned location contains the JCR UUID of the created version.<br/>
+To reproduce:</p>
+<ol>
+	<li>Create a resource<br/>
+curl -i -XPUT <a href="http://localhost:8080/rest/book" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book</a></li>
+	<li>Create version of the resource<br/>
+curl -i -XPOST -H"slug: v0" <a href="http://localhost:8080/rest/book/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/fcr:versions</a>
+	<ul>
+		<li>BAD: notice the response location: <a href="http://localhost:8080/rest/book/fcr:versions/87a0a8c317f1e7aa5511ed-a01e-4070-880a-bb3d78a3bbff" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/fcr:versions/87a0a8c317f1e7aa5511ed-a01e-4070-880a-bb3d78a3bbff</a></li>
+		<li>It should be: <a href="http://localhost:8080/rest/book/fcr:versions/v0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/fcr:versions/v0</a><br/>
+---------</li>
+	</ul>
+	</li>
+	<li>Also, if a child of the resource is created:<br/>
+curl -i -XPUT <a href="http://localhost:8080/rest/book/page" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/page</a></li>
+	<li>And another version of the resource is created:<br/>
+curl -i -XPOST -H"slug: v1" <a href="http://localhost:8080/rest/book/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/fcr:versions</a></li>
+	<li>And the version is retrieved:<br/>
+curl -i  <a href="http://localhost:8080/rest/book/fcr:versions/v1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/fcr:versions/v1</a>
+	<ul>
+		<li>BAD: the child resource has a UUID path such as:<br/>
+ldp:contains &lt;<a href="http://localhost:8080/rest/book/fcr:versions/87a0a8c317f1e729ba7b74-3ac9-480a-a5f2-7d4e96c24cfb/page" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/fcr:versions/87a0a8c317f1e729ba7b74-3ac9-480a-a5f2-7d4e96c24cfb/page</a>&gt; </li>
+		<li>It should be:<br/>
+ldp:contains &lt;<a href="http://localhost:8080/rest/book/fcr:versions/v1/page" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/fcr:versions/v1/page</a>&gt; .</li>
+	</ul>
+	</li>
+</ol>
+
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-16334"><div class="by">Andrew Woods, 2016-03-13 15:15 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/pull/1005" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1005</a></p></div></div>
+<div class="comment" id="comment-16373"><div class="by">Andrew Woods, 2016-03-18 21:34 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/f0db4f21a1dcf72eeb2ffb565462ab7fc4600a8c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f0db4f21a1dcf72eeb2ffb565462ab7fc4600a8c</a></p></div></div>
+<p><a href="data/FCREPO-1817.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

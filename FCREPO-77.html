@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-77 addDatastream allows invalid values for checksumType</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-77</span> addDatastream allows invalid values for checksumType</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Wayland, Rosser L (rlw)</td></tr><tr><th>Assignee</th><td>Robert Haschart</td></tr><tr><th>Created</th><td>2007-05-10 17:25 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr></table>
+<h2>Description</h2>
+<p>Our site is having a problem with the values for checksum parameters.  Adding a new datastream to a Fedora object with a checksumType value of "DEFAULT" is permitted using the API-M addDatastream function.  The datastream is added and contains the line &lt;foxml:contentDigest DIGEST="none" TYPE="DEFAULT"/&gt;</p>
+
+<p> After the successful API-M add the resulting Fedora object cannot be imported to another Fedora repository using the FedoraAdmin client.  The â€˜Ingest From Repositoryâ€™ rejects with the following error message:</p>
+
+
+
+<p>Fedora.server.errors.ObjectValidityException: DOValidatorXMLSchema returned validation exception.</p>
+
+<p>The underlying exception was a org.xml.sax.SAXException.</p>
+
+<p>The message was "URI=null Line=468: cvc-enumeration-valid: Value 'DEFAULT' is not facet-valid with respect to enumeration '<span class="error">&#91;MD5, SHA-1, SHA-256, SHA-384, SHA-512, HAVAL, TIGER, WHIRLPOOL, DISABLED&#93;</span>'.</p>
+
+<p>It must be a value from the enumeration."</p>
+
+
+
+<p>This leaves me with some questions on the value of checksumType to use when calling API-M.  Since the FedoraAdmin client rejects the value of "DEFAULT" when adding an object, should the call to addDatastream using a value of "DEFAULT" for checksum type also be rejected as an error or should it cause the new datastream to be added using the default checksum algorithm specified in the Fedora.fcfg file (in this case DISABLED since autoChecksum is set to false in the Fedora.fcfg file)?  Assuming that autoChecksum is false, should the value â€œDEFAULTâ€ be used for the checksumType attribute in the modifyDatastreamByValue and modifyDatastreamByReference methods or should this also use the value "DISABLED"?  Since there are now problem records in our repository, should a modifyDatastream using a checksumType â€œDEFAULTâ€ or â€œDISABLEDâ€ correct the value in the foxml?</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10146"><div class="by">Chris Wilper, 2007-11-02 23:07 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>This fix has gone into maintenance-2.2 r6261,<br/>
+and still needs to be forward-ported to trunk <br/>
+before this issue is closed.</p></div></div>
+<div class="comment" id="comment-10147"><div class="by">Chris Wilper, 2007-11-06 01:14 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>Closed; fix is in trunk r6252.</p></div></div>
+<div class="comment" id="comment-10148"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: rwayland3<br/>
+Item #: 1716636<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1716636" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1716636</a><br/>
+Closed On: 2007-11-05 19:14:23<br/>
+Closed By: cwilper</p></div></div>
+<p><a href="data/FCREPO-77.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1385 Anonymous Blank Nodes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1385</span> Anonymous Blank Nodes</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Incomplete</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2015-02-27 00:13 UTC</td></tr><tr><th>Updated</th><td>2015-05-04 21:33 UTC</td></tr><tr><th>Resolved</th><td>2015-05-04 19:36 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr><tr><th>Addresses</th><td><a href="FCREPO-1302.html">FCREPO-1302</a> Ingest degradation bulk load</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-1514.html">FCREPO-1514</a> Revisit Blank Node implementation</td></tr></table>
+<h2>Description</h2>
+<p>This task is to re-implement blank nodes along the lines of the following plan:</p>
+
+<p>1) The REST API would continue to accept RDF documents with blank nodes (this is not a change from the current behavior).</p>
+
+<p>2) The fedora:Blanknode class in the fedora ontology would be eliminated.</p>
+
+<p>3) Blank nodes will no longer be published at the .well-known/genid location.</p>
+
+<p>That is, when RDF documents with blank nodes are added to Fedora, those blank nodes will be skolemized internally and stored under the node that the RDF document described, but will not be made available at any location.</p>
+
+<p>4) When fedora:Container nodes are requested, any skolem nodes contained in that document will be serialized as blank nodes, according to the concrete RDF syntax that is requested.</p>
+
+<p>5) When a fedora:Container (one that contains blank nodes) is deleted, the corresponding skolem nodes will also be removed from Fedora.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1385/10225_bnode.txt">bnode.txt</a>, 210 bytes, added by Andrew Woods on 2015-04-27</li>
+<li><a href="attachments/FCREPO-1385/10226_bnode-update.txt">bnode-update.txt</a>, 232 bytes, added by Andrew Woods on 2015-04-27</li>
+<li><a href="attachments/FCREPO-1385/10215_build.log">build.log</a>, 3720188 bytes, added by Jared Whiklo on 2015-03-20</li>
+<li><a href="attachments/FCREPO-1385/10214_rbacl-build.out">rbacl-build.out</a>, 3719926 bytes, added by Andrew Woods on 2015-03-18</li>
+</ul>
+<h2>Comments (45)</h2>
+<div class="comment" id="comment-13576"><div class="by">A. Soroka, 2015-02-27 15:39 UTC</div><div class="text"><p>To be very clear here (since there has been a lot of confusion around this topic):</p>
+
+<p>"That is, when RDF documents with blank nodes are added to fedora, those blank nodes would remain anonymous and not be made available at any skolemized location."</p>
+
+<p>is inaccurate. In fact, the incoming bnodes will certainly be skolemized (there is no other way to persist them) but the skolemized URIs will not be exposed via the Fedora/LDP API. There is no meaning in the idea of a "skolemized location". </p></div></div>
+<div class="comment" id="comment-13577"><div class="by">A. Soroka, 2015-02-27 15:41 UTC</div><div class="text"><p>"The fedora:Blanknode class in the fedora ontology would be eliminated."</p>
+
+<p>Yes, but to be clear, there will continue to exist a repository-internal type for distinguishing the skolem nodes.</p></div></div>
+<div class="comment" id="comment-13657"><div class="by">A. Soroka, 2015-03-09 15:55 UTC</div><div class="text"><p>Currently in:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/tree/BNodesAreBNodes" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/tree/BNodesAreBNodes</a></p>
+
+<p>blocked because ITs in fcrepo-auth-commons are failing. These tests are undocumented and make three assertions like:</p>
+
+<p> verify(fad, times(9)).hasPermission(any(Session.class), any(Path.class), any(String[].class));</p>
+
+<p>9 times exactly? Why? I could change this to 8 and the tests would pass, but that seems a bit foolhardy.</p>
+
+<p>Osman Din, perhaps you can shed some light on the magic number 9?</p></div></div>
+<div class="comment" id="comment-13658"><div class="by">Osman Din, 2015-03-09 16:22 UTC</div><div class="text"><p>A. Soroka The magic number has to do with ModeShape implementation checking node permissions a certain number of times when updating and setting properties.So it should be safe to change it to the new number, but it might be much better to get rid of (or at least modify) those lines altogether since the checks are too implementation dependent. Just to clarify, I didn't introduce these checks (only updated them to keep the status quo). </p></div></div>
+<div class="comment" id="comment-13660"><div class="by">A. Soroka, 2015-03-09 16:43 UTC</div><div class="text"><p>I'm not sure where to go on this. I'd like to keep moving on my issue, but I don't like leaving behind these opaque and uncommunicative tests. Osman Din, do you have any sense of the amount of work required to "intelligible-ize" these guys? Or were you suggesting that it should be safe to just rip 'em out entirely?</p></div></div>
+<div class="comment" id="comment-13680"><div class="by">Andrew Woods, 2015-03-10 14:52 UTC</div><div class="text"><p>A. Soroka, In terms of the fcrepo-auth-commons tests, we want to make sure that `hasPermission()` is being called (that is a critical part of authorization  However, what exactly ModeShape is doing under the covers is of less importance... and apparently evolving with incremental ModeShape releases. I would suggest changing the tests to ensure that `hasPermission()` is being called at least once (i.e. count &gt; 0).<br/>
+More granularity than that is brittle and meaningless.</p></div></div>
+<div class="comment" id="comment-13684"><div class="by">A. Soroka, 2015-03-10 15:56 UTC</div><div class="text"><p>This makes a lot of sense. I'll do this and move on.</p></div></div>
+<div class="comment" id="comment-13692"><div class="by">A. Soroka, 2015-03-10 17:10 UTC</div><div class="text"><p>Andrew Woods,cb, Benjamin Armintor</p>
+
+<p>I am close to finishing this, with one remaining question: are we still intent on providing the ability to refer to hash-URIs without having to create resources to that purpose? In other words, if I POST an object via some RDF:</p>
+
+<p>&lt;&gt; &lt;hasRelationship&gt; &lt;#foobar&gt;.<br/>
+&lt;#foobar&gt; a &lt;thing&gt;.</p>
+
+<p>do we want a JCR resource that persists &lt;#foobar&gt; to be automatically created as a descendant node of the JCR node that persists &lt;&gt;? That <em>seems</em> to be what is happening now, although I'm not honestly sure. I'm pinging cb and Benjamin Armintor on this because it seems to be their code, and hopefully they have a better sense than do I of any policy we may have around this.</p></div></div>
+<div class="comment" id="comment-13717"><div class="by">A. Soroka, 2015-03-11 15:27 UTC</div><div class="text"><p>Okay, I found the relevant patch:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/5c30c743bb05ef627acc90f4b037b118c7d9de9c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/5c30c743bb05ef627acc90f4b037b118c7d9de9c</a></p>
+
+<p>and it looks like you rolled that joint, cb. Can you help me to understand what the policy established there was? We do create nodes internally as described in my previous comment, and you did it in the skolemization code, whereas I will probably break it out into independent classes, but in any case, what is the lifecycle on those nodes? It looks like you are establishing them as "fedora:resource"s. Is that the most we can say about them? Do we have some way to fit into the the LDP model? Do we expose them as independent URIs?</p></div></div>
+<div class="comment" id="comment-13724"><div class="by">Andrew Woods, 2015-03-13 14:15 UTC</div><div class="text"><p>Thanks for digging into this, A. Soroka. Where does the discussion stand? Are you blocked?</p></div></div>
+<div class="comment" id="comment-13725"><div class="by">A. Soroka, 2015-03-13 14:23 UTC</div><div class="text"><p>Well, more or less, Andrew Woods. What I mean is that I could simply try hard to duplicate exactly what we're doing now, and I think I could do an okay job of that, but without actually having a definition of what we're doing now I'd do it by reading the old code. I'd prefer, of course, to actually set a policy on this and record it publicly (and I'm sure we would all prefer that).</p>
+
+<p>I may have a habit of wanting to be too precise with too much of our behavior, but I don't think I'm doing that here-- I think we really do want to have a solid, precise, and public understanding of how we handle these guys (hash URIs).</p>
+
+<p>This is the last task, to my current understanding, before I can send a PR for this. (Famous last words!)</p></div></div>
+<div class="comment" id="comment-13726"><div class="by">Andrew Woods, 2015-03-13 14:28 UTC</div><div class="text"><p>Thanks, A. Soroka. I agree, it would be ideal to have a documented policy/approach to hash-URIs. Since cb does not appear to be getting these notifications, can you please touch base with him in some other way (phone? email? text? letter? house-visit?) to get his guiding principles in the original design... then report back to this ticket (and eventually to the wiki)?</p></div></div>
+<div class="comment" id="comment-13727"><div class="by">A. Soroka, 2015-03-13 14:31 UTC</div><div class="text"><p>Will do.</p></div></div>
+<div class="comment" id="comment-13732"><div class="by">A. Soroka, 2015-03-13 20:13 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/748" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/748</a></p></div></div>
+<div class="comment" id="comment-13744"><div class="by">A. Soroka, 2015-03-16 15:52 UTC</div><div class="text"><p>I just found a possible improvement in efficiency. Please hold off on review.</p></div></div>
+<div class="comment" id="comment-13755"><div class="by">Andrew Woods, 2015-03-18 19:10 UTC</div><div class="text"><p>The following command (which is required for releasing fcrepo4) fails:<br/>
+mvn clean javadoc:jar</p></div></div>
+<div class="comment" id="comment-13756"><div class="by">A. Soroka, 2015-03-18 19:11 UTC</div><div class="text"><p>Can you give more information? A stacktrace, for example?</p></div></div>
+<div class="comment" id="comment-13757"><div class="by">Andrew Woods, 2015-03-18 19:17 UTC</div><div class="text"><p>1 error<br/>
+4 warnings<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Reactor Summary:<br/>
+<span class="error">&#91;INFO&#93;</span> <br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Commons 4 .................................. SUCCESS <span class="error">&#91;0.548s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository BOM ............................. SUCCESS <span class="error">&#91;0.017s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository JCR BOM ......................... SUCCESS <span class="error">&#91;0.017s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository BOMs ............................ SUCCESS <span class="error">&#91;0.020s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Kernel API ...................... SUCCESS <span class="error">&#91;2.677s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Metrics Module .................. SUCCESS <span class="error">&#91;1.060s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Minter Module ................... SUCCESS <span class="error">&#91;1.088s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Configurations Module ........... SUCCESS <span class="error">&#91;0.017s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Kernel Implementation ........... FAILURE <span class="error">&#91;6.814s&#93;</span><br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository JMS Module ...................... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Object Serialization Module ..... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository HTTP Commons Module ............. SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository FileSystem Connector Module ..... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Authorization Commons Module .... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository HTTP API Module ................. SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository RDF Transformations Module ...... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository Deployable Web Application ...... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository LDP integration tests Module .... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> Fedora Repository RDF integration tests Module .... SKIPPED<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> BUILD FAILURE<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Total time: 16.074s<br/>
+<span class="error">&#91;INFO&#93;</span> Finished at: Wed Mar 18 15:08:53 EDT 2015<br/>
+<span class="error">&#91;INFO&#93;</span> Final Memory: 30M/422M<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;ERROR&#93;</span> Failed to execute goal org.apache.maven.plugins:maven-javadoc-plugin:2.10.1:jar (default-cli) on project fcrepo-kernel-impl: MavenReportException: Error while creating archive:<br/>
+<span class="error">&#91;ERROR&#93;</span> Exit code: 1 - /home/awoods/programming/java/apps/fedora/futures/fcrepo4/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/Deskolemizer.java:66: warning: no description for @param<br/>
+<span class="error">&#91;ERROR&#93;</span> * @param idTranslator<br/>
+<span class="error">&#91;ERROR&#93;</span> ^<br/>
+<span class="error">&#91;ERROR&#93;</span> /home/awoods/programming/java/apps/fedora/futures/fcrepo4/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/Deskolemizer.java:67: error: @param name not found<br/>
+<span class="error">&#91;ERROR&#93;</span> * @param context<br/>
+<span class="error">&#91;ERROR&#93;</span> ^<br/>
+<span class="error">&#91;ERROR&#93;</span> /home/awoods/programming/java/apps/fedora/futures/fcrepo4/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/Deskolemizer.java:67: warning: no description for @param<br/>
+<span class="error">&#91;ERROR&#93;</span> * @param context<br/>
+<span class="error">&#91;ERROR&#93;</span> ^<br/>
+<span class="error">&#91;ERROR&#93;</span> /home/awoods/programming/java/apps/fedora/futures/fcrepo4/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/Deskolemizer.java:69: warning: no @param for model<br/>
+<span class="error">&#91;ERROR&#93;</span> public Deskolemizer(final IdentifierConverter&lt;Resource, FedoraResource&gt; idTranslator, final Model model) {<br/>
+<span class="error">&#91;ERROR&#93;</span> ^<br/>
+<span class="error">&#91;ERROR&#93;</span> /home/awoods/programming/java/apps/fedora/futures/fcrepo4/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/HashURIDetector.java:44: warning: no description for @param<br/>
+<span class="error">&#91;ERROR&#93;</span> * @param idTranslator<br/>
+<span class="error">&#91;ERROR&#93;</span> ^<br/>
+<span class="error">&#91;ERROR&#93;</span> <br/>
+<span class="error">&#91;ERROR&#93;</span> Command line was: /usr/lib/jvm/jdk1.8.0_25/jre/../bin/javadoc @options @packages<br/>
+<span class="error">&#91;ERROR&#93;</span> <br/>
+<span class="error">&#91;ERROR&#93;</span> Refer to the generated Javadoc files in '/home/awoods/programming/java/apps/fedora/futures/fcrepo4/fcrepo-kernel-impl/target/apidocs' dir.<br/>
+<span class="error">&#91;ERROR&#93;</span> -&gt; <span class="error">&#91;Help 1&#93;</span><br/>
+<span class="error">&#91;ERROR&#93;</span> <br/>
+<span class="error">&#91;ERROR&#93;</span> To see the full stack trace of the errors, re-run Maven with the -e switch.<br/>
+<span class="error">&#91;ERROR&#93;</span> Re-run Maven using the -X switch to enable full debug logging.<br/>
+<span class="error">&#91;ERROR&#93;</span> <br/>
+<span class="error">&#91;ERROR&#93;</span> For more information about the errors and possible solutions, please read the following articles:<br/>
+<span class="error">&#91;ERROR&#93;</span> <span class="error">&#91;Help 1&#93;</span> <a href="http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException" class="external-link" rel="nofollow noreferrer">http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException</a><br/>
+<span class="error">&#91;ERROR&#93;</span> <br/>
+<span class="error">&#91;ERROR&#93;</span> After correcting the problems, you can resume the build with the command<br/>
+<span class="error">&#91;ERROR&#93;</span>   mvn &lt;goals&gt; -rf :fcrepo-kernel-impl</p></div></div>
+<div class="comment" id="comment-13758"><div class="by">Andrew Woods, 2015-03-18 21:01 UTC</div><div class="text"><p>After successfully building this PR, I notice that both:<br/>
+fcrepo-module-auth-rbacl and<br/>
+fcrepo-module-auth-xacml</p>
+
+<p>builds are broken (see attached rbacl-build.out).</p></div></div>
+<div class="comment" id="comment-13759"><div class="by">Andrew Woods, 2015-03-19 13:33 UTC</div><div class="text"><p>It looks like the issue happens during serialization by RdfStreamStreamingOutput.java. The parent of the target resource is included in the serialization, and in some test cases, that parent is the repository root, which is closed to READs for the test user.<br/>
+Unlike before, the Deskolimizer.java actually reads the underlying JCR node to get the nodeType.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/748/files#diff-629585426c9eb791824f8fe7d4b9b643R118" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/748/files#diff-629585426c9eb791824f8fe7d4b9b643R118</a></p>
+
+<p>Since users are not always allowed to read the parent nodes, the underlying READ request fails.</p></div></div>
+<div class="comment" id="comment-13760"><div class="by">A. Soroka, 2015-03-19 13:51 UTC</div><div class="text"><p>I think I follow you, but I'm a little baffled. How can it be possible to determine the types on a resource without actually reading it?</p></div></div>
+<div class="comment" id="comment-13761"><div class="by">Andrew Woods, 2015-03-19 13:54 UTC</div><div class="text"><p>I am not sure it is possible... but before the Deskolemizer, we were not trying to determine the types.</p></div></div>
+<div class="comment" id="comment-13762"><div class="by">A. Soroka, 2015-03-19 13:58 UTC</div><div class="text"><p>Hm. I need to look at the failing stuff in the auth modules. It's getting less and less obvious to me why modules concerned with auth should be in any way sensitive to this blank node thing. </p></div></div>
+<div class="comment" id="comment-13763"><div class="by">Andrew Woods, 2015-03-19 14:52 UTC</div><div class="text"><p>It has to do with reading JCR nodes. If authorization is enabled, and the underlying F4 mechanics is trying to read resources that are not available to the requesting user, there is a conflict.</p></div></div>
+<div class="comment" id="comment-13764"><div class="by">A. Soroka, 2015-03-19 15:03 UTC</div><div class="text"><p>Well, one option here is to assume that if the node is unreadable, it is not Skolem. Another is to assume that it is. Those are pretty much the only two options if we use a type to mark Skolem nodes. </p>
+{grin}
+
+<p>The other option that comes to mind is to replace the use of a type with some kind of magic path segment. Then determination could be made on the basis of a path, without reading the node. That seems quite grungy, but maybe it's the most practical thing.</p></div></div>
+<div class="comment" id="comment-13773"><div class="by">Andrew Woods, 2015-03-20 12:43 UTC</div><div class="text"><p>From a performance perspective, there may be a strong argument for using a "magic path segment" in flagging Skolem resources; however...</p>
+
+<p>From an authorization perspective, with the current implementation, Skolem resources are always child resources of a dereferenceable, first-class parent resource. Also, by their very nature, Skolem resources are not themselves directly dereferenceable. Therefore, I can not think of a scenario when a user would ever have access to a Skolem resource if they did not have access to the dereferenceable parent resource. </p>
+
+<p>That would imply that the method, isSkolem()<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/748/files#diff-629585426c9eb791824f8fe7d4b9b643R109" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/748/files#diff-629585426c9eb791824f8fe7d4b9b643R109</a></p>
+
+<p>would only hit an "access denied" exception in the case where the target resource <b>is not Skolem</b>... because the user will always be denied when requesting the parent if the resource were Skolem.</p></div></div>
+<div class="comment" id="comment-13774"><div class="by">A. Soroka, 2015-03-20 13:13 UTC</div><div class="text"><p>See, this is where I was going earlier, but then we need to understand how the auth stuff is running those failing tests. Are you advising me to step back from the "magic path segment" (because I would love to)?</p></div></div>
+<div class="comment" id="comment-13775"><div class="by">Andrew Woods, 2015-03-20 13:38 UTC</div><div class="text"><p>If you agree with the rationale, then yes, please moon-walk right away from the "magic path".</p></div></div>
+<div class="comment" id="comment-13776"><div class="by">A. Soroka, 2015-03-20 13:40 UTC</div><div class="text"><p>I agree at least that we want to understand more fully what's going on to cause a coupling from auth to blank node policies. There's no way that makes sense. I'll go spend time with the auth code.</p></div></div>
+<div class="comment" id="comment-13777"><div class="by">A. Soroka, 2015-03-20 14:00 UTC</div><div class="text"><p>Wow. This is quite bizarre. I'm also failing to build the RBACL module against the BNode branch, but with a completely different signature of failure:</p>
+
+<p>Failed tests: <br/>
+  BasicRolesAdminIT.testAdminCannotReadRootNode:595 Admin should not be allowed to read root node! expected:&lt;403&gt; but was:&lt;200&gt;<br/>
+  BasicRolesAdminIT.testAdminCannotWriteDatastreamOnRootNode:604 Admin should not be allowed to write datastream to root node! expected:&lt;403&gt; but was:&lt;201&gt;</p>
+
+<p>Tests run: 207, Failures: 2, Errors: 0, Skipped: 2</p>
+
+<p>I think I need to get some more data from other people's attempts to build this.</p></div></div>
+<div class="comment" id="comment-13778"><div class="by">Andrew Woods, 2015-03-20 14:09 UTC</div><div class="text"><p>I was seeing test failures in both the rbacl and xacml modules being built against the BNode branch.<br/>
+Are you raising something different?</p></div></div>
+<div class="comment" id="comment-13779"><div class="by">A. Soroka, 2015-03-20 14:11 UTC</div><div class="text"><p>Yes, the same setup-- completely different failures. Look at your log that you attached and then look at the error summary I just posted above.</p>
+
+<p>Jared Whiklo is now building the same setup to see what he gets.</p></div></div>
+<div class="comment" id="comment-13780"><div class="by">Jared Whiklo, 2015-03-20 14:31 UTC</div><div class="text"><p>whikloj's build log added above - <b>build.log</b></p></div></div>
+<div class="comment" id="comment-14006"><div class="by">Andrew Woods, 2015-04-14 18:10 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/ceacc9832890906c8dee8f4533f5b33679d9b875" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ceacc9832890906c8dee8f4533f5b33679d9b875</a></p>
+
+<p>Related commit:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/03c2bef5aa68ef224a86aa432d5ecfb378ff7c99" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/03c2bef5aa68ef224a86aa432d5ecfb378ff7c99</a></p></div></div>
+<div class="comment" id="comment-14160"><div class="by">Unknown, 2015-04-24 13:01 UTC</div><div class="text"><p>A blank node, once created, is not updatable. For example:</p>
+
+<p>    PREFIX dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt;<br/>
+    PREFIX foaf: &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt;</p>
+
+<p>    INSERT </p>
+{ &lt;&gt; dc:creator [ a foaf:Person ; 
+                     foaf:givenName "Thomas" ;
+                     foaf:familyName "Mann" ] }
+<p>    WHERE {}</p>
+
+<p>Creates a blank node on the given resource. An attempt to update it via sparql-update fails:</p>
+
+<p>    PREFIX dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt;<br/>
+    PREFIX foaf: &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt;</p>
+
+<p>    DELETE </p>
+{ ?b foaf:givenName "Thomas" }
+<p>    INSERT </p>
+{ ?b foaf:givenName "Klaus" }
+<p>    WHERE </p>
+{&lt;&gt; dc:creator ?b . ?b foaf:familyName "Mann"}
+
+<p>with the error: Update RDF contains subject(s) (-63b89ab5:14ce6ff2ca0:-7eb6) not in the domain of this repository.</p>
+</div></div>
+<div class="comment" id="comment-14161"><div class="by">Unknown, 2015-04-24 13:03 UTC</div><div class="text"><p>A note that an equivalent sequence of sparql-update commands works as expected in jena/fuseki.</p></div></div>
+<div class="comment" id="comment-14178"><div class="by">Andrew Woods, 2015-04-27 00:06 UTC</div><div class="text"><p>I have poked a bit at this issue and made some small progress. The issue that I am seeing is that deskolemization is happening during RDF updates (PUT and PATCH), and causing two issues:<br/>
+1) Blank node identifiers are rejected by the JcrPropertyStatementListener as "not being in the domain"<br/>
+2) In RDF updates, provided blank nodes are not able to match with existing blank nodes which are deskolemized.</p>
+
+<p>The following PR appears to address the PATCH scenario, as detailed below, without any apparent ill effect.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/786" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/786</a></p>
+
+<p>PATCH scenario:<br/>
+curl -i -XPUT localhost:8080/rest/foo<br/>
+curl -i -XPATCH -H"Content-Type: application/sparql-update" --data-binary @bnode.txt localhost:8080/rest/foo<br/>
+curl -i -XPATCH -H"Content-Type: application/sparql-update" --data-binary @bnode-update.txt localhost:8080/rest/foo</p>
+
+<p>Where "bnode.txt" and "bnode-update.txt" are the same as Unknown's above, and attached to this ticket.</p>
+
+<p>Unfortunately, I have not found a resolution to the PUT scenario outlined below.<br/>
+PUT scenario:<br/>
+curl -s -o foo.out localhost:8080/rest/foo</p>
+<ul>
+	<li>update in foo.out &#8211; foaf:givenName "Klaus" =&gt; "Super"
+	<ul>
+		<li>also update the blank node identifiers, as they are apparently not proper RDF</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>curl -i -XPUT -H"Content-Type: text/turtle" --data-binary @foo.out localhost:8080/rest/foo</p>
+<ul>
+	<li>fails</li>
+</ul>
+
+
+<p>In general, it seems that if we limited the deskolemization to RdfStreams that are being returned to the client, then all should be well. The issue comes when we deskolemize resources internally while trying to perform update operations.</p></div></div>
+<div class="comment" id="comment-14182"><div class="by">A. Soroka, 2015-04-27 13:44 UTC</div><div class="text"><p>The reason I deskolemized for updates is so that SPARQL Update would work properly. (Which it does to create new bnodes, but not otherwise.)</p>
+
+<p>I don't see how we can avoid deskolemizing if we want to use SPARQL Update.</p></div></div>
+<div class="comment" id="comment-14183"><div class="by">Andrew Woods, 2015-04-27 13:49 UTC</div><div class="text"><p>Interesting. What I am seeing is that sparql-update only works with PR-786. A. Soroka, could you add a sparql-update integration test, possibly mimicking the scenario Unknown and I detail above? </p></div></div>
+<div class="comment" id="comment-14184"><div class="by">A. Soroka, 2015-04-27 13:57 UTC</div><div class="text"><p>It's already there.</p>
+
+<p>org.fcrepo.integration.http.api.FedoraLdpIT.testPatchWithBlankNode()</p></div></div>
+<div class="comment" id="comment-14186"><div class="by">Andrew Woods, 2015-04-27 14:17 UTC</div><div class="text"><p>It must be testing a different scenario, because it passes before and after PR-786.<br/>
+We should add the scenario Unknown and I detail above as another integration test.</p></div></div>
+<div class="comment" id="comment-14193"><div class="by">A. Soroka, 2015-04-29 19:09 UTC</div><div class="text"><p>Yes, that's my point. It works to <em>create</em> bnodes, but not to modify them. </p></div></div>
+<div class="comment" id="comment-14196"><div class="by">A. Soroka, 2015-04-30 13:37 UTC</div><div class="text"><p>On closer inspection, it's actually <em>removing</em> blank nodes that is the problem. (Which appears as a problem modifying them because SPARQL Update's version of modification is removal-and-then-insertion of triples.)</p>
+
+<p>Because the mapping between RDF resources and Fedora resources (as represented in IdentifierConverter and its subtypes) is one-in-one-out, it's not possible to determine, given a blank node to be removed, which Skolem node should be removed.</p>
+
+<p>This is obviously a solvable problem, and we'd have to look at the various techniques that actual triplestores have used to solve it. I'm in no position to dedicate that time, and I doubt anyone else is. As predicted, attempting to deal with blank nodes is going to slowly turn Fedora into a shoddy triplestore.</p></div></div>
+<div class="comment" id="comment-14200"><div class="by">Andrew Woods, 2015-05-04 19:36 UTC</div><div class="text"><p>Revert main commit with: <br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/788" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/788</a></p></div></div>
+<div class="comment" id="comment-14201"><div class="by">Andrew Woods, 2015-05-04 20:37 UTC</div><div class="text"><p>All updates reverted with merged PR-788</p>
+
+<p>Related, propagated updates:<br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo-audit/commit/578626c0b8ff602920e95b78697dfba72a612d54" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-audit/commit/578626c0b8ff602920e95b78697dfba72a612d54</a><br/>
+<a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/c507414f4c9489a71291386c09f06525a6f1e666" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/c507414f4c9489a71291386c09f06525a6f1e666</a></p></div></div>
+<p><a href="data/FCREPO-1385.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

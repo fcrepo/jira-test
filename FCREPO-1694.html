@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1694 Ensure that no non-deployable module compile-depends on fcrepo-kernel-modeshape</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1694</span> Ensure that no non-deployable module compile-depends on fcrepo-kernel-modeshape</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2015-08-11 19:10 UTC</td></tr><tr><th>Updated</th><td>2021-09-23 05:59 UTC</td></tr><tr><th>Resolved</th><td>2021-09-23 05:59 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1824.html">FCREPO-1824</a> remove modeshape from the kernel-api</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1935.html">FCREPO-1935</a> remove internal jcr/modeshape types from RDF generation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1934.html">FCREPO-1934</a> remove dependency on modeshape/jcr internal types in template rendering</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2045.html">FCREPO-2045</a> Remove fcr:import and fcr:export endpoints</td></tr></table>
+<h2>Description</h2>
+<p>If our separation of API and implementation is complete and correct, no non-deployable module should depend on fcrepo-kernel-modeshape except via Maven scope "test". This explicitly excludes deployable modules like fcrepo-webapp.</p>
+<h2>Comments (35)</h2>
+<div class="comment" id="comment-14991"><div class="by">Unknown, 2015-08-12 11:29 UTC</div><div class="text"><p>At present, the following modules (excluding fcrepo-webapp) have runtime dependencies on fcrepo-kernel-modeshape:</p>
+
+<p>fcrepo-audit<br/>
+fcrepo-http-commons<br/>
+fcrepo-http-api<br/>
+fcrepo-module-auth-xacml</p></div></div>
+<div class="comment" id="comment-14992"><div class="by">Unknown, 2015-08-12 12:09 UTC</div><div class="text"><p>I would also note that almost all of the modules (including fcrepo-kernel-api) depend on org.modeshape/modeshape-jcr-api (e.g. org.modeshape.jcr.api.JcrConstants).</p>
+
+<p>Furthermore, fcrepo-auth-common and fcrepo-connector-file also depend directly on org.modeshape/modeshape-jcr (as opposed to org.modeshape/modeshape-jcr-api)</p>
+
+<p>Other than (perhaps?) fcrepo-connector-file, I would think that the only dependencies (transitive or direct) on anything modeshape-related should be confined to the fcrepo-kernel-modeshape module.</p></div></div>
+<div class="comment" id="comment-14994"><div class="by">A. Soroka, 2015-08-12 13:57 UTC</div><div class="text"><p><tt>fcrepo-connector-file</tt> is a bit different. It really doesn't make any sense without MODE.</p></div></div>
+<div class="comment" id="comment-14995"><div class="by">A. Soroka, 2015-08-12 13:58 UTC</div><div class="text"><p>I agree that any dependency to MODE should be factored through <tt>fcrepo-kernel-modeshape</tt>. We should investigate why those constants are in use. They should probably be laundered through Fedora's model classes.</p></div></div>
+<div class="comment" id="comment-14997"><div class="by">Unknown, 2015-08-12 14:28 UTC</div><div class="text"><p>A PR that incrementally begins to address this: <a href="https://github.com/fcrepo4/fcrepo4/pull/882" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/882</a></p></div></div>
+<div class="comment" id="comment-15003"><div class="by">Unknown, 2015-08-12 17:55 UTC</div><div class="text"><p>This change will certainly affect downstream applications in -exts and/or -labs</p></div></div>
+<div class="comment" id="comment-15195"><div class="by">Unknown, 2015-09-09 22:16 UTC</div><div class="text"><p>An initial PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/882" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/882</a></p>
+
+<p>After this is reviewed, the ticket should be reopened. The changes in this PR imply changes with several downstream (-exts, -labs) projects.</p></div></div>
+<div class="comment" id="comment-15197"><div class="by">Andrew Woods, 2015-09-10 02:02 UTC</div><div class="text"><p>One minor code review question, otherwise this looks good.</p></div></div>
+<div class="comment" id="comment-15206"><div class="by">Unknown, 2015-09-11 20:15 UTC</div><div class="text"><p>Updated PR, addressing code comments.</p></div></div>
+<div class="comment" id="comment-15232"><div class="by">Andrew Woods, 2015-09-14 20:18 UTC</div><div class="text"><p>This is a good incremental update, but we should either change the title of this ticket or solve the entire issue. Below are the projects that need to have a dependency on fcrepo-kernel-modeshape removed:</p>
+
+<ol>
+	<li>fcrepo4</li>
+</ol>
+<ul class="alternate" type="square">
+	<li>fcrepo-http-api</li>
+	<li>fcrepo-webapp</li>
+	<li>fcrepo-http-commons</li>
+	<li>fcrepo-connector-file - ok</li>
+</ul>
+
+
+<ol>
+	<li>Other projects</li>
+</ol>
+<ul class="alternate" type="square">
+	<li>fcrepo4-upgrade-utils</li>
+	<li>fcrepo-module-auth-webac</li>
+	<li>fcrepo-audit</li>
+	<li>fcrepo4-oaiprovider</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15233"><div class="by">A. Soroka, 2015-09-14 20:20 UTC</div><div class="text"><p>I say keep the ticket as-is and make steps inside it. (Subtix.)</p></div></div>
+<div class="comment" id="comment-15282"><div class="by">Nick Ruest, 2015-09-24 15:18 UTC</div><div class="text"><p>September 24, 2015 Fedora Tech call</p>
+
+<p>Consensus for creating  sub-tasks.</p></div></div>
+<div class="comment" id="comment-15792"><div class="by">Andrew Woods, 2015-11-10 16:30 UTC</div><div class="text"><p>The problem with "sub-tasks" is that a sprint can not be closed if there are sub-tasks that are closed with a parent ticket that has not been closed.</p></div></div>
+<div class="comment" id="comment-15793"><div class="by">Unknown, 2015-11-10 16:36 UTC</div><div class="text"><p>in lieu of a "subtask", 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1824" >
+                <a href="FCREPO-1824.html" class="jira-issue-macro-key issue-link"  title="remove modeshape from the kernel-api" >
+            
+            FCREPO-1824
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is now a linked, dependent issue (will that work?)</p></div></div>
+<div class="comment" id="comment-15794"><div class="by">Andrew Woods, 2015-11-10 16:46 UTC</div><div class="text"><p>+1</p></div></div>
+<div class="comment" id="comment-16643"><div class="by">Unknown, 2016-05-12 18:42 UTC</div><div class="text"><p>This PR chips away at this issue: <a href="https://github.com/fcrepo4/fcrepo4/pull/1036" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1036</a></p>
+
+<p>Please re-open this issue after this PR is merged.</p></div></div>
+<div class="comment" id="comment-16644"><div class="by">A. Soroka, 2016-05-12 19:48 UTC</div><div class="text"><p>Partially fixed with: <a href="https://github.com/fcrepo4/fcrepo4/commit/05e489e07e4807106c3a79e5bd5fdcb6f3431090" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/05e489e07e4807106c3a79e5bd5fdcb6f3431090</a></p></div></div>
+<div class="comment" id="comment-16645"><div class="by">A. Soroka, 2016-05-12 19:48 UTC</div><div class="text"><p>Continue work.</p></div></div>
+<div class="comment" id="comment-16656"><div class="by">Unknown, 2016-05-16 19:26 UTC</div><div class="text"><p>Follow-on PR: <a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/21" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/21</a></p></div></div>
+<div class="comment" id="comment-16658"><div class="by">Andrew Woods, 2016-05-16 20:13 UTC</div><div class="text"><p>Follow-on resolution:</p>
+<ol>
+	<li>fcrepo-transform
+	<ul>
+		<li><a href="https://github.com/fcrepo4-exts/fcrepo-transform/commit/103cc631e28e39d00535c606f46cf589feafa896" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/commit/103cc631e28e39d00535c606f46cf589feafa896</a></li>
+	</ul>
+	</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-16723"><div class="by">Unknown, 2016-05-23 02:08 UTC</div><div class="text"><p>This PR further chips away at this: <a href="https://github.com/fcrepo4/fcrepo4/pull/1041" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1041</a></p></div></div>
+<div class="comment" id="comment-16724"><div class="by">Unknown, 2016-05-23 13:28 UTC</div><div class="text"><p>And another PR: <a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/23" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/23</a></p></div></div>
+<div class="comment" id="comment-16773"><div class="by">Unknown, 2016-05-27 13:39 UTC</div><div class="text"><p>Another PR (related to jcr-based serialization): <a href="https://github.com/fcrepo4/fcrepo4/pull/1043" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1043</a></p></div></div>
+<div class="comment" id="comment-16778"><div class="by">Andrew Woods, 2016-05-27 21:17 UTC</div><div class="text"><p>Having built <a href="https://github.com/fcrepo4/fcrepo4/pull/1041" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1041</a> locally, <a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/23" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/23</a> fails to build<br/>
+..as does:<br/>
+fcrepo-module-auth-rbacl<br/>
+fcrepo-module-auth-xacml</p></div></div>
+<div class="comment" id="comment-16779"><div class="by">Unknown, 2016-05-28 14:15 UTC</div><div class="text"><p>I have added a commit to both <a href="https://github.com/fcrepo4/fcrepo4/pull/1041" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1041</a> and <a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/23" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/23</a></p>
+
+<p>Fcrepo-transform now builds and passes its tests. I will address the auth-* modules soon.</p></div></div>
+<div class="comment" id="comment-16780"><div class="by">Andrew Woods, 2016-05-28 14:50 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/23" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/23</a> fails to build for me, having first run <tt>mvn clean install</tt> on <a href="https://github.com/fcrepo4/fcrepo4/pull/1041" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1041</a>... with:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /home/awoods/programming/java/apps/fedora/futures/fcrepo-transform/src/test/java/org/fcrepo/transform/http/FedoraTransformTest.java:[50,38] cannot find symbol
+  symbol:   class NamespaceService
+  location: package org.fcrepo.kernel.api.services
+[ERROR] /home/awoods/programming/java/apps/fedora/futures/fcrepo-transform/src/test/java/org/fcrepo/transform/http/FedoraTransformTest.java:[78,13] cannot find symbol
+  symbol:   class NamespaceService
+  location: class org.fcrepo.transform.http.FedoraTransformTest
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16781"><div class="by">Unknown, 2016-05-30 16:35 UTC</div><div class="text"><p>@awoods: there is some sort of problem with the implementation in <a href="https://github.com/fcrepo4/fcrepo4/pull/1041" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1041</a>, so forget that one for now.</p>
+
+<p>The other PRs can be reviewed: <a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/23" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/23</a> and <a href="https://github.com/fcrepo4/fcrepo4/pull/1043" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1043</a> (the second one, if you want to move forward on that one, implies the creation of a module for -exts called fcrepo-serialization-jcr)</p></div></div>
+<div class="comment" id="comment-16806"><div class="by">Andrew Woods, 2016-06-01 17:57 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/23" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/23</a> resolved with:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo4-exts/fcrepo-transform/commit/e8846c364533b9d5cc793a1a3a05ce563531973b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/commit/e8846c364533b9d5cc793a1a3a05ce563531973b</a></li>
+</ul>
+
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/1043" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1043</a> has been moved to: </p>
+<ul class="alternate" type="square">
+	<li><a href="https://jira.duraspace.org/browse/FCREPO-2045" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2045</a></li>
+</ul>
+
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/1041" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1041</a> needs to be revisited.</p></div></div>
+<div class="comment" id="comment-16818"><div class="by">Unknown, 2016-06-02 14:15 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1041" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1041</a> has been revisited and is ready for review.</p></div></div>
+<div class="comment" id="comment-16820"><div class="by">Andrew Woods, 2016-06-02 21:22 UTC</div><div class="text"><p>Another related commit:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/a8799ee4e74c72269376a73420861878723a2dcf" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a8799ee4e74c72269376a73420861878723a2dcf</a></p></div></div>
+<div class="comment" id="comment-16822"><div class="by">Unknown, 2016-06-03 01:26 UTC</div><div class="text"><p>Another PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1048" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1048</a></p>
+
+<p>The external auth-* modules and fcrepo-transform should not require any changes because of this.</p></div></div>
+<div class="comment" id="comment-16841"><div class="by">Andrew Woods, 2016-06-03 15:57 UTC</div><div class="text"><p>Another related commit closing PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1048" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1048</a></p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo4/fcrepo4/commit/2d3506051df643e18da53a684fd1b81e77d2a7d8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/2d3506051df643e18da53a684fd1b81e77d2a7d8</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-17708"><div class="by">Unknown, 2016-10-03 15:57 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1108" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1108</a></p>
+
+<p>Please re-open this ticket after merging. Note: this change does not conflict with the ongoing work related to 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1868" >
+                <a href="FCREPO-1868.html" class="jira-issue-macro-key issue-link"  title="remove dependency on javax.jcr.Session in kernel-api" >
+            
+            FCREPO-1868
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, so feel free to merge this whenever is convenient.</p></div></div>
+<div class="comment" id="comment-17771"><div class="by">Andrew Woods, 2016-10-10 16:01 UTC</div><div class="text"><p>Related resolution: <a href="https://github.com/fcrepo4/fcrepo4/commit/2f575dfd44947c71dad1a239cf7112b239800579" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/2f575dfd44947c71dad1a239cf7112b239800579</a></p></div></div>
+<div class="comment" id="comment-22489"><div class="by">Danny Bernstein, 2021-09-23 05:59 UTC</div><div class="text"><p>Closing due to age and lack of interest.  It may have been completed.</p></div></div>
+<p><a href="data/FCREPO-1694.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

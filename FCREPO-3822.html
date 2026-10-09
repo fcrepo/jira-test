@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3822 Cannot rebuild database from OCFL filesystem</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3822</span> Cannot rebuild database from OCFL filesystem</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High (migrated)</td></tr><tr><th>Reporter</th><td>Daniel Lamb</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2022-05-05 20:01 UTC</td></tr><tr><th>Updated</th><td>2022-05-06 15:25 UTC</td></tr><tr><th>Resolved</th><td>2022-05-06 15:25 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.2.0</td></tr></table>
+<h2>Description</h2>
+<p>When attempting to rebuild the fedora db, I am getting the following error on my very first object:</p>
+
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-none">ERROR 18:53:10.880 [ReindexWorker-2] (ReindexWorker) Reindexing of OCFL id info:fedora/17/db/8e/98/17db8e98-3746-4cc1-9a65-5e967c2c47a4 failed
+fcrepo_1      | org.fcrepo.storage.ocfl.exception.ValidationException: OCFL object info:fedora/17/db/8e/98/17db8e98-3746-4cc1-9a65-5e967c2c47a4 is not a valid Fedora 6 object. The following problems were identified:
+fcrepo_1      |   1. [Version v1] Missing root header file at .fcrepo/fcr-root.json
+fcrepo_1      | 	at org.fcrepo.storage.ocfl.exception.ValidationException.createForObject(ValidationException.java:60)
+fcrepo_1      | 	at org.fcrepo.storage.ocfl.validation.Context.throwValidationException(Context.java:76)
+fcrepo_1      | 	at org.fcrepo.storage.ocfl.validation.ObjectValidator$ObjectValidatorInner.validate(ObjectValidator.java:118)
+fcrepo_1      | 	at org.fcrepo.storage.ocfl.validation.ObjectValidator.validate(ObjectValidator.java:85)
+fcrepo_1      | 	at org.fcrepo.persistence.ocfl.impl.ReindexService.indexOcflObject(ReindexService.java:109)
+fcrepo_1      | 	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.lambda$run$0(ReindexWorker.java:118)
+fcrepo_1      | 	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTx$3(DbTransactionExecutor.java:91)
+fcrepo_1      | 	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+fcrepo_1      | 	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+fcrepo_1      | 	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+fcrepo_1      | 	at org.fcrepo.common.db.DbTransactionExecutor.doInTx(DbTransactionExecutor.java:90)
+fcrepo_1      | 	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTxWithRetry$2(DbTransactionExecutor.java:74)
+fcrepo_1      | 	at net.jodah.failsafe.Functions.lambda$toSupplier$10(Functions.java:240)
+fcrepo_1      | 	at net.jodah.failsafe.Functions.lambda$get$0(Functions.java:48)
+fcrepo_1      | 	at net.jodah.failsafe.RetryPolicyExecutor.lambda$supply$0(RetryPolicyExecutor.java:62)
+fcrepo_1      | 	at net.jodah.failsafe.Execution.executeSync(Execution.java:129)
+fcrepo_1      | 	at net.jodah.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:376)
+fcrepo_1      | 	at net.jodah.failsafe.FailsafeExecutor.run(FailsafeExecutor.java:210)
+fcrepo_1      | 	at org.fcrepo.common.db.DbTransactionExecutor.doInTxWithRetry(DbTransactionExecutor.java:73)
+fcrepo_1      | 	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:117)
+fcrepo_1      | 	at java.base/java.lang.Thread.run(Thread.java:834)
+fcrepo_1      | ERROR 18:53:10.882 [ReindexWorker-0] (ReindexWorker) Reindexing of OCFL id info:fedora/2022-03/50761-Service File.jpg failed</pre>
+</div></div>
+
+
+
+<p>After talking to Peter Winckles in Slack, I <tt>tree</tt>'d the approriate directory and got</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-none">root@islandora01:/mnt/fedora-datastreamStore/fcrepo-data/home/data/ocfl-root/8ec/dd3/663/8ecdd3663573ebe4e39e550741f17f1ce781fc33b9fe078cb61400116d928240# tree -a .
+.
+├── 0=ocfl_object_1.0
+├── extensions
+│   └── 0005-mutable-head
+│       ├── head
+│       │   ├── content
+│       │   │   └── r1
+│       │   │       ├── fcr-container.nt
+│       │   │       └── .fcrepo
+│       │   │           └── fcr-root.json
+│       │   ├── inventory.json
+│       │   └── inventory.json.sha512
+│       ├── revisions
+│       │   └── r1
+│       └── root-inventory.json.sha512
+├── inventory.json
+├── inventory.json.sha512
+└── v1
+    ├── inventory.json
+    └── inventory.json.sha512
+
+8 directories, 11 files</pre>
+</div></div>
+
+<p>According to him, it appears to be a bug in the validation code.  It is not accounting for an empty v1 when manual versioning is used.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22632"><div class="by">Jared Whiklo, 2022-05-06 15:24 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo/fcrepo-storage-ocfl/pull/52" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/pull/52</a></p></div></div>
+<div class="comment" id="comment-22633"><div class="by">Jared Whiklo, 2022-05-06 15:25 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo-storage-ocfl/commit/e07ce9964461578e604bef5d40ff2cfd4ea5dc8f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/commit/e07ce9964461578e604bef5d40ff2cfd4ea5dc8f</a></p></div></div>
+<p><a href="data/FCREPO-3822.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

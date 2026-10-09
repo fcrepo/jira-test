@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1944 404 on GET version after Deletion of contained resource</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1944</span> 404 on GET version after Deletion of contained resource</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Jason Sherman</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-03-08 02:35 UTC</td></tr><tr><th>Updated</th><td>2016-04-29 23:00 UTC</td></tr><tr><th>Resolved</th><td>2016-03-15 03:09 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>versioning</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1942.html">FCREPO-1942</a> Error: GET version of container with versioned child</td></tr></table>
+<h2>Description</h2>
+<p>This bug is seen when a container contains another resource, the container is versioned, the child resource is deleted, then the previously created container version is retrieved.<br/>
+The following requests demonstrate the error.</p>
+
+<p>curl -i -XPUT localhost:8080/rest/collection<br/>
+curl -i -XPUT -H"Content-Type: application/pdf" --data-binary @book.pdf localhost:8080/rest/collection/book.pdf<br/>
+curl -i -XPOST -H"slug: v0" localhost:8080/rest/collection/fcr:versions<br/>
+curl -i  localhost:8080/rest/collection/fcr:versions/v0<br/>
+curl -i -XDELETE localhost:8080/rest/collection/book.pdf<br/>
+curl -i  localhost:8080/rest/collection/fcr:versions/v0</p>
+<ul>
+	<li>
+	<ul>
+		<li>BOOM! 404</li>
+	</ul>
+	</li>
+</ul>
+
+
+
+<p>Note: In the case where the child resource is a binary, it appears that the binary is not moved to the "fcrepo.binary.directory/trash" when it is deleted, implying that there is still a reference to the binary... which would indicate that the 404 is at the Fedora level, and that Modeshape may still enable restoring the child resource from the container version. </p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-16283"><div class="by">Jared Whiklo, 2016-03-10 03:56 UTC</div><div class="text"><p>Everything seems good, then in the FedoraVersions.getVersion(String) it throws a java.io.IOException.</p>
+
+<p>However it does it from something called a <tt>DelegatingMethodAccessorImpl</tt> or a <tt>ResourceMethodInvocationHandlerFactory</tt>.</p>
+
+<p>These seems to be part of JAX-RS (I think), kinda lost as to how these are called. </p>
+
+<p>Stacktrace of when error occurs is</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ResourceMethodInvocationHandlerFactory$1.invoke(Object, Method, Object[]) line: 81	
+AbstractJavaResourceMethodDispatcher$1.run() line: 151	
+JavaResourceMethodDispatcherProvider$ResponseOutInvoker(AbstractJavaResourceMethodDispatcher).invoke(Object, Object...) line: 171	
+JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(Object, Request) line: 152	
+JavaResourceMethodDispatcherProvider$ResponseOutInvoker(AbstractJavaResourceMethodDispatcher).dispatch(Object, ContainerRequest) line: 104	
+ResourceMethodInvoker.invoke(RequestProcessingContext, Object) line: 384	
+ResourceMethodInvoker.apply(RequestProcessingContext) line: 342	
+</pre>
+</div></div>
+
+
+<p>public javax.ws.rs.core.Response org.fcrepo.http.api.FedoraVersions.getVersion(java.lang.String) throws java.io.IOException</p>
+</div></div>
+<div class="comment" id="comment-16284"><div class="by">Jared Whiklo, 2016-03-10 04:00 UTC</div><div class="text"><p>Ok, actually I think the error happens once the response is handed off to JAX-RS. I put a breakpoint here in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraVersions.java#L148" class="external-link" rel="nofollow noreferrer">FedoraVersions</a>. </p>
+
+<p>I can follow it all the way down and back up, but once it returns here (which I assume returns to JAX-RS) then the IOException appears.</p>
+
+<p>Andrew Woods does/can JAX-RS call any methods when returning the <b>Response</b>? I feel like I am missing a piece of the puzzle.</p>
+</div></div>
+<div class="comment" id="comment-16285"><div class="by">Jared Whiklo, 2016-03-10 04:37 UTC</div><div class="text"><p>Ok, forgot that. I was too far in to see it.</p>
+
+<p>Here is the actual error message</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>org.fcrepo.kernel.api.exception.RepositoryRuntimeException: javax.jcr.ItemNotFoundException: 87a0a8c7505d64676b2b4c-2eb2-4670-919f-5d6397694592
+	at org.fcrepo.kernel.modeshape.FedoraResourceImpl.getUnfrozenResource(FedoraResourceImpl.java:731)
+	at org.fcrepo.kernel.modeshape.FedoraResourceImpl.getVersionedAncestor(FedoraResourceImpl.java:699)
+	at org.fcrepo.http.commons.api.rdf.HttpResourceConverter.getPath(HttpResourceConverter.java:327)
+	at org.fcrepo.http.commons.api.rdf.HttpResourceConverter.doBackwardPathOnly(HttpResourceConverter.java:367)
+	at org.fcrepo.http.commons.api.rdf.HttpResourceConverter.doBackward(HttpResourceConverter.java:148)
+	at org.fcrepo.http.commons.api.rdf.HttpResourceConverter.doBackward(HttpResourceConverter.java:76)
+	at com.google.common.base.Converter.correctedDoBackward(Converter.java:164)
+	at com.google.common.base.Converter$ReverseConverter.correctedDoForward(Converter.java:244)
+	at com.google.common.base.Converter.convert(Converter.java:147)
+	at org.fcrepo.kernel.modeshape.rdf.impl.NodeRdfContext.uriFor(NodeRdfContext.java:76)
+	at org.fcrepo.kernel.modeshape.rdf.impl.ChildrenRdfContext.lambda$new$50(ChildrenRdfContext.java:63)
+	at org.fcrepo.kernel.modeshape.rdf.impl.ChildrenRdfContext$$Lambda$92/1018118789.apply(Unknown Source)
+</pre>
+</div></div>
+
+<p>I think this is thrown here (<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java#L728-L732" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java#L728-L732</a>) when we get the triples for the versioned resource, because the version has a child. So it tries to convert the frozen/versioned path to the unfrozen path, but the item is gone so it throws an exception.</p>
+
+<p>I'll do some more digging tomorrow, consider this a bookmark. </p>
+
+<p>And sorry Andrew Woods for dragging you in when I was only half understanding the issue.</p></div></div>
+<div class="comment" id="comment-16304"><div class="by">Jared Whiklo, 2016-03-11 04:03 UTC</div><div class="text"><p>Ok, I am not sure how to proceed.</p>
+
+<p>Part of the HttpResourceConverter is to <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L330" class="external-link" rel="nofollow noreferrer">get the Unfrozen FedoraResource</a> for any frozen one we encounter.</p>
+
+<p>However in the case of a deleted resource, this returns a <tt>javax.jcr.ItemNotFoundException</tt>. </p>
+
+<p>This is called because in a normal representation we resolve all the children of the node <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/impl/ChildrenRdfContext.java#L61-L63" class="external-link" rel="nofollow noreferrer">here</a>.</p>
+
+<p>If you change your request to<br/>
+<tt>curl -i -H"Prefer: return=minimal" <a href="http://localhost:8080/rest/collection/fcr:versions/v0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/collection/fcr:versions/v0</a></tt><br/>
+it will complete. </p>
+
+<p>The path of the resource seems to only exist in the actual resource, so deleting any resource makes the path inaccessible. </p>
+
+<p>I tried to replace the RepositoryRuntimeException with the <a href="https://github.com/fcrepo4/fcrepo4/blob/7494305ef59dbc4c758754a15a7a57351b6c0ac1/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/RdfLexicon.java#L240-L241" class="external-link" rel="nofollow noreferrer">INACCESSIBLE_RESOURCE</a> originally created for dealing with restricted paths in Link Headers.</p>
+
+<p>However this causes other errors as it is not <b>in the domain of the repository</b>. </p>
+
+<p>Does this seem like a way to proceed? Generate a fake FedoraResource with a path something like "deletedResource"?</p></div></div>
+<div class="comment" id="comment-16322"><div class="by">A. Soroka, 2016-03-11 18:11 UTC</div><div class="text"><p>After some discussion on IRC, it seems like this might be caused by a situation in which unversioned contents occur inside versioned containers. If that is correct, then the question arises as to whether we should prevent the situation from occurring to begin with?</p></div></div>
+<div class="comment" id="comment-16323"><div class="by">Jared Whiklo, 2016-03-11 18:32 UTC</div><div class="text"><p>Esmé Cowles could we access a fcr:tombstone from a frozenNode if the actual resource has been deleted? Then we could get the path back to generate the triples in ChildrenRdfContext. I realize that if you delete the tombstone you are back to square one, just trying to see how to resolve this.</p></div></div>
+<div class="comment" id="comment-16324"><div class="by">Esmé Cowles, 2016-03-11 18:36 UTC</div><div class="text"><p>Jared Whiklo, I'm not sure if that would work, but it sounds worth exploring.  If there is a version history, then getting access to it and fulfilling the request sounds great.</p>
+
+<p>If the versions are also deleted (or if the content was never versioned like A. Soroka suggests), then we should probably return 410 Gone if the parent resource has a tombstone.</p></div></div>
+<div class="comment" id="comment-16328"><div class="by">Andrew Woods, 2016-03-12 22:00 UTC</div><div class="text"><p>Jared Whiklo, would you mind putting a hold on this ticket until I finish:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1942" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1942</a></p>
+
+<p>I believe they are related and I may have a fix on the way.</p></div></div>
+<div class="comment" id="comment-16330"><div class="by">Andrew Woods, 2016-03-13 00:10 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/pull/1005" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1005</a></p></div></div>
+<div class="comment" id="comment-16351"><div class="by">Jared Whiklo, 2016-03-15 03:09 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/f0db4f21a1dcf72eeb2ffb565462ab7fc4600a8c" class="external-link" rel="nofollow noreferrer">f0db4f2</a></p></div></div>
+<p><a href="data/FCREPO-1944.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

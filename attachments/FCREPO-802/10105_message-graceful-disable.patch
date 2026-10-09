@@ -1,0 +1,72 @@
+Index: fcrepo-server/src/main/java/org/fcrepo/server/messaging/MessagingModule.java
+===================================================================
+--- fcrepo-server/src/main/java/org/fcrepo/server/messaging/MessagingModule.java	(revision 2163)
++++ fcrepo-server/src/main/java/org/fcrepo/server/messaging/MessagingModule.java	(working copy)
+@@ -17,7 +17,11 @@
+ 
+ import javax.jms.Session;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import org.fcrepo.common.Constants;
++
+ import org.fcrepo.server.DatastoreConfig;
+ import org.fcrepo.server.Module;
+ import org.fcrepo.server.Server;
+@@ -26,8 +30,6 @@
+ import org.fcrepo.server.errors.ModuleShutdownException;
+ import org.fcrepo.server.messaging.JMSManager.DestinationType;
+ import org.fcrepo.server.utilities.ServerUtility;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+ 
+ /**
+  * Fedora's <code>Messaging</code> as a configurable module.
+@@ -87,9 +89,14 @@
+                                       createDestinations(),
+                                       jmsMgr);
+         } catch (Exception e) {
++            if (!failGracefully()) {
+             throw new ModuleInitializationException("Error connecting to JMS ",
+                                                     getRole(),
+                                                     e);
++            } else {
++                disable();
++                logger.warn("Error connecting to JMS.  Messaging Module is now disabled.");
++            }
+         }
+     }
+ 
+@@ -257,6 +264,15 @@
+     }
+ 
+ 
++    private void disable() {
++        setParameter("enabled", "false");
++    }
++
++    private boolean failGracefully() {
++        String graceful = getParameter("failGracefully");
++        return (graceful != null && graceful.equalsIgnoreCase("true"));
++    }
++
+     public void close() throws MessagingException {
+         if (msg != null) {
+             msg.close();
+Index: fcrepo-server/src/main/resources/fcfg/server/fedora-base.fcfg
+===================================================================
+--- fcrepo-server/src/main/resources/fcfg/server/fedora-base.fcfg	(revision 2163)
++++ fcrepo-server/src/main/resources/fcfg/server/fedora-base.fcfg	(working copy)
+@@ -459,6 +459,11 @@
+ 	<module role="org.fcrepo.server.messaging.Messaging" class="org.fcrepo.server.messaging.MessagingModule">
+ 		<comment>Fedora's Java Messaging Service (JMS) Module</comment>
+ 		<param name="enabled" value="false" />
++		<param name="failGracefully" value="false">
++		    <comment>If "failGracefully" is set to "true", Fedora will log an error and disable messaging if the configured broker 
++		             is unavailable at startup, .  The default behavior (when set to "false") is to shutdown the server
++		             if the broker is unavailable at startup.</comment> 
++		</param>
+ 		<param name="java.naming.factory.initial" value="org.apache.activemq.jndi.ActiveMQInitialContextFactory" />
+ 		<param name="java.naming.provider.url" value="vm:(broker:(tcp://localhost:61616))"/>
+ 		<param name="datastore1" value="apimUpdateMessages">

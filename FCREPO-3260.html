@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3260 Document OCFL limitations related to paths and OS limitations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3260</span> Document OCFL limitations related to paths and OS limitations</h1>
+<table class="meta"><tr><th>Type</th><td>Documentation</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>High (migrated)</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-03-26 16:51 UTC</td></tr><tr><th>Updated</th><td>2021-07-06 17:47 UTC</td></tr><tr><th>Resolved</th><td>2021-07-06 17:47 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>This task is to add content to the Fedora 6 System Administration wiki docs that details the known limitations for known OS platforms... and have clear points of configuration for Fedora installations that can not fit within those limitations.</p>
+
+<p>Source materials for documentation:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/UW-Madison-Library/ocfl-java/blob/master/ocfl-java-core/src/main/java/edu/wisc/library/ocfl/core/path/constraint/DefaultContentPathConstraints.java" class="external-link" rel="nofollow noreferrer">https://github.com/UW-Madison-Library/ocfl-java/blob/master/ocfl-java-core/src/main/java/edu/wisc/library/ocfl/core/path/constraint/DefaultContentPathConstraints.java</a><br/>
+￼</li>
+	<li><a href="https://github.com/OCFL/spec/issues/407#issuecomment-553561928" class="external-link" rel="nofollow noreferrer">https://github.com/OCFL/spec/issues/407#issuecomment-553561928</a></li>
+</ul>
+
+
+<p>From Slack:<br/>
+In regards to <a href="https://github.com/UW-Madison-Library/ocfl-java/issues/4" class="external-link" rel="nofollow noreferrer">https://github.com/UW-Madison-Library/ocfl-java/issues/4</a><br/>
+ocfl-java's behavior by default is as follows:<br/>
+Maps logical path directly to content path<br/>
+Stores the file at the content path<br/>
+Throws an exception if it can't write the file to content path due to file system restrictions (such as file name length)<br/>
+If you add content path constraints it behaves as follows:<br/>
+Maps logical path directly to content path<br/>
+Applies content path constraint<br/>
+Throws an exception if the content path does not satisfy the constraints<br/>
+In this case, you could modify the logical path on the application side so that it can be directly mapped to a content path. For example, shortening file names or removing special characters.<br/>
+Finally, you can provide custom path sanitizers. When you do, it does the following:<br/>
+Passes the logical path to the sanitizer, which returns a safe content path<br/>
+Applies any configured content path constraints<br/>
+Attempts to write the file to the content path<br/>
+This is essentially the same thing as the example using just the content path constraints, except that the code for cleaning up logical paths is executed within the ocfl client rather than outside of it.<br/>
+Why doesn't ocfl-java make safe logical -&gt; content mappings by default? Because, I don't want it to make assumptions about what portions of a file name are important to users.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-21688"><div class="by">Andrew Woods, 2020-11-18 14:36 UTC</div><div class="text"><p>Important documentation, but likely not a Beta-blocker. Moving to "minor".</p></div></div>
+<div class="comment" id="comment-22044"><div class="by">Peter Winckles, 2021-02-12 19:02 UTC</div><div class="text"><p><a href="https://wiki.lyrasis.org/display/FEDORA6x/Resource+IDs" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FEDORA6x/Resource+IDs</a></p></div></div>
+<div class="comment" id="comment-22123"><div class="by">Danny Bernstein, 2021-03-03 23:46 UTC</div><div class="text"><p>Looks good - I just added one comment  one the new page.</p></div></div>
+<p><a href="data/FCREPO-3260.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

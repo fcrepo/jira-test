@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3832 PUT to Fedora with inconsistent database tables causes 500 Server Error</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3832</span> PUT to Fedora with inconsistent database tables causes 500 Server Error</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2022-06-17 13:08 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 22:08 UTC</td></tr><tr><th>Resolved</th><td>2024-01-11 22:08 UTC</td></tr></table>
+<h2>Description</h2>
+<p>While an inconsistent database state should cause problems, the problem here seems weird. It should be self resolving.</p>
+
+<p>When a user was PUTting resources into his Fedora they where getting 500 Server errors for all PUTs and GETs were returning 404s.</p>
+
+<p>Further investigation revealed that the tables seemed to have been truncated.</p>
+
+<p>PUTs resulted in a stack trace of</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>15-Jun-2022 09:06:55.741 INFO [http-nio-8080-exec-848] ca.islandora.syn.valve.SynValve.doAuthentication Site verified using static token.
+INFO 09:06:55.743 [http-nio-8080-exec-848] (FedoraLdp) PUT to create resource with ID: OH_frozen/OH_01213_massagli_joan/originals/OH_01213_book_o.pdf
+WARN 09:06:55.940 [http-nio-8080-exec-848] (WildcardExceptionMapper) Unmapped exception
+org.springframework.dao.DataIntegrityViolationException: PreparedStatementCallback; SQL [INSERT INTO search_resource_rdf_type (resource_id, rdf_type_id) VALUES (?, ?)]; (conn=801566) Cannot add or update a child row: a foreign key constraint fails (`fcrepo6`.`search_resource_rdf_type`, CONSTRAINT `search_resource_rdf_type_ibfk_2` FOREIGN KEY (`rdf_type_id`) REFERENCES `search_rdf_type` (`id`) ON DELETE CASCADE); nested exception is java.sql.BatchUpdateException: (conn=801566) Cannot add or update a child row: a foreign key constraint fails (`fcrepo6`.`search_resource_rdf_type`, CONSTRAINT `search_resource_rdf_type_ibfk_2` FOREIGN KEY (`rdf_type_id`) REFERENCES `search_rdf_type` (`id`) ON DELETE CASCADE)
+        at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:251)
+        at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:70)
+        at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1541)
+        at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:667)
+        at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:691)
+        at org.springframework.jdbc.core.JdbcTemplate.batchUpdate(JdbcTemplate.java:1034)
+        at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.batchUpdate(NamedParameterJdbcTemplate.java:373)
+        at org.fcrepo.search.impl.DbSearchIndexImpl.insertRdfTypeAssociations(DbSearchIndexImpl.java:740)
+        at org.fcrepo.search.impl.DbSearchIndexImpl.doDirectUpsert(DbSearchIndexImpl.java:565)
+        at org.fcrepo.search.impl.DbSearchIndexImpl.lambda$addUpdateIndex$3(DbSearchIndexImpl.java:550)
+        at org.fcrepo.kernel.impl.TransactionImpl.doInTx(TransactionImpl.java:176)
+        at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:546)
+        at jdk.internal.reflect.GeneratedMethodAccessor209.invoke(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:344)
+        at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:208)
+        at com.sun.proxy.$Proxy49.addUpdateIndex(Unknown Source)
+        at org.fcrepo.search.impl.SearchIndexMetrics.lambda$addUpdateIndex$0(SearchIndexMetrics.java:56)
+        at io.micrometer.core.instrument.composite.CompositeTimer.record(CompositeTimer.java:79)
+        at org.fcrepo.search.impl.SearchIndexMetrics.addUpdateIndex(SearchIndexMetrics.java:55)
+        at org.fcrepo.kernel.impl.services.CreateResourceServiceImpl.addToSearchIndex(CreateResourceServiceImpl.java:211)
+        at org.fcrepo.kernel.impl.services.CreateResourceServiceImpl.perform(CreateResourceServiceImpl.java:135)
+        at org.fcrepo.http.api.FedoraLdp.lambda$createOrReplaceObjectRdf$2(FedoraLdp.java:468)
+        at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTx$3(DbTransactionExecutor.java:79)
+        at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+        at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+        at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+        at org.fcrepo.common.db.DbTransactionExecutor.doInTx(DbTransactionExecutor.java:78)
+        at org.fcrepo.http.api.FedoraBaseResource.doInDbTx(FedoraBaseResource.java:141)
+        at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:456)
+        at jdk.internal.reflect.GeneratedMethodAccessor207.invoke(Unknown Source)
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+... trimmed ...
+Caused by: java.sql.BatchUpdateException: (conn=801566) Cannot add or update a child row: a foreign key constraint fails (`fcrepo6`.`search_resource_rdf_type`, CONSTRAINT `search_resource_rdf_type_ibfk_2` FOREIGN KEY (`rdf_type_id`) REFERENCES `search_rdf_type` (`id`) ON DELETE CASCADE)
+        at org.mariadb.jdbc.MariaDbStatement.executeBatchExceptionEpilogue(MariaDbStatement.java:327)
+        at org.mariadb.jdbc.ClientSidePreparedStatement.executeBatch(ClientSidePreparedStatement.java:299)
+        at com.zaxxer.hikari.pool.ProxyStatement.executeBatch(ProxyStatement.java:127)
+        at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeBatch(HikariProxyPreparedStatement.java)
+        at org.springframework.jdbc.core.JdbcTemplate.lambda$batchUpdate$4(JdbcTemplate.java:1048)
+        at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:651)
+        ... 103 common frames omitted
+Caused by: java.sql.SQLIntegrityConstraintViolationException: (conn=801566) Cannot add or update a child row: a foreign key constraint fails (`fcrepo6`.`search_resource_rdf_type`, CONSTRAINT `search_resource_rdf_type_ibfk_2` FOREIGN KEY (`rdf_type_id`) REFERENCES `search_rdf_type` (`id`) ON DELETE CASCADE)
+        at org.mariadb.jdbc.internal.util.exceptions.ExceptionFactory.createException(ExceptionFactory.java:70)
+        at org.mariadb.jdbc.internal.util.exceptions.ExceptionFactory.create(ExceptionFactory.java:158)
+        at org.mariadb.jdbc.MariaDbStatement.executeBatchExceptionEpilogue(MariaDbStatement.java:323)
+        ... 108 common frames omitted
+Caused by: org.mariadb.jdbc.internal.util.exceptions.MariaDbSqlException: Cannot add or update a child row: a foreign key constraint fails (`fcrepo6`.`search_resource_rdf_type`, CONSTRAINT `search_resource_rdf_type_ibfk_2` FOREIGN KEY (`rdf_type_id`) REFERENCES `search_rdf_type` (`id`) ON DELETE CASCADE)
+        at org.mariadb.jdbc.internal.util.exceptions.MariaDbSqlException.of(MariaDbSqlException.java:34)
+        at org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol.exceptionWithQuery(AbstractQueryProtocol.java:194)
+        at org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol.access$000(AbstractQueryProtocol.java:107)
+        at org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol$1.handleResultException(AbstractQueryProtocol.java:692)
+        at org.mariadb.jdbc.internal.protocol.AsyncMultiRead.call(AsyncMultiRead.java:141)
+        at org.mariadb.jdbc.internal.protocol.AsyncMultiRead.call(AsyncMultiRead.java:67)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+        ... 1 common frames omitted
+Caused by: java.sql.SQLException: Cannot add or update a child row: a foreign key constraint fails (`fcrepo6`.`search_resource_rdf_type`, CONSTRAINT `search_resource_rdf_type_ibfk_2` FOREIGN KEY (`rdf_type_id`) REFERENCES `search_rdf_type` (`id`) ON DELETE CASCADE)
+        at org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol.readErrorPacket(AbstractQueryProtocol.java:1694)
+        at org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol.readPacket(AbstractQueryProtocol.java:1556)
+        at org.mariadb.jdbc.internal.protocol.AbstractQueryProtocol.getResult(AbstractQueryProtocol.java:1519)
+        at org.mariadb.jdbc.internal.protocol.AsyncMultiRead.call(AsyncMultiRead.java:132)
+        ... 5 common frames omitted</pre>
+</div></div>
+
+
+
+<p>In the simple search, which should be adding any missing RDF types to the database first. I think (maybe) the cache was used instead which makes it seem like Fedora was in use when it was truncated.</p>
+
+<p>My guess is the code here is picking up a “key” that no longer actually exists.<br/>
+<a href="https://github.com/fcrepo/fcrepo/blob/bce829bb2f38c6514fef1caa1daed5a7bf0171ca/fcrepo-search-impl/src/main/java/org/fcrepo/search/impl/DbSearchIndexImpl.java#L726-L732" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/bce829bb2f38c6514fef1caa1daed5a7bf0171ca/fcrepo-search-impl/src/main/java/org/fcrepo/search/impl/DbSearchIndexImpl.java#L726-L732</a> </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-22662"><div class="by">Jared Whiklo, 2022-06-17 13:15 UTC</div><div class="text"><p>If my guesses above are correct (i.e. truncating the table on a running system), I don’t know that this is a solvable issue. But perhaps a try { } catch in <a href="https://github.com/fcrepo/fcrepo/blob/bce829bb2f38c6514fef1caa1daed5a7bf0171ca/fcrepo-search-impl/src/main/java/org/fcrepo/search/impl/DbSearchIndexImpl.java#L748-L752" class="external-link" rel="nofollow noreferrer">getRdfTypeIdDirect</a> that forces the type to be inserted at that moment. </p></div></div>
+<div class="comment" id="comment-22663"><div class="by">Jared Whiklo, 2022-06-17 13:54 UTC</div><div class="text"><p>Trying to replicate this, but am unable to truncate the tables in MySQL easily.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>mysql&gt; truncate search_resource_rdf_type;
+Query OK, 0 rows affected (0.05 sec)
+
+mysql&gt; truncate table search_rdf_type;
+ERROR 1701 (42000): Cannot truncate a table referenced in a foreign key constraint (`fcrepo`.`search_resource_rdf_type`, CONSTRAINT `search_resource_rdf_type_ibfk_2`)</pre>
+</div></div>
+
+<p>We could still try to catch the exception but I’m not sure we can just say that the problem is the table data is missing.</p></div></div>
+<div class="comment" id="comment-22664"><div class="by">Danny Bernstein, 2022-07-07 14:18 UTC</div><div class="text"><p>Keeping this open for now, but it appears to be a transient issue caused by user intervention directly on the database tables. </p></div></div>
+<div class="comment" id="comment-22962"><div class="by">Jared Whiklo, 2024-01-11 22:08 UTC</div><div class="text"><p>This seems to have involved direct access to the underlying tables, which can be dangerous. If someone else experiences this hopefully they will search Jira.</p></div></div>
+<p><a href="data/FCREPO-3832.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

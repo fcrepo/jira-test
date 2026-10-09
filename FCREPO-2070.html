@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2070 Use linked data backend for fcrepo-transform</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2070</span> Use linked data backend for fcrepo-transform</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-07-04 16:09 UTC</td></tr><tr><th>Updated</th><td>2016-08-11 20:09 UTC</td></tr><tr><th>Resolved</th><td>2016-08-11 20:08 UTC</td></tr><tr><th>Components</th><td>f4-transform</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox-4.6.0</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2072.html">FCREPO-2072</a> Extend Camel indexing recipe to defeference and cache linked data</td></tr><tr><th>Required by</th><td><a href="FCREPO-1672.html">FCREPO-1672</a> Migrate to Jena 3.0.0</td></tr></table>
+<h2>Description</h2>
+<p>Marmotta offers a Linked Data -aware backend to support LDPath that is very much more powerful than the simpler Jena Model-based backend fcrepo-transform now uses, without being significantly more difficult to deploy or use. We should switch to using it.</p>
+<h2>Comments (23)</h2>
+<div class="comment" id="comment-16953"><div class="by">Andrew Woods, 2016-07-04 16:48 UTC</div><div class="text"><p>Currently, Fedora uses: ldpath-backend-jena, <a href="https://github.com/fcrepo4-exts/fcrepo-transform/blob/master/pom.xml#L106-L114" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/blob/master/pom.xml#L106-L114</a><br/>
+Available backends: <a href="https://marmotta.apache.org/ldpath/index.html#Backend_Modules" class="external-link" rel="nofollow noreferrer">https://marmotta.apache.org/ldpath/index.html#Backend_Modules</a></p></div></div>
+<div class="comment" id="comment-16956"><div class="by">A. Soroka, 2016-07-04 17:46 UTC</div><div class="text"><p>The backend with which we are concerned is <tt>ldpath-backend-linkeddata</tt>. This backend does require an LDCache implementation behind it. I think a simple in-memory implementation wrapping a Guava Cache is a good way to start.</p></div></div>
+<div class="comment" id="comment-16965"><div class="by">A. Soroka, 2016-07-05 20:02 UTC</div><div class="text"><p>Unfortunately, Marmotta technology relies on very old versions of Commons HTTP and Sesame. The HTTP client dependencies, in particular, are blocked by Maven Enforcer's com.redhat.victims rules. Closing in favor of another approach.</p></div></div>
+<div class="comment" id="comment-17141"><div class="by">Unknown, 2016-07-28 11:07 UTC</div><div class="text"><p>I'd like to replace the jena backend for fcrepo-transform in order to migrate to jena 3.x. I could write a shim to convert the jena model to a sesame graph (and use the sesame backend), but the linkeddata backend is, as described above, significantly more powerful. If I relax the maven enforcer for just the transform module, it is possible to use the linkeddata backend. Thoughts?</p></div></div>
+<div class="comment" id="comment-17143"><div class="by">Unknown, 2016-07-28 16:11 UTC</div><div class="text"><p>PR: <br/>
+fcrepo-webapp-plus: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/43" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/43</a></p></div></div>
+<div class="comment" id="comment-17144"><div class="by">A. Soroka, 2016-07-28 19:53 UTC</div><div class="text"><p>Are you going to use an in-memory only approach for this, or something that persists to disk?</p></div></div>
+<div class="comment" id="comment-17145"><div class="by">Unknown, 2016-07-28 20:03 UTC</div><div class="text"><p>At present, I'm using spring injection with the fallback being filesystem-based persistence. Once the MODE5 branch is merged, the infinispan (in memory) option may be a good option, but at present that's not possible b/c of dependency conflicts (marmotta:ldcache-backend-infinispan uses ISPN 6.x and MODE4 uses ISPN 7.x)</p></div></div>
+<div class="comment" id="comment-17151"><div class="by">A. Soroka, 2016-07-29 20:27 UTC</div><div class="text"><p>If we do an in-memory version (which I think would actually make a better default) how about a simple single-node-assumption impl of LDCache using something like Guava's Cache API?</p></div></div>
+<div class="comment" id="comment-17152"><div class="by">Unknown, 2016-07-29 20:34 UTC</div><div class="text"><p>I agree that an in-memory impl using Guava's cache API makes a lot of sense. At present, I need to rework quite a bit of the fcrepo-transform code in order to pass in a shared cache to each request. There's also some complexity related to AuthN. And so at this point, I'd like to use an existing impl of Marmotta's LDCachingBackend rather than creating our own implementation of their LDCachingBackend API (just to simplify the extent of this change).</p></div></div>
+<div class="comment" id="comment-17156"><div class="by">A. Soroka, 2016-07-30 12:33 UTC</div><div class="text"><p>I would imagine the cache being injected, like the XServices, and I suspect that actually, doing a Guava impl of LDCache might be <em>easier</em> than bringing in something as weighty as a new ISPN instance. But I leave it to you to explore.</p></div></div>
+<div class="comment" id="comment-17157"><div class="by">Unknown, 2016-07-30 13:31 UTC</div><div class="text"><p>PRs:<br/>
+fcrepo-transform:<a href="https://github.com/fcrepo4-exts/fcrepo-transform/pull/26" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-transform/pull/26</a><br/>
+fcrepo-webapp-plus: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/44" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/44</a></p>
+
+<p>I have to add that this feature rocks!</p></div></div>
+<div class="comment" id="comment-17173"><div class="by">Andrew Woods, 2016-08-02 23:52 UTC</div><div class="text"><p>After creating a resource at the top-level of the repository(`/rest/test`), the default transform appears to no longer returning a meaningful result:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -uadmin1:password3  localhost:8080/<span class="code-keyword">rest</span>/test/fcr:transform/<span class="code-keyword">default</span>
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17174"><div class="by">Andrew Woods, 2016-08-02 23:54 UTC</div><div class="text"><p>There are a few minor code review comments, but the most pressing issue is that the basic, default /fcr:transform capability does not appear to work.<br/>
+Hopefully I am missing something simple in my testing approach.</p></div></div>
+<div class="comment" id="comment-17177"><div class="by">Unknown, 2016-08-04 15:39 UTC</div><div class="text"><p>I am going to pursue a completely different tack here. Instead, I propose reimplementing this as a camel/karaf-based service and completely deprecating the fcrepo-transform module.</p>
+
+<p>At present, I have an implementation of <tt>fcrepo-ldpath</tt> that will be made part of <tt>fcrepo-camel-toolbox</tt>. I have unit and integration tests in place and am verifying karaf-based deployment.</p>
+
+<p>Andrew Woods do you have any concerns about this approach? If not, I will close the current PRs referenced here and work toward deprecating fcrepo-transform.</p></div></div>
+<div class="comment" id="comment-17178"><div class="by">A. Soroka, 2016-08-04 16:11 UTC</div><div class="text"><p>As a point of information, Unknown's new tack was discussed at today's tech call and met with uniform approval.</p></div></div>
+<div class="comment" id="comment-17179"><div class="by">Andrew Woods, 2016-08-05 12:17 UTC</div><div class="text"><p>Unknown, since the primary usage of fcrepo-transform has been in the context of indexing Solr, which we offer through Camel and since the Transform capability maps well into the API-X pattern, at a general level this move seems reasonable. <br/>
+Do you plan on working this into the API-X framework?<br/>
+Can you describe your proposed interaction model?</p></div></div>
+<div class="comment" id="comment-17180"><div class="by">Unknown, 2016-08-05 14:01 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/103" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/103</a></p></div></div>
+<div class="comment" id="comment-17181"><div class="by">Unknown, 2016-08-05 14:06 UTC</div><div class="text"><p>Andrew Woods The interaction model is almost identical to the existing fcr:transform feature. For a resource at, say, <a href="http://localhost:8080/fcrepo/rest/resource/path" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/resource/path</a>, you would interact with the service like so:</p>
+
+<p>curl -XGET <a href="http://localhost:4444/ldpath/resource/path?ldpath=http://example.org/myldpath" class="external-link" rel="nofollow noreferrer">http://localhost:4444/ldpath/resource/path?ldpath=http://example.org/myldpath</a></p>
+
+<p>OR</p>
+
+<p>curl -XPOST <a href="http://localhost:4444/ldpath/resource/path" class="external-link" rel="nofollow noreferrer">http://localhost:4444/ldpath/resource/path</a> -d @myldpath.txt -H"Content-Type: text/plain"</p>
+
+<p>OR (for the default transform)</p>
+
+<p>curl -XGET <a href="http://localhost:4444/ldpath/resource/path" class="external-link" rel="nofollow noreferrer">http://localhost:4444/ldpath/resource/path</a></p>
+
+<p>There is no facility for <em>storing</em> ldpath programs such as there is with fcr-transform, but if that is truly desired it would be easy to add.</p></div></div>
+<div class="comment" id="comment-17203"><div class="by">Andrew Woods, 2016-08-09 21:29 UTC</div><div class="text"><p>Unknown, are you anticipating a follow-on task of adding a test to: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-tests" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-tests</a> ?</p></div></div>
+<div class="comment" id="comment-17204"><div class="by">Andrew Woods, 2016-08-10 00:01 UTC</div><div class="text"><p>Pending response to some minor code review comments... otherwise this looks and works great.</p></div></div>
+<div class="comment" id="comment-17226"><div class="by">Unknown, 2016-08-11 19:38 UTC</div><div class="text"><p>Code review comments have been addressed in a new commit to this PR.</p></div></div>
+<div class="comment" id="comment-17228"><div class="by">Unknown, 2016-08-11 20:01 UTC</div><div class="text"><p>Andrew Woods yes, you can expect a follow-on PR for fcrepo-camel-tests that will include tests for the fcrepo-ldpath module.</p></div></div>
+<div class="comment" id="comment-17229"><div class="by">Andrew Woods, 2016-08-11 20:08 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/3a6cc7f6b1ca56d75e0248a3e9a72f81f2319cb3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/3a6cc7f6b1ca56d75e0248a3e9a72f81f2319cb3</a></p></div></div>
+<p><a href="data/FCREPO-2070.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

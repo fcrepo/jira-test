@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3413 Stacktrace in response: PATCH with unknown prefix</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3413</span> Stacktrace in response: PATCH with unknown prefix</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2020-09-08 20:07 UTC</td></tr><tr><th>Updated</th><td>2020-11-13 21:25 UTC</td></tr><tr><th>Resolved</th><td>2020-11-13 21:25 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>This bug can be seen when trying to perform a PATCH request that includes the use of a RDF prefix that is undefined. The bug is that the body of the HTTP response to the client is an internal stacktrace. The fix should catch the exception, include a simple error message (e.g. "RDF was not parsable: <span class="error">&#91;line: 1, col: 4 &#93;</span> Unrecognized keyword: unknown"), and a 400 response code.</p>
+
+<p>1. Create a resource<br/>
+$ curl -i -XPUT -H"Content-Type: text/turtle" -H'Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"' --data-binary @body.ttl localhost:8080/rest/test0</p>
+<ul class="alternate" type="square">
+	<li>Where @body.ttl is:<br/>
+```<br/>
+&lt;&gt; &lt;<a href="http://test.com#title" class="external-link" rel="nofollow noreferrer">http://test.com#title</a>&gt; "A Title"<br/>
+```</li>
+</ul>
+
+
+<p>2. Verify the new resource includes the triple found in body.ttl<br/>
+$ curl -i localhost:8080/rest/test0</p>
+
+<p>3. Perform PATCH<br/>
+$   512  curl -i -XPATCH -H"Content-Type: application/sparql-update" --data-binary @update.su localhost:8080/rest/test0</p>
+<ul class="alternate" type="square">
+	<li>Where @update.su is:<br/>
+```<br/>
+DELETE 
+{
+   &lt;&gt; unknown:title "A Title";
+}
+<p>INSERT </p>
+{
+   &lt;&gt; unknown:title "new title";
+}
+<p>WHERE {<br/>
+}<br/>
+```</p></li>
+</ul>
+
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-21603"><div class="by">Jared Whiklo, 2020-11-13 21:25 UTC</div><div class="text"><p>As of <a href="https://github.com/fcrepo/fcrepo/commit/93a8e636ab22559a9100eedea20f83f8bb9077d6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/93a8e636ab22559a9100eedea20f83f8bb9077d6</a></p>
+
+<p>the command</p>
+
+<p><tt>&gt; curl -i -ufedoraAdmin:fedoraAdmin -XPATCH -H"Content-type: application/sparql-update" -d "DELETE { &lt;&gt; unknown:title \"A Title\" . } INSERT { &lt;&gt; unknown:title \"new title\" . } WHERE { }" <a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a></tt></p>
+
+<p>returns</p>
+
+<p><tt>HTTP/1.1 400 Bad Request</tt><br/>
+<tt>Date: Fri, 13 Nov 2020 21:22:14 GMT</tt><br/>
+<tt>Set-Cookie: JSESSIONID=node01pkktvh2b9jzq1j1h2ayhm9v8p3.node0; Path=/</tt><br/>
+<tt>Expires: Thu, 01 Jan 1970 00:00:00 GMT</tt><br/>
+<tt>Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Thu, 12-Nov-2020 21:22:14 GMT; SameSite=lax</tt><br/>
+<tt>Content-Type: text/plain;charset=utf-8</tt><br/>
+<tt>Content-Length: 114</tt><br/>
+<tt>Server: Jetty(9.4.34.v20201102)</tt><tt>There are one or more undefined namespace(s) in your request [ unknown:title ], please define them before retrying</tt></p></div></div>
+<p><a href="data/FCREPO-3413.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

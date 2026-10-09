@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2604 Assure that messages are emitted when required by the spec</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2604</span> Assure that messages are emitted when required by the spec</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2017-09-12 13:56 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-06-21 14:41 UTC</td></tr><tr><th>Components</th><td>f4-messaging</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Addresses</th><td><a href="FCREPO-2605.html">FCREPO-2605</a> Figure out what to do with messages emitted when one resource links to another</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2803.html">FCREPO-2803</a> Audit how events are generated on new inbound references</td></tr></table>
+<h2>Description</h2>
+<p>The spec states that there MUST be a corresponding notification when the state of a resource changes as a result of an HTTP operation.  </p>
+
+<p>First, seek clarification:  What is the definition of 'state' of a resource?</p>
+
+<p>Secondly, check/audit the current impl behaviour.  At the very least, it seems to emit <b>too many</b> message under some circumstances.  For example, if you modify A with a PATCH so that it links to B, there will be two "resource modification" messages:  one for A, and one for B.  It is unclear if B is warranted.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2604/10318_messaging.txt">messaging.txt</a>, 47997 bytes, added by Situ, Longshou on 2017-10-03</li>
+<li><a href="attachments/FCREPO-2604/10317_messaging.txt">messaging.txt</a>, 47901 bytes, added by Situ, Longshou on 2017-10-03</li>
+</ul>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-19310"><div class="by">Aaron Birkland, 2017-09-12 17:26 UTC</div><div class="text"><p>There is some relevant discussion on a previous issue that touches upon the notion of state.  The general consensus was that linking to an object does <em>not</em> alter its state (even though it <em>does</em> alter a <em>representation</em> of the linked-to resource).  That would seem suggest that emitting modification events for the linked-to resource would <em>not</em> be required by the spec</p>
+
+<p><a href="https://jira.duraspace.org/browse/FCREPO-1742" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1742</a></p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19426"><div class="by">Situ, Longshou, 2017-09-29 21:44 UTC</div><div class="text"><p>Aaron Birkland I try to understand what's the scope of the ticket and what's it's related to ticket <a href="https://jira.duraspace.org/browse/FCREPO-2605" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2605</a>. Currently Fedora is mapping Modeshape events to four resource states as the codes showing in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/observer/FedoraEventImpl.java#L203-L209" class="external-link" rel="nofollow noreferrer">FedoraEventImpl.java#L203-L209</a>:<br/>
+Event.NODE_ADDED =&gt; RESOURCE_CREATION (create resource)<br/>
+Event.NODE_REMOVED =&gt; RESOURCE_DELETION (delete resource)<br/>
+Event.NODE_MOVED =&gt; RESOURCE_RELOCATION (move resource)</p>
+
+<p>Event.PROPERTY_ADDED =&gt; RESOURCE_MODIFICATION (update resource)<br/>
+Event.PROPERTY_CHANGED =&gt; RESOURCE_MODIFICATION (update resource)<br/>
+Event.PROPERTY_REMOVED =&gt; RESOURCE_MODIFICATION (update resource)</p>
+
+<p>So Fedora resources have four states Create, Delete, Update and Move. Correct? <br/>
+Is the scope of this ticket just to examine whether Modeshape will produce extra events when a resource's state is changed, but not considering the counting of events from POST-ing to a Direct/Indirect container that adds extra server manage triples to another resource? I can't image that Modeshape will produce extra events if a resource state isn't changed unless there's a Modeshape bug somewhere.</p></div></div>
+<div class="comment" id="comment-19428"><div class="by">Andrew Woods, 2017-09-29 21:53 UTC</div><div class="text"><p>A reasonable starting point for this ticket could be an audit of what events are emitted for a variety of client operations, such as:</p>
+<ol>
+	<li>Create container</li>
+	<li>Create binary</li>
+	<li>Update container (and binary)</li>
+	<li>Delete container (and binary)</li>
+	<li>Add resource to basic container</li>
+	<li>Add resource to direct container</li>
+	<li>Add resource to indirect container</li>
+	<li>Link between resources</li>
+	<li>etc</li>
+</ol>
+
+
+<p>With that information, we can determine which events actually should be emitted.</p></div></div>
+<div class="comment" id="comment-19439"><div class="by">Situ, Longshou, 2017-10-03 20:05 UTC</div><div class="text"><p>Andrew Woods Here are the events I got from the client operations above. I've added one more case for # 8 Link between resources with PATCH and POST that emits an extra event for the linked-to resource, which seems hard to explain. Please reference the attachment  <span class="nobr"><a href="attachments/FCREPO-2604/10317_messaging.txt" title="messaging.txt attached to FCREPO-2604" data-attachment-type="file" data-attachment-name="messaging.txt" data-media-services-type="file" data-media-services-id="fa1adc5e-c807-4c2e-8c0c-640e3dec6577" rel="noreferrer">messaging.txt</a></span>  for details of the messages emitted from Modeshape.</p>
+
+<p>Here are the conclusions:<br/>
+1. Create container emits two messages:</p>
+<ul>
+	<li>A message with an Update event and a Create event for the new container created.</li>
+	<li>A message with an Update event for the parent container.</li>
+</ul>
+
+
+<p>2. Create binary emits is two messages:</p>
+<ul>
+	<li>A message with an Update event and a Create event for the new binary created.</li>
+	<li>A message with an Update event for the parent container.</li>
+</ul>
+
+
+<p>3. Update container (and binary) both emits a message with a Update event.</p>
+
+<p>4. Delete container (and binary) both emits two messages:</p>
+<ul>
+	<li>A message with an Delete event for the resource deleted.</li>
+	<li>A message with an Update event for the parent resource.</li>
+</ul>
+
+
+<p>5. Add resource to basic container emits two messages:</p>
+<ul>
+	<li>A message with an Update event and a Create event for the new basic container created.</li>
+	<li>A message with an Update event for the parent container.</li>
+</ul>
+
+
+<p>6. Add resource to direct container emits three messages:</p>
+<ul>
+	<li>A message with an Update event and a Create event for the new resource created.</li>
+	<li>A message with an Update event for the direct container.</li>
+	<li>A message with an Update event for the membership resource.</li>
+</ul>
+
+
+<p>7. Add resource to indirect container emits four messages:</p>
+<ul>
+	<li>A message with an Update event and a Create event for the new resource created.</li>
+	<li>A message with an Update event for the indirect container.</li>
+	<li>A message with an Update event for the membership resource.</li>
+	<li>A message with an Update event for the member resource that is linked-to.</li>
+</ul>
+
+
+<p>8. Link between resources with PATCH emits two messages:</p>
+<ul>
+	<li>A message with an Update event for the linking resource.</li>
+	<li>A message with an Update event for the resource linked-to.</li>
+</ul>
+
+
+<p>9. Link between resources with POST emits three messages:</p>
+<ul>
+	<li>A message with an Update  event and a Create  event for the new inbound resource created.</li>
+	<li>A message with an Update event for the linking resource.</li>
+	<li>A message with an Update event for the resource linked-to.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19444"><div class="by">Andrew Woods, 2017-10-03 23:39 UTC</div><div class="text"><p>Nicely done.</p>
+
+<p>Although I believe your work is done for this ticket, I will leave it in the "Review" state until we assess which (if any) messages should be stopped.</p></div></div>
+<div class="comment" id="comment-19840"><div class="by">Jared Whiklo, 2018-04-12 17:32 UTC</div><div class="text"><p>The only thing I can see that might be nice is to remove the extra <em>Update</em> after every <em>Create</em>. Otherwise this seems good to me.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20010"><div class="by">kefo, 2018-05-24 14:06 UTC</div><div class="text"><p>Jared Whiklo: I believe when Situ, Longshou wrote "Update event and a Create event..." he was referring to the fact that a single message contained two event types, separated by a comma.  That is, it was not two separate messages.  Is your preference that there be a single eventType in a message and therefore that one of those (the 'update' I presume) be removed?</p></div></div>
+<div class="comment" id="comment-20011"><div class="by">kefo, 2018-05-24 14:28 UTC</div><div class="text"><p>I do not think a message should be emitted when a 'linked-to' resource receives a new inbound reference, which is the case in examples 7, 8, and 9.  In short, I do not believe the state of the linked-to resource has changed.  If I perform a GET on the linked-to resource after the original requests in 8 and 9 (and whether I ask for inbound references is beside the point) the triples of the linked-to resource are the same (except, perhaps, the last-modified value because that might be set by modeshape?).  This gets to Aaron Birkland's second question (and, by example, the first).  There also seems to be consensus on this interpretation of 'state' in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1742" >
+                <a href="FCREPO-1742.html" class="jira-issue-macro-key issue-link"  title="Last-Modified and ETag should not change with inbound references" >
+            
+            FCREPO-1742
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p>
+
+<p>To bring in a working example of this, we've been hit pretty hard by the activity described in items 8 and 9.  We sync resources from one system to another.  We process thousands a day (sometimes tens of thousands) and sometimes we need to perform a full sync which frequently means hundreds of thousands of resources.  The resources we sync often have many references to other repository resources in part because those are rich relationships between other 'first-class' repository resources and in part because we make heavy use of vocabularies and lists.  Our "Active" Status resource (meaning a resource is "Active") is probably referenced by hundreds of thousands of resources.  We do not know what properties specifically were updated in the source system for a given repository resource (so we cannot perform a targeted PATCH).  We must, by and large, replace nearly all the content that might have been modified in the source system with the PATCH.  (A PATCH, versus a PUT, is necessary because we have repository-created and repository-only relationships we must persist and we do not want those wiped out.)  I can watch our reindexing logs and observe these vocabulary and list resources, and other linked-to resources, being fetched and reindexed again and again and again and again.  We do not request and index the inbound references, so the linked-to resource is basically unchanged each time it is reindexed.  This has resulted in a deluge of traffic and not infrequent indexing lags.</p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20012"><div class="by">Jared Whiklo, 2018-05-24 18:23 UTC</div><div class="text"><p>kefo thanks for catching my mistake. I am okay with a single message with two events.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20022"><div class="by">Andrew Woods, 2018-06-21 14:40 UTC</div><div class="text"><p>The research performed by Situ, Longshou for this ticket is complete.</p>
+
+<p>The only outstanding issue related to the appropriate emission of messages is captured in the comments above related to messages being sent for resources that are updated when inbound relationships are created pointing to those resources.</p>
+
+<p>Closing this ticket, as investigation of the "inbound reference events" issue is being tracked in: <a href="https://jira.duraspace.org/browse/FCREPO-2803" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2803</a></p></div></div>
+<p><a href="data/FCREPO-2604.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

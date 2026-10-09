@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2810 Authorization hash URI resources have the incorrect subject</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2810</span> Authorization hash URI resources have the incorrect subject</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2018-06-28 16:18 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-07-13 19:37 UTC</td></tr><tr><th>Components</th><td>webac</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>When retrieving a FedoraAcl resource, the subjects of the returned triples do not include the "/fcr:acl" part of the path.</p>
+
+<p>PUT /foo/fcr:acl</p>
+
+<p>PATCH /foo/fcr:acl<br/>
+ INSERT DATA</p>
+
+{ &lt;#authz&gt; a acl:Authorization ; ... }
+
+<p>GET /foo/fcr:acl<br/>
+ &lt;/foo#authz&gt; a acl:Authorization ; ...</p>
+
+<p>I would expect the response to the GET request to be:</p>
+
+<p>&lt;/foo/fcr:acl#authz&gt; a acl:Authorization ; ...</p>
+
+<p> </p>
+
+<p>It should also be noted that the non-hash subjects are also incorrect - ie /foo rather than /foo/fcr:acl.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20062"><div class="by">Danny Bernstein, 2018-07-12 23:33 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1369" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1369</a></p></div></div>
+<div class="comment" id="comment-20066"><div class="by">Andrew Woods, 2018-07-13 16:10 UTC</div><div class="text"><p>Pending response to code review.</p>
+
+<p>Also, although the scenario in this ticket now result in the correct `&lt;/foo/fcr:acl#authz&gt;` subject, there appears to be another block of triples included in the /fcr:acl response:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/foo/fcr:acl&gt;
+</span>        rdf:type               fedora:Resource ;
+        rdf:type               webac:Acl ;
+        fedora:lastModifiedBy  <span class="code-quote">"fedoraAdmin"</span> ;
+        fedora:createdBy       <span class="code-quote">"fedoraAdmin"</span> ;
+        fedora:created         <span class="code-quote">"2018-07-13T16:06:59.823Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:lastModified    <span class="code-quote">"2018-07-13T16:07:19.059Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; .
+</span>
+&lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/foo/fcr:acl#authz&gt;
+</span>        rdf:type      acl:Authorization ;
+        acl:accessTo  &lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/<span class="code-keyword">new</span>&gt; ;
+</span>        acl:mode      acl:READ ;
+        acl:agent     <span class="code-quote">"testuser"</span> .
+
+&lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/foo/fcr:acl&gt;
+</span>        rdf:type         ldp:RDFSource ;
+        rdf:type         ldp:Container ;
+        rdf:type         ldp:BasicContainer ;
+        fedora:writable  <span class="code-keyword">true</span> .
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-20068"><div class="by">Yinlin Chen, 2018-07-13 19:37 UTC</div><div class="text"><p>Resolved with : <a href="https://github.com/fcrepo4/fcrepo4/commit/e40f2e6a7af2714dea60a9f78d7880a3976cdc9e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/e40f2e6a7af2714dea60a9f78d7880a3976cdc9e</a></p></div></div>
+<p><a href="data/FCREPO-2810.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

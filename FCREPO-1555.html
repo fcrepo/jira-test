@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1555 Attempting to PUT outdated RDF returns incorrect HTTP status code</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1555</span> Attempting to PUT outdated RDF returns incorrect HTTP status code</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Trivial</td></tr><tr><th>Reporter</th><td>Alex Dolski</td></tr><tr><th>Assignee</th><td>Jon Roby</td></tr><tr><th>Created</th><td>2015-05-22 16:29 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 20:47 UTC</td></tr><tr><th>Resolved</th><td>2018-09-27 04:04 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1, Fedora 4.2.0</td></tr></table>
+<h2>Description</h2>
+<p>When updating a container via HTTP PUT, the value of the `fedora:lastModified` triple must match its current counterpart in the repository, otherwise an HTTP 400 error is returned with the following message:</p>
+
+<p>    Could not remove triple containing predicate <a href="http://fedora.info/definitions/v4/repository#lastModified" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#lastModified</a> to node /book</p>
+
+<p>This should really be a 409 (Conflict) error with an improved message. I would propose something like: "Cannot update the container as the supplied RDF is out-of-date based on the value of its fedora:lastModified triple."</p>
+
+<p>Background: <a href="https://github.com/fcrepo4/fcrepo4/issues/800#issuecomment-104694026" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/800#issuecomment-104694026</a></p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-14377"><div class="by">A. Soroka, 2015-05-27 19:00 UTC</div><div class="text"><p>Would it be better to just ignore "lastModified" for the purpose of mutating requests?</p></div></div>
+<div class="comment" id="comment-14418"><div class="by">Jon Roby, 2015-06-01 18:08 UTC</div><div class="text"><p>I don't understand this ticket. Is it JUST the lastModified field that causes this or the GET-PUT-PUT? If its the GET-PUT-PUT operations, shouldn't the error message be more generalized?</p></div></div>
+<div class="comment" id="comment-14421"><div class="by">Alex Dolski, 2015-06-01 21:28 UTC</div><div class="text"><p>Fedora doesn't track the order of HTTP request methods as they come in, it only cares about preventing conflicts. It uses the lastModified triple to determine whether the RDF in a PUT request is based on the latest version in the repository. Otherwise, there could be a situation like this:</p>
+
+<p>T+00:00:00 client1 GET /foo (lastModified T-08:30:50)<br/>
+T+00:00:01 client2 GET /foo (lastModified T-08:30:50)<br/>
+T+00:00:05 client1 PUT /foo (lastModified T-08:30:50) success, lastModified updated to T+00:00:05<br/>
+T+00:00:06 client2 PUT /foo (lastModified T-08:30:50) client2 wipes out client1's changes</p>
+
+<p>This ticket concerns the clarity of the error message and the suitability of the HTTP status code that result when an attempt is made to do this.</p></div></div>
+<div class="comment" id="comment-14424"><div class="by">A. Soroka, 2015-06-02 13:18 UTC</div><div class="text"><p>To be clear, given the vagaries of network transit and ntp, Fedora <em>can't</em> order requests.</p></div></div>
+<div class="comment" id="comment-14442"><div class="by">Jon Roby, 2015-06-03 19:26 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/810" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/810</a></p></div></div>
+<div class="comment" id="comment-14445"><div class="by">Andrew Woods, 2015-06-03 22:10 UTC</div><div class="text"><p>See code review comments.</p></div></div>
+<div class="comment" id="comment-14466"><div class="by">Andrew Woods, 2015-06-04 20:51 UTC</div><div class="text"><p>Give this a shot, Jon Roby<br/>
+<a href="https://github.com/robyj/fcrepo4/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/robyj/fcrepo4/pull/1</a></p></div></div>
+<div class="comment" id="comment-15326"><div class="by">Jared Whiklo, 2015-09-25 16:41 UTC</div><div class="text"><p>I talked to Jon Roby and he is going to merge your pull request Andrew Woods. Hopefully that will finish this off.</p>
+
+<p>If not let me know what is needed. cheers.</p></div></div>
+<div class="comment" id="comment-20298"><div class="by">Danny Bernstein, 2018-09-27 04:04 UTC</div><div class="text"><p>Now that we support -Dfcrepo.properties.management="relaxed" for overriding server managed triples, this one should be resolved.</p>
+
+<p>I'm closing it.</p></div></div>
+<p><a href="data/FCREPO-1555.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

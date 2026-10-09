@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1802 External triplestores to enforce the authorization rules defined in the repository</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1802</span> External triplestores to enforce the authorization rules defined in the repository</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-10-28 13:46 UTC</td></tr><tr><th>Updated</th><td>2017-11-22 00:27 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to investigate (and document in the wiki) potential approaches for enforcing WebAC policies defined on F4 resources when being queried in an external triplestore.<br/>
+Although general approaches may be available, this work may also be unique to each triplestore. The triplestores that have been tested with F4 are:</p>
+<ul class="alternate" type="square">
+	<li>Fuseki</li>
+	<li>Sesame</li>
+	<li>BlazeGraph</li>
+</ul>
+
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-15594"><div class="by">Diego Pino Navarro, 2015-10-28 16:10 UTC</div><div class="text"><p>Adding some noise here + 2 Cents : I know Nick Ruest is working on this, and since i'm doing some internal research on the Islandora world i was thinking maybe we could move this to an upper level (in terms of where do we enforce, what do we expose) + how we also allow all different rdf sources (triple stores, dumps, whatever) to play together by enabling webAC to be enforced on query time in a transparent manner.</p>
+
+<p><a href="http://ebiquity.umbc.edu/blogger/2015/04/19/access-control-for-a-triplestore-linked-data-fragments-interface/" class="external-link" rel="nofollow noreferrer">http://ebiquity.umbc.edu/blogger/2015/04/19/access-control-for-a-triplestore-linked-data-fragments-interface/</a><br/>
+<a href="http://linkeddatafragments.org" class="external-link" rel="nofollow noreferrer">http://linkeddatafragments.org</a></p>
+
+<p>(Look at the software tab)</p>
+</div></div>
+<div class="comment" id="comment-15719"><div class="by">Nick Ruest, 2015-11-04 01:37 UTC</div><div class="text"><p>Andrew Woods, Unknown would it be possible to devote some time to this on tomorrow's call? I've been thinking about this <b>a lot</b>. But, I keep on coming back to what exactly the use case(s) is/are, and I figure it might be better to talk it out a bit.</p></div></div>
+<div class="comment" id="comment-15720"><div class="by">Unknown, 2015-11-04 02:20 UTC</div><div class="text"><p>Nick Ruest That would be great. I keep coming back to the idea that the triplestore is, perhaps, not the place to impose access controls. At least not <b>fine grained</b> access controls. Of course, if you want to expose a public sparql endpoint, that wouldn't work; unless, of course, you only put public data there.</p>
+
+<p>However, I wonder about the possiblities that a linked data fragments server could provide &#8211; these also seem to be more useful than full SPARQL endpoints. And in that regard, I have this idea that I've been unable to bury. And the idea is this &#8211; what if your triplestore had a basic inference engine (e.g. simple rdfs entailment) and your fedora repository is being synced to that triplestore. Then, with a slightly more sophisticated route than the current fcrepo-indexer-triplestore, you index the content to the triplestore. Then, for every fedora resource you re-query the triplestore to get all of the added inferencing. With that information (and with the information that Fedora provides w/r/t the access controls &#8211; Jared Whiklo is working on this ticket), you can pass those "enhanced" triples to a cassandra based database. There, you have a column family that specifically handles authZ, so you get authorization controls <b>for every triple in the repo</b>. Plus, it scales like nobody's fool.</p>
+
+<p>I'm not entirely sure that it would work. However, in the last two months, I also haven't been able to come up with a good reason why it <b>wouldn't</b> work.</p></div></div>
+<div class="comment" id="comment-15723"><div class="by">A. Soroka, 2015-11-04 14:41 UTC</div><div class="text"><p>This seems useful. It also seems like nothing on which the Fedora core team should be spending time.</p>
+
+<p>This is an external (closely-related) project in the making.</p></div></div>
+<p><a href="data/FCREPO-1802.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

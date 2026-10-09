@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2341 UI does not parse Link headers correctly when redirecting</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2341</span> UI does not parse Link headers correctly when redirecting</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Elliot Metsger</td></tr><tr><th>Created</th><td>2016-12-08 17:16 UTC</td></tr><tr><th>Updated</th><td>2017-08-16 15:49 UTC</td></tr><tr><th>Resolved</th><td>2017-03-28 04:47 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>bug, html-ui</td></tr></table>
+<h2>Environment</h2>Chrome browser
+<h2>Description</h2>
+<p>When testing the API-X demo<span class="error">&#91;1&#93;</span> depositing binaries via the Fedora html UI, sometimes the user is redirected to the wrong place.  Instead of /fcr:metadata, the user is sometimes directed to the API-X service document.</p>
+
+<p>This appears to be due to the UI parsing link headers incorrectly.  If there are multiple link relations, e.g.:<br/>
+Link: &lt;/otherPlace&gt;; rel="anOtherRel"<br/>
+Link: &lt;/fcr:metadata&gt;; rel="describedby"<br/>
+.. the net effect is that the UI picks a random link regardless of relation.</p>
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-18111"><div class="by">Aaron Birkland, 2016-12-08 17:19 UTC</div><div class="text"><p>This seems to be a javascript issue in:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>const fn = function (method, url, headers, data) {
+      http(method, url, headers, data, function(res) {
+        if (res.status == 201) {
+          const loc = res.getResponseHeader('Location');
+          const link = res.getResponseHeader('Link');
+          if (link != null &amp;&amp; link.match('rel="describedby"')) {
+            const str = link.match(/&lt;[^&gt;]+&gt;/)[0];
+            window.location = str.slice(1, str.length - 1);
+          } else if (loc != null) {
+            window.location = loc;
+          } else {
+            window.location.reload();
+          }
+        } else {
+            ajaxErrorHandler(res, 'Error creating binary');
+        }
+      });
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18141"><div class="by">Jared Whiklo, 2016-12-11 03:05 UTC</div><div class="text"><p>According to Mozilla if there is more than one header with the same name, all headers are returned in a single comma separated string.</p>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getResponseHeader" class="external-link" rel="nofollow noreferrer">https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/getResponseHeader</a></p></div></div>
+<div class="comment" id="comment-18142"><div class="by">Jared Whiklo, 2016-12-11 03:35 UTC</div><div class="text"><p>On second thought trying to test this through a docker machine is too confusing. However I think the answer is much the same as Unknown did for the <tt>checkIfNonRdfResource</tt> so something like</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+    <span class="code-keyword">const</span> fn = function (method, url, headers, data) {
+      http(method, url, headers, data, function(res) {
+        <span class="code-keyword">if</span> (res.status == 201) {
+          <span class="code-keyword">const</span> loc = res.getResponseHeader(<span class="code-quote">'Location'</span>);
+          <span class="code-keyword">const</span> linkheaders = res.getResponseHeader(<span class="code-quote">'Link'</span>).split(<span class="code-quote">", "</span>);
+          <span class="code-keyword">const</span> link = linkheaders.filter(function(h) { <span class="code-keyword">return</span> h.match(/rel=<span class="code-quote">"describedby"</span>/)});
+          <span class="code-keyword">if</span> (linkheaders != <span class="code-keyword">null</span> &amp;&amp; link.length &gt; 0) {
+            window.location = link[0].substr(1, link[0].indexOf(<span class="code-quote">'&gt;'</span>) - 1);
+          } <span class="code-keyword">else</span> <span class="code-keyword">if</span> (loc != <span class="code-keyword">null</span>) {
+            window.location = loc;
+          } <span class="code-keyword">else</span> {
+            window.location.reload();
+          }
+        } <span class="code-keyword">else</span> {
+            ajaxErrorHandler(res, <span class="code-quote">'Error creating binary'</span>);
+        }
+      });
+    }
+</pre>
+</div></div>
+<p>should work.</p></div></div>
+<div class="comment" id="comment-18646"><div class="by">Andrew Woods, 2017-03-24 20:25 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-18650"><div class="by">Elliot Metsger, 2017-03-27 15:48 UTC</div><div class="text"><p>@awoods I don't receive a null on my platform. I've tried this patch against master and against 4.7.1. I'm using Chrome on Mac OS version 56.0.2924.87 (64-bit).</p>
+
+<p>The other platform I have available to test on is Safari version 9.1.2 (11601.7.7), but that just seems totally broken (unrelated to this patch).</p>
+
+<p>I pushed an update that I hope guards against null objects. Please test and let me know if it works for you.</p></div></div>
+<div class="comment" id="comment-18655"><div class="by">Andrew Woods, 2017-03-28 04:47 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/03f95c41434274a8e94331463676a048fa75bf4d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/03f95c41434274a8e94331463676a048fa75bf4d</a></p></div></div>
+<p><a href="data/FCREPO-2341.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

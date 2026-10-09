@@ -1,0 +1,103 @@
+postgres 475-rc2
+
+[kford1@kfordbox lake]$ sudo -u postgres psql -d fcrepo47 -c "TRUNCATE TABLE modeshape_repository;"
+TRUNCATE TABLE
+[kford1@kfordbox lake]$ sudo -u postgres psql -d fcrepo47 -c "SELECT COUNT(ID) FROM modeshape_repository;"
+ count 
+-------
+     0
+(1 row)
+
+[kford1@kfordbox lake]$ rm -fr /data/fcrepo47_data/*
+[kford1@kfordbox lake]$ ls -l /data/fcrepo47_data/
+total 0
+
+[kford1@kfordbox lake]$ cd fcrepo47/webapp/
+[kford1@kfordbox webapp]$ rm fcrepo.war 
+[kford1@kfordbox webapp]$ ln -s fcrepo-webapp-4.7.5-RC-2.war fcrepo.war
+[kford1@kfordbox webapp]$ cd ../../
+[kford1@kfordbox lake]$ ls -l fcrepo47/webapp/
+total 374184
+lrwxrwxrwx 1 kford1 kford1       28 Jan 25 15:00 fcrepo.war -> fcrepo-webapp-4.7.5-RC-2.war
+-rw-rw-r-- 1 kford1 tomcat 44461983 Nov  3  2016 fcrepo-webapp-4.7.0.war
+-rw-r--r-- 1 kford1 kford1 46818492 Dec 21  2016 fcrepo-webapp-4.7.1-RC-1.war
+-rw-r--r-- 1 kford1 kford1 46864593 Jan 18 10:29 fcrepo-webapp-4.7.1.war
+-rw-r--r-- 1 kford1 kford1 45711209 Jan 18 10:29 fcrepo-webapp-4.7.3.war
+-rw-r--r-- 1 kford1 kford1 48746014 Jan 18 10:29 fcrepo-webapp-4.7.4.war
+-rw-r--r-- 1 kford1 kford1 48973223 Jan 18 10:29 fcrepo-webapp-4.7.5-RC-1.war
+-rw-r--r-- 1 kford1 kford1 48973794 Jan 24 10:25 fcrepo-webapp-4.7.5-RC-2.war
+-rw-r--r-- 1 kford1 kford1 52598404 Jan 24 10:25 fcrepo-webapp-plus-4.7.5-RC-1.war
+
+[kford1@kfordbox lake]$ ./tomcat7-47/bin/startup.sh
+Using CATALINA_BASE:   /opt/lake/tomcat7-47
+Using CATALINA_HOME:   /opt/lake/tomcat7-47
+Using CATALINA_TMPDIR: /opt/lake/tomcat7-47/temp
+Using JRE_HOME:        /usr
+Using CLASSPATH:       /opt/lake/tomcat7-47/bin/bootstrap.jar:/opt/lake/tomcat7-47/bin/tomcat-juli.jar
+Tomcat started.
+[kford1@kfordbox lake]$ 
+[kford1@kfordbox lake]$ 
+
+**** AFTER STARTED BUT BEFORE LOADING DATA***
+
+
+[kford1@kfordbox lake]$ sudo -u postgres psql -d fcrepo47 -c "SELECT COUNT(ID) FROM modeshape_repository;"
+ count 
+-------
+     0
+(1 row)
+
+[kford1@kfordbox lake]$ ls -l /data/fcrepo47_data/
+total 16
+drwxrwxr-x 3 kford1 kford1 4096 Jan 25 15:01 com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean.default.objectStoreDir
+drwxrwxr-x 3 kford1 kford1 4096 Jan 25 15:01 com.arjuna.ats.arjuna.objectstore.objectStoreDir
+drwxrwxr-x 2 kford1 kford1 4096 Jan 25 15:01 fcrepo.activemq.directory
+drwxrwxr-x 2 kford1 kford1 4096 Jan 25 15:01 fcrepo.object.directory
+[kford1@kfordbox lake]$ 
+[kford1@kfordbox lake]$ 
+
+
+
+**** LOADING DATA ***
+*** NOTE DB ROWS DO NOT INCREASE ***
+*** NOTE GROWTH OF modeshape.repository FILE ***
+
+[kford1@kfordbox lake]$ 
+[kford1@kfordbox lake]$ ls -l /data/fcrepo47_data/
+total 20
+drwxrwxr-x  3 kford1 kford1 4096 Jan 25 15:01 com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean.default.objectStoreDir
+drwxrwxr-x  3 kford1 kford1 4096 Jan 25 15:01 com.arjuna.ats.arjuna.objectstore.objectStoreDir
+drwxrwxr-x  2 kford1 kford1 4096 Jan 25 15:01 fcrepo.activemq.directory
+drwxrwxr-x 62 kford1 kford1 4096 Jan 25 15:04 fcrepo.binary.directory
+drwxrwxr-x  2 kford1 kford1 4096 Jan 25 15:01 fcrepo.object.directory
+[kford1@kfordbox lake]$ sudo -u postgres psql -d fcrepo47 -c "SELECT COUNT(ID) FROM modeshape_repository;"
+ count 
+-------
+     0
+(1 row)
+
+[kford1@kfordbox lake]$ ls -l /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository 
+-rw-rw-r-- 1 kford1 kford1 1540096 Jan 25 15:04 /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository
+[kford1@kfordbox lake]$ ls -l /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository 
+-rw-rw-r-- 1 kford1 kford1 1658880 Jan 25 15:04 /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository
+[kford1@kfordbox lake]$ ls -l /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository 
+-rw-rw-r-- 1 kford1 kford1 1773568 Jan 25 15:05 /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository
+[kford1@kfordbox lake]$ ls -l /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository 
+-rw-rw-r-- 1 kford1 kford1 1863680 Jan 25 15:05 /data/fcrepo47_data/fcrepo.object.directory/modeshape.repository
+[kford1@kfordbox lake]$ sudo -u postgres psql -d fcrepo47 -c "SELECT COUNT(ID) FROM modeshape_repository;"
+ count 
+-------
+     0
+(1 row)
+
+
+
+[kford1@kfordbox lake]$ ./tomcat7-47/bin/shutdown.sh 
+Using CATALINA_BASE:   /opt/lake/tomcat7-47
+Using CATALINA_HOME:   /opt/lake/tomcat7-47
+Using CATALINA_TMPDIR: /opt/lake/tomcat7-47/temp
+Using JRE_HOME:        /usr
+Using CLASSPATH:       /opt/lake/tomcat7-47/bin/bootstrap.jar:/opt/lake/tomcat7-47/bin/tomcat-juli.jar
+[kford1@kfordbox lake]$ 
+
+

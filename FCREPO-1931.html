@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1931 Fedora 4 returns a 400 error when uploading a file larger than the available space in the temp directory.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1931</span> Fedora 4 returns a 400 error when uploading a file larger than the available space in the temp directory.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-02-29 16:36 UTC</td></tr><tr><th>Updated</th><td>2017-01-24 03:34 UTC</td></tr><tr><th>Resolved</th><td>2016-10-13 04:20 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.1</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>When uploading a large file Modeshape stores it in the temp directory.  If there is insufficient space, a 400 error is returned with no useful message.  It is especially difficult to debug this error since there is no stack trace (no matter how much logging is enabled) and because, non-intuitively, fedora 4 writes to the temp space, which may be on a different volume than the storage space fedora is configured to use.</p>
+
+<p>The following stack trace was derived by using a modified version of fedora 4.</p>
+
+<p>org.modeshape.jcr.value.ValueFormatException: Error converting InputStream to a BinaryValue<br/>
+	at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:259)<br/>
+	at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:49)<br/>
+	at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:148)<br/>
+	at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:41)<br/>
+	at org.fcrepo.kernel.modeshape.FedoraBinaryImpl.setContent(FedoraBinaryImpl.java:173)<br/>
+	at org.fcrepo.http.api.ContentExposingResource.replaceResourceBinaryWithStream(ContentExposingResource.java:566)<br/>
+	at org.fcrepo.http.api.FedoraLdp.createObject(FedoraLdp.java:458)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:497)<br/>
+	at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:151)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:171)<br/>
+	at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:152)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:104)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:384)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:342)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:101)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:297)<br/>
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:254)<br/>
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1030)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:373)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:381)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:344)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:221)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:303)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)<br/>
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)<br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:220)<br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:122)<br/>
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:505)<br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:170)<br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:103)<br/>
+	at org.apache.catalina.valves.RequestFilterValve.process(RequestFilterValve.java:334)<br/>
+	at org.apache.catalina.valves.RemoteAddrValve.invoke(RemoteAddrValve.java:119)<br/>
+	at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:956)<br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:116)<br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:423)<br/>
+	at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1079)<br/>
+	at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:625)<br/>
+	at org.apache.tomcat.util.net.JIoEndpoint$SocketProcessor.run(JIoEndpoint.java:316)<br/>
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)<br/>
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)<br/>
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)<br/>
+	at java.lang.Thread.run(Thread.java:745)<br/>
+Caused by: org.modeshape.jcr.value.binary.BinaryStoreException: java.io.IOException: No space left on device<br/>
+	at org.modeshape.jcr.value.binary.FileSystemBinaryStore.storeValue(FileSystemBinaryStore.java:117)<br/>
+	at org.modeshape.jcr.value.binary.AbstractBinaryStore.storeValue(AbstractBinaryStore.java:248)<br/>
+	at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:257)<br/>
+	... 53 more<br/>
+Caused by: java.io.IOException: No space left on device<br/>
+	at java.io.FileOutputStream.writeBytes(Native Method)<br/>
+	at java.io.FileOutputStream.write(FileOutputStream.java:326)<br/>
+	at java.io.BufferedOutputStream.flushBuffer(BufferedOutputStream.java:82)<br/>
+	at java.io.BufferedOutputStream.write(BufferedOutputStream.java:126)<br/>
+	at org.modeshape.common.util.IoUtil.write(IoUtil.java:332)<br/>
+	at org.modeshape.jcr.value.binary.FileSystemBinaryStore.storeValue(FileSystemBinaryStore.java:97)<br/>
+	... 55 more</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-16292"><div class="by">A. Soroka, 2016-03-10 16:43 UTC</div><div class="text"><p>Michael Durbin, is this not a MODE ticket? Can we move it over there and close it WON'T-FIX?</p></div></div>
+<div class="comment" id="comment-16374"><div class="by">Michael Durbin, 2016-03-21 13:45 UTC</div><div class="text"><p>I'm not sure 400 is the best error code... isn't a 500 better?  If you're satisfied with a 400 or would prefer that Modeshape return a more apt error, that's fine too, but if we put just a couple lines of code in here (either to return the root cause "no more space" or even to log it) it might save a future fedora user a lot of time debugging.   After the failure, the temp file is deleted, so there's no obvious indication that disk space was an issue.  </p></div></div>
+<div class="comment" id="comment-16375"><div class="by">A. Soroka, 2016-03-21 13:50 UTC</div><div class="text"><p>Okay, if you're confident you know how to detect this condition, I don't think anyone would be unhappy with more precise diagnostics  . One thing to watch out for is that some folks will not want to publish details of their filesystems in cases like this, so whatever you do needs to be config'able. I would probably go for <a href="https://tools.ietf.org/html/rfc4918#section-9.3.1" class="external-link" rel="nofollow noreferrer"><tt>507 (Insufficient Storage)</tt></a> as per that link to WebDAV extensions.</p></div></div>
+<div class="comment" id="comment-17776"><div class="by">Danny Bernstein, 2016-10-10 16:53 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1115" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1115</a></p></div></div>
+<div class="comment" id="comment-17779"><div class="by">Andrew Woods, 2016-10-10 18:18 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-17782"><div class="by">Danny Bernstein, 2016-10-10 23:14 UTC</div><div class="text"><p>All improvements to the pull request are in.</p></div></div>
+<div class="comment" id="comment-17788"><div class="by">Andrew Woods, 2016-10-11 22:48 UTC</div><div class="text"><p>Pending response to code review comment regarding rebasing the PR.</p></div></div>
+<div class="comment" id="comment-17813"><div class="by">Danny Bernstein, 2016-10-13 04:20 UTC</div><div class="text"><p>master rebased and extraneously @throws  (as well as a frequently breaking unit test).</p></div></div>
+<div class="comment" id="comment-17817"><div class="by">Andrew Woods, 2016-10-13 14:19 UTC</div><div class="text"><p>New PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1122" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1122</a></p></div></div>
+<div class="comment" id="comment-17835"><div class="by">Michael Durbin, 2016-10-14 20:23 UTC</div><div class="text"><p>Unknown signed off on the code, and I verified the functionality.</p>
+
+<p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/c4712b64b765137123b199c6533e3a0171410853" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/c4712b64b765137123b199c6533e3a0171410853</a></p></div></div>
+<p><a href="data/FCREPO-1931.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

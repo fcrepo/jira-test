@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-80 LDAP, JNDI, and Servlet Filter issues</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-80</span> LDAP, JNDI, and Servlet Filter issues</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bill Niebel</td></tr><tr><th>Created</th><td>2007-06-05 19:50 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>ISSUES</p>
+
+<p>1.  A bug.  Confused usage of local (method) variable and instance field with the same name "authenticated". </p>
+
+<p>2.  Unexpected / strange response from JNDI.  Again, this is a non-existent user with no password provided.  In the case seen in the log,  JNDI does not throw an exception. I haven't seen any documentation on what to expect in this case, and certainly didn't expect this behavior for the specific case of no password provided.  In local testing, I've seen exceptions thrown always on no password provided.  The difference could be due to the directory server used, I guess. I've changed the code defensively, but need to test before sending the patch.  I will also both<br/>
+(a) trap the lack of password in the Fedora code itself, so that it's an error to Fedora before JNDI is called; and<br/>
+(b) treat empty results returned from the results as non-authentication.<br/>
+Both of these will be configurable, which will allow further testing if we want/need to tease this out (i.e., ferret out when exceptions are unexpectedly not thrown).</p>
+
+
+<p>3.  A bug.  The cached authentication value is not reset before the re-authentication attempt.  A re-authentication attempt with exception thrown then results in using the existing cached value. This is puzzling especially when the the cached value is -<del>incorrectly</del>- set to true, as set in the second login attempt with no password and no exception thrown by JNDI. That is, case 3 (or 4) is the result of both this bug  -<del>and</del>- case (2) having incorrectly cached a true authentication value.  Strange case and inadequate testing.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-80/10006_sf-1731608-debugging-readme.txt">sf-1731608-debugging-readme.txt</a>, 8363 bytes, added by Chris Wilper on 2007-06-18</li>
+<li><a href="attachments/FCREPO-80/10007_sf-1731608-fedora-2.2.6012.zip">sf-1731608-fedora-2.2.6012.zip</a>, 67616 bytes, added by Chris Wilper on 2007-06-18</li>
+<li><a href="attachments/FCREPO-80/10005_sf-1731608-readme.txt">sf-1731608-readme.txt</a>, 4984 bytes, added by Chris Wilper on 2007-06-18</li>
+</ul>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-10159"><div class="by">Bill Niebel, 2007-06-05 22:25 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: niebel<br/>
+Logged In: YES <br/>
+user_id=1705824<br/>
+Originator: YES</p>
+
+<p>I've committed bug fixes for 1 and 3 to maintenance-2.2 (@ 6010) and to trunk (@ 6011).  Item 2 will be committed separately.</p></div></div>
+<div class="comment" id="comment-10160"><div class="by">Bill Niebel, 2007-06-06 21:01 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: niebel<br/>
+Logged In: YES <br/>
+user_id=1705824<br/>
+Originator: YES</p>
+
+<p>I've committed defensive programming for 2 to maintenance-2.2 (@ 6012) and to<br/>
+trunk (@ 6013).  I'll send email re how I tested this.</p></div></div>
+<div class="comment" id="comment-10161"><div class="by">Bill Niebel, 2007-06-06 22:34 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: niebel<br/>
+Logged In: YES <br/>
+user_id=1705824<br/>
+Originator: YES</p>
+
+<p>We should add better init protection against inconsistent parms.</p></div></div>
+<div class="comment" id="comment-10162"><div class="by">Bill Niebel, 2007-06-18 15:52 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: niebel<br/>
+Logged In: YES <br/>
+user_id=1705824<br/>
+Originator: YES</p>
+
+<p>File Added: readme.txt</p></div></div>
+<div class="comment" id="comment-10163"><div class="by">Bill Niebel, 2007-06-18 15:53 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: niebel<br/>
+Logged In: YES <br/>
+user_id=1705824<br/>
+Originator: YES</p>
+
+<p>File Added: debugging-readme.txt</p></div></div>
+<div class="comment" id="comment-10164"><div class="by">Bill Niebel, 2007-06-18 16:08 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: niebel<br/>
+Logged In: YES <br/>
+user_id=1705824<br/>
+Originator: YES</p>
+
+<p>File Added: fedora-2.2.6012.zip</p></div></div>
+<div class="comment" id="comment-10165"><div class="by">Bill Niebel, 2007-06-18 16:17 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: niebel<br/>
+Logged In: YES <br/>
+user_id=1705824<br/>
+Originator: YES</p>
+
+<p>uploaded readme text and zip file for patch 6012 (also incorporates issue 1721620).<br/>
+also included a separate debugging readme, for dealing with ldap server behaving<br/>
+differently in field from what's seen in development.</p></div></div>
+<div class="comment" id="comment-10166"><div class="by">Chris Wilper, 2007-07-03 03:20 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: sf-robot<br/>
+Logged In: YES <br/>
+user_id=1312539<br/>
+Originator: NO</p>
+
+<p>This Tracker item was closed automatically by the system. It was<br/>
+previously set to a Pending status, and the original submitter<br/>
+did not respond within 14 days (the time period specified by<br/>
+the administrator of this Tracker).</p></div></div>
+<div class="comment" id="comment-10167"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: niebel<br/>
+Item #: 1731608<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1731608" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1731608</a><br/>
+Closed On: 2007-07-02 22:20:04<br/>
+Closed By: sf-robot</p></div></div>
+<p><a href="data/FCREPO-80.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

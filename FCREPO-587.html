@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-587 DOValidatorSchematron error on Fedora startup with WebLogic</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-587</span> DOValidatorSchematron error on Fedora startup with WebLogic</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2009-11-24 20:27 UTC</td></tr><tr><th>Updated</th><td>2010-05-26 06:39 UTC</td></tr><tr><th>Resolved</th><td>2010-05-26 06:39 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Environment</h2>Fedora 3.2.1, WebLogic 10.3.1
+<h2>Description</h2>
+<p>When trying to start Fedora deployed in WebLogic, Andreas Nef has reported the following stack trace:</p>
+
+<p>INFO 2009-10-16 15:46:10.586 [<span class="error">&#91;STANDBY&#93;</span> ExecuteThread: '2' for queue: 'weblogic.kernel.Default (self-tuning)'] (Server) Post-Initializing fedora.server.storage.translation.DOTranslatorModule<br/>
+INFO 2009-10-16 15:46:10.586 [<span class="error">&#91;STANDBY&#93;</span> ExecuteThread: '2' for queue: 'weblogic.kernel.Default (self-tuning)'] (Server) Post-Initializing fedora.server.messaging.MessagingModule<br/>
+INFO 2009-10-16 15:46:10.599 [<span class="error">&#91;STANDBY&#93;</span> ExecuteThread: '2' for queue: 'weblogic.kernel.Default (self-tuning)'] (BasicServer) Ingesting new system object: fedora-system:ContentModel-3.0<br/>
+ERROR 2009-10-16 15:46:10.896 [<span class="error">&#91;STANDBY&#93;</span> ExecuteThread: '2' for queue: 'weblogic.kernel.Default (self-tuning)'] (DOValidatorSchematron) Schematron validation failed<br/>
+javax.xml.transform.TransformerException: java.lang.RuntimeException: Namespace for prefix 'foxml' has not been declared.<br/>
+	at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:717)<br/>
+	at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:313)<br/>
+	at fedora.server.validation.DOValidatorSchematron.createValidatingStyleSheet(DOValidatorSchematron.java:203)<br/>
+	at fedora.server.validation.DOValidatorSchematron.setUp(DOValidatorSchematron.java:161)<br/>
+	at fedora.server.validation.DOValidatorSchematron.&lt;init&gt;(DOValidatorSchematron.java:76)<br/>
+	at fedora.server.validation.DOValidatorImpl.validateByRules(DOValidatorImpl.java:334)<br/>
+	at fedora.server.validation.DOValidatorImpl.validate(DOValidatorImpl.java:251)<br/>
+	at fedora.server.validation.DOValidatorModule.validate(DOValidatorModule.java:188)<br/>
+	at fedora.server.storage.DefaultDOManager.getIngestWriter(DefaultDOManager.java:789)<br/>
+	at fedora.server.BasicServer.preIngestIfNeeded(BasicServer.java:155)<br/>
+	at fedora.server.BasicServer.postInitServer(BasicServer.java:99)<br/>
+	at fedora.server.Server.&lt;init&gt;(Server.java:629)<br/>
+	at fedora.server.BasicServer.&lt;init&gt;(BasicServer.java:40)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:39)<br/>
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:27)<br/>
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:513)<br/>
+	at fedora.server.Server.getInstance(Server.java:1021)<br/>
+	at fedora.server.ServerController.init(ServerController.java:208)<br/>
+	at javax.servlet.GenericServlet.init(GenericServlet.java:241)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper$ServletInitAction.run(StubSecurityHelper.java:283)<br/>
+	at weblogic.security.acl.internal.AuthenticatedSubject.doAs(AuthenticatedSubject.java:321)<br/>
+	at weblogic.security.service.SecurityManager.runAs(SecurityManager.java:121)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper.createServlet(StubSecurityHelper.java:64)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.createOneInstance(StubLifecycleHelper.java:58)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.&lt;init&gt;(StubLifecycleHelper.java:48)<br/>
+	at weblogic.servlet.internal.ServletStubImpl.prepareServlet(ServletStubImpl.java:521)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadServlet(WebAppServletContext.java:1913)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.loadServletsOnStartup(WebAppServletContext.java:1887)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadResources(WebAppServletContext.java:1805)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.start(WebAppServletContext.java:3041)<br/>
+	at weblogic.servlet.internal.WebAppModule.startContexts(WebAppModule.java:1374)<br/>
+	at weblogic.servlet.internal.WebAppModule.start(WebAppModule.java:452)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.ScopedModuleDriver.start(ScopedModuleDriver.java:200)<br/>
+	at weblogic.application.internal.flow.ModuleListenerInvoker.start(ModuleListenerInvoker.java:117)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.StartModulesFlow.activate(StartModulesFlow.java:27)<br/>
+	at weblogic.application.internal.BaseDeployment$2.next(BaseDeployment.java:629)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.BaseDeployment.activate(BaseDeployment.java:206)<br/>
+	at weblogic.application.internal.SingleModuleDeployment.activate(SingleModuleDeployment.java:40)<br/>
+	at weblogic.application.internal.DeploymentStateChecker.activate(DeploymentStateChecker.java:161)<br/>
+	at weblogic.deploy.internal.targetserver.AppContainerInvoker.activate(AppContainerInvoker.java:79)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.activate(AbstractOperation.java:569)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.activateDeployment(ActivateOperation.java:140)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.doCommit(ActivateOperation.java:106)<br/>
+	at weblogic.deploy.internal.targetserver.operations.StartOperation.doCommit(StartOperation.java:143)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.commit(AbstractOperation.java:323)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleDeploymentCommit(DeploymentManager.java:844)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.activateDeploymentList(DeploymentManager.java:1253)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleCommit(DeploymentManager.java:440)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentServiceDispatcher.commit(DeploymentServiceDispatcher.java:163)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.doCommitCallback(DeploymentReceiverCallbackDeliverer.java:181)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.access$100(DeploymentReceiverCallbackDeliverer.java:12)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer$2.run(DeploymentReceiverCallbackDeliverer.java:67)<br/>
+	at weblogic.work.SelfTuningWorkManagerImpl$WorkAdapterImpl.run(SelfTuningWorkManagerImpl.java:516)<br/>
+	at weblogic.work.ExecuteThread.execute(ExecuteThread.java:201)<br/>
+	at weblogic.work.ExecuteThread.run(ExecuteThread.java:173)<br/>
+Caused by: java.lang.RuntimeException: Namespace for prefix 'foxml' has not been declared.<br/>
+	at com.sun.org.apache.xml.internal.serializer.SerializerBase.getNamespaceURI(SerializerBase.java:895)<br/>
+	at com.sun.org.apache.xml.internal.serializer.SerializerBase.addAttribute(SerializerBase.java:422)<br/>
+	at preprocessor.template$dot$0()<br/>
+	at preprocessor.applyTemplates()<br/>
+	at preprocessor.applyTemplates()<br/>
+	at preprocessor.transform()<br/>
+	at com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet.transform(AbstractTranslet.java:602)<br/>
+	at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:710)<br/>
+	... 62 more<br/>
+---------<br/>
+java.lang.RuntimeException: Namespace for prefix 'foxml' has not been declared.<br/>
+	at com.sun.org.apache.xml.internal.serializer.SerializerBase.getNamespaceURI(SerializerBase.java:895)<br/>
+	at com.sun.org.apache.xml.internal.serializer.SerializerBase.addAttribute(SerializerBase.java:422)<br/>
+	at preprocessor.template$dot$0()<br/>
+	at preprocessor.applyTemplates()<br/>
+	at preprocessor.applyTemplates()<br/>
+	at preprocessor.transform()<br/>
+	at com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet.transform(AbstractTranslet.java:602)<br/>
+	at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:710)<br/>
+	at com.sun.org.apache.xalan.internal.xsltc.trax.TransformerImpl.transform(TransformerImpl.java:313)<br/>
+	at fedora.server.validation.DOValidatorSchematron.createValidatingStyleSheet(DOValidatorSchematron.java:203)<br/>
+	at fedora.server.validation.DOValidatorSchematron.setUp(DOValidatorSchematron.java:161)<br/>
+	at fedora.server.validation.DOValidatorSchematron.&lt;init&gt;(DOValidatorSchematron.java:76)<br/>
+	at fedora.server.validation.DOValidatorImpl.validateByRules(DOValidatorImpl.java:334)<br/>
+	at fedora.server.validation.DOValidatorImpl.validate(DOValidatorImpl.java:251)<br/>
+	at fedora.server.validation.DOValidatorModule.validate(DOValidatorModule.java:188)<br/>
+	at fedora.server.storage.DefaultDOManager.getIngestWriter(DefaultDOManager.java:789)<br/>
+	at fedora.server.BasicServer.preIngestIfNeeded(BasicServer.java:155)<br/>
+	at fedora.server.BasicServer.postInitServer(BasicServer.java:99)<br/>
+	at fedora.server.Server.&lt;init&gt;(Server.java:629)<br/>
+	at fedora.server.BasicServer.&lt;init&gt;(BasicServer.java:40)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:39)<br/>
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:27)<br/>
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:513)<br/>
+	at fedora.server.Server.getInstance(Server.java:1021)<br/>
+	at fedora.server.ServerController.init(ServerController.java:208)<br/>
+	at javax.servlet.GenericServlet.init(GenericServlet.java:241)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper$ServletInitAction.run(StubSecurityHelper.java:283)<br/>
+	at weblogic.security.acl.internal.AuthenticatedSubject.doAs(AuthenticatedSubject.java:321)<br/>
+	at weblogic.security.service.SecurityManager.runAs(SecurityManager.java:121)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper.createServlet(StubSecurityHelper.java:64)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.createOneInstance(StubLifecycleHelper.java:58)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.&lt;init&gt;(StubLifecycleHelper.java:48)<br/>
+	at weblogic.servlet.internal.ServletStubImpl.prepareServlet(ServletStubImpl.java:521)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadServlet(WebAppServletContext.java:1913)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.loadServletsOnStartup(WebAppServletContext.java:1887)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadResources(WebAppServletContext.java:1805)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.start(WebAppServletContext.java:3041)<br/>
+	at weblogic.servlet.internal.WebAppModule.startContexts(WebAppModule.java:1374)<br/>
+	at weblogic.servlet.internal.WebAppModule.start(WebAppModule.java:452)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.ScopedModuleDriver.start(ScopedModuleDriver.java:200)<br/>
+	at weblogic.application.internal.flow.ModuleListenerInvoker.start(ModuleListenerInvoker.java:117)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.StartModulesFlow.activate(StartModulesFlow.java:27)<br/>
+	at weblogic.application.internal.BaseDeployment$2.next(BaseDeployment.java:629)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.BaseDeployment.activate(BaseDeployment.java:206)<br/>
+	at weblogic.application.internal.SingleModuleDeployment.activate(SingleModuleDeployment.java:40)<br/>
+	at weblogic.application.internal.DeploymentStateChecker.activate(DeploymentStateChecker.java:161)<br/>
+	at weblogic.deploy.internal.targetserver.AppContainerInvoker.activate(AppContainerInvoker.java:79)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.activate(AbstractOperation.java:569)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.activateDeployment(ActivateOperation.java:140)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.doCommit(ActivateOperation.java:106)<br/>
+	at weblogic.deploy.internal.targetserver.operations.StartOperation.doCommit(StartOperation.java:143)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.commit(AbstractOperation.java:323)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleDeploymentCommit(DeploymentManager.java:844)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.activateDeploymentList(DeploymentManager.java:1253)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleCommit(DeploymentManager.java:440)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentServiceDispatcher.commit(DeploymentServiceDispatcher.java:163)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.doCommitCallback(DeploymentReceiverCallbackDeliverer.java:181)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.access$100(DeploymentReceiverCallbackDeliverer.java:12)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer$2.run(DeploymentReceiverCallbackDeliverer.java:67)<br/>
+	at weblogic.work.SelfTuningWorkManagerImpl$WorkAdapterImpl.run(SelfTuningWorkManagerImpl.java:516)<br/>
+	at weblogic.work.ExecuteThread.execute(ExecuteThread.java:201)<br/>
+	at weblogic.work.ExecuteThread.run(ExecuteThread.java:173)<br/>
+ERROR 2009-10-16 15:46:10.940 [<span class="error">&#91;STANDBY&#93;</span> ExecuteThread: '2' for queue: 'weblogic.kernel.Default (self-tuning)'] (DOValidatorImpl) VALIDATE: ERROR - failed Schematron rules validation.<br/>
+fedora.server.errors.ObjectValidityException: java.lang.RuntimeException: Namespace for prefix 'foxml' has not been declared.<br/>
+	at fedora.server.validation.DOValidatorSchematron.createValidatingStyleSheet(DOValidatorSchematron.java:206)<br/>
+	at fedora.server.validation.DOValidatorSchematron.setUp(DOValidatorSchematron.java:161)<br/>
+	at fedora.server.validation.DOValidatorSchematron.&lt;init&gt;(DOValidatorSchematron.java:76)<br/>
+	at fedora.server.validation.DOValidatorImpl.validateByRules(DOValidatorImpl.java:334)<br/>
+	at fedora.server.validation.DOValidatorImpl.validate(DOValidatorImpl.java:251)<br/>
+	at fedora.server.validation.DOValidatorModule.validate(DOValidatorModule.java:188)<br/>
+	at fedora.server.storage.DefaultDOManager.getIngestWriter(DefaultDOManager.java:789)<br/>
+	at fedora.server.BasicServer.preIngestIfNeeded(BasicServer.java:155)<br/>
+	at fedora.server.BasicServer.postInitServer(BasicServer.java:99)<br/>
+	at fedora.server.Server.&lt;init&gt;(Server.java:629)<br/>
+	at fedora.server.BasicServer.&lt;init&gt;(BasicServer.java:40)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:39)<br/>
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:27)<br/>
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:513)<br/>
+	at fedora.server.Server.getInstance(Server.java:1021)<br/>
+	at fedora.server.ServerController.init(ServerController.java:208)<br/>
+	at javax.servlet.GenericServlet.init(GenericServlet.java:241)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper$ServletInitAction.run(StubSecurityHelper.java:283)<br/>
+	at weblogic.security.acl.internal.AuthenticatedSubject.doAs(AuthenticatedSubject.java:321)<br/>
+	at weblogic.security.service.SecurityManager.runAs(SecurityManager.java:121)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper.createServlet(StubSecurityHelper.java:64)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.createOneInstance(StubLifecycleHelper.java:58)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.&lt;init&gt;(StubLifecycleHelper.java:48)<br/>
+	at weblogic.servlet.internal.ServletStubImpl.prepareServlet(ServletStubImpl.java:521)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadServlet(WebAppServletContext.java:1913)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.loadServletsOnStartup(WebAppServletContext.java:1887)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadResources(WebAppServletContext.java:1805)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.start(WebAppServletContext.java:3041)<br/>
+	at weblogic.servlet.internal.WebAppModule.startContexts(WebAppModule.java:1374)<br/>
+	at weblogic.servlet.internal.WebAppModule.start(WebAppModule.java:452)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.ScopedModuleDriver.start(ScopedModuleDriver.java:200)<br/>
+	at weblogic.application.internal.flow.ModuleListenerInvoker.start(ModuleListenerInvoker.java:117)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.StartModulesFlow.activate(StartModulesFlow.java:27)<br/>
+	at weblogic.application.internal.BaseDeployment$2.next(BaseDeployment.java:629)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.BaseDeployment.activate(BaseDeployment.java:206)<br/>
+	at weblogic.application.internal.SingleModuleDeployment.activate(SingleModuleDeployment.java:40)<br/>
+	at weblogic.application.internal.DeploymentStateChecker.activate(DeploymentStateChecker.java:161)<br/>
+	at weblogic.deploy.internal.targetserver.AppContainerInvoker.activate(AppContainerInvoker.java:79)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.activate(AbstractOperation.java:569)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.activateDeployment(ActivateOperation.java:140)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.doCommit(ActivateOperation.java:106)<br/>
+	at weblogic.deploy.internal.targetserver.operations.StartOperation.doCommit(StartOperation.java:143)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.commit(AbstractOperation.java:323)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleDeploymentCommit(DeploymentManager.java:844)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.activateDeploymentList(DeploymentManager.java:1253)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleCommit(DeploymentManager.java:440)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentServiceDispatcher.commit(DeploymentServiceDispatcher.java:163)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.doCommitCallback(DeploymentReceiverCallbackDeliverer.java:181)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.access$100(DeploymentReceiverCallbackDeliverer.java:12)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer$2.run(DeploymentReceiverCallbackDeliverer.java:67)<br/>
+	at weblogic.work.SelfTuningWorkManagerImpl$WorkAdapterImpl.run(SelfTuningWorkManagerImpl.java:516)<br/>
+	at weblogic.work.ExecuteThread.execute(ExecuteThread.java:201)<br/>
+	at weblogic.work.ExecuteThread.run(ExecuteThread.java:173)<br/>
+FATAL 2009-10-16 15:46:10.942 [<span class="error">&#91;STANDBY&#93;</span> ExecuteThread: '2' for queue: 'weblogic.kernel.Default (self-tuning)'] (Server) Server failed to initialize<br/>
+fedora.server.errors.ServerInitializationException: Failed to ingest system object(s)<br/>
+	at fedora.server.BasicServer.postInitServer(BasicServer.java:104)<br/>
+	at fedora.server.Server.&lt;init&gt;(Server.java:629)<br/>
+	at fedora.server.BasicServer.&lt;init&gt;(BasicServer.java:40)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)<br/>
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:39)<br/>
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:27)<br/>
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:513)<br/>
+	at fedora.server.Server.getInstance(Server.java:1021)<br/>
+	at fedora.server.ServerController.init(ServerController.java:208)<br/>
+	at javax.servlet.GenericServlet.init(GenericServlet.java:241)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper$ServletInitAction.run(StubSecurityHelper.java:283)<br/>
+	at weblogic.security.acl.internal.AuthenticatedSubject.doAs(AuthenticatedSubject.java:321)<br/>
+	at weblogic.security.service.SecurityManager.runAs(SecurityManager.java:121)<br/>
+	at weblogic.servlet.internal.StubSecurityHelper.createServlet(StubSecurityHelper.java:64)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.createOneInstance(StubLifecycleHelper.java:58)<br/>
+	at weblogic.servlet.internal.StubLifecycleHelper.&lt;init&gt;(StubLifecycleHelper.java:48)<br/>
+	at weblogic.servlet.internal.ServletStubImpl.prepareServlet(ServletStubImpl.java:521)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadServlet(WebAppServletContext.java:1913)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.loadServletsOnStartup(WebAppServletContext.java:1887)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.preloadResources(WebAppServletContext.java:1805)<br/>
+	at weblogic.servlet.internal.WebAppServletContext.start(WebAppServletContext.java:3041)<br/>
+	at weblogic.servlet.internal.WebAppModule.startContexts(WebAppModule.java:1374)<br/>
+	at weblogic.servlet.internal.WebAppModule.start(WebAppModule.java:452)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.ScopedModuleDriver.start(ScopedModuleDriver.java:200)<br/>
+	at weblogic.application.internal.flow.ModuleListenerInvoker.start(ModuleListenerInvoker.java:117)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver$3.next(ModuleStateDriver.java:204)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.flow.ModuleStateDriver.start(ModuleStateDriver.java:60)<br/>
+	at weblogic.application.internal.flow.StartModulesFlow.activate(StartModulesFlow.java:27)<br/>
+	at weblogic.application.internal.BaseDeployment$2.next(BaseDeployment.java:629)<br/>
+	at weblogic.application.utils.StateMachineDriver.nextState(StateMachineDriver.java:37)<br/>
+	at weblogic.application.internal.BaseDeployment.activate(BaseDeployment.java:206)<br/>
+	at weblogic.application.internal.SingleModuleDeployment.activate(SingleModuleDeployment.java:40)<br/>
+	at weblogic.application.internal.DeploymentStateChecker.activate(DeploymentStateChecker.java:161)<br/>
+	at weblogic.deploy.internal.targetserver.AppContainerInvoker.activate(AppContainerInvoker.java:79)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.activate(AbstractOperation.java:569)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.activateDeployment(ActivateOperation.java:140)<br/>
+	at weblogic.deploy.internal.targetserver.operations.ActivateOperation.doCommit(ActivateOperation.java:106)<br/>
+	at weblogic.deploy.internal.targetserver.operations.StartOperation.doCommit(StartOperation.java:143)<br/>
+	at weblogic.deploy.internal.targetserver.operations.AbstractOperation.commit(AbstractOperation.java:323)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleDeploymentCommit(DeploymentManager.java:844)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.activateDeploymentList(DeploymentManager.java:1253)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentManager.handleCommit(DeploymentManager.java:440)<br/>
+	at weblogic.deploy.internal.targetserver.DeploymentServiceDispatcher.commit(DeploymentServiceDispatcher.java:163)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.doCommitCallback(DeploymentReceiverCallbackDeliverer.java:181)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer.access$100(DeploymentReceiverCallbackDeliverer.java:12)<br/>
+	at weblogic.deploy.service.internal.targetserver.DeploymentReceiverCallbackDeliverer$2.run(DeploymentReceiverCallbackDeliverer.java:67)<br/>
+	at weblogic.work.SelfTuningWorkManagerImpl$WorkAdapterImpl.run(SelfTuningWorkManagerImpl.java:516)<br/>
+	at weblogic.work.ExecuteThread.execute(ExecuteThread.java:201)<br/>
+	at weblogic.work.ExecuteThread.run(ExecuteThread.java:173)<br/>
+Caused by: fedora.server.errors.ObjectValidityException: java.lang.RuntimeException: Namespace for prefix 'foxml' has not been declared.<br/>
+	at fedora.server.validation.DOValidatorSchematron.createValidatingStyleSheet(DOValidatorSchematron.java:206)<br/>
+	at fedora.server.validation.DOValidatorSchematron.setUp(DOValidatorSchematron.java:161)<br/>
+	at fedora.server.validation.DOValidatorSchematron.&lt;init&gt;(DOValidatorSchematron.java:76)<br/>
+	at fedora.server.validation.DOValidatorImpl.validateByRules(DOValidatorImpl.java:334)<br/>
+	at fedora.server.validation.DOValidatorImpl.validate(DOValidatorImpl.java:251)<br/>
+	at fedora.server.validation.DOValidatorModule.validate(DOValidatorModule.java:188)<br/>
+	at fedora.server.storage.DefaultDOManager.getIngestWriter(DefaultDOManager.java:789)<br/>
+	at fedora.server.BasicServer.preIngestIfNeeded(BasicServer.java:155)<br/>
+	at fedora.server.BasicServer.postInitServer(BasicServer.java:99)<br/>
+	... 52 more</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11110"><div class="by">Chris Wilper, 2009-11-24 20:38 UTC</div><div class="text"><p>Could this have something to do with the xslt processor WebLogic uses by default?</p>
+
+<p>Fedora (trunk) comes with Saxon 9.  But this stack trace indicates that xalan is being used in WebLogic when schematron validation occurs.</p></div></div>
+<div class="comment" id="comment-11112"><div class="by">Chris Wilper, 2009-11-25 02:16 UTC</div><div class="text"><p>To force the use of Saxon in Fedora 3.2.1, you should be able to set the following system property so that it is visible to the Fedora webapp when it starts in WebLogic (consult weblogic docs for this; I have no idea)</p>
+
+<p>javax.xml.transform.TransformerFactory=net.sf.saxon.TransformerFactoryImpl</p>
+
+<p>It seems that, since the Fedora webapp includes saxon9, offering a "choice" of xslt processors (or accepting the default behavior, which I suppose is leaving it up to the servlet container) isn't adding value.</p>
+
+<p>I think we should force the use of Saxon9 within the code itself.  This would ensure future releases of Fedora are consistently using the xslt processor we test against.</p></div></div>
+<div class="comment" id="comment-11403"><div class="by">eddie, 2010-05-26 06:39 UTC</div><div class="text"><p>resolved with revision #8504</p></div></div>
+<p><a href="data/FCREPO-587.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

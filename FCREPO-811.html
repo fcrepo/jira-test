@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-811 POLICY datastreams (possibly others) subject to race conditions when control group is &quot;R&quot;</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-811</span> POLICY datastreams (possibly others) subject to race conditions when control group is &quot;R&quot;</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Asger Askov Blekinge</td></tr><tr><th>Assignee</th><td>Asger Askov Blekinge</td></tr><tr><th>Created</th><td>2010-10-18 13:29 UTC</td></tr><tr><th>Updated</th><td>2011-02-21 23:25 UTC</td></tr><tr><th>Resolved</th><td>2010-12-02 17:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3, Fedora 3.4</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr><tr><th>Is related to</th><td><a href="FCREPO-774.html">FCREPO-774</a> REST Servlet throws exception under access load.</td></tr></table>
+<h2>Description</h2>
+<p>Symptons: If the policy datastream in an object is Referenced content,<br/>
+operations involving this object will sometimes throw a AuthzException.<br/>
+There are probably other failures somewhere due to this bug.</p>
+
+
+
+<p>Cause: (warning, long rant)</p>
+
+<p>When fedora needs to act on this object, it will fetch the policy (every<br/>
+time, so beware of performance).</p>
+
+
+<p>PolicyFinderModule.class<br/>
+// if the object exists and has a POLICY datastream, parse and return it</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"><span class="code-keyword">private</span> AbstractPolicy loadObjectPolicy(<span class="code-object">String</span> pid)
+ <span class="code-keyword">throws</span> ServerException {
+    <span class="code-keyword">try</span> {
+        DOReader reader = m_repoReader.getReader(Server.USE_DEFINITIVE_STORE, ReadOnlyContext.EMPTY, pid);
+        Datastream ds = reader.GetDatastream(<span class="code-quote">"POLICY"</span>, <span class="code-keyword">null</span>);
+        <span class="code-keyword">if</span> (ds != <span class="code-keyword">null</span>) {
+            logger.debug(<span class="code-quote">"Using POLICY <span class="code-keyword">for</span> "</span> + pid);
+            <span class="code-keyword">return</span> m_policyParser
+                    .copy().parse(ds.getContentStream(),
+                               m_validateObjectPoliciesFromDatastream);
+        } <span class="code-keyword">else</span> {
+            <span class="code-keyword">return</span> <span class="code-keyword">null</span>;
+        }
+    } <span class="code-keyword">catch</span> (ObjectNotInLowlevelStorageException e) {
+        <span class="code-keyword">return</span> <span class="code-keyword">null</span>;
+    }
+}
+</pre>
+</div></div>
+
+<p>So, the PolicyFinderModule gets a Reader to the Object. It then gets the<br/>
+Datastream from the object. It then gets the inputstream to the<br/>
+datastream contents.</p>
+
+<p>So far, logical and simple. </p>
+
+
+
+
+<p>Down in PolicyParser we find the following code</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"><span class="code-keyword">public</span> AbstractPolicy parse(InputStream policyStream, <span class="code-object">boolean</span> schemaValidate)
+        <span class="code-keyword">throws</span> ValidationException {
+
+    <span class="code-comment">// Parse; die <span class="code-keyword">if</span> not well-formed
+</span>    Document doc = <span class="code-keyword">null</span>;
+    <span class="code-keyword">try</span> {
+        doc = m_domParser.parse(policyStream);
+    } <span class="code-keyword">catch</span> (Exception e) {
+        <span class="code-keyword">throw</span> <span class="code-keyword">new</span> ValidationException(<span class="code-quote">"Policy invalid; malformed XML"</span>, e);
+    }
+</pre>
+</div></div>
+
+<p>The message "Policy invalid; malformed XML" is carried all the way up to<br/>
+the fedora log, but the validation exception is lost. Why is the<br/>
+validation exception lost, you might ask?</p>
+
+<p>The following code from PolicyFinderModule</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"><span class="code-keyword">public</span> PolicyFinderResult findPolicy(EvaluationCtx context) {
+    PolicyFinderResult policyFinderResult = <span class="code-keyword">null</span>;
+    <span class="code-keyword">try</span> {
+        List&lt;AbstractPolicy&gt; policies = <span class="code-keyword">new</span> ArrayList&lt;AbstractPolicy&gt;(m_repositoryPolicies);
+        <span class="code-object">String</span> pid = getPid(context);
+        <span class="code-keyword">if</span> (pid != <span class="code-keyword">null</span> &amp;&amp; !"".equals(pid)) {
+            AbstractPolicy objectPolicyFromObject = loadObjectPolicy(pid);
+            <span class="code-keyword">if</span> (objectPolicyFromObject != <span class="code-keyword">null</span>) {
+                policies.add(objectPolicyFromObject);
+            }
+        }
+
+........
+    } <span class="code-keyword">catch</span> (Exception e) {
+        policyFinderResult =
+                <span class="code-keyword">new</span> PolicyFinderResult(<span class="code-keyword">new</span> Status(ERROR_CODE_LIST, e
+                        .getMessage()));
+    }
+    <span class="code-keyword">return</span> policyFinderResult;
+}
+</pre>
+</div></div>
+
+<p>That catch gets gets the message from the exception, but looses the<br/>
+cause. So, fair, we should not be told why the validation failed. I am<br/>
+not sure if this is a bug, but I feel like the cause should go into the log. </p>
+
+
+
+<p>Backing up, why did the validation fail? Debugging revealed the answer.</p>
+
+<p>The stream had been closed. Now, why would the stream ever be closed<br/>
+before read? There is a very good reason for this, known as the<br/>
+MIMETypedStream class.</p>
+
+
+
+<p>This code in DatastreamReferencedContent will illuminate the problem</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">@Override
+<span class="code-keyword">public</span> InputStream getContentStream() <span class="code-keyword">throws</span> StreamIOException {
+    <span class="code-keyword">try</span> {
+        MIMETypedStream stream = getExternalContentManager().getExternalContent(<span class="code-keyword">new</span> ContentManagerParams(DSLocation));
+        DSSize = getContentLength(stream);
+        <span class="code-keyword">return</span> stream.getStream();
+    } <span class="code-keyword">catch</span> (Exception ex) {
+        <span class="code-keyword">throw</span> <span class="code-keyword">new</span> StreamIOException(<span class="code-quote">"Error getting content stream"</span>, ex);
+    }
+}
+</pre>
+</div></div>
+
+<p>To get a content stream, a MIMETypedStream is gotten, and from that the<br/>
+Inputstream is gotten. So, the MIMETypedStream is forgotten, and<br/>
+promptly garbagecollected. </p>
+
+
+<p>When MIMETypedStream is garbagecollected, the following method will be<br/>
+called</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">/**
+* Ensures the underlying stream is closed at garbage-collection time
+* <span class="code-keyword">if</span> the stream has not been retrieved. If getStream() has been called
+* the caller is responsible to close the stream.
+*
+* {@inheritDoc}
+*/
+@Override
+<span class="code-keyword">public</span> void finalize() {
+    <span class="code-keyword">if</span>(!gotStream) {
+        close();
+    }
+}
+</pre>
+</div></div>
+
+<p>Sounds sensible enough. But then we look at getStream</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"> /**
+ * Retrieves the underlying stream.
+ * Caller is responsible to close the stream,
+ * either by calling MIMETypedStream.close()
+ * or by calling close() on the stream.
+ *
+ * @<span class="code-keyword">return</span> The <span class="code-object">byte</span> stream
+ */
+<span class="code-keyword">public</span> InputStream getStream() {
+    <span class="code-keyword">return</span> stream;
+}
+</pre>
+</div></div>
+
+<p>A bug reveals itself. When the MIMETypedStream is garbage collected, it<br/>
+closes it's stream, no matter who is currently using it.</p>
+
+
+
+<p>I stated that the MIMETypedStream is at the root of the problem. Let me<br/>
+expand upon that. The fact that MIMETypedStream closes it's contained<br/>
+stream is the issue. Most (all?) java streams will be automatically<br/>
+closed upon finalize. I know that the HTTPInputstream that<br/>
+MIMETypedStream most often front will be closed on finalize already.<br/>
+Generally, it is considered dangerous behaivour to close streams you did<br/>
+not open yourself. The MIMETypedStream does not make any provisions in<br/>
+it's javadoc, that you should not use the inputted inputstream for other<br/>
+purposes as well. If MIMETypedStream wants to have exclusive access to<br/>
+it's inputstream, it should let the callers know this.<br/>
+Secondly, the setter method in MIMETypedStream. What is actually the<br/>
+correct semantics for close, if the mimetypedstream has one inputstream,<br/>
+but is SET to have a new one? Should it close the old one? Should it<br/>
+even have a setter?</p>
+
+
+<p>I will not commit any fixes until I know if this should go into 3.4.1 or<br/>
+I would in other ways disturb the release process. But of course, the<br/>
+simple fix, that will work 99% of the time is to add</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"><span class="code-keyword">public</span> InputStream getStream() {
+    gotStream = <span class="code-keyword">true</span>;
+    <span class="code-keyword">return</span> stream;
+}
+<span class="code-keyword">public</span> void setStream(InputStream stream) {
+    <span class="code-keyword">if</span>(!gotStream) {
+        close();
+    }
+    <span class="code-keyword">this</span>.stream = stream;
+}
+</pre>
+</div></div>
+
+
+<p><a href="data/FCREPO-811.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

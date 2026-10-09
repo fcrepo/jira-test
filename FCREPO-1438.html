@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1438 Add support to fcrepo4-client for creation of non-RDF resources with a &quot;message/external-body&quot; content type.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1438</span> Add support to fcrepo4-client for creation of non-RDF resources with a &quot;message/external-body&quot; content type.</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2015-04-01 20:36 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-08 16:32 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr><tr><th>Required by</th><td><a href="FCREPO-1412.html">FCREPO-1412</a> Add migration support for redirect and external datastreams.</td></tr></table>
+<h2>Description</h2>
+<p>The ability to add an external datastream (binary non-RDF resource) exists in fedora, but not yet in the fcrepo4-client.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-13852"><div class="by">Michael Durbin, 2015-04-01 20:49 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo4-client/pull/17" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-client/pull/17</a></p>
+
+<p>I'm aware that there is no unit test.  The FedoraRepositoryImpl has only 30% line coverage anyway and the task of bringing testing up to acceptable levels is beyond the scope of this ticket.  Furthermore, the bigger risk to failures is the lack of integration tests.  For instance, if the semantics of this external datastream change in fedora 4, unit tests with their mocks will keep on passing while the client no longer functions against fedora.</p></div></div>
+<div class="comment" id="comment-13891"><div class="by">A. Soroka, 2015-04-08 13:02 UTC</div><div class="text"><p>What does "external datastream" mean here? A "binary non-RDF resource" is certainly not what I would call "external". Is there some new definition that needs to be made clear, both here and presumably in the doc wiki?</p></div></div>
+<div class="comment" id="comment-13892"><div class="by">Michael Durbin, 2015-04-08 13:11 UTC</div><div class="text"><p>I'm not sure what the correct terminology is.  </p>
+
+<p>In our documentation (<a href="https://wiki.duraspace.org/display/FEDORA40/RESTful+HTTP+API+-+Containers#RESTfulHTTPAPI-Containers-YellowPUTCreatearesourcewithaspecifiedpath,orreplacethetriplesassociatedwitharesourcewiththetriplesprovidedintherequestbody" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA40/RESTful+HTTP+API+-+Containers#RESTfulHTTPAPI-Containers-YellowPUTCreatearesourcewithaspecifiedpath,orreplacethetriplesassociatedwitharesourcewiththetriplesprovidedintherequestbody</a>.) it's described as "Example (4): Creating a new binary resource at a specified path redirecting to external content".</p>
+</div></div>
+<div class="comment" id="comment-13898"><div class="by">Andrew Woods, 2015-04-08 15:37 UTC</div><div class="text"><p>I'm not sure I follow the testing logic. Are you saying that since testing on the FedoraRepositoryImpl.java class is not currently up to standard, that a test for your new method should remain consistent with that low standard?<br/>
+The problem is only going to get worse at this rate.<br/>
+Would you be willing to add:<br/>
+1) an initial integration test pattern to this project, and<br/>
+2) a unit test for your new method?</p></div></div>
+<div class="comment" id="comment-13899"><div class="by">Andrew Woods, 2015-04-08 15:39 UTC</div><div class="text"><p>Pending response to testing question.</p></div></div>
+<div class="comment" id="comment-13900"><div class="by">Michael Durbin, 2015-04-08 15:57 UTC</div><div class="text"><p>I'm strongly opposed to blanket unit testing for this project for the following reasons:<br/>
+1.  they don't actually ensure that the code works<br/>
+2.  implementing and maintaining them is an onerous burden that discourages people from volunteering to make changes necessary in this project for their use<br/>
+3.  given the extremely low use (and the fact that it wasn't used as a base for the other fedora 4 client code in fcrepo-camel) it would seem that it may require some refactoring to be more generally adopted for use (which would result in all the work writing unit tests being wasted effort)<br/>
+4.  given its status in fcrepo-labs, it is not expected to have the same requirements for unit-test-based code coverage<br/>
+5.  most of the units of code we'd be testing are so simple that the setting up mocking to test them dramatically exceed the complexity and size of the code being tested.</p>
+
+<p>In other words, I don't see how, for code that's essentially one that exercise the fedora REST API as currently specified, adding a unit test that amounts to a mocked implementation of the REST API call we're invoking adds value anywhere near proportional to the amount of work it takes.  Furthermore it arguably decreases the value of the codebase because there would then be two pieces that need to be completely rewritten when the REST API changes.</p>
+
+<p>That said, I'm willing to add an integration test for this.</p>
+</div></div>
+<div class="comment" id="comment-13901"><div class="by">Michael Durbin, 2015-04-08 16:32 UTC</div><div class="text"><p>I added an integration test to the PR (which was aided by a rebase against master).</p></div></div>
+<div class="comment" id="comment-13902"><div class="by">Andrew Woods, 2015-04-08 16:37 UTC</div><div class="text"><p>If any given unit test does not "ensure that the code works", it is not a good unit test.<br/>
+In any case, an integration test would be fantastic.<br/>
+Thanks!</p></div></div>
+<div class="comment" id="comment-13903"><div class="by">Andrew Woods, 2015-04-08 16:50 UTC</div><div class="text"><p>PR-17 has been merged with the master branch.</p></div></div>
+<div class="comment" id="comment-13908"><div class="by">A. Soroka, 2015-04-08 17:34 UTC</div><div class="text"><p>I think it might be time to revisit whatever policies we now have place for testing regimes, as well as testing frameworks and the like. Perhaps even a special topic call.</p></div></div>
+<p><a href="data/FCREPO-1438.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1362 Deleting referenced node removes all property values on referrer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1362</span> Deleting referenced node removes all property values on referrer</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-02-10 23:56 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-03-13 21:20 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Environment</h2>RHEL6, Java 7, Tomcat 7, fcrepo 4.1.0
+<h2>Description</h2>
+<p>Steps to reproduce: </p>
+<ul class="alternate" type="square">
+	<li>Create containers: /test, /test/res1, /test/res2</li>
+	<li>Add property to /test: INSERT 
+{ &lt;&gt; myns:rel &lt;/test/res1&gt;, &lt;/test/res2&gt; }
+<p> WHERE {}</p></li>
+	<li>Verify that multi-valued property is set in /test referring to both resources</li>
+	<li>Delete either /test/res1 or /test/res2</li>
+</ul>
+
+
+<p>Result: myns:rel does not appear in /test any more; both relationships are deleted<br/>
+Expected: only the relationship with the deleted node should be deleted</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-13394"><div class="by">scossu, 2015-02-12 16:17 UTC</div><div class="text"><p>N.B. This does not happen with the built-in ldp:contains property. </p></div></div>
+<div class="comment" id="comment-13606"><div class="by">Jared Whiklo, 2015-03-03 22:03 UTC</div><div class="text"><p>This seems to happen in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/FedoraResourceImpl.java#L259-L261" class="external-link" rel="nofollow noreferrer">FedoraResourceImpl.java#L259-L261</a>. </p>
+
+<p>When it gets the node.getWeakReferences() it returns a single multi-value property. Which is built between the /test and /test/child1 and /test/child2 containers. This is then removed completely destroying both properties.</p>
+
+<p>Still looking into it.</p>
+
+</div></div>
+<div class="comment" id="comment-13641"><div class="by">Jared Whiklo, 2015-03-06 21:40 UTC</div><div class="text"><p>Thanks to the amazing A. Soroka</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/744" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/744</a></p></div></div>
+<div class="comment" id="comment-13650"><div class="by">Andrew Woods, 2015-03-08 21:21 UTC</div><div class="text"><p>This looks good, Jared Whiklo.<br/>
+Please create an integration test in FedoraResourceImplIT.java that demonstrates the scenario that you have fixed.</p></div></div>
+<div class="comment" id="comment-13662"><div class="by">Jared Whiklo, 2015-03-09 19:31 UTC</div><div class="text"><p>Updated pull request with an integration test.</p></div></div>
+<div class="comment" id="comment-13691"><div class="by">Andrew Woods, 2015-03-10 16:56 UTC</div><div class="text"><p>I have updated the integration test to reflect the initial issue.<br/>
+Please merge this PR with your branch if you agree:<br/>
+<a href="https://github.com/whikloj/fcrepo4/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/whikloj/fcrepo4/pull/1</a></p>
+
+<p>When I ran your integration test against the master branch, the tests passed... which indicated a need for a more specific test.</p></div></div>
+<div class="comment" id="comment-13693"><div class="by">Jared Whiklo, 2015-03-10 17:29 UTC</div><div class="text"><p>Agreed, I had a more complex integration test initially. I'll remember not to second guess myself next time.</p></div></div>
+<div class="comment" id="comment-13733"><div class="by">Andrew Woods, 2015-03-13 21:20 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/4a77e57d18687b6e4f653e0d88765d007e284584" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/4a77e57d18687b6e4f653e0d88765d007e284584</a></p></div></div>
+<p><a href="data/FCREPO-1362.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

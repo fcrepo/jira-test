@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2612 Add versioning response headers to LDPRv HEAD/GET responses w/o Accept-Datetime</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2612</span> Add versioning response headers to LDPRv HEAD/GET responses w/o Accept-Datetime</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2017-09-22 17:53 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2017-10-09 23:02 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>The following headers should be added to responses to HEAD and GET requests to LDPRv's only when the resource is versioned (has the <a href="http://fedora.info/definitions/fcrepo#VersionedResource" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/fcrepo#VersionedResource</a> type):</p>
+
+<ul>
+	<li>Vary: accept-datetime</li>
+	<li>Include 'Link: rel="timegate"' referencing itself.</li>
+	<li>Include 'Link: rel="timemap"' on versioned resource pointing to LDPCv.</li>
+	<li>Since the LDPRv is also its own timegate, it must return an 'original' link header referencing itself</li>
+</ul>
+
+
+<p>See Pattern 1.2 in <a href="https://tools.ietf.org/html/rfc7089#page-18" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/html/rfc7089#page-18</a> for details.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-19390"><div class="by">Jared Whiklo, 2017-09-27 16:59 UTC</div><div class="text"><p>Following pattern 1.2 and my comments on  FCREPO-2614 we also need to account for HEAD requests with a <tt>Memento-Datetime</tt> header, which requires a Content-Location pointing to the appropriate LDPRm. In a GET request the response body would be that of the appropriate LDPRm (as above).</p></div></div>
+<div class="comment" id="comment-19398"><div class="by">Ben Pennell, 2017-09-27 18:53 UTC</div><div class="text"><p>Jared Whiklo 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2614" >
+                <a href="FCREPO-2614.html" class="jira-issue-macro-key issue-link"  title="Add versioning headers for LDPRm HEAD/GET responses" >
+            
+            FCREPO-2614
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ was intended to account for GET and HEAD requests that return LDPRms.  This ticket was describing the headers that would be present on requests to LDPRvs without the Accept-Datetime header.  Sorry for the confusion.</p></div></div>
+<div class="comment" id="comment-19402"><div class="by">Jared Whiklo, 2017-09-27 19:03 UTC</div><div class="text"><p>Ben Pennell no problem, that make sense. </p></div></div>
+<div class="comment" id="comment-19468"><div class="by">Danny Bernstein, 2017-10-05 22:20 UTC</div><div class="text"><p>This one is ready to go pending the acceptance of <a href="https://github.com/fcrepo4/fcrepo4/pull/1256" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1256</a> (<a href="https://jira.duraspace.org/browse/FCREPO-2624" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2624</a>)</p></div></div>
+<div class="comment" id="comment-19479"><div class="by">Andrew Woods, 2017-10-06 19:19 UTC</div><div class="text"><p>Danny Bernstein: what do you mean by "This one is ready to go"?</p>
+
+<p>Is there a PR?</p></div></div>
+<div class="comment" id="comment-19486"><div class="by">Danny Bernstein, 2017-10-06 20:33 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1259" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1259</a></p></div></div>
+<div class="comment" id="comment-19493"><div class="by">Andrew Woods, 2017-10-07 00:03 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19499"><div class="by">Danny Bernstein, 2017-10-09 23:02 UTC</div><div class="text"><p>Requested changes are in place.</p></div></div>
+<div class="comment" id="comment-19502"><div class="by">Andrew Woods, 2017-10-11 13:45 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/cbca9915da8d8e7f81b87622ce8721ed7812085d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/cbca9915da8d8e7f81b87622ce8721ed7812085d</a></p></div></div>
+<p><a href="data/FCREPO-2612.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

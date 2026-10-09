@@ -1,0 +1,59 @@
+116,123c116,125
+<                         // get the "before" object and determine if it was indexed in the cache
+<                         policyBefore = new PolicyObject(m_DOManager,
+<                                                         managementMethod.parameters.context,
+<                                                         managementMethod.parameters.pid,
+<                                                         null,
+<                                                         null,
+<                                                         null);
+<                         boolean indexedBefore = policyBefore.isPolicyActive();
+---
+> 			//if objectState is null, then the state was not changed.  Leave the policy index/cache alone.
+>                         if (managementMethod.parameters.objectState != null && managementMethod.parameters.objectState.length() > 0) {
+> 			  // get the "before" object and determine if it was indexed in the cache
+> 			  policyBefore = new PolicyObject(m_DOManager,
+> 							  managementMethod.parameters.context,
+> 							  managementMethod.parameters.pid,
+> 							  null,
+> 							  null,
+> 							  null);
+> 			  boolean indexedBefore = policyBefore.isPolicyActive();
+125c127
+<                         returnValue = invokeTarget(target, method, args);
+---
+> 			  returnValue = invokeTarget(target, method, args);
+127,133c129,135
+<                         // get the object after the state change and determine if it should be indexed
+<                         policyAfter = new PolicyObject(m_DOManager,
+<                                                        managementMethod.parameters.context,
+<                                                        managementMethod.parameters.pid,
+<                                                        managementMethod.parameters.objectState,
+<                                                        null,
+<                                                        null);
+---
+> 			  // get the object after the state change and determine if it should be indexed
+> 			  policyAfter = new PolicyObject(m_DOManager,
+> 							managementMethod.parameters.context,
+> 							managementMethod.parameters.pid,
+> 							managementMethod.parameters.objectState,
+> 							null,
+> 							null);
+135,142c137,145
+<                         // if the indexing status has changed, make appropriate changes to the policy cache/index
+<                         if (indexedBefore != policyAfter.isPolicyActive()) {
+<                             if (policyAfter.isPolicyActive() ) {
+<                                 addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+<                             } else {
+<                                 deletePolicy(managementMethod.parameters.pid);
+<                             }
+<                         }
+---
+> 			  // if the indexing status has changed, make appropriate changes to the policy cache/index
+> 			  if (indexedBefore != policyAfter.isPolicyActive()) {
+> 			      if (policyAfter.isPolicyActive() ) {
+> 				  addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+> 			      } else {
+> 				  deletePolicy(managementMethod.parameters.pid);
+> 			      }
+> 			  }
+> 			}

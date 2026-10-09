@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2352 Add support for user-supplied Bag metadata</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2352</span> Add support for user-supplied Bag metadata</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-12-12 18:26 UTC</td></tr><tr><th>Updated</th><td>2016-12-15 15:29 UTC</td></tr><tr><th>Resolved</th><td>2016-12-15 15:29 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.1.0</td></tr><tr><th>Labels</th><td>import-export-phase-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-2221.html">FCREPO-2221</a> Export BagIt bags from Fedora</td></tr><tr><th>Required by</th><td><a href="FCREPO-2356.html">FCREPO-2356</a> Enforce BagIt profile requirements for user-supplied metadata</td></tr></table>
+<h2>Description</h2>
+<p>Add support for users supplying metadata values to be included in the Bag.  Some or all of these fields may be required by some profiles:</p>
+
+<p>    Source-Organization<br/>
+    Organization-Address<br/>
+    Contact-Name<br/>
+    Contact-Phone<br/>
+    Contact-Email<br/>
+    External-Description<br/>
+    External-Identifier<br/>
+    Bag-Group-Identifier<br/>
+    Internal-Sender-Description</p>
+
+<p>Values should passed via a --bag-config param that points to a yml file like this: <a href="https://gist.githubusercontent.com/ruebot/b7d4e8a592d304d9a9a47000355424a6/raw/6f4f0dc86bd09da9683d6003544d48a10718f2d8/bag-info.yml" class="external-link" rel="nofollow noreferrer">https://gist.githubusercontent.com/ruebot/b7d4e8a592d304d9a9a47000355424a6/raw/6f4f0dc86bd09da9683d6003544d48a10718f2d8/bag-info.yml</a></p>
+
+<p>Also change --bag to --bag-profile. </p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-18172"><div class="by">Danny Bernstein, 2016-12-12 18:48 UTC</div><div class="text"><p>Esmé Cowles: So are you thinking we should add these as commandline params?  Or should they go in their own file and then that file path is passed in as a command line param?  Or some other idea?  Just curious what your thoughts are there.</p></div></div>
+<div class="comment" id="comment-18173"><div class="by">Esmé Cowles, 2016-12-12 18:52 UTC</div><div class="text"><p>I'm not sure.  I think we could add them as command-line params.  But some of them (e.g., Source-Organization, Contact-*) seem like things that would be the same for basically all Bags produced by an org, so some kind of config file where these could be entered does seem like a good idea.</p>
+
+<p><a href="https://jira.duraspace.org/browse/FCREPO-2224" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2224</a> has an example BagIt profile, so maybe there's a way to include the values in there, and then the user could specify the bag profile file instead of just the name like the initial implementation?</p></div></div>
+<div class="comment" id="comment-18208"><div class="by">Danny Bernstein, 2016-12-13 19:04 UTC</div><div class="text"><p>Esmé Cowles:  So if I'm understanding you correctly:  it would probably be best to have a simple config file (json? ) that gets passed to the command line.  When this param is present,  a bagit profile must also be present.   Then 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2356" >
+                <a href="FCREPO-2356.html" class="jira-issue-macro-key issue-link"  title="Enforce BagIt profile requirements for user-supplied metadata" >
+            
+            FCREPO-2356
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+  will be responsible for enforcing the rules.  So maybe no individual metadata values will be passed directly on the commandline.  Only via the config file. Does that sound about right? </p></div></div>
+<div class="comment" id="comment-18209"><div class="by">Esmé Cowles, 2016-12-13 19:07 UTC</div><div class="text"><p>Danny Bernstein: That sounds good to me.  Once we have a release, we can gather feedback on that, and see if people would rather be able to specify some of the values as command-line arguments instead.  But putting them all in the JSON file sounds like a good first approach.</p></div></div>
+<div class="comment" id="comment-18222"><div class="by">Esmé Cowles, 2016-12-14 14:56 UTC</div><div class="text"><p>Danny Bernstein: I went ahead and created a wiki page with the metadata fields I know about from the BagIt spec and the requirements docs I've seen: <a href="https://wiki.duraspace.org/display/FF/Design+-+Bag+Metadata" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+Bag+Metadata</a></p>
+
+<p>I included a column with my best guess about which fields users would want to supply on a per-Bag basis (presumably as a command-line parameter) and which ones fields would probably be the same for all Bags.  We should get feedback on how this should work from our stakeholders.</p>
+
+<p>I wouldn't worry about this for the purposes of this ticket, I just wanted to make sure you knew about this.</p></div></div>
+<div class="comment" id="comment-18229"><div class="by">Danny Bernstein, 2016-12-14 21:28 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/65" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/65</a></p></div></div>
+<div class="comment" id="comment-18238"><div class="by">Nick Ruest, 2016-12-15 15:29 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/4943db6ebcc7c40cf3f1b3e115dac81284112285" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/4943db6ebcc7c40cf3f1b3e115dac81284112285</a></p></div></div>
+<p><a href="data/FCREPO-2352.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

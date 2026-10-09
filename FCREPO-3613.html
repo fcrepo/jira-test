@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3613 F5 -&gt; F6 Migration does not properly handle spaces in RDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3613</span> F5 -&gt; F6 Migration does not properly handle spaces in RDF</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2021-01-27 14:01 UTC</td></tr><tr><th>Updated</th><td>2021-03-04 16:44 UTC</td></tr><tr><th>Resolved</th><td>2021-02-07 21:31 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>Daniel Lamb reported that he cannot access resources that contain spaces after migrating to F6. This is because the migration code is missing the logic that was recently added to F6 to url encode internal ids when they are inserted into RDF.</p>
+
+<p>Additionally, we should verify that spaces are not a problem for F3 migrations as well.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-21958"><div class="by">Daniel Lamb, 2021-01-27 14:12 UTC</div><div class="text"><p>Happy to test 5 -&gt; 6 on this ticket </p></div></div>
+<div class="comment" id="comment-21962"><div class="by">Peter Winckles, 2021-01-27 18:05 UTC</div><div class="text"><p>Here's the bad RDF:</p>
+
+<p>&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#type" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#type</a>&gt; &lt;<a href="http://pcdm.org/models#File" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#File</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.loc.gov/premis/rdf/v1#hasSize" class="external-link" rel="nofollow noreferrer">http://www.loc.gov/premis/rdf/v1#hasSize</a>&gt; "4729"^<sup>&lt;<a href="http://www.w3.org/2001/XMLSchema#int" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#int</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#width" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#width</a>&gt; "100"</sup><sup>&lt;<a href="http://www.w3.org/2001/XMLSchema#int" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#int</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://purl.org/dc/terms/title" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/title</a>&gt; "cat collection thumbnail"@en .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://schema.org/dateModified" class="external-link" rel="nofollow noreferrer">http://schema.org/dateModified</a>&gt; "2019-06-04T17:25:34+00:00"</sup><sup>&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://schema.org/author" class="external-link" rel="nofollow noreferrer">http://schema.org/author</a>&gt; &lt;<a href="https://islandora.traefik.me/user/1" class="external-link" rel="nofollow noreferrer">https://islandora.traefik.me/user/1</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.iana.org/assignments/relation/describedby" class="external-link" rel="nofollow noreferrer">http://www.iana.org/assignments/relation/describedby</a>&gt; &lt;<a href="https://islandora.traefik.me/media/32" class="external-link" rel="nofollow noreferrer">https://islandora.traefik.me/media/32</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://schema.org/dateCreated" class="external-link" rel="nofollow noreferrer">http://schema.org/dateCreated</a>&gt; "2019-06-04T17:25:04+00:00"</sup><sup>&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#type" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#type</a>&gt; &lt;<a href="http://pcdm.org/use#ThumbnailImage" class="external-link" rel="nofollow noreferrer">http://pcdm.org/use#ThumbnailImage</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#height" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#height</a>&gt; "66"</sup>^&lt;<a href="http://www.w3.org/2001/XMLSchema#int" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#int</a>&gt; .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType</a>&gt; "image/jpeg" .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#label" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#label</a>&gt; "cat collection thumbnail"@en .&lt;info:fedora/2019-06/8-Thumbnail Image.jpg/fcr:metadata&gt; &lt;<a href="http://pcdm.org/models#fileOf" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#fileOf</a>&gt; &lt;<a href="https://islandora.traefik.me/node/7" class="external-link" rel="nofollow noreferrer">https://islandora.traefik.me/node/7</a>&gt; .</p></div></div>
+<div class="comment" id="comment-21965"><div class="by">Peter Winckles, 2021-01-27 20:12 UTC</div><div class="text"><p>It turns out that this RDF was added in Fedora 6 after migration, and it is not a migration problem after all.</p></div></div>
+<div class="comment" id="comment-21968"><div class="by">Peter Winckles, 2021-01-27 21:09 UTC</div><div class="text"><p>From slack:</p>
+
+<p>i've just recreated it from a fresh import<br/>
+2:16<br/>
+so fresh off the import i have this:<br/>
+2:16<br/>
+danny@danny-XPS-13-7390:~/Code/Islandora/isle-dc$ curl -sS -H "Accept: application/ld+json" <a href="http://islandora.traefik.me:8081/fcrepo/rest/2019-06/8-Thumbnail%20Image.jpg/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://islandora.traefik.me:8081/fcrepo/rest/2019-06/8-Thumbnail%20Image.jpg/fcr:metadata</a> | jq<br/>
+[<br/>
+{<br/>
+"@id": "http://islandora.traefik.me:8081/fcrepo/rest/2019-06/8-Thumbnail%20Image.jpg",<br/>
+"@type": [<br/>
+"http://fedora.info/definitions/v4/repository#Resource",<br/>
+"http://www.w3.org/ns/ldp#NonRDFSource",<br/>
+"http://www.w3.org/ns/ldp#Resource",<br/>
+"http://fedora.info/definitions/v4/repository#Binary"<br/>
+],<br/>
+"http://fedora.info/definitions/v4/repository#lastModified": [</p>
+{ "@value": "2020-12-03T17:59:28.936Z", "@type": "http://www.w3.org/2001/XMLSchema#dateTime" }
+
+<p>],<br/>
+"http://www.loc.gov/premis/rdf/v1#hasSize": [</p>
+{ "@value": "4729", "@type": "http://www.w3.org/2001/XMLSchema#long" }
+
+<p>],<br/>
+"http://fedora.info/definitions/v4/repository#created": [</p>
+{ "@value": "2020-12-03T17:59:28.936Z", "@type": "http://www.w3.org/2001/XMLSchema#dateTime" }
+
+<p>],<br/>
+"http://www.loc.gov/premis/rdf/v1#hasMessageDigest": [</p>
+{ "@id": "urn:sha1:24b1131d3310ebc073e7a682dfebb1e852dc5a4a" }
+
+<p>],<br/>
+"http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType": [</p>
+{ "@value": "image/jpeg" }
+
+<p>],<br/>
+"http://fedora.info/definitions/v4/repository#hasFixityService": [</p>
+{ "@id": "http://islandora.traefik.me:8081/fcrepo/rest/2019-06/8-Thumbnail%20Image.jpg/fcr:fixity" }
+
+<p>],<br/>
+"http://www.iana.org/assignments/relation/describedby": [</p>
+{ "@id": "http://islandora.traefik.me:8081/fcrepo/rest/2019-06/8-Thumbnail%20Image.jpg/fcr:metadata" }
+
+<p>],<br/>
+"http://fedora.info/definitions/v4/repository#lastModifiedBy": [</p>
+{ "@value": "bypassAdmin" }
+
+<p>],<br/>
+"http://fedora.info/definitions/v4/repository#createdBy": [</p>
+{ "@value": "bypassAdmin" }
+
+<p>]<br/>
+}<br/>
+]<br/>
+2:17<br/>
+And then I'm PUTing this on top and it's problematic. The request returns 500 and then my object is corrupted from then on out<br/>
+2:18<br/>
+[{"@id":"http:\/\/islandora.traefik.me:8081\/fcrepo\/rest\/2019-06\/8-Thumbnail%20Image.jpg\/fcr:metadata","@type":"http:\/\/pcdm.org\/models#File","http:\/\/pcdm.org\/use#ThumbnailImage","http:\/\/schema.org\/author":[</p>
+{"@id":"https:\/\/islandora.traefik.me\/user\/1"}
+
+<p>],"http:\/\/purl.org\/dc\/terms\/title":[</p>
+{"@value":"cat collection thumbnail","@language":"en"}
+
+<p>],"http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#label":[</p>
+{"@value":"cat collection thumbnail","@language":"en"}
+
+<p>],"http:\/\/schema.org\/dateCreated":[</p>
+{"@value":"2019-06-04T17:25:04+00:00","@type":"http:\/\/www.w3.org\/2001\/XMLSchema#dateTime"}
+
+<p>],"http:\/\/schema.org\/dateModified":[</p>
+{"@value":"2019-06-04T17:25:34+00:00","@type":"http:\/\/www.w3.org\/2001\/XMLSchema#dateTime"}
+
+<p>],"http:\/\/www.loc.gov\/premis\/rdf\/v1#hasSize":[</p>
+{"@value":"4729","@type":"http:\/\/www.w3.org\/2001\/XMLSchema#int"}
+
+<p>],"http:\/\/www.ebu.ch\/metadata\/ontologies\/ebucore\/ebucore#height":[</p>
+{"@value":"66","@type":"http:\/\/www.w3.org\/2001\/XMLSchema#int"}
+
+<p>],"http:\/\/pcdm.org\/models#fileOf":[</p>
+{"@id":"https:\/\/islandora.traefik.me\/node\/7"}
+
+<p>],"http:\/\/www.ebu.ch\/metadata\/ontologies\/ebucore\/ebucore#hasMimeType":[</p>
+{"@value":"image\/jpeg","@type":"http:\/\/www.w3.org\/2001\/XMLSchema#string"}
+
+<p>],"http:\/\/www.ebu.ch\/metadata\/ontologies\/ebucore\/ebucore#width":[</p>
+{"@value":"100","@type":"http:\/\/www.w3.org\/2001\/XMLSchema#int"}
+
+<p>],"http:\/\/www.iana.org\/assignments\/relation\/describedby":[</p>
+{"@id":"https:\/\/islandora.traefik.me\/media\/32"}
+
+<p>]}]<br/>
+2:18<br/>
+and Fedora is returning me this:<br/>
+2:19<br/>
+`PUT <a href="http://islandora.traefik.me:8081/fcrepo/rest/2019-06/8-Thumbnail%20Image.jpg/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://islandora.traefik.me:8081/fcrepo/rest/2019-06/8-Thumbnail%20Image.jpg/fcr:metadata</a>` resulted in a `500 Internal Server Error` response: &lt;!doctype html&gt;&lt;html lang=\"en\"&gt;&lt;head&gt;&lt;title&gt;HTTP Status 500 – Internal Server Error&lt;/title&gt;&lt;style type=\"text/css\"&gt;body</p>
+{font-family:Tahoma,Arial,sans-serif;}
+
+<p>h1, h2, h3, b<br/>
+color: Color value is invalid</p>
+
+<p>h1</p>
+{font-size:22px;}
+
+<p>h2</p>
+{font-size:16px;}
+
+<p>h3</p>
+{font-size:14px;}
+
+<p>p</p>
+{font-size:12px;}
+
+<p>a<br/>
+color: Color value is invalid</p>
+
+<p>.line</p>
+{height:1px;background-color:#525D76;border:none;}
+
+<p>&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP Status 500 – Internal Server Error&lt;/h1&gt;&lt;hr class=\"line\" /&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt; Status Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt; Internal Server Error&lt;/p&gt;&lt;p&gt;&lt;b&gt;Description&lt;/b&gt; The server encountered an unexpected condition that prevented it from fulfilling the request.&lt;/p&gt;&lt;hr class=\"line\" /&gt;&lt;h3&gt;Apache Tomcat/9.0.34&lt;/h3&gt;&lt;/body&gt;&lt;/html&gt; at /var/www/crayfish/Milliner/src/Service/MillinerService.php:286)</p></div></div>
+<div class="comment" id="comment-21985"><div class="by">Daniel Lamb, 2021-02-01 19:22 UTC</div><div class="text"><p>I can recreate this without going through the import-export tool and upgrade utils.  Just with curl, it seems that PUT'ing an RdfResource with a space in the path causes problems.</p>
+
+<p>For an RDFResource:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -X PUT -H <span class="code-quote">"Authorization: Bearer XXX"</span> http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/rdf%20content 
+</span>http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/rdf%20content</span>
+</pre>
+</div></div>
+<p>PUT'ing an updated representation results in 500.  Here I'm adding dcterms:title to what I received from a GET request.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ cat test.json
+[
+  {
+    <span class="code-quote">"@id"</span>: <span class="code-quote">"http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/rdf%20content"</span>,
+</span>    <span class="code-quote">"@type"</span>: [
+      <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#RDFSource"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#Resource"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#BasicContainer"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#Resource"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#Container"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#Container"</span>
+</span>    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#lastModifiedBy"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"admin"</span>
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#createdBy"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"admin"</span>
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//purl.org/dc/terms/title"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"Some Title"</span>,
+        <span class="code-quote">"@language"</span>: <span class="code-quote">"en"</span>
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#lastModified"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"2021-01-29T18:34:04.302707Z"</span>,
+        <span class="code-quote">"@type"</span>: <span class="code-quote">"http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime"</span>
+</span>      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#created"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"2021-01-29T18:34:04.302707Z"</span>,
+        <span class="code-quote">"@type"</span>: <span class="code-quote">"http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime"</span>
+</span>      }
+    ]
+  }
+]
+
+$ curl -X PUT -H <span class="code-quote">"Content-Type: application/ld+json"</span> -H <span class="code-quote">"Authorization: Bearer XXX"</span> -H <span class="code-quote">"Prefer: handling=lenient"</span> --data-binary @test.json http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/rdf%20content
+</span> 
+&lt;!doctype html&gt;&lt;html lang=<span class="code-quote">"en"</span>&gt;&lt;head&gt;&lt;title&gt;HTTP Status 500 – Internal Server Error&lt;/title&gt;&lt;style type=<span class="code-quote">"text/css"</span>&gt;body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP Status 500 – Internal Server Error&lt;/h1&gt;&lt;hr class=<span class="code-quote">"line"</span> /&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt; Status Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt; Internal Server Error&lt;/p&gt;&lt;p&gt;&lt;b&gt;Description&lt;/b&gt; The server encountered an unexpected condition that prevented it from fulfilling the request.&lt;/p&gt;&lt;hr class=<span class="code-quote">"line"</span> /&gt;&lt;h3&gt;Apache Tomcat/9.0.34&lt;/h3&gt;&lt;/body&gt;&lt;/html&gt;</pre>
+</div></div>
+<p>For an RdfResource that belongs to a corresponding NonRdfResource, it also appears to corrupt or make the NonRdfResource unavailable:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -X PUT -H <span class="code-quote">"Authorization: Bearer XXX"</span> -H <span class="code-quote">"Content-Type: text/plain"</span> -d <span class="code-quote">"SOME TEXT"</span> <span class="code-quote">"http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/some%20binary.txt"</span>
+</span>
+http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/some%20binary.txt</span>
+</pre>
+</div></div>
+<p>Again, adding dcterms:title results in 500, and any subsequent requests to the binary results in 500:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ cat test2.json 
+[
+  {
+    <span class="code-quote">"@id"</span>: <span class="code-quote">"http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/some%20binary.txt"</span>,
+</span>    <span class="code-quote">"@type"</span>: [
+      <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#Binary"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#Resource"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//www.w3.org/ns/ldp#NonRDFSource"</span>,
+</span>      <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#Resource"</span>
+</span>    ],
+    <span class="code-quote">"http:<span class="code-comment">//www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"text/plain"</span>
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#hasFixityService"</span>: [
+</span>      {
+        <span class="code-quote">"@id"</span>: <span class="code-quote">"http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/some%20binary.txt/fcr:fixity"</span>
+</span>      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#lastModified"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"2021-02-01T18:52:55.792367Z"</span>,
+        <span class="code-quote">"@type"</span>: <span class="code-quote">"http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime"</span>
+</span>      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#lastModifiedBy"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"admin"</span>
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//www.ebu.ch/metadata/ontologies/ebucore/ebucore#filename"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: ""
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//www.loc.gov/premis/rdf/v1#hasSize"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"9"</span>,
+        <span class="code-quote">"@type"</span>: <span class="code-quote">"http:<span class="code-comment">//www.w3.org/2001/XMLSchema#<span class="code-object">long</span>"</span>
+</span>      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//www.loc.gov/premis/rdf/v1#hasMessageDigest"</span>: [
+</span>      {
+        <span class="code-quote">"@id"</span>: <span class="code-quote">"urn:sha-512:6dc4037f05e5ca8e11d43da9dc88815e6384cf09fd838155b9baae64fb40b7a6ba6c650b8dfba6a37b242dd903d23076ac356e9a44ec0aa462b6f4fbba229745"</span>
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#createdBy"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"admin"</span>
+      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#created"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"2021-02-01T18:52:55.792367Z"</span>,
+        <span class="code-quote">"@type"</span>: <span class="code-quote">"http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime"</span>
+</span>      }
+    ],
+    <span class="code-quote">"http:<span class="code-comment">//purl.org/dc/terms/title"</span>: [
+</span>      {
+        <span class="code-quote">"@value"</span>: <span class="code-quote">"Some Title"</span>,
+        <span class="code-quote">"@language"</span>: <span class="code-quote">"en"</span>
+      }
+    ]
+  }
+]
+
+$ curl -X PUT -H <span class="code-quote">"Content-Type: application/ld+json"</span> -H <span class="code-quote">"Authorization: Bearer XXX"</span> -H <span class="code-quote">"Prefer: handling=lenient"</span> --data-binary @test2.json http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/some%20binary.txt/fcr:metadata
+</span> 
+&lt;!doctype html&gt;&lt;html lang=<span class="code-quote">"en"</span>&gt;&lt;head&gt;&lt;title&gt;HTTP Status 500 – Internal Server Error&lt;/title&gt;&lt;style type=<span class="code-quote">"text/css"</span>&gt;body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP Status 500 – Internal Server Error&lt;/h1&gt;&lt;hr class=<span class="code-quote">"line"</span> /&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt; Status Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt; Internal Server Error&lt;/p&gt;&lt;p&gt;&lt;b&gt;Description&lt;/b&gt; The server encountered an unexpected condition that prevented it from fulfilling the request.&lt;/p&gt;&lt;hr class=<span class="code-quote">"line"</span> /&gt;&lt;h3&gt;Apache Tomcat/9.0.3
+
+$ curl -sS -H <span class="code-quote">"Accept: application/ld+json"</span> <span class="code-quote">"http:<span class="code-comment">//islandora.traefik.me:8081/fcrepo/<span class="code-keyword">rest</span>/some%20binary.txt/fcr:metadata"</span>
+</span>
+&lt;!doctype html&gt;&lt;html lang=<span class="code-quote">"en"</span>&gt;&lt;head&gt;&lt;title&gt;HTTP Status 500 – Internal Server Error&lt;/title&gt;&lt;style type=<span class="code-quote">"text/css"</span>&gt;body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;HTTP Status 500 – Internal Server Error&lt;/h1&gt;&lt;hr class=<span class="code-quote">"line"</span> /&gt;&lt;p&gt;&lt;b&gt;Type&lt;/b&gt; Exception Report&lt;/p&gt;&lt;p&gt;&lt;b&gt;Message&lt;/b&gt; org.apache.jena.riot.RiotException: [line: 1, col: 19] Bad character in IRI (space): &amp;lt;info:fedora&amp;#47;some[space]...&amp;gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Description&lt;/b&gt; The server encountered an unexpected condition that prevented it from fulfilling the request.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Exception&lt;/b&gt;&lt;/p&gt;&lt;pre&gt;javax.servlet.ServletException: org.apache.jena.riot.RiotException: [line: 1, col: 19] Bad character in IRI (space): &amp;lt;info:fedora&amp;#47;some[space]...&amp;gt;
+	org.apache.shiro.web.servlet.AdviceFilter.cleanup(AdviceFilter.java:196)
+	org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:148)
+	org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)
+	org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:450)
+	org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)
+	org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)
+	org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)
+	org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)
+	org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)
+	org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)
+	org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358)
+	org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271)
+&lt;/pre&gt;&lt;p&gt;&lt;b&gt;Root Cause&lt;/b&gt;&lt;/p&gt;&lt;pre&gt;org.apache.jena.riot.RiotException: [line: 1, col: 19] Bad character in IRI (space): &amp;lt;info:fedora&amp;#47;some[space]...&amp;gt;
+	org.apache.jena.riot.system.ErrorHandlerFactory$ErrorHandlerStd.error(ErrorHandlerFactory.java:146)
+	org.apache.jena.riot.tokens.TokenizerText.error(TokenizerText.java:1288)
+	org.apache.jena.riot.tokens.TokenizerText.readIRI(TokenizerText.java:505)
+	org.apache.jena.riot.tokens.TokenizerText.parseToken(TokenizerText.java:197)
+	org.apache.jena.riot.tokens.TokenizerText.hasNext(TokenizerText.java:89)
+	org.apache.jena.atlas.iterator.PeekIterator.fill(PeekIterator.java:50)
+	org.apache.jena.atlas.iterator.PeekIterator.&amp;lt;init&amp;gt;(PeekIterator.java:44)
+	org.apache.jena.riot.lang.LangEngine.&amp;lt;init&amp;gt;(LangEngine.java:48)
+	org.apache.jena.riot.lang.LangBase.&amp;lt;init&amp;gt;(LangBase.java:32)
+	org.apache.jena.riot.lang.LangNTuple.&amp;lt;init&amp;gt;(LangNTuple.java:58)
+	org.apache.jena.riot.lang.LangNTriples.&amp;lt;init&amp;gt;(LangNTriples.java:43)
+	org.apache.jena.riot.lang.RiotParsers.createParserNTriples(RiotParsers.java:89)
+	org.apache.jena.riot.lang.RiotParsers.createParser(RiotParsers.java:60)
+	org.apache.jena.riot.RDFParserRegistry$ReaderRIOTLang.read(RDFParserRegistry.java:181)
+	org.apache.jena.riot.RDFParser.read(RDFParser.java:353)
+	org.apache.jena.riot.RDFParser.parseNotUri(RDFParser.java:343)
+	org.apache.jena.riot.RDFParser.parse(RDFParser.java:292)
+	org.apache.jena.riot.RDFParserBuilder.parse(RDFParserBuilder.java:540)
+	org.apache.jena.riot.RDFDataMgr.parseFromInputStream(RDFDataMgr.java:901)
+	org.apache.jena.riot.RDFDataMgr.read(RDFDataMgr.java:299)
+	org.apache.jena.riot.RDFDataMgr.read(RDFDataMgr.java:273)
+	org.apache.jena.riot.RDFDataMgr.read(RDFDataMgr.java:263)
+	org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSession.getTriples(OcflPersistentStorageSession.java:246)
+	org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSessionMetrics.lambda$getTriples$2(OcflPersistentStorageSessionMetrics.java:83)
+	org.fcrepo.common.metrics.MetricsHelper.time(MetricsHelper.java:45)
+	org.fcrepo.persistence.ocfl.impl.OcflPersistentStorageSessionMetrics.getTriples(OcflPersistentStorageSessionMetrics.java:82)
+	org.fcrepo.kernel.impl.models.FedoraResourceImpl.getUserTypes(FedoraResourceImpl.java:287)
+	org.fcrepo.kernel.impl.models.FedoraResourceImpl.getTypes(FedoraResourceImpl.java:240)
+	org.fcrepo.auth.webac.WebACRolesProvider.getRoles(WebACRolesProvider.java:124)
+	org.fcrepo.auth.webac.WebACAuthorizingRealm.getRolesForId(WebACAuthorizingRealm.java:196)
+	org.fcrepo.auth.webac.WebACAuthorizingRealm.getRolesForPath(WebACAuthorizingRealm.java:188)
+	org.fcrepo.auth.webac.WebACAuthorizingRealm.doGetAuthorizationInfo(WebACAuthorizingRealm.java:149)
+	org.apache.shiro.realm.AuthorizingRealm.getAuthorizationInfo(AuthorizingRealm.java:342)
+	org.apache.shiro.realm.AuthorizingRealm.hasRole(AuthorizingRealm.java:576)
+	org.apache.shiro.authz.ModularRealmAuthorizer.hasRole(ModularRealmAuthorizer.java:374)
+	org.apache.shiro.mgt.AuthorizingSecurityManager.hasRole(AuthorizingSecurityManager.java:153)
+	org.apache.shiro.subject.support.DelegatingSubject.hasRole(DelegatingSubject.java:228)
+	org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:221)
+	org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+	org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:86)
+	org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)
+	org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)
+	org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	org.apache.shiro.web.servlet.AdviceFilter.executeChain(AdviceFilter.java:108)
+	org.apache.shiro.web.servlet.AdviceFilter.doFilterInternal(AdviceFilter.java:137)
+	org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)
+	org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)
+	org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:450)
+	org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)
+	org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)
+	org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)
+	org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)
+	org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)
+	org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)
+	org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358)
+	org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271)
+&lt;/pre&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt; The full stack trace of the root cause is available in the server logs.&lt;/p&gt;&lt;hr class=<span class="code-quote">"line"</span> /&gt;&lt;h3&gt;Apache Tomcat/9.0.34&lt;/h3&gt;&lt;/body&gt;&lt;/html&gt;
+</pre>
+</div></div>
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21994"><div class="by">Daniel Lamb, 2021-02-05 19:33 UTC</div><div class="text"><p>All my previous testing was using the alpha 2 war.  I updated to main and now my previous commands run without issue.  I'm thinking whatever I ran into was resolved recently from other PRs.</p></div></div>
+<div class="comment" id="comment-21996"><div class="by">Jared Whiklo, 2021-02-07 21:31 UTC</div><div class="text"><p>Seemingly resolved by <a href="https://jira.lyrasis.org/browse/FCREPO-3598" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3598</a></p></div></div>
+<div class="comment" id="comment-22124"><div class="by">Daniel Lamb, 2021-03-04 16:44 UTC</div><div class="text"><p>Pardon the necromancy on this thread, but...</p>
+
+<p> </p>
+
+<p>I can confirm that this has been fixed as of 6.0.0-beta-1.  Thx everyone.</p></div></div>
+<p><a href="data/FCREPO-3613.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

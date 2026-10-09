@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3792 NPE when emitting an event during reindex</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3792</span> NPE when emitting an event during reindex</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2021-11-17 18:37 UTC</td></tr><tr><th>Updated</th><td>2021-11-22 21:22 UTC</td></tr><tr><th>Resolved</th><td>2021-11-22 18:35 UTC</td></tr><tr><th>Components</th><td>core</td></tr><tr><th>Affects versions</th><td>Fedora 6.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.1.1</td></tr></table>
+<h2>Description</h2>
+<p>I attempted to start Fedora on top of the sample Brown content and received the following errors while it was reindexing:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ERROR 12:29:47.702 [ReindexWorker-0] (EventAccumulatorImpl) Failed to emit events: [ResourceOperationEventBuilder{fedoraId=info:fedora/testsuite:67423, types=[INBOUND_REFERENCE], resourceTypes=[http:<span class="code-comment">//www.w3.org/ns/ldp#Resource, http://www.w3.org/ns/ldp#Container, http://fedora.info/definitions/v4/repository#ArchivalGroup, http://fedora.info/definitions/v4/repository#Resource, http://fedora.info/definitions/v4/repository#Container, http://mementoweb.org/ns#TimeGate, http://www.w3.org/ns/ldp#RDFSource, http://mementoweb.org/ns#OriginalResource, http://www.w3.org/ns/ldp#BasicContainer], userID=<span class="code-quote">'<span class="code-keyword">null</span>'</span>, userAgent=<span class="code-quote">'<span class="code-keyword">null</span>'</span>, baseUrl=<span class="code-quote">'<span class="code-keyword">null</span>'</span>, date=2021-11-17T18:29:47.612183482Z}]
+</span>java.lang.NullPointerException: baseUrl cannot be <span class="code-keyword">null</span>
+	at com.google.common.base.Preconditions.checkNotNull(Preconditions.java:907)
+	at org.fcrepo.kernel.impl.observer.EventImpl.&lt;init&gt;(EventImpl.java:60)
+	at org.fcrepo.kernel.impl.observer.ResourceOperationEventBuilder.build(ResourceOperationEventBuilder.java:137)
+	at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.lambda$emitEvents$1(EventAccumulatorImpl.java:90)
+	at com.google.common.collect.Maps$KeySet.lambda$forEach$0(Maps.java:3916)
+	at java.base/java.util.HashMap.forEach(HashMap.java:1420)
+	at com.google.common.collect.Maps$KeySet.forEach(Maps.java:3916)
+	at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.emitEvents(EventAccumulatorImpl.java:79)
+	at org.fcrepo.kernel.impl.TransactionImpl.commit(TransactionImpl.java:100)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.lambda$run$0(ReindexWorker.java:107)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTx$3(DbTransactionExecutor.java:79)
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTx(DbTransactionExecutor.java:78)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTxWithRetry$2(DbTransactionExecutor.java:62)
+	at net.jodah.failsafe.Functions.lambda$toSupplier$10(Functions.java:262)
+	at net.jodah.failsafe.Functions.lambda$get$0(Functions.java:48)
+	at net.jodah.failsafe.RetryPolicyExecutor.lambda$supply$0(RetryPolicyExecutor.java:66)
+	at net.jodah.failsafe.Execution.executeSync(Execution.java:128)
+	at net.jodah.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:379)
+	at net.jodah.failsafe.FailsafeExecutor.run(FailsafeExecutor.java:212)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTxWithRetry(DbTransactionExecutor.java:61)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:105)
+	at java.base/java.lang.<span class="code-object">Thread</span>.run(<span class="code-object">Thread</span>.java:833)
+ERROR 12:29:57.426 [ReindexWorker-1] (EventAccumulatorImpl) Failed to emit events: [ResourceOperationEventBuilder{fedoraId=info:fedora/testsuite:67423, types=[INBOUND_REFERENCE], resourceTypes=[http:<span class="code-comment">//www.w3.org/ns/ldp#Resource, http://www.w3.org/ns/ldp#Container, http://fedora.info/definitions/v4/repository#ArchivalGroup, http://fedora.info/definitions/v4/repository#Resource, http://fedora.info/definitions/v4/repository#Container, http://mementoweb.org/ns#TimeGate, http://www.w3.org/ns/ldp#RDFSource, http://mementoweb.org/ns#OriginalResource, http://www.w3.org/ns/ldp#BasicContainer], userID=<span class="code-quote">'<span class="code-keyword">null</span>'</span>, userAgent=<span class="code-quote">'<span class="code-keyword">null</span>'</span>, baseUrl=<span class="code-quote">'<span class="code-keyword">null</span>'</span>, date=2021-11-17T18:29:57.400489539Z}]
+</span>java.lang.NullPointerException: baseUrl cannot be <span class="code-keyword">null</span>
+	at com.google.common.base.Preconditions.checkNotNull(Preconditions.java:907)
+	at org.fcrepo.kernel.impl.observer.EventImpl.&lt;init&gt;(EventImpl.java:60)
+	at org.fcrepo.kernel.impl.observer.ResourceOperationEventBuilder.build(ResourceOperationEventBuilder.java:137)
+	at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.lambda$emitEvents$1(EventAccumulatorImpl.java:90)
+	at com.google.common.collect.Maps$KeySet.lambda$forEach$0(Maps.java:3916)
+	at java.base/java.util.HashMap.forEach(HashMap.java:1420)
+	at com.google.common.collect.Maps$KeySet.forEach(Maps.java:3916)
+	at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.emitEvents(EventAccumulatorImpl.java:79)
+	at org.fcrepo.kernel.impl.TransactionImpl.commit(TransactionImpl.java:100)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.lambda$run$0(ReindexWorker.java:107)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTx$3(DbTransactionExecutor.java:79)
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTx(DbTransactionExecutor.java:78)
+	at org.fcrepo.common.db.DbTransactionExecutor.lambda$doInTxWithRetry$2(DbTransactionExecutor.java:62)
+	at net.jodah.failsafe.Functions.lambda$toSupplier$10(Functions.java:262)
+	at net.jodah.failsafe.Functions.lambda$get$0(Functions.java:48)
+	at net.jodah.failsafe.RetryPolicyExecutor.lambda$supply$0(RetryPolicyExecutor.java:66)
+	at net.jodah.failsafe.Execution.executeSync(Execution.java:128)
+	at net.jodah.failsafe.FailsafeExecutor.call(FailsafeExecutor.java:379)
+	at net.jodah.failsafe.FailsafeExecutor.run(FailsafeExecutor.java:212)
+	at org.fcrepo.common.db.DbTransactionExecutor.doInTxWithRetry(DbTransactionExecutor.java:61)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:105)
+	at java.base/java.lang.<span class="code-object">Thread</span>.run(<span class="code-object">Thread</span>.java:833)
+</pre>
+</div></div>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3792/10358_Screen_Shot_2021-11-18_at_2.46.50_PM.png">Screen Shot 2021-11-18 at 2.46.50 PM.png</a>, 274233 bytes, added by Danny Bernstein on 2021-11-19</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-22559"><div class="by">Danny Bernstein, 2021-11-18 15:52 UTC</div><div class="text"><p>I’m getting set up to reproduce the issue here.  What were the migration-utils params you used to generated the OCFL?   </p></div></div>
+<div class="comment" id="comment-22560"><div class="by">Peter Winckles, 2021-11-18 15:58 UTC</div><div class="text"><p><tt>java -jar migration-utils-6.2.0-SNAPSHOT-driver.jar -t legacy -d brown/repoarchive/datastreams_2019/2019 -o brown/repostore/data_2019/objects/2019 -a brown-migrated</tt></p></div></div>
+<div class="comment" id="comment-22561"><div class="by">Danny Bernstein, 2021-11-18 20:09 UTC</div><div class="text"><p>Yeah - this looks like it will be a problem for all rebuilds.  I think a point release is going to be required.</p></div></div>
+<div class="comment" id="comment-22562"><div class="by">Danny Bernstein, 2021-11-18 20:19 UTC</div><div class="text"><p>The base uri gets set properly when the transaction is created via the http api.  But this is not the case when it is created in the reindexing process. </p></div></div>
+<div class="comment" id="comment-22563"><div class="by">Danny Bernstein, 2021-11-18 20:31 UTC</div><div class="text"><p>The problem does not show up with resources sans inbound refs which is less embarrassing. But even more surprising, when creating a resource with inbound references there is no problem rebuilding that either. </p></div></div>
+<div class="comment" id="comment-22564"><div class="by">Danny Bernstein, 2021-11-19 04:30 UTC</div><div class="text"><p>So it appears that events are being emitted in the rebuild flow here:</p>
+
+
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3792/10358_Screen_Shot_2021-11-18_at_2.46.50_PM.png" height="846" width="2531" style="border: 0px solid black" /></span></p>
+
+<p>When an event is generated by a call to the http api,  it always passes through the TransactionProvider which ensures there is a value set for the baseUrl.  Not so for the rebuild flow. </p>
+
+<p>But as I understand it we should not be generating events at all during the rebuild.  So I’ll create a fix that suppresses all events during the rebuild.</p></div></div>
+<div class="comment" id="comment-22565"><div class="by">Danny Bernstein, 2021-11-19 17:36 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1954" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1954</a> </p></div></div>
+<p><a href="data/FCREPO-3792.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

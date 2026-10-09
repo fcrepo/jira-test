@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2252 Import of dataset, lost namespace prefixes - plantpatents</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2252</span> Import of dataset, lost namespace prefixes - plantpatents</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Nick Ruest</td></tr><tr><th>Created</th><td>2016-09-29 23:17 UTC</td></tr><tr><th>Updated</th><td>2017-07-14 20:23 UTC</td></tr><tr><th>Resolved</th><td>2017-05-15 16:17 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.1.0</td></tr><tr><th>Labels</th><td>import-export-phase-1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2199.html">FCREPO-2199</a> ERROR on import of dataset, no properties - plantpatents</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2376.html">FCREPO-2376</a> User-supplied namespace prefixes are ignored</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2438.html">FCREPO-2438</a> Import/Export - Document use of CND for namespaces</td></tr></table>
+<h2>Description</h2>
+<p>In a similar fashion to the setup detailed in: <a href="https://jira.duraspace.org/browse/FCREPO-2188" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2188</a> </p>
+
+<p>...this ticket is to address the situation where resource namespaces are lost: </p>
+<ul>
+	<li>After /fcr:restore of the plantpatents dataset, open a tab with the following resource:<br/>
+<a href="http://localhost:8080/rest/62/44/53/d5/624453d5-e62a-43ff-b934-a04ab36acc75" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/62/44/53/d5/624453d5-e62a-43ff-b934-a04ab36acc75</a> </li>
+</ul>
+
+
+<p>Then go through the export/import cycle, and open a different tab with that same resource: <br/>
+<a href="http://localhost:8080/rest/62/44/53/d5/624453d5-e62a-43ff-b934-a04ab36acc75" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/62/44/53/d5/624453d5-e62a-43ff-b934-a04ab36acc75</a> </p>
+
+<p>! Notice the difference... namespaces changed! </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2252/10278_after.png">after.png</a>, 89350 bytes, added by Andrew Woods on 2016-09-29</li>
+<li><a href="attachments/FCREPO-2252/10279_before.png">before.png</a>, 87944 bytes, added by Andrew Woods on 2016-09-29</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-18123"><div class="by">Esmé Cowles, 2016-12-09 17:24 UTC</div><div class="text"><p>I thought that Fedora would use the provided namespace prefix when first encountering a new namespace, as long as it was encountered in an RDF format that declared namespaces.  But I've been testing this with a simple Turtle document, and I'm seeing generated namespace prefixes (ns001, etc.) for all user-defined namespaces.</p></div></div>
+<div class="comment" id="comment-18125"><div class="by">Esmé Cowles, 2016-12-09 17:29 UTC</div><div class="text"><p>I'm seeing the same behavior (disregarding user-supplied namespace prefixes) in 4.5.1 and later.  So if this is a Fedora bug, it's been there a while.</p></div></div>
+<div class="comment" id="comment-18293"><div class="by">Andrew Woods, 2016-12-22 18:30 UTC</div><div class="text"><p>Esmé Cowles, did you happen to test 4.5.0 and before? If so, are you seeing that the described behavior was introduced with 4.5.1?</p></div></div>
+<div class="comment" id="comment-18295"><div class="by">Esmé Cowles, 2016-12-22 19:08 UTC</div><div class="text"><p>Andrew Woods, I just tested with 4.1.1, 4.2.0, 4.3.0, 4.4.0, and 4.5.0 — all of them use the user-supplied namespace prefixes when a new namespace is used with a prefix in a Turtle document, e.g.:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+@prefix example: &lt;http:<span class="code-comment">//example.org/models#&gt; .
+</span>
+&lt;&gt; a example:Thing ; example:name <span class="code-quote">"Bob"</span> .
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18305"><div class="by">Andrew Woods, 2016-12-22 20:23 UTC</div><div class="text"><p>Esmé Cowles, would you please create a new ticket for the issue of user-provided namespaces no longer being registered and link it to this ticket? Thanks!</p></div></div>
+<div class="comment" id="comment-18700"><div class="by">Andrew Woods, 2017-05-15 16:17 UTC</div><div class="text"><p>Resolved with documentation: <a href="https://jira.duraspace.org/browse/FCREPO-2438" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2438</a></p></div></div>
+<p><a href="data/FCREPO-2252.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

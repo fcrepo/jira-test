@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3911 CRITICAL Apache ActiveMQ Exploit in the wild</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3911</span> CRITICAL Apache ActiveMQ Exploit in the wild</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Created</th><td>2023-11-03 18:12 UTC</td></tr><tr><th>Updated</th><td>2023-12-11 15:22 UTC</td></tr><tr><th>Resolved</th><td>2023-12-11 15:22 UTC</td></tr></table>
+<h2>Description</h2>
+<p>In response to CVE-2023-046604 We need to patch the most recent versions of Fedora 3,4,5 and 6 to bring the packaged ActiveMQ up to a version listed as safe in the following document:</p>
+
+<p><a href="https://activemq.apache.org/security-advisories.data/CVE-2023-46604-announcement.txt" class="external-link" rel="nofollow noreferrer">https://activemq.apache.org/security-advisories.data/CVE-2023-46604-announcement.txt</a></p>
+
+<p>We also need assistance from anyone with Fedora build experience to ensure that the aging pom.xml files and related repositories and dependencies are able to be built in this day and age. An initial look at Fedora 3 and 4 show there is work to be done here. </p>
+
+
+
+<p>Whilst the end goal is 4 new releases rolled out to GitHub, DockerHub and Sonatype, those actions require credentials and permissions that only select members of the team may have. That is the final step in the process though, so any help with getting the builds working is appreciated. </p>
+
+<p>Make a comment on the ticket if you are working on a particular version, and jump on to the committers or tech channels on slack if you don't have access to committers, and keep the conversation going there. </p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-22897"><div class="by">Arran Griffith, 2023-11-03 18:23 UTC</div><div class="text"><p>Fedora release process documentation: <a href="https://wiki.lyrasis.org/display/FF/Fedora+Release+Process" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FF/Fedora+Release+Process</a> </p></div></div>
+<div class="comment" id="comment-22898"><div class="by">Danny Bernstein, 2023-11-03 20:53 UTC</div><div class="text"><p>I’m working on updating 5.1.x.</p></div></div>
+<div class="comment" id="comment-22899"><div class="by">Danny Bernstein, 2023-11-03 21:09 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/2051" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2051</a> </p></div></div>
+<div class="comment" id="comment-22900"><div class="by">Thomas Bernhart, 2023-11-04 22:31 UTC</div><div class="text"><p>Is camel-toolbox also affected by this? It uses the ActiveMQ client libraries, right?</p></div></div>
+<div class="comment" id="comment-22902"><div class="by">Dan Field, 2023-11-06 09:15 UTC</div><div class="text"><p>Thomas Bernhart I believe only the client libraries of ActiveMQ are used, as you noted. The exploit is in the server component on the OpenWire protocol. As we aren’t running the embedded server or exposing port 61616, this shouldn’t be an issue. HOWEVER, automated security scanners are going to flag this as they aren’t aware of the implementation, so we should bump the version and release a new version anyway. It is of a lesser priotity than those cases where the OpenWire protocol is exposed though. </p>
+
+<p>Are threre any other projects hiding in the various Orgs under our care which may be an issue? </p></div></div>
+<div class="comment" id="comment-22903"><div class="by">Dan Field, 2023-11-07 14:56 UTC</div><div class="text"><p>PR for the main branch of Fedora 6<br/>
+<a href="https://github.com/fcrepo/fcrepo/pull/2061" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2061</a> </p></div></div>
+<div class="comment" id="comment-22905"><div class="by">Jared Whiklo, 2023-11-16 16:20 UTC</div><div class="text"><p>Released fixed releases for Fedora 4, 5 &amp; 6. Fedora 3 is probably not resolvable but that will need to be messaged to the community.</p></div></div>
+<div class="comment" id="comment-22908"><div class="by">Jared Whiklo, 2023-11-16 20:34 UTC</div><div class="text"><p>Discussion at the Community meeting resulted in Thomas Bernhart suggesting that they had disabled the internal brokers transport connectors on their Fedora 3 instance and just forwarded all messages to an external broker.</p>
+
+<p>I realize we had done this awhile ago too just to allow securing the broker.</p>
+
+<p>This information is for Fedora 3.8.1</p>
+
+<p>To do this, you setup a new ActiveMQ instance on your server. I added authentication to allow other machines to connect if they had a username:password only.</p>
+
+<p>Then you create an ActiveMQ configuration file, like</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-xml">&lt;beans 
+  xmlns=<span class="code-quote">"http://www.springframework.org/schema/beans"</span>
+  <span class="code-keyword">xmlns:amq</span>=<span class="code-quote">"http://activemq.apache.org/schema/core"</span>
+  <span class="code-keyword">xmlns:xsi</span>=<span class="code-quote">"http://www.w3.org/2001/XMLSchema-instance"</span>
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+  http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.5.0.xsd"&gt;
+​
+  <span class="code-tag"><span class="code-comment">&lt;!-- ActiveMQ JMS Broker configuration --&gt;</span></span>
+  <span class="code-tag">&lt;amq:broker id=<span class="code-quote">"broker"</span> useShutdownHook=<span class="code-quote">"false"</span>&gt;</span>
+​
+    <span class="code-tag">&lt;amq:managementContext&gt;</span>
+      <span class="code-tag">&lt;amq:managementContext connectorPort=<span class="code-quote">"1093"</span> createConnector=<span class="code-quote">"false"</span>/&gt;</span>
+    <span class="code-tag">&lt;/amq:managementContext&gt;</span>
+​
+    <span class="code-tag"><span class="code-comment">&lt;!-- Your remote broker, configured with failover --&gt;</span></span>
+    <span class="code-tag">&lt;amq:networkConnectors&gt;</span>
+      <span class="code-tag">&lt;amq:networkConnector name=<span class="code-quote">"fedorabridge"</span> userName=<span class="code-quote">"fedora"</span> password=<span class="code-quote">"&lt;redacted&gt;</span>"</span> dynamicOnly=<span class="code-quote">"true"</span> uri=<span class="code-quote">"static:(failover:(tcp://0.0.0.0:61616))"</span>/&gt;
+    <span class="code-tag">&lt;/amq:networkConnectors&gt;</span>
+​
+    <span class="code-tag"><span class="code-comment">&lt;!-- The directory where Fedora will store the ActiveMQ data --&gt;</span></span>
+    <span class="code-tag">&lt;amq:persistenceAdapter&gt;</span>
+      <span class="code-tag">&lt;amq:amqPersistenceAdapter directory=<span class="code-quote">"file:/usr/local/fedora/data/activemq-data"</span>/&gt;</span>
+    <span class="code-tag">&lt;/amq:persistenceAdapter&gt;</span>
+  <span class="code-tag">&lt;/amq:broker&gt;</span>
+​
+  &lt;!-- Set this to prevent objects from being serialized when
+       passed along to your embedded broker;  saves some overhead processing --&gt;
+  <span class="code-tag">&lt;bean id=<span class="code-quote">"jmsConnectionFactory"</span> class=<span class="code-quote">"org.apache.activemq.ActiveMQConnectionFactory"</span>&gt;</span>
+     <span class="code-tag">&lt;property name=<span class="code-quote">"objectMessageSerializationDefered"</span> value=<span class="code-quote">"false"</span>/&gt;</span>
+  <span class="code-tag">&lt;/bean&gt;</span>
+
+<span class="code-tag">&lt;/beans&gt;</span></pre>
+</div></div>
+
+<p>and in your fedora.fcfg file in the Messaging module you alter the “java.naming.provider.url” to point to this file.</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-xml"><span class="code-tag">&lt;module role=<span class="code-quote">"org.fcrepo.server.messaging.Messaging"</span> class=<span class="code-quote">"org.fcrepo.server.messaging.MessagingModule"</span>&gt;</span>
+    <span class="code-tag">&lt;comment&gt;</span>Fedora's Java Messaging Service (JMS) Module<span class="code-tag">&lt;/comment&gt;</span>
+    <span class="code-tag">&lt;param name=<span class="code-quote">"java.naming.factory.initial"</span> value=<span class="code-quote">"org.apache.activemq.jndi.ActiveMQInitialContextFactory"</span>/&gt;</span>
+    <span class="code-tag"><span class="code-comment">&lt;!--&lt;param name=<span class="code-quote">"java.naming.provider.url"</span> value=<span class="code-quote">"vm:(broker:(tcp://localhost:61616,stomp://localhost:61613))"</span>/&gt;</span>--&gt;</span>
+    <span class="code-tag">&lt;param name=<span class="code-quote">"java.naming.provider.url"</span> value=<span class="code-quote">"vm://localhost?brokerConfig=xbean:file:/usr/local/fedora/server/config/spring/activemq.xml"</span>/&gt;</span>
+    <span class="code-tag">&lt;param name=<span class="code-quote">"datastore2"</span> value=<span class="code-quote">"apimAccessMessages"</span>&gt;</span>
+      <span class="code-tag">&lt;comment&gt;</span>A datastore representing a JMS Destination for APIM events which do not update the repository<span class="code-tag">&lt;/comment&gt;</span>
+    <span class="code-tag">&lt;/param&gt;</span>
+    <span class="code-tag">&lt;param name=<span class="code-quote">"datastore1"</span> value=<span class="code-quote">"apimUpdateMessages"</span>&gt;</span>
+      <span class="code-tag">&lt;comment&gt;</span>A datastore representing a JMS Destination for APIM events which update the repository<span class="code-tag">&lt;/comment&gt;</span>
+    <span class="code-tag">&lt;/param&gt;</span>
+    <span class="code-tag">&lt;param name=<span class="code-quote">"enabled"</span> value=<span class="code-quote">"true"</span>/&gt;</span>
+  <span class="code-tag">&lt;/module&gt;</span></pre>
+</div></div>
+
+<p>If you have configured everything correctly you should see messages from Fedora 3 appear in your external broker in the same queue/topic you would expect.</p></div></div>
+<div class="comment" id="comment-22909"><div class="by">Dan Field, 2023-11-17 13:32 UTC</div><div class="text"><p>Does that disable the exploited ActiveMQ from running on port 61616 still? It looks like it just reconfigures fedora where to send and receive it's JMS messages. </p></div></div>
+<div class="comment" id="comment-22910"><div class="by">Jared Whiklo, 2023-11-17 14:41 UTC</div><div class="text"><p>Yes, it does disable the internal broker from running on 61616. Also (to clarify) Fedora does not receive any messages via JMS, it only publishes. </p>
+
+<p><b>Edit</b>: I think I misunderstood your question</p></div></div>
+<div class="comment" id="comment-22911"><div class="by">Dan Field, 2023-11-17 15:24 UTC</div><div class="text"><p>Thanks for the clarification. This is a good solution if it effectively cuts off access to the exploited version and bypasses to an activemq instance of the users choosing. I’ll give it a test ASAP </p></div></div>
+<div class="comment" id="comment-22915"><div class="by">Thomas Bernhart, 2023-11-17 16:04 UTC</div><div class="text"><p>We actually only did that for Fedora 6 🙂 But of course it’s a valid solution for Fedora 3 as well. There we just made sure the ports are closed in our Firewalls.</p></div></div>
+<div class="comment" id="comment-22925"><div class="by">Dan Field, 2023-12-11 15:21 UTC</div><div class="text"><p>All releases for 4,5 and 6 are out and the workarounds for those on 3 are documented. I think we can close this now </p></div></div>
+<p><a href="data/FCREPO-3911.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

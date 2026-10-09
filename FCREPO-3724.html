@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3724 MySQL still deadlocks when updating search index</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3724</span> MySQL still deadlocks when updating search index</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2021-05-21 16:28 UTC</td></tr><tr><th>Updated</th><td>2021-05-27 14:59 UTC</td></tr><tr><th>Resolved</th><td>2021-05-21 17:24 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Description</h2>
+<p>When using MySQL concurrent updates to the search index still deadlock.</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>WARN 08:41:47.316 [qtp1923962747-33] (WildcardExceptionMapper) Unmapped exceptionorg.springframework.dao.DeadlockLoserDataAccessException: PreparedStatementCallback; SQL [INSERT INTO search_resource_rdf_type (resource_id, rdf_type_id) SELECT a.resource_id, b.rdf_type_id FROM  (SELECT id AS resource_id FROM simple_search WHERE fedora_id = ?) a, (SELECT id AS rdf_type_id from search_rdf_type WHERE rdf_type_uri= ?) b]; (conn=6) Deadlock found when trying to get lock; try restarting transaction; nested exception is java.sql.BatchUpdateException: (conn=6) Deadlock found when trying to get lock; try restarting transaction	at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:271)	at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:70)	at org.springframework.jdbc.core.JdbcTemplate.translateException(JdbcTemplate.java:1541)	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:667)	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:691)	at org.springframework.jdbc.core.JdbcTemplate.batchUpdate(JdbcTemplate.java:1034)	at org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.batchUpdate(NamedParameterJdbcTemplate.java:373)	at org.fcrepo.search.impl.DbSearchIndexImpl.insertRdfTypeAssociations(DbSearchIndexImpl.java:700)	at org.fcrepo.search.impl.DbSearchIndexImpl.doDirectUpsert(DbSearchIndexImpl.java:557)	at org.fcrepo.search.impl.DbSearchIndexImpl.lambda$addUpdateIndex$1(DbSearchIndexImpl.java:542)	at org.fcrepo.kernel.impl.TransactionImpl.doInTx(TransactionImpl.java:190)	at org.fcrepo.search.impl.DbSearchIndexImpl.addUpdateIndex(DbSearchIndexImpl.java:538)
+</pre>
+</div></div>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-22234"><div class="by">Peter Winckles, 2021-05-21 17:24 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1912" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1912</a></p></div></div>
+<div class="comment" id="comment-22235"><div class="by">Peter Winckles, 2021-05-21 19:14 UTC</div><div class="text"><p>The original PR is abandoned, and the problem is addressed here: <a href="https://github.com/fcrepo/fcrepo/pull/1910" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1910</a></p></div></div>
+<div class="comment" id="comment-22244"><div class="by">Danny Bernstein, 2021-05-27 14:59 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo/fcrepo/commit/de9beb610d11ffb144c1ad9d0ecd3f603fb7309e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/de9beb610d11ffb144c1ad9d0ecd3f603fb7309e</a></p></div></div>
+<p><a href="data/FCREPO-3724.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

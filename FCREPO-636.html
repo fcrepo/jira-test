@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-636 Enable policy enforcement by declaration in RELS-EXT and RELS-INT</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-636</span> Enable policy enforcement by declaration in RELS-EXT and RELS-INT</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Created</th><td>2010-02-12 17:15 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Is related to</th><td><a href="FCREPO-740.html">FCREPO-740</a> Allow policies from multiple parents (multiple collection membership)</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-762.html">FCREPO-762</a> Implement more tightly-defined (ie semantically precise) specification/identification of resources in policies</td></tr></table>
+<h2>Description</h2>
+<p>Once policies are represented in the repository as objects (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-577" >
+                <a href="FCREPO-577.html" class="jira-issue-macro-key issue-link"  title="Make XACML policies first-class Fedora digital objects" >
+            
+            FCREPO-577
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+), we should enable objects and datastreams to declare or "subscribe" to policies via RELS-EXT and RELS-INT (assuming an as-yet-to-be-decided predicate).</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-11443"><div class="by">Stephen Bayliss, 2010-06-24 11:27 UTC</div><div class="text"><p>It would seem that the XACML 2.0 hierarchical resource profile <a href="http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-hier-profile-spec-os.pdf" class="external-link" rel="nofollow noreferrer">http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-hier-profile-spec-os.pdf</a> is relevant to this.</p>
+
+<p>The basics that seem to be appropriate:</p>
+
+<p>Resource identifiers (section 2)</p>
+<ul class="alternate" type="square">
+	<li>hierarchical URI representation to be used to indicate resource identity in the context of its collection membership</li>
+	<li>if a resource has multiple parentage, there will be several different URI representations of the resource identifier,</li>
+	<li>need to be explicit that these URI identifiers for resources used as part of XACML are distinct from the REST API identifiers and the info:fedora/ identifiers</li>
+	<li>section 2 specifies that the authority part of the URI is mandatory; it would seem appropriate that an HTTP URI scheme should be defined (eg <a href="http://local-fedora-server/objecthierarchy/" class="external-link" rel="nofollow noreferrer">http://local-fedora-server/objecthierarchy/</a>&lt;collection&gt;/&lt;child&gt; (doesn't need to be rereferenceable)</li>
+	<li>currently FeSL just specifies the path component of the URI(ie no authority/scheme part of URI specified)</li>
+	<li>need ability to include datastreams within the resource identifier URIs</li>
+</ul>
+
+
+<p>Request context</p>
+<ul class="alternate" type="square">
+	<li>should provide full set of hierarchical resource identifiers</li>
+	<li>where resources are members of multiple collections (which themselves might have multiple parentage), the request context should contain all of the potential paths from the resource to its ancestors</li>
+</ul>
+
+
+<p>Policy</p>
+<ul class="alternate" type="square">
+	<li>resources can be specified as a regular expression on a URI</li>
+	<li>so regexp could specify "any descendent of" "immediate children of" etc (as well as the resource itself)</li>
+	<li>MatchID="urn:oasis:names:tc:xacml:2.0:function:anyURI-regexp-match" (in FeSL currently)</li>
+	<li>FeSL uses the XML datatype for anyURI, the spec above as a xacml vocabulary datatype for the same</li>
+</ul>
+
+
+<p>Relationships</p>
+<ul class="alternate" type="square">
+	<li>relationships should be used in determining resource parents and anscestors</li>
+	<li>eg config file specifying which relationships indicate "parent" for the context of XACML policy</li>
+	<li>better would be to have this config as an object in the repository</li>
+	<li>relationships would be used in creating the request context - ie given a PID, look up the ancestry and build the URIs with the various ancestry paths</li>
+</ul>
+
+
+<p>Subscribing to policies using relationships</p>
+
+<p>Using the above, we could support the scenario where</p>
+<ul class="alternate" type="square">
+	<li>a collection has a policy, with the policy directly identifying the collection (rather than through a relationship)</li>
+	<li>resources subscribe to the collection through relationships to the collection</li>
+</ul>
+
+
+<p>This issue seems to identify a need for going further than that - rather than the XACML policies directly specifying the identifiers of the resources, resources subscribe to policies through relationships (policy resource identifiers are implicit rather than explicit).  ie we have XACML policies that do not identify the resources; similar to the way the native Fedora XACML implementation has policy datastreams that implicity are for the object containing the POLICY datastream.</p>
+
+<p>This suggests that the PolicyFinderModule should be capable of locating applicable policies through these subscribing relationships.  And within this needs to be able to match the policies to the request context hierarchical URI(s) identifying the resources.</p>
+
+<p>So we seem to have<br/>
+1) find policies directly based on matching the request context hierarchical resource identifier URI(s) with URIs and regexps in policies (for the scenario where policies directly identify resources)<br/>
+2) find policies through relationships, eg for a hierarchy consisting of<br/>
+/node1/node2/node3<br/>
+a) find all policies matching &lt;node3&gt; hasPolicy &lt;?&gt;<br/>
+b) find all policies matching &lt;node2&gt; hasPolicyForChildren &lt;?&gt;<br/>
+c) find all policies matching &lt;node2&gt; hasPolicyForDescendents &lt;?&gt;<br/>
+d) find all policies matching &lt;node1&gt; hasPolicyForDescendents &lt;?&gt;<br/>
+3) potentially find policies from the policy datastream of the object?</p>
+
+<p>Need to consider impact on</p>
+<ul class="alternate" type="square">
+	<li>policy caching/indexing layer (currently DbXML) - whether to cache all policies, or whether to locate policies directly from Fedora objects (noting that policies may be further constrained eg on subject, so indexing is desireable even when relationships are used for implicit resource identification in the policy.  Note here that a policy with no resources specified applies for all resources, so need to be able to differentiate between that and a policy where resources are implicitly specified through relationships)</li>
+	<li>policy combining algorithm - order of precedence</li>
+</ul>
+
+
+<p>Indexing and resource identifiers</p>
+<ul class="alternate" type="square">
+	<li>the above reference also defines parent and ancestor semantics to be used when identifying resources (in request contexts and policies).  It may be more efficient to use this than the hierarchical URI scheme for resource-in-collection identification as this could potentially avoid needing to do regexp matches using regexps specified in each policy.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11477"><div class="by">Stephen Bayliss, 2010-07-13 18:24 UTC</div><div class="text"><p>Suggestion for an implementation:</p>
+
+<p>Scenario:<br/>
+Policies are stored in Fedora objects (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-577" >
+                <a href="FCREPO-577.html" class="jira-issue-macro-key issue-link"  title="Make XACML policies first-class Fedora digital objects" >
+            
+            FCREPO-577
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) for the purposes of editing.  When policies are added, modified etc, they are cached/indexed, currently in DBXML (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-576" >
+                <a href="FCREPO-576.html" class="jira-issue-macro-key issue-link"  title="Remove dbxml or make it an optional dependency" >
+            
+            FCREPO-576
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) but maybe in an alternative caching/indexing layer in the future.</p>
+
+<p>Relationships such as the following (full URIs tbd) are specified in RELS-EXT to "apply" policies to resources:<br/>
+isPolicyFor (or inverse: hasPolicy)<br/>
+isPolicyForChildren (policy applies to children of a collection) (or inverse: hasPolicyParent)<br/>
+isPolicyForDescendents (policy applies to all descendents of a collection) (or inverse: hasPolicyAncestor)</p>
+
+<p>The mechanism for updating the cache is through the decorator pattern (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-577" >
+                <a href="FCREPO-577.html" class="jira-issue-macro-key issue-link"  title="Make XACML policies first-class Fedora digital objects" >
+            
+            FCREPO-577
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).</p>
+
+<p>So we could:</p>
+
+<p>1) Have policies in Fedora objects which do <b>not</b> specify a XACML resource<br/>
+2) When updates are made either to the XACML policy or to RELS-EXT containing the above relationships:</p>
+<ul class="alternate" type="square">
+	<li>as well as caching/indexing the policy (as per current scenario), build the resource specification part of the XACML policy based on the relationships, ie the Fedora object "template" policy is filled in and the filled-in version is the one pushed to the cache/index.</li>
+</ul>
+
+
+<p>eg<br/>
+pidns:collectionPolicy1 isPolicyForChildren pidns:collection1 results in XACML resource spec "<b>/pindns:collection1/</b>" (all children of collection 1, irrespective of rest of parent hierarchy)<br/>
+pidns:policy1 isPolicyFor pidns:object1 results in XACML resource spec "pidns:object1"</p>
+
+<p>(Ancestors could be an issue, not sure if there is a XACML resource ancestor syntax such as "pidns:collection1/**" or something similar).</p>
+
+<p>In effect, the XACML policies with no resource spec in Fedora objects would be regarded as "template" policies, filled in by examining relationships.  </p>
+
+<p>XACML policies that do have a XACML resource spec would not be regarded as "templates" and would be cached as-is (so relationships "applying" policies to these would have no effect).  Alternatively some kind of attribute could be used to indicate a template vs a complete policy.</p>
+
+<p>Alternatives - a customised of the XACML schema to explicitly specify a "template" resource section identifying how relationships are used to apply the policy.</p>
+
+<p>TBD: how would this be used with policies that eg apply to datastreams belonging to objects that are members of a collection?</p>
+
+<p>There are probably some alternative design choices here (say, allow for POLICY and POLICYTEMPLATE datastreams), but that's the basic principle.</p></div></div>
+<div class="comment" id="comment-11510"><div class="by">Stephen Bayliss, 2010-08-10 16:21 UTC</div><div class="text"><p>Could be addressed as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-762" >
+                <a href="FCREPO-762.html" class="jira-issue-macro-key issue-link"  title="Implement more tightly-defined (ie semantically precise) specification/identification of resources in policies" >
+            
+            FCREPO-762
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ by defining ResourceAttributeDesignators that implement the required semantics.</p></div></div>
+<div class="comment" id="comment-11677"><div class="by">Gregory Jansen, 2010-11-11 22:48 UTC</div><div class="text"><p>The inheritance model here will be more flexible if RELS-EXT relations can also be expressed as "parent contains child" relationships.  The implementation proposed seems to allow one to specify a custom "hasParent" type of property, but not a "hasChild" property.  In the ontology we use at the CDR for instance, the parent has a RELS-EXT property pointing at the child.  </p>
+
+<p>I realize that this is harder to implement in terms of the lookup of the triples.  IMHO it may be time for such lookups to use the triple store.  It could still be considered an optional configuration, but the flexibility is far greater.</p></div></div>
+<div class="comment" id="comment-11679"><div class="by">Stephen Bayliss, 2010-11-12 14:12 UTC</div><div class="text"><p>Agree this should be flexible in<br/>
+(1) specifying how collection membership is implemented (relationship from child to parent, relationship from parent to child) and<br/>
+(2) identifying how the policy applies to the collection and children (policyForCollection, policyForCollectionMembers, policyForCollectionMembersAndDescendents) etc.</p>
+
+<p>Ideally specify this in config rather than code.</p>
+
+<p>For (1) what would be ideal would be to support multiple types of collection implementation (eg both isMember and hasMember of, etc).</p>
+
+<p>For simple situations it could be a case of RELS-EXT lookups, for more complex situations it could be specified as queries on the resource index (SPO, TQL, SPARQL).</p></div></div>
+<div class="comment" id="comment-11724"><div class="by">Stephen Bayliss, 2010-12-03 23:28 UTC</div><div class="text"><p>Suggest an initial implementation as follows:</p>
+
+<p>Configuration currently supports specifying child-&gt;parent relationships, extend this to also allow parent-&gt;child relationships</p>
+<ul class="alternate" type="square">
+	<li>however note that relationships are currently queried directly on the object; we would (optionally?) need to allow RI queries to support parent-&gt;child</li>
+</ul>
+
+
+<p>Then we could support the following:</p>
+
+<p>Policy object:<br/>
+fesl:policy1</p>
+
+<p>Specifies resources in XACML as:<br/>
+/fesl:policy1/*</p>
+
+<p>Resource:<br/>
+ns:pid -&gt; hasPolicy -&gt; fesl:policy1</p>
+
+<p>Grouping of resources for navigation could be completely distinct from applying policies.  (ie, the existing isMemberOf relationships could be removed from the config).</p>
+
+<p>Datastreams - could be handled by other stuff in XACML, for instance a separate ResourceAttributeDesignator and attribute finder (the incoming resource identifier(s) will identify the datastream in any case, we just need to make sure it is "exposed" so that it can be included in the XACML).  Currently I don't believe FeSL supports datastream IDs.</p>
+
+<p>TODO: relationship with <a href="https://jira.duraspace.org/browse/FCREPO-740" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-740</a> - so if needed policy could also be defined at the (traditional) collection level; and resources with multiple policies; relationship with policy combining algorithm.</p></div></div>
+<div class="comment" id="comment-11917"><div class="by">Stephen Bayliss, 2011-04-21 11:37 UTC</div><div class="text"><p>Could do with reviewing this in light of implementation of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-838" >
+                <a href="FCREPO-838.html" class="jira-issue-macro-key issue-link"  title="Allow both parent-child and child-parent relationships in forming hierarchical resource identifiers for FeSL policies" >
+            
+            FCREPO-838
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ and FCREPO-839; suspect these provide the necessary functionality.</p></div></div>
+<div class="comment" id="comment-12990"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-636.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

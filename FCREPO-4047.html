@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4047 NonRdfSourceDescription search index entries not added</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4047</span> NonRdfSourceDescription search index entries not added</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2025-12-22 15:54 UTC</td></tr><tr><th>Updated</th><td>2026-01-22 16:31 UTC</td></tr><tr><th>Resolved</th><td>2026-01-22 16:31 UTC</td></tr><tr><th>Affects versions</th><td>fcrepo 7.0.0</td></tr><tr><th>Fix versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Description</h2>
+<p>When creating Binary resources then reindexing, I observed that the count of NonRdfSourceDescription and all resources at the fcr:stats endpoint was changing after a subsequent reindexing. After more testing, it appears that when adding binaries the NonRdfSourceDescription entry is generally not being added, although I did observe that when I run a bulk object creation script that the NonRdfSourceDescription count goes up about half as much as the Binary count.</p>
+
+<p>To verify this issue, run <tt>mvn jetty:run -pl fcrepo-webapp</tt> on main, go to:<br/>
+<a href="http://localhost:8088/rest/fcr:stats" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/fcr:stats</a></p>
+
+<p>You should see all zeros (assuming you were starting fresh). Then create a couple binaries in the UI, and visit fcr:stats again. You should now see the <tt><a href="http://fedora.info/definitions/v4/repository#Binary" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#Binary</a></tt> count equal to the number of binaries you created, but there are no <tt>NonRdfSourceDescription</tt> entries.</p>
+
+<p>Next, stop jetty, and then run it with reindexing turned on:</p>
+
+<p><tt>mvn -Dfcrepo.rebuild=true -rf fcrepo-webapp jetty:run</tt></p>
+
+<p>Now go to fcr:stats again, and there will be a <tt>NonRdfSourceDescription</tt> count equal to the number of binaries. The <tt>resource_count</tt> also will have gone up, since it includes the <tt>NonRdfSourceDescriptions</tt></p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-27281"><div class="by">Ben Pennell, 2025-12-22 22:19 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/2276" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2276</a> </p>
+
+<p>Also noticed that the resumption functionality for skipping already indexed resources was not working when only using the <tt>fcrepo.rebuild</tt> flag, it would only trigger when the deprecated (and no longer documented) <tt>fcrepo.rebuild.continue</tt> flag was set, so I removed that check and it appears to be resuming again.</p></div></div>
+<p><a href="data/FCREPO-4047.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

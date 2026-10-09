@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-746 risearch queries do not support mulgara:gt and mugara:lt (but mulgara:after and mulgara:before work)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-746</span> risearch queries do not support mulgara:gt and mugara:lt (but mulgara:after and mulgara:before work)</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-07-26 13:30 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>The Mulgara documentation suggests that querying against a datatyping model using the predicates mulgara:gt and mulgara:lt should be possible for XSD datatype int.  However these do not work, but mulgara:before and mulgara:after do work.</p>
+
+<p>eg RELS-EXT:</p>
+
+<p>&lt;rdf:RDF xmlns:fedora-model="info:fedora/fedora-system:def/model#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:myns="http://www.example.org/myns#"&gt;<br/>
+  &lt;rdf:Description rdf:about="info:fedora/ns:pid"&gt;<br/>
+    &lt;myns:temperature rdf:datatype="http://www.w3.org/2001/XMLSchema#int"&gt;30&lt;/myns:temperature&gt;<br/>
+  &lt;/rdf:Description&gt;<br/>
+&lt;/rdf:RDF&gt;</p>
+
+<p>Non-working Query:</p>
+
+<p>select $object $temp from &lt;#ri&gt;                                                      <br/>
+where <br/>
+$object &lt;<a href="http://www.example.org/myns#temperature" class="external-link" rel="nofollow noreferrer">http://www.example.org/myns#temperature</a>&gt; $temp in &lt;#ri&gt;<br/>
+and $temp &lt;<a href="http://mulgara.org/mulgara#gt" class="external-link" rel="nofollow noreferrer">http://mulgara.org/mulgara#gt</a>&gt; '10'^^&lt;xml-schema:int&gt; in &lt;#xsd&gt;</p>
+
+<p>Working Query:</p>
+
+<p>select $object $temp from &lt;#ri&gt;                                                      <br/>
+where <br/>
+$object &lt;<a href="http://www.example.org/myns#temperature" class="external-link" rel="nofollow noreferrer">http://www.example.org/myns#temperature</a>&gt; $temp in &lt;#ri&gt;<br/>
+and $temp &lt;<a href="http://mulgara.org/mulgara#after" class="external-link" rel="nofollow noreferrer">http://mulgara.org/mulgara#after</a>&gt; '10'^^&lt;xml-schema:int&gt; in &lt;#xsd&gt;</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12915"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-746.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

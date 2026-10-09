@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-468 Merge contributions from the ARROW project to OAIProvider</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-468</span> Merge contributions from the ARROW project to OAIProvider</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Filipe Correia</td></tr><tr><th>Created</th><td>2009-03-30 16:40 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-04-06 17:00 UTC</td></tr><tr><th>Components</th><td>legacy - OAIProvider</td></tr><tr><th>Duplicates</th><td><a href="FCREPO-473.html">FCREPO-473</a> Document additional set membership config options</td></tr><tr><th>Duplicates</th><td><a href="FCREPO-472.html">FCREPO-472</a> Option of using PID directly as itemID</td></tr><tr><th>Duplicates</th><td><a href="FCREPO-471.html">FCREPO-471</a> Replace whitespace in setSpecs with underscores</td></tr></table>
+<h2>Description</h2>
+<p>Please refer to this mailing list thread:<br/>
+<a href="http://sourceforge.net/mailarchive/forum.php?thread_name=4ff60e1c0903300655v4db4d33bs876c95ad5a7f622a%40mail.gmail.com&amp;forum_name=fedora-commons-developers" class="external-link" rel="nofollow noreferrer">http://sourceforge.net/mailarchive/forum.php?thread_name=4ff60e1c0903300655v4db4d33bs876c95ad5a7f622a%40mail.gmail.com&amp;forum_name=fedora-commons-developers</a></p>
+
+<p>Background:</p>
+
+<p>Oliver Lucido and Harry Sidhunata of the ARROW project made modifications to Fedora's OAIProvider service to support the following:</p>
+
+<p>1) Configuration of set membership via DC values instead of RELS-EXT.<br/>
+This is simply a configuration change to the proai.properties file (detailed in the attachment), but in order to work reliably, requires special processing by the Fedora OAIProvider in order to deal with DC values that contain whitespace characters.  The patch replaces such characters, when they occur, with underscores so they are syntactically valid with respect to the OAI-PMH protocol, which does not allow spaces in setSpec names.</p>
+
+<p>2) The use of the Fedora object's PID as the oai itemID.  This is convenient because it avoids the problem of the appearance of duplicate records when a) using the default configuration (which uses dc:identifier) and b) multiple dc:identifiers exist in record object's DC datastreams.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-468/10053_ARROW-OAIProvider-Changes.html">ARROW-OAIProvider-Changes.html</a>, 55029 bytes, added by Chris Wilper on 2009-04-03</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-10885"><div class="by">Chris Wilper, 2009-03-31 15:10 UTC</div><div class="text"><p>Filipe, do you know who developed this?   The sourceforge project lists "arrowproject".  Did you work on this or know who to contact?  Thanks,<br/>
+Chris</p></div></div>
+<div class="comment" id="comment-10887"><div class="by">Filipe Correia, 2009-03-31 20:44 UTC</div><div class="text"><p>Hi Chris, I haven't worked on it, but i've contacted one of the project members, asking if the source code was made available somewhere. I'll keep you posted.</p></div></div>
+<div class="comment" id="comment-10888"><div class="by">Chris Wilper, 2009-04-03 14:42 UTC</div><div class="text"><p>Attached document detailing the ARROW changes to the Fedora Commons-provided OAIProvider service.  Filipe received this from Neil Dickson and David Groenewegen.</p></div></div>
+<div class="comment" id="comment-10889"><div class="by">Chris Wilper, 2009-04-03 15:42 UTC</div><div class="text"><p>Filipe, thanks for tracking down the details on this.  I've updated the main description of this issue with a synopsis of the changes made in the ARROW code.</p>
+
+<p>Here is my initial take on what could be done to fold this work in:</p>
+
+<p>1) Apply the setSpec change (replace whitespace with underscores) as-is.  This is a good thing to do in general; regardless of whether it's configured to use DC or RELS-EXT values for this information.</p>
+
+<p>2) Allow the <b>option</b> of using the PID as the itemID.  The ARROW changes hardcode the use of the PID, and I actually think that's a reasonable default configuration, but we still need to keep this configurable for people who don't want to use PIDs directly as their itemIDs.</p>
+
+<p>3) Document how to configure the OAIProvider to use DC instead of RELS-EXT as the source of the set membership information.</p>
+
+<p>4) Document how to configure the OAIProvider to get collection membership in the "top-down" way and the "bottom-up" way (and what the tradeoffs are).  As the ARROW document points out, both ways will work but the OAIProvider documentation does not make that clear.</p>
+
+<p>I want to break this down into multiple issues for tracking purposes, but wanted to see if the full list makes sense to you first.</p></div></div>
+<div class="comment" id="comment-10890"><div class="by">Filipe Correia, 2009-04-03 19:35 UTC</div><div class="text"><p>Looks like a good plan </p></div></div>
+<div class="comment" id="comment-10891"><div class="by">Filipe Correia, 2009-04-03 19:37 UTC</div><div class="text"><p>In the future perhaps we could also look into the OAI provider developed by VTLS in partnership with ARROW. The source code lives here: <a href="http://code.google.com/p/simple-oai-provider/" class="external-link" rel="nofollow noreferrer">http://code.google.com/p/simple-oai-provider/</a>   It seems to have served their purposes better at the time, so it might be worth to look at (I guess it might provide some new ideas, or be good enough to replace PROAI).</p></div></div>
+<div class="comment" id="comment-10893"><div class="by">Chris Wilper, 2009-04-06 17:00 UTC</div><div class="text"><p>Broke out into multiple issues (see links) that can be tracked individually</p></div></div>
+<p><a href="data/FCREPO-468.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

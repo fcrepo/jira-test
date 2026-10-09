@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-497 Content disposition header for filename.extension downloads of datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-497</span> Content disposition header for filename.extension downloads of datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Matt Zumwalt</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-06-02 12:01 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-11-25 14:17 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr><tr><th>Is related to</th><td><a href="FCREPO-703.html">FCREPO-703</a> REST API calls to getDatastreamDissemination fails when XACML enabled, API-A auth disabled</td></tr></table>
+<h2>Description</h2>
+<p>Suggested by Matt Zumwalt at OR09:</p>
+
+<p>To allow people to use a preferred filename and extension when downloading datastreams from Fedora, the REST API should provide a Content-Disposition HTTP header that includes the preferred filename and extension.  The filename can come from the datastream label, if provided.  The extension can either come from the datastream label (if provided), or a mime-type-to-extension map that's configurable on the server.</p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-11052"><div class="by">Stephen Bayliss, 2009-11-03 09:42 UTC</div><div class="text"><p>Suggestion - implement this as a disseminator (maybe some kind of system-provided "download" disseminator?) as it's about how content is delivered </p></div></div>
+<div class="comment" id="comment-11084"><div class="by">Chris Wilper, 2009-11-19 19:15 UTC</div><div class="text"><p>Technically, </p>
+{pid}
+<p>/datastreams/</p>
+{dsID}
+<p>/content <b>is</b> a system-provided disseminator (maps to api-a's "getDatastreamDissemination").  It seems appropriate to me to provide this default behavior from that builtin URL unless we foresee a problem with it. </p></div></div>
+<div class="comment" id="comment-11085"><div class="by">Benjamin Armintor, 2009-11-19 20:38 UTC</div><div class="text"><p>I'm not in a position to look at this in depth yet, but it looks like the work will largely be:<br/>
+1) Make sure that the MIMETypedStream objects are initialized with a header array that includes the presumed content disposition<br/>
+2) Make sure the consumers of MIMETypedStreams are all inspecting the header array and reproducing the values in the HttpServletResponse objects</p>
+
+<p>One possible hitch:  Doesn't the content disposition header require a specification of "attachment" or "inline"?  Are we comfortable assuming one or the other (I'm presuming inline)?</p>
+</div></div>
+<div class="comment" id="comment-11086"><div class="by">Stephen Bayliss, 2009-11-20 11:35 UTC</div><div class="text"><p>I think there are three potential scenarios here, which could depend on the context in which the resource is served:</p>
+
+<p>1) disposition is to be determined by the browser, based on the content-type header, which is what will happen at the moment<br/>
+2) disposition is to be determined by the browser; however if the user instead explicitly wants to save the content (ie "save link as"/"save target as") then a filename should be provided<br/>
+3) disposition is explicitly to download, providing a filename.</p>
+
+<p>To force a download with a filename, content-disposition should be set to 'attachment; filename="name.ext"' <span class="error">&#91;1&#93;</span><span class="error">&#91;2&#93;</span> which covers (3).  Theoretically (2) is covered with 'inline; filename="name.ext"' however in practice some browsers tend to ignore the filename in this case <span class="error">&#91;3&#93;</span>.</p>
+
+<p>I think setting this header should be under the control of the application - ie a parameter on this URL (eg "setContentDisposition=true" or "download=true") so that both "open" and "download" links can be provided by the application as required.</p>
+
+<p>For the filename, I'm not comfortable with using the datastream label alone, as this has different semantics - however it could default to the datastream label if no filename is defined.</p>
+
+<p>The filename+extension could be defined as a new datastream property - or we could make use of RELS-INT for this, eg specifying info:fedora/demo:123/DSID ns:downloadFilename "myfile.ext".  (It would be nice to use an existing vocabulary for the relationship, such as <span class="error">&#91;4&#93;</span>, but as this specifies the header as a class rather than a property we couldn't use this within the existing RELS-INT validation rules).</p>
+
+<p>Where no filename is explicitly specified, I'd suggest <br/>
+1) if there is a datastream label, use that as the filename, determine extension as below<br/>
+2) if there is no datastream label, use the datastream ID as the filename.  If the datastream contains "." then the filename + extension should be the datastream ID.  If the datastream ID doesn't contain "." then determine the extension as below.</p>
+
+<p>(I believe people are currently using dsIDs such as "filename.ext" as most browsers will generate a download filename based on what's after the final "/" in the URL - so this is for consistency with existing behaviour)</p>
+
+<p>For the extension, rather than defining a mime-type-to-extension map, I'd suggest using web.xml - although this does give a one-many mapping between mime-types and extensions it could default to the first extension specified for the mime-type.</p>
+
+<p>(as an aside - browser treatment of content-disposition has not always been entirely consistent - and I believe there are cases where it's also necessary to specify a content-type of eg application/octet-stream to force the download <span class="error">&#91;5&#93;</span>)</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://www.ietf.org/rfc/rfc2183.txt" class="external-link" rel="nofollow noreferrer">http://www.ietf.org/rfc/rfc2183.txt</a> - 2.  The Content-Disposition Header Field<br/>
+<span class="error">&#91;2&#93;</span> <a href="http://www.rfc-editor.org/rfc/rfc2616.txt" class="external-link" rel="nofollow noreferrer">http://www.rfc-editor.org/rfc/rfc2616.txt</a>  - 19.5.1 Content-Disposition<br/>
+<span class="error">&#91;3&#93;</span> <a href="http://stackoverflow.com/questions/381890/securly-download-file-inside-browser-with-correct-filename" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/381890/securly-download-file-inside-browser-with-correct-filename</a><br/>
+<span class="error">&#91;4&#93;</span> <a href="http://www.w3.org/TR/HTTP-in-RDF/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/HTTP-in-RDF/</a>  and <a href="http://www.w3.org/2006/http.rdfs" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2006/http.rdfs</a><br/>
+<span class="error">&#91;5&#93;</span> <a href="http://n4.nabble.com/File-Download-XForms-IE7-tt42785.html#a42787" class="external-link" rel="nofollow noreferrer">http://n4.nabble.com/File-Download-XForms-IE7-tt42785.html#a42787</a></p></div></div>
+<div class="comment" id="comment-11087"><div class="by">Chris Wilper, 2009-11-21 06:59 UTC</div><div class="text"><p>I like the idea of the download=true param to give the linking website/page an opportunity to force a Save As... prompt right in the request url.</p>
+
+<p>I see your point about datastream label not really being intended as a filename, but absent an additional field that specifies a particular filename to use, I think it would act as a good fallback.  Certainly a better fallback than DSID. So I think we're in agreement on the preference-order for where the filename comes from.</p>
+
+<p>RE: web.xml for mapping.  Thinking about this vs an external file (say, in $FEDORA_HOME/server/config), I guess I don't feel too strongly either way.  I see the benefit of the way it's defined in web.xml being somewhat standard.  However, changing what's in web.xml seems somewhat more of a hassle than changing a simple text file for that purpose.  Ultimately, I guess such a mapping could come from some sort of management object in the repository.  But figuring out the "best place" to store this mapping is something that could be done after making something simple work.</p>
+
+<p>RE: a "preferred filename" property.  I think you nailed it, that it's a choice between versioning the FOXML (and METS, and AtomExport) schema to add that, or doing it via RELS-INT.  Whenever it comes to adding a new property, I tend to lean the RDF way myself, because versioning XML schemas is always such a clunky proposition.  As you mentioned, this means either choosing an existing predicate in the wild or minting our own.  I could go either way on that.  Two other things to consider on the RELS-INT front: 1) since it would be a fedora-recognized property, do we attempt any validation on the value?, and 2) the asOfDateTime of the original request is probably significant here: I think we'd probably want to use the RELS-INT as it existed at that time.</p>
+
+<p>Meta-statement about this feature in general:  How about breaking it into three phases?</p>
+
+<p>Phase I:<br/>
+For all GETs on datastream content:<br/>
++ Add 'inline; filename="foo"`content-disposition<br/>
++ Determine filename using DSID, with extension-guessing as described above<br/>
++ If ?download=true, use 'attachment; filename="foo"'</p>
+
+<p>Phase II:<br/>
+For all GETs on datastream content:<br/>
++ Prefer to use the datastream label as the filename.  If undefined, fallback to DSID as described above.</p>
+
+<p>Phase III:<br/>
++ Figure out how a new filename property will be defined and resolved for a given ?asOfDateTime GET request on a datastream.<br/>
++ Determine whether + how this should also be provided when people GET the datastream profile<br/>
++ Consider storing it in the RI (automatic if the choice is to express it in RELS-INT)<br/>
+For all GETs on datastream content:<br/>
++ Prefer to use the filename property as the filename.  If undefined, fallback to label as described above.</p></div></div>
+<div class="comment" id="comment-11089"><div class="by">Stephen Bayliss, 2009-11-21 21:54 UTC</div><div class="text"><p>Thanks for your comments Chris.</p>
+
+<p>On web.xml mapping, I'm leaning towards a separate file (for now, and yes, a repository-managed object in the future).</p>
+
+<p>On validation - should be fairly simple I think to add this, validate that it's a POSIX-compatible filename for example.</p>
+
+<p>On asOfDateTime, I'm not sure - are you saying that if a datastream was requested with asOfDateTime then it should use RELS-INT from the same date/time?  So if a repository manager wanted to add ability to download previous versions of datastreams with a filename, they wouldn't be able to do this?  (without somehow adding a back-dated RELS-INT)</p>
+
+<p>On "+ Add 'inline; filename="foo"`content-disposition " - in itself that's not a problem; but it's not specified in rfc2616 (only "attachment" is), and the majority of browsers don't seem to support it with regard to recognising the filename - <a href="http://greenbytes.de/tech/tc2231/" class="external-link" rel="nofollow noreferrer">http://greenbytes.de/tech/tc2231/</a></p>
+
+<p>I'd suggest we go ahead and implement it, but not document any commitment to it working; avoid setting expectations and then getting lots of reports of problems that we can't actually solve.</p></div></div>
+<div class="comment" id="comment-11102"><div class="by">Chris Wilper, 2009-11-24 00:20 UTC</div><div class="text"><p>On asOfDateTime, really what I was getting at with using a previous version of RELS-INT was that the user experience of the content-disposition (e.g., which filename it produces) would not be preserved if you always used the most recent RELS-INT, regardless of the asOfDateTime given.  Whereas, if it were a FOXML property on the &lt;datastreamVersion&gt; that the request resolves to, that wouldn't be an issue &#8211; as with other metadata like mediaType, the filename to use would be the one attached to the version you're requesting.</p>
+
+<p>Interesting article on which browsers support the suggested filename when using "inline". "inline" is the one that <b>doesn't</b> force a "Save As" dialog (unless the user right clicks and selects "Save As").   I see you've assigned yourself to the issue so I'm sure you've got something reasonable in mind for this.</p></div></div>
+<div class="comment" id="comment-11106"><div class="by">Stephen Bayliss, 2009-11-24 09:22 UTC</div><div class="text"><p>I think I can see what you're getting at with the version of RELS-INT now - if version 1 of a pdf were uploaded, and a filename of "report v1.0.pdf" specified, and then this is replaced by version 2 with a filename name "report v2.0.pdf" then it could be useful to ensure that the user gets the appropriate filename for the version they download.</p>
+
+<p>One fairly significant issue here is that the API-M methods for relationships do not include asOfDateTime as a parameter; so the API doesn't currently support this.  So to implement this properly it would also mean (breaking?) changes to the API which we probably don't want to do at this time.</p>
+
+<p>So do we go forward with with the current RELS-INT view; raising a JIRA issue for this; and clearly documenting this?</p>
+
+<p>An alternative could be to add additional methods to the API - these would be the generic "arbitrary RDF datastream manipulation" methods that have been discussed with regards to the REST API.  (something like <span class="error">&#91;get|add|purge&#93;</span>DatastreamRelationships).  Though theoretically the existing relationships methods should still be modified in a future (major?) release to add asOfDateTime.</p>
+
+<p>On "inline", I'd propose adding it to the header so that those browsers that do support picking up the filename for inline content when a user chooses to download it can use this; but setting expectations - stating that it's not generally supported by all browsers (it is only specified in rfc2183 for internet messages, and not rfc2616 for HTTP).</p></div></div>
+<div class="comment" id="comment-11113"><div class="by">Stephen Bayliss, 2009-11-25 13:56 UTC</div><div class="text"><p>Implemented as follows:</p>
+
+<p>Configuration:</p>
+
+<p>Originally we discussed deriving the filename from (in order) RELS-INT, the label and the datastream ID.  However I believe there are people who, recognising that currently the datastream id will be used as a filename by the browser on download, have included extensions in some of their datastream IDs.  So I've made it all fully-configurable; it might be a bit over-the-top, suggestions welcomed on simplifying this if you feel necessary.</p>
+
+<p>Potential sources for filenames for the content-disposition header are:<br/>
+RELS-INT<br/>
+Datastream Label<br/>
+Datastream ID</p>
+
+<p>These (or a subset) can be specified in any order in fedora.fcfg - the initial setting is per the order we originally came up with.</p>
+
+<p>Additionally, for each source, you can configure whether or not to determine a file extension from the mimetype-to-extensions mapping file - for instance in the case of a label which would normally be a textual description, you would want to do this.  But where you're asserting the filename in RELS-INT you may prefer to include the extension in that name.  And for datastreams that may have already been set up to include an extension in the name you might want to only determine the extension if there's not already one present in the ID.</p>
+
+<p>Potentially the configuration in fedora.fcfg could be simplified by combining the source order configuration and extension configuration into a single value, eg "rels|never label|always id|ifmissing".  Feedback welcomed.</p>
+
+<p>Mapping file:</p>
+
+<p>This is in the server config directory.  This is based on a trimmed-down Tomcat web.xml; potentially we may want to supply something much smaller with just a few of the most well-known extensions/mimetypes?</p>
+
+<p>Code organisation:</p>
+
+<p>I've hived off all the new logic into a new class; arguably it could instead be part of BaseRestResource and/or DatastreamResource; feedback welcomed.  The mime-to-extensions mapping ArrayList is implemented as static - the REST classes get instantiated for every invocation so this is to avoid repeatedly reading this</p>
+
+
+<p>Outstanding issues:</p>
+
+<p>Relationships API currently only supports the latest version of RELS-INT (not asOfDateTime); so filenames specified there will always be returned as the latest (rather than the one specified at the time).</p>
+
+<p>Predicate to use in RELS-INT:  I've used hasDownloadFilename in the fedora relationships namespace - not sure what we want to use here, should this be in the model namespace?</p></div></div>
+<div class="comment" id="comment-11178"><div class="by">Stephen Bayliss, 2009-12-17 15:31 UTC</div><div class="text"><p>Test Notes:</p>
+
+<p>1) The Default config/priorities for filename are to search rels-int, datastream label, datastream id in order to generate a filename; with file extension mapping based on mimetype done for label (always) and id (where not present in the ID).<br/>
+Test case, create an object as follows:<br/>
+DS1 (xml, inline) has ID DS1, no label<br/>
+DS2.xyz (xml, managed content), no label, DSID has an extension as part of it<br/>
+DS3 with label "label for ds3", mime-type of image/jpeg (external, just point to some jpeg out there!)<br/>
+DS4 - image/jpeg, external, with label "label for ds4", RELS-INT (below) specifies filename<br/>
+DS5 - image/jpeg, external, with no label, RELS-INT (below) specifies filename<br/>
+DS6 - image/jpeg, redirect, with label "label for ds6"</p>
+
+
+<p>RELS-INT:<br/>
+&lt;rdf:RDF xmlns:fedora-model="info:fedora/fedora-system:def/model#" xmlns:ns="http://www.example.org/dummy#" <br/>
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"&gt;<br/>
+  &lt;rdf:Description rdf:about="info:fedora/changeme:2/DS4"&gt;<br/>
+    &lt;fedora-model:downloadFilename&gt;datastream 4 from rels.pqr&lt;/fedora-model:downloadFilename&gt;<br/>
+  &lt;/rdf:Description&gt;<br/>
+  &lt;rdf:Description rdf:about="info:fedora/changeme:2/DS5"&gt;<br/>
+    &lt;fedora-model:downloadFilename&gt;datastream 5 from rels.abc&lt;/fedora-model:downloadFilename&gt;<br/>
+  &lt;/rdf:Description&gt;<br/>
+  &lt;rdf:Description rdf:about="info:fedora/changeme:2/DS6"&gt;<br/>
+    &lt;fedora-model:downloadFilename&gt;datastream 6 from rels.pqr&lt;/fedora-model:downloadFilename&gt;<br/>
+  &lt;/rdf:Description&gt;<br/>
+&lt;/rdf:RDF&gt;</p>
+
+
+
+<p>Check (specify download=true):<br/>
+1 DS1 downloads as DS1.xml<br/>
+2 DS2 downloads as DS2.xyz<br/>
+3 DS3 downloads as label for ds3.jpg<br/>
+4 DS4 donloads as "datastream 4 from rels.pqr"<br/>
+5 DS5 downloads as datastream5 from rels.abc"<br/>
+6 DS6. - no download if redirect</p>
+
+<p>Check for these ("live http headers" in firefox) that without download=true, content-disposition header is present with the filename (type inline).  Attempt to save DS3 in browser and check it prompts with label for ds3.jpg (firefox; browser coverage is patchy so may not work for others)</p>
+
+<p>2) Change configuration  modify datastreamContentDispositionInlineEnabled to "false", restart fedora, check a couple of above and check there is now no content disposition header (livehttpheaders in firefox); also check a couple of the above still download as before once download=true is added back</p>
+
+<p>3) Change configuration datastreamFilenameSource to "label rels id", restart fedora<br/>
+repeat above checks:<br/>
+1 DS1 downloads as DS1.xml<br/>
+2 DS2 downloads as DS2.xyz<br/>
+3 DS3 downloads as label for ds3.jpg<br/>
+4 DS4 now downloads as "label for ds4.jpg"<br/>
+5 DS5 downloads as datastream5 from rels.abc<br/>
+6 DS6 no download if redirect</p>
+
+<p>4) modify datastreamExtensionMappingLabel to "never" in config, restart fedora - repeat 3, check filename now has no extension "label for ds3"</p>
+
+<p>5) modify datastreamFilenameSource to be " " in config, restart fedora.<br/>
+Check in all cases above the default values "download" is used as the filename.</p>
+
+</div></div>
+<div class="comment" id="comment-11433"><div class="by">Daniel Davis, 2010-06-17 20:33 UTC</div><div class="text"><p>Microsoft word documents served from Tomcat are getting the MIME-type of application/msword changed to application/vnd.ms-word so that mapping was added.</p></div></div>
+<p><a href="data/FCREPO-497.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

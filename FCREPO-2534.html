@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2534 Mixed content in Fedora UI when used with SSL</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2534</span> Mixed content in Fedora UI when used with SSL</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2017-07-13 21:17 UTC</td></tr><tr><th>Updated</th><td>2018-09-06 05:26 UTC</td></tr><tr><th>Resolved</th><td>2017-07-26 14:44 UTC</td></tr><tr><th>Components</th><td>fcrepo-webapp</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.3</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0, Fedora 4.7.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2574.html">FCREPO-2574</a> Mixed form content in UI when used with SSL</td></tr></table>
+<h2>Environment</h2>Fedora behind SSL/TLS termination proxy
+<h2>Description</h2>
+<p>Links to UI assets (css, js, etc) are always http, even if the repository is behind an SSL termination proxy, and the X-Forwarded-Proto header indicates https.</p>
+
+<p>Suggestions on on the table include allowing the protocol in hyperlinks to be relative, configurable, or reactive to X-Forwarded-Proto.  </p>
+
+<p>See also:<br/>
+<a href="https://opensource.ncsa.illinois.edu/jira/browse/NDS-644" class="external-link" rel="nofollow noreferrer">https://opensource.ncsa.illinois.edu/jira/browse/NDS-644</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1208" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1208</a></p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-19191"><div class="by">Andrew Woods, 2017-07-13 22:00 UTC</div><div class="text"><p>Actually, I do not believe that UI assets are always http, but rather the base URL used to serve those assets are the same as the requesting URL.</p>
+
+<p>In the case of <a href="https://github.com/fcrepo4/fcrepo4/pull/1208" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1208</a> , the proxy_pass directive is requesting http resources:</p>
+
+<p>&gt; <tt>proxy_pass <a href="http://c1mckay-sgki99-fedoraerror-8080" class="external-link" rel="nofollow noreferrer">http://c1mckay-sgki99-fedoraerror-8080</a>;</tt></p></div></div>
+<div class="comment" id="comment-19192"><div class="by">Aaron Birkland, 2017-07-13 22:25 UTC</div><div class="text"><p>The proxy_pass is correct for a termination proxy;  It's accepting TLS requests from the outside world, decrypting (TLS/SSL termination), and proxying the requests to Fedora unencrypted. </p>
+
+<p>The user/browser in the outside world is using https, but gets back html that says:</p>
+
+<p>&lt;script type="text/javascript" src="<span class="error">&#91;<font color="#0066cc"><a href="http://sgki99-fedoraerror.workbench.nationaldataservice.org/fcrepo/rest/fcr:assets/common.js" class="external-link" rel="nofollow noreferrer">http://sgki99-fedoraerror.workbench.nationaldataservice.org/fcrepo/rest/fcr:assets/common.js</a></font>&#93;</span>"&gt;&lt;/script&gt;</p>
+
+<p>That's an unencrypted http link.  The baseuri is good except for protocol, which does not match the original request (which was https).  The browser is refusing to load it because it is violating the mixed content rule.  In order for it to work, one or more of the following needs to be true:</p>
+<ul>
+	<li>HSTS and/or CSP directives instruct the client to ignore stated protocol and always uses https</li>
+	<li>The link in the html is https instead of http</li>
+	<li>The link is relative, so the browser uses the same protocol as the initlial request (http)</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19193"><div class="by">Andrew Woods, 2017-07-13 22:30 UTC</div><div class="text"><p>Agreed. I was just clarify the description of this issue:</p>
+<blockquote><p>Links to UI assets (css, js, etc) are always http</p></blockquote></div></div>
+<div class="comment" id="comment-19194"><div class="by">Esmé Cowles, 2017-07-13 22:52 UTC</div><div class="text"><p>So the proxy's URL-rewriting is rewriting <a href="http://c1mckay-sgki99-fedoraerror-8080" class="external-link" rel="nofollow noreferrer">http://c1mckay-sgki99-fedoraerror-8080</a> to <a href="http://sgki99-fedoraerror.workbench.nationaldataservice.org" class="external-link" rel="nofollow noreferrer">http://sgki99-fedoraerror.workbench.nationaldataservice.org</a> instead of <a href="https://sgki99-fedoraerror.workbench.nationaldataservice.org?" class="external-link" rel="nofollow noreferrer">https://sgki99-fedoraerror.workbench.nationaldataservice.org?</a></p>
+
+<p>I'm not opposed to making some provision for customizing the asset base URL, but it seems like a bug in the proxy's URL-rewriting if it doesn't correctly rewrite the protocol when rewriting URLs.</p></div></div>
+<div class="comment" id="comment-19195"><div class="by">Aaron Birkland, 2017-07-13 23:22 UTC</div><div class="text"><p>In general, all a reverse proxy does in terms of rewriting occurs in http headers.  The entity bodies are considered opaque and are unmodified (except for stuff like decrypting, transfer encoding, and other transport-related stuff).  This is very lightweight.</p>
+
+<p>The problem is that links within the <b>documents</b> fedora produces (in this case, the html for the UI) contain plain links.  Inspecting those documents and modifying them (e.g to re-write URIs) is a specialized task, requiring knowledge of the media types, etc.  Essentially you're piping the response through a specialized grep   I know nginx and apache also have modules that can do that too.  The problem is that this is more heavyweight and resource-intensive than simple proxying.</p>
+
+<p>For something as simple and straightforward as TLS/SSL termination, usually the expense of re-writing entity bodies is not justified.  That's why headers like X-Forwarded-Proto exist:  So that they can give the web apps the information they need in order to create a document that doesn't have to be rewritten.  So it would be a win if Fedora supports that. </p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19196"><div class="by">Andrew Woods, 2017-07-14 13:15 UTC</div><div class="text"><p>Thanks, Aaron Birkland. Since there are many places in the codebase that rely on the Jersey request context for the <tt>uriInfo</tt>, it would seem that the ideal option here would be to use the value of the <tt>X-Forwarded-Proto</tt> header, if it exists, otherwise use the Jersey-injected <tt>uriInfo</tt>.</p>
+
+<p>Although the <tt>getRequestUriBuilder().scheme()</tt> approach could help with the /fcr:assets URLs, it is likely insufficient for the variety of other places in the codebase that rely on <tt>uriInfo</tt>.</p></div></div>
+<div class="comment" id="comment-19197"><div class="by">Jared Whiklo, 2017-07-14 13:50 UTC</div><div class="text"><p>I am experimenting with removing the entire $uriBuilder from common-head.vsl along the lines of the submitted PR, if I can get it to work I can make the suggestion on that PR.</p></div></div>
+<div class="comment" id="comment-19198"><div class="by">Andrew Woods, 2017-07-14 13:58 UTC</div><div class="text"><p>Thanks, Jared Whiklo.</p>
+
+<p>That will probably resolve the issue of <a href="https://github.com/fcrepo4/fcrepo4/pull/1208" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1208</a> .</p>
+
+<p>Aaron Birkland raises the larger question of potentially using the value of the <tt>X-Forwarded-Proto</tt> header for in URLs found in the body of HTTP responses.</p>
+
+<p>...but incremental progress is good.</p></div></div>
+<div class="comment" id="comment-19199"><div class="by">Jared Whiklo, 2017-07-14 14:01 UTC</div><div class="text"><p>My suggestion is <a href="https://github.com/fcrepo4/fcrepo4/pull/1208#issuecomment-315365666" class="external-link" rel="nofollow noreferrer">here</a> but boils down to making references from /static which takes them outside the Jersey URI map of /rest. It also moves the common.js and common.css into this /static location because it makes sense that they not be in with the Velocity templates. Lastly moving the common.(js|css) means that the ViewAssets class is not used.</p></div></div>
+<div class="comment" id="comment-19234"><div class="by">Andrew Woods, 2017-07-26 14:44 UTC</div><div class="text"><p>Resolved with (master): <a href="https://github.com/fcrepo4/fcrepo4/commit/0b56e89802c437214b638c976c3a612138de9966" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/0b56e89802c437214b638c976c3a612138de9966</a></p>
+
+<p> </p>
+
+<p>Resolved with (4.7-maintenance): &lt;pending PR&gt;</p></div></div>
+<div class="comment" id="comment-19251"><div class="by">Andrew Woods, 2017-08-21 15:59 UTC</div><div class="text"><p>PR for 4.7-maintenance: <a href="https://github.com/fcrepo4/fcrepo4/pull/1220" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1220</a></p></div></div>
+<div class="comment" id="comment-19274"><div class="by">Aaron Birkland, 2017-08-31 18:38 UTC</div><div class="text"><p>Resolved in 4.7-maintenance with:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/43cb87086420c447cb6801f886fe88d77100c658" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/43cb87086420c447cb6801f886fe88d77100c658</a></p></div></div>
+<div class="comment" id="comment-20147"><div class="by">Justin Merz, 2018-08-21 23:18 UTC</div><div class="text"><p>Just an FYI, I have a wrapper solution to support the Forwarded header in fcrepo.  It wraps the UriInfo class and injects it postContruct in FedoraLdp. We have been using the implementation at the UCD library for a couple months now and thought I would make you aware.</p>
+
+<p> </p>
+
+<p>Repo:</p>
+
+<p><a href="https://github.com/UCDavisLibrary/fcrepo4" class="external-link" rel="nofollow noreferrer">https://github.com/UCDavisLibrary/fcrepo4</a></p>
+
+<p>Wrapper:</p>
+
+<p><a href="https://github.com/UCDavisLibrary/fcrepo4/blob/fcrepo-4.7.5-headers/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraUrlInfoWrapper.java" class="external-link" rel="nofollow noreferrer">https://github.com/UCDavisLibrary/fcrepo4/blob/fcrepo-4.7.5-headers/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraUrlInfoWrapper.java</a></p>
+
+<p>Inject:</p>
+
+<p><a href="https://github.com/UCDavisLibrary/fcrepo4/blob/fcrepo-4.7.5-headers/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L175" class="external-link" rel="nofollow noreferrer">https://github.com/UCDavisLibrary/fcrepo4/blob/fcrepo-4.7.5-headers/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L175</a></p></div></div>
+<p><a href="data/FCREPO-2534.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

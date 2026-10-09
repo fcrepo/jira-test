@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2384 Add optional AppleTrees</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2384</span> Add optional AppleTrees</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Daniel Lamb</td></tr><tr><th>Created</th><td>2017-01-16 15:06 UTC</td></tr><tr><th>Updated</th><td>2017-08-16 15:04 UTC</td></tr><tr><th>Resolved</th><td>2017-08-16 15:04 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>configuration</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2389.html">FCREPO-2389</a> Refactor fcrepo-webapp-plus around externalized Spring configuration</td></tr></table>
+<h2>Description</h2>
+<p>This task is to add the AppleTree capability into Fedora's id-translation chain as an option that by default is NOT enabled.<br/>
+The reason it should not be enabled by default is because it should only be used on new repositories... not repositories that have existing content.</p>
+
+<p>See: </p>
+<ul class="alternate" type="square">
+	<li><a href="https://gitlab.amherst.edu/acdc/acrepo-apple-trees/blob/c79ed5788420d428c70029450dfe6b62e421a777/src/main/java/edu/amherst/acdc/orchard/AppleTreeConverter.java" class="external-link" rel="nofollow noreferrer">https://gitlab.amherst.edu/acdc/acrepo-apple-trees/blob/c79ed5788420d428c70029450dfe6b62e421a777/src/main/java/edu/amherst/acdc/orchard/AppleTreeConverter.java</a></li>
+	<li><a href="https://gitlab.amherst.edu/acdc/amherst-fedora-webapp/blob/0dd2975b4c667f96b06a535463117a6b1e1e21b0/src/main/webapp/WEB-INF/classes/spring/configuration.xml#L66" class="external-link" rel="nofollow noreferrer">https://gitlab.amherst.edu/acdc/amherst-fedora-webapp/blob/0dd2975b4c667f96b06a535463117a6b1e1e21b0/src/main/webapp/WEB-INF/classes/spring/configuration.xml#L66</a></li>
+</ul>
+
+<h2>Comments (25)</h2>
+<div class="comment" id="comment-18427"><div class="by">Daniel Lamb, 2017-01-19 19:08 UTC</div><div class="text"><p>Andrew Woods Looks like this will only work off the 4.7.0 release.  On 4.8.0-SNAPSHOT and 4.7.1-RC I'm getting this:</p>
+
+<p><span class="error">&#91;WARNING&#93;</span> <br/>
+Dependency convergence error for org.fcrepo:fcrepo-kernel-api:4.8.0-SNAPSHOT paths to dependency are:<br/>
++-org.fcrepo:fcrepo-webapp:4.8.0-SNAPSHOT<br/>
+  +-org.fcrepo:fcrepo-kernel-modeshape:4.8.0-SNAPSHOT<br/>
+    +-org.fcrepo:fcrepo-kernel-api:4.8.0-SNAPSHOT<br/>
+and<br/>
++-org.fcrepo:fcrepo-webapp:4.8.0-SNAPSHOT<br/>
+  +-org.fcrepo:fcrepo-jms:4.8.0-SNAPSHOT<br/>
+    +-org.fcrepo:fcrepo-kernel-api:4.8.0-SNAPSHOT<br/>
+and<br/>
++-org.fcrepo:fcrepo-webapp:4.8.0-SNAPSHOT<br/>
+  +-org.fcrepo:fcrepo-jms:4.8.0-SNAPSHOT<br/>
+    +-org.fcrepo:fcrepo-event-serialization:4.8.0-SNAPSHOT<br/>
+      +-org.fcrepo:fcrepo-kernel-api:4.8.0-SNAPSHOT<br/>
+and<br/>
++-org.fcrepo:fcrepo-webapp:4.8.0-SNAPSHOT<br/>
+  +-org.fcrepo:fcrepo-auth-common:4.8.0-SNAPSHOT<br/>
+    +-org.fcrepo:fcrepo-kernel-api:4.8.0-SNAPSHOT<br/>
+and<br/>
++-org.fcrepo:fcrepo-webapp:4.8.0-SNAPSHOT<br/>
+  +-edu.amherst.acdc:acrepo-apple-trees:0.1.1<br/>
+    +-org.fcrepo:fcrepo-kernel-api:4.7.0</p>
+
+<p>Looks like there'd have to be some upstream changes for it to work with anything past 4.7.0.</p></div></div>
+<div class="comment" id="comment-18428"><div class="by">Unknown, 2017-01-19 19:40 UTC</div><div class="text"><p>Daniel Lamb you will see in the <a href="https://gitlab.amherst.edu/acdc/acrepo-apple-trees" class="external-link" rel="nofollow noreferrer">readme</a> that the version in maven central corresponds to Fedora 4.7.0. Because the core Fedora API is not versioned separately, I can only work with released artifacts of Fedora.</p></div></div>
+<div class="comment" id="comment-18429"><div class="by">Andrew Woods, 2017-01-19 19:54 UTC</div><div class="text"><p>Given the circular dependency of Fedora on AppleTree and vice versa, coupled with the fact they we have not yet moved to versioning the Fedora API separately... is there another option available besides bringing AppleTree into the Fedora codebase?</p></div></div>
+<div class="comment" id="comment-18430"><div class="by">Daniel Lamb, 2017-01-19 19:54 UTC</div><div class="text"><p>Unknown +1 and thanks for this work.  I guess that establishes the scope of this ticket to 4.7.0 </p>
+
+<p>I added the bean entry for the apple tree converter here: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-webapp/src/main/resources/spring/rest.xml#L22-L25" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-webapp/src/main/resources/spring/rest.xml#L22-L25</a>.  I have managed to compile successfully with 4.7.0 and all tests pass.</p>
+
+<p>My best guess for how to make conditional is to make the class for the bean come from configuration, with the default value being the original id converter?  We're kind of locked in here since it's a compile time dependency.  Which also brings up the question: Would you encourage folks building their own, or would a separate war be offered?</p></div></div>
+<div class="comment" id="comment-18431"><div class="by">Daniel Lamb, 2017-01-19 19:55 UTC</div><div class="text"><p>Ninja'd by Andrew Woods.  Yes, this does bring up complications.</p></div></div>
+<div class="comment" id="comment-18432"><div class="by">Unknown, 2017-01-19 20:03 UTC</div><div class="text"><p>Andrew Woods there are two options &#8211; version fcrepo-kernel-api independently or bring the apple trees code into the main code base. That is: either make Fedora more modular or make Fedora more monolithic.</p></div></div>
+<div class="comment" id="comment-18433"><div class="by">Unknown, 2017-01-19 20:17 UTC</div><div class="text"><p>Daniel Lamb as to your question "Would you encourage folks to build their own". Yes, that's the whole point of <a href="https://gitlab.amherst.edu/acdc/amherst-fedora-webapp" class="external-link" rel="nofollow noreferrer">https://gitlab.amherst.edu/acdc/amherst-fedora-webapp</a>. And I think that's something that should be encouraged.</p></div></div>
+<div class="comment" id="comment-18434"><div class="by">Andrew Woods, 2017-01-19 21:10 UTC</div><div class="text"><p>The most flexibility around configuration comes from piecing together and building your own webapp... but in terms of ease of use, that is unfortunately not realistic to expect as a requirement of a broad community installation base. People want a webapp that can be dropped into the servlet container and works... with some deploy- or run-time configuration. That said, providing documented patterns for how to piece together more custom webapps would be ideal; hence the agenda item (not covered) on today's tech call.</p>
+
+<p>In the meantime, until we version the kernel-api separately, Unknown, would you be open to one of the following:</p>
+<ol>
+	<li>Bringing <a href="https://gitlab.amherst.edu/acdc/acrepo-apple-trees" class="external-link" rel="nofollow noreferrer">https://gitlab.amherst.edu/acdc/acrepo-apple-trees</a> into fcrepo-exts?</li>
+	<li>Bringing <a href="https://gitlab.amherst.edu/acdc/acrepo-apple-trees" class="external-link" rel="nofollow noreferrer">https://gitlab.amherst.edu/acdc/acrepo-apple-trees</a> into the core codebase as a maven module?</li>
+	<li>Bringing AppleTreeConverter.java and its test into fcrepo-kernel-api?</li>
+</ol>
+
+</div></div>
+<div class="comment" id="comment-18435"><div class="by">Unknown, 2017-01-19 21:25 UTC</div><div class="text"><p>Andrew Woods I am perfectly happy keeping this as an external module, but if you feel that it would be better to have in fcrepo4-exts, that's fine. As you probably know, the code uses Gradle as a build tool and is written in Clojure. The earlier version used Java, but I've made a number of changes to that code, so I wouldn't recommend using the old Java code as-is. But if you don't mind that, I can just transfer the <a href="https://github.com/acoburn/acrepo-apple-trees" class="external-link" rel="nofollow noreferrer">github fork</a> to fcrepo4-exts.</p></div></div>
+<div class="comment" id="comment-18436"><div class="by">Andrew Woods, 2017-01-19 21:41 UTC</div><div class="text"><p>Clojure and Gradle are fine. The immediate reason for bringing the project into the Fedora fold is to resolve the dependency clash issue; specifically, we would want to release SNAPSHOT artifacts of the AppleTree to the Sonatype snapshot repository and update the project version number to be aligned with Fedora's version: 4.8.0-SNAPSHOT:<br/>
+<a href="https://github.com/acoburn/acrepo-apple-trees/blob/master/build.gradle#L35" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/acrepo-apple-trees/blob/master/build.gradle#L35</a></p>
+
+<p>In this case, the implication would be that we integrate the AppleTree into fcrepo-webapp-plus instead of the core code due to the fact that we do not allow the core code to depend on fcrepo4-exts dependencies.</p>
+
+<p>The alternatives are to either bring the single functional and single test classes into an existing core module (fcrepo-kernel-api?) or as its own core maven module.</p></div></div>
+<div class="comment" id="comment-18437"><div class="by">Unknown, 2017-01-19 21:58 UTC</div><div class="text"><p>Long-term, it would make sense to implement something similar to what I have and put it in fcrepo-kernel-modeshape, then make it part of the default converter chain in fcrepo-http-common and as part of the spring configuration of fcrepo-webapp. But that would probably be for some 4.8.0 version &#8211; but importantly, it would mean that users with existing content couldn't migrate to that version. I don't know what the plan would be for that.</p>
+
+<p>Medium-term, making this part of webapp-plus is fine. But again, this wouldn't be part of the 4.7.1 release (unless you want to reset the clock again &#8211; please don't), and people will still want to know how to migrate content. The answer is: they can't, which doesn't fit so well with patch releases.</p>
+
+<p>Short-term, which is what I'm interested in, as soon as the 4.7.1 release hits maven central, I'll make sure that the converter code works with it.</p></div></div>
+<div class="comment" id="comment-18438"><div class="by">Unknown, 2017-01-19 22:03 UTC</div><div class="text"><p>Daniel Lamb getting this to work with Maven (w/o the dependency convergence errors) should be as simple as adding an &lt;exclusions&gt; clause to the import directive. Like this: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L154-L163" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L154-L163</a></p>
+
+<p>Be sure to exclude the fcrepo-kernel-api import, and possibly also the commons-codec dependency.</p></div></div>
+<div class="comment" id="comment-18439"><div class="by">Andrew Woods, 2017-01-19 22:12 UTC</div><div class="text"><p>Unknown, long-, medium-, and short-term plans all sound good.<br/>
+This is definitely targeting 4.8.0 and not 4.7.1.<br/>
+As for migrations, we will start by making the AppleTree optional... and over time determine other solutions.</p>
+
+<p>Daniel Lamb, are you good to go?</p></div></div>
+<div class="comment" id="comment-18446"><div class="by">Unknown, 2017-01-20 01:18 UTC</div><div class="text"><p>Daniel Lamb I have an even better option for you, namely that you do nothing more than you already have.</p>
+
+<p>I updated the dependency requirements for acrepo-apple-trees such that the fcrepo dependency is <tt>compileOnly</tt> (or <tt>provided</tt> in Maven-speak). This means that your dependency resolution rules won't complain. I tested this locally using an <tt>acrepo-apple-trees</tt> compiled with fcrepo-kernel-api/4.7.0 but built into a web application based on fcrepo-*/4.7.1-SNAPSHOT.</p>
+
+<p>The version you'll want to use for this is 0.1.2, which should be available on maven central within a few hours. And incidentally, if you include this, you may want to set the ID minter to use the <a href="https://github.com/fcrepo4-exts/fcrepo-mint/blob/master/src/main/java/org/fcrepo/mint/UUIDPidMinter.java" class="external-link" rel="nofollow noreferrer">UUIDPidMinter</a> rather than the default UUIDPathMinter, since you don't need to generate the additional hierarchy. At Amherst we are using a custom minter module that just increments ID values with a pre-defined prefix: <a href="https://gitlab.amherst.edu/acdc/acrepo-tulsi" class="external-link" rel="nofollow noreferrer">https://gitlab.amherst.edu/acdc/acrepo-tulsi</a>. And yes, that, too is written in Clojure.</p></div></div>
+<div class="comment" id="comment-18450"><div class="by">Daniel Lamb, 2017-01-20 16:18 UTC</div><div class="text"><p>Unknown Sounds good.  </p>
+
+<p>Andrew Woods So, to recap what needs to be done:</p>
+<ul>
+	<li>Make changes in fcrepo-webapp-plus</li>
+	<li>Use 0.1.2 of Apple Trees</li>
+	<li>Change configuration to use the UUIDPidMinter instead of the UUIDPathMinter</li>
+</ul>
+
+
+<p>Is putting this in fcrepo-webapp-plus sufficient for it being 'optional'?  Or do I need to make sure fcrepo-webapp-plus can be compiled with and without apple trees?</p></div></div>
+<div class="comment" id="comment-18451"><div class="by">Andrew Woods, 2017-01-20 19:04 UTC</div><div class="text"><p>Daniel Lamb, actually, putting it into fcrepo4-webapp (instead of plus) would be nice. The AppleTree and UUIDPidMinter go together... and should be both enabled or disabled. <br/>
+As mentioned, they should be disabled by default.</p></div></div>
+<div class="comment" id="comment-18455"><div class="by">Unknown, 2017-01-20 20:18 UTC</div><div class="text"><p>I actually don't know what "disabled by default" means in the context of Spring XML. Andrew Woods do you mean using a separate maven profile? Or commenting-out the relevant Spring beans? Or you mean adding a dependency to <tt>fcrepo-webapp</tt> and leaving the Spring bean construction out of the XML so that the <tt>apple-trees</tt> jar is present in the war but just not used by default? It is, perhaps, also worth noting that <tt>UUIDPidMinter</tt> is in <tt>fcrepo4-exts/fcrepo-mint</tt>, so you can decide what that means for <tt>fcrepo-webapp</tt>.</p></div></div>
+<div class="comment" id="comment-18456"><div class="by">Andrew Woods, 2017-01-20 20:50 UTC</div><div class="text"><p>Unknown, thanks for highlighting the fact that <tt>UUIDPidMinter</tt> is in fcrepo4-exts... that would certainly bring us back to doing this configuration in <tt>fcrepo-webapp-plus</tt>.</p>
+
+<p>For the sake of this current ticket, let's just add the AppleTree dependency to fcrepo-webapp-plus without specific configuration enabled.<br/>
+There is a follow-on ticket for refactoring fcrepo-webapp-plus to be more flexible: <a href="https://jira.duraspace.org/browse/FCREPO-2389" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2389</a> </p></div></div>
+<div class="comment" id="comment-18462"><div class="by">Daniel Lamb, 2017-01-23 13:42 UTC</div><div class="text"><p>Andrew Woods So just to confirm, I'm only adding the Apple Tree dependency to the pom in fcrepo-webapp-plus?</p></div></div>
+<div class="comment" id="comment-18463"><div class="by">Andrew Woods, 2017-01-23 14:12 UTC</div><div class="text"><p>Daniel Lamb, yes. Thank you.</p></div></div>
+<div class="comment" id="comment-18464"><div class="by">Unknown, 2017-01-23 16:55 UTC</div><div class="text"><p>Daniel Lamb make that version 0.1.3 of <tt>acrepo-apple-trees</tt>. That version is on maven central now.</p></div></div>
+<div class="comment" id="comment-18486"><div class="by">Daniel Lamb, 2017-01-25 03:09 UTC</div><div class="text"><p> PR for this is ready for review: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/54" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/54</a></p>
+
+<p>I was getting a strange conflict that I resolved by excluding clojure logging.  I'm not sure what the implications of that exclusion are.</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Dependency convergence error <span class="code-keyword">for</span> org.clojure:clojure:1.8.0 paths to dependency are:
++-org.fcrepo:fcrepo-webapp-plus:4.8.0-SNAPSHOT
+  +-edu.amherst.acdc:acrepo-apple-trees:0.1.3
+    +-org.clojure:clojure:1.8.0
+and
++-org.fcrepo:fcrepo-webapp-plus:4.8.0-SNAPSHOT
+  +-edu.amherst.acdc:acrepo-apple-trees:0.1.3
+    +-org.clojure:tools.logging:0.3.1
+      +-org.clojure:clojure:1.4.0
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18494"><div class="by">Andrew Woods, 2017-01-26 00:09 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/49c8d14747b6db4659e48a4a6046efc21aba3647" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/49c8d14747b6db4659e48a4a6046efc21aba3647</a></p></div></div>
+<div class="comment" id="comment-19177"><div class="by">Andrew Woods, 2017-07-10 22:40 UTC</div><div class="text"><p>Related PR to 4.7-maintenance: <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/58" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/pull/58</a></p></div></div>
+<div class="comment" id="comment-19178"><div class="by">Danny Bernstein, 2017-07-11 03:11 UTC</div><div class="text"><p>Resolved in 4.7-maintenance (previously committed in master):</p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/04f63f9da1aa8ebd5eff4d7fa7f2392107724384" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-webapp-plus/commit/04f63f9da1aa8ebd5eff4d7fa7f2392107724384</a></p>
+
+<p> </p></div></div>
+<p><a href="data/FCREPO-2384.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

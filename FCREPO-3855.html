@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3855 One-click is displaying errors when running on java 19</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3855</span> One-click is displaying errors when running on java 19</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2022-10-17 17:35 UTC</td></tr><tr><th>Updated</th><td>2024-09-02 12:19 UTC</td></tr><tr><th>Resolved</th><td>2024-07-24 14:41 UTC</td></tr><tr><th>Components</th><td>core</td></tr><tr><th>Affects versions</th><td>Fedora 6.2.0</td></tr></table>
+<h2>Environment</h2>OSX Monterey,  Java 19
+<h2>Description</h2>
+<p>When I download[ 6.2.0 of the releases page|https://github.com/fcrepo/fcrepo/releases/download/fcrepo-6.2.0/fcrepo-webapp-6.2.0-jetty-console.jar] and run the following with java 19, I’m getting the following error in the stack trace </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ java -jar ~/Downloads/fcrepo-webapp-6.2.0-jetty-console.jar
+
+Exception in thread "main" java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at org.simplericity.jettyconsole.JettyConsoleBootstrapMainClass.startJettyConsole(JettyConsoleBootstrapMainClass.java:229)
+	at org.simplericity.jettyconsole.JettyConsoleBootstrapMainClass.run(JettyConsoleBootstrapMainClass.java:123)
+	at org.simplericity.jettyconsole.JettyConsoleBootstrapMainClass.main(JettyConsoleBootstrapMainClass.java:94)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:119)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:578)
+	at org.simplericity.jettyconsole.JettyConsoleBootstrapMainClass.startJettyConsole(JettyConsoleBootstrapMainClass.java:227)
+	... 2 more
+Caused by: java.lang.RuntimeException: java.lang.IllegalAccessException: class org.simplericity.macify.eawt.DefaultApplication cannot access class com.apple.eawt.Application (in module java.desktop) because module java.desktop does not export com.apple.eawt to unnamed module @52d455b8
+	at org.simplericity.macify.eawt.DefaultApplication.&lt;init&gt;(DefaultApplication.java:69)
+	at org.simplericity.jettyconsole.JettyConsoleStarter.initAppleExtensions(JettyConsoleStarter.java:209)
+	at org.simplericity.jettyconsole.JettyConsoleStarter.initSwingApp(JettyConsoleStarter.java:195)
+	at org.simplericity.jettyconsole.JettyConsoleStarter.run(JettyConsoleStarter.java:160)
+	at org.simplericity.jettyconsole.JettyConsoleStarter.main(JettyConsoleStarter.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	... 4 more
+Caused by: java.lang.IllegalAccessException: class org.simplericity.macify.eawt.DefaultApplication cannot access class com.apple.eawt.Application (in module java.desktop) because module java.desktop does not export com.apple.eawt to unnamed module @52d455b8
+	at java.base/jdk.internal.reflect.Reflection.newIllegalAccessException(Reflection.java:420)
+	at java.base/java.lang.reflect.AccessibleObject.checkAccess(AccessibleObject.java:709)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.simplericity.macify.eawt.DefaultApplication.&lt;init&gt;(DefaultApplication.java:64)
+	... 9 more</pre>
+</div></div>
+
+<p>The application actually runs successfully - seems to be a non-critical error.  But when I start Fedora, I get the following popup:</p>
+
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3855/10372_Screen_Shot_2022-10-17_at_10.40.56_AM.png" height="324" width="1554" style="border: 0px solid black" /></span></p>
+
+<p>If I press “Ok” the browser fails to launch. But I can still access Fedora HTML UI by opening a browser to <a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a></p>
+
+
+
+<p>I get the same results whether I download the pre-built artifact or built from source using open jdk 19.</p>
+
+
+
+<p>BTW:  Using the following java command line params fixes it.</p>
+
+
+<p>java --add-opens java.desktop/com.apple.eio=ALL-UNNAMED --add-opens java.desktop/com.apple.eawt=ALL-UNNAMED  -jar ~/Downloads/fcrepo-webapp-6.2.0-jetty-console.jar</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3855/10372_Screen_Shot_2022-10-17_at_10.40.56_AM.png">Screen Shot 2022-10-17 at 10.40.56 AM.png</a>, 119868 bytes, added by Danny Bernstein on 2022-10-17</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22780"><div class="by">Dan Field, 2023-01-17 16:30 UTC</div><div class="text"><p>This seems to trace back to <a href="https://mvnrepository.com/artifact/org.simplericity.macify/macify" title="smart-link" class="external-link" rel="nofollow noreferrer">https://mvnrepository.com/artifact/org.simplericity.macify/macify</a>  which has not been updated since 2011 and is becoming deprecated due to the changes in <a href="https://openjdk.org/jeps/272" title="smart-link" class="external-link" rel="nofollow noreferrer">https://openjdk.org/jeps/272</a> </p>
+
+
+
+<p>Notes for myself as I unpick the dependencies and history<br/>
+<a href="https://github.com/fcrepo-exts/jetty-console" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/jetty-console</a>  is a fork of <a href="https://github.com/eirbjo/jetty-console" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/eirbjo/jetty-console</a> the author of whihc appears to be from the same organisation,  simplericity as the macigy dependancy, however I can;t find any evidence of these living in public SCM. THe pom file points at an SVN repo <a href="https://repo1.maven.org/maven2/org/simplericity/macify/macify/1.6/macify-1.6.pom" class="external-link" rel="nofollow noreferrer">https://repo1.maven.org/maven2/org/simplericity/macify/macify/1.6/macify-1.6.pom</a> but that is no longer online. It seems that macify is deprecated and unmaintained. </p>
+
+
+
+<p>Danny’s solution breaks the encapsulation as per comments <a href="https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8160437" title="smart-link" class="external-link" rel="nofollow noreferrer">https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8160437</a>  however I don’t think this can be relied on going forwards as internal APIs are unsupported post JDK 9. </p></div></div>
+<div class="comment" id="comment-23080"><div class="by">Dan Field, 2024-07-24 14:41 UTC</div><div class="text"><p>one-click functionality removed in <a href="https://fedora-repository.atlassian.net/jira/software/c/projects/FCREPO/issues/FCREPO-3923" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/jira/software/c/projects/FCREPO/issues/FCREPO-3923</a></p></div></div>
+<p><a href="data/FCREPO-3855.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

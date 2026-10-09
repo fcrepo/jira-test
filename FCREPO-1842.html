@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1842 Calculate and compare alternate checksum on ingest</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1842</span> Calculate and compare alternate checksum on ingest</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>James Tuttle</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-11-17 16:41 UTC</td></tr><tr><th>Updated</th><td>2016-08-30 18:39 UTC</td></tr><tr><th>Resolved</th><td>2016-08-30 18:39 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2075.html">FCREPO-2075</a> Fedora does not warn that non-SHA1 checksums are ignored</td></tr></table>
+<h2>Description</h2>
+<p>I want to submit alternate checksums (SHA-256, MD5, etc) alongside deposited content and for Fedora to calculate, compare, and store a checksums matching the algorithms I've submitted.  </p>
+
+<p>Additionally, any user-provided digest algorithms that are not supported by Fedora should respond with a 400 status or some other indicator to the client that the digest can not be used.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-17288"><div class="by">Andrew Woods, 2016-08-29 19:22 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1095" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1095</a></p></div></div>
+<div class="comment" id="comment-17297"><div class="by">Jared Whiklo, 2016-08-30 14:11 UTC</div><div class="text"><p>Tested SHA-1</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[whikloj@net227.lib.umanitoba.ca 8:54 ] 
+[/Users/whikloj/Desktop] 
+&gt; shasum -a 1 IMG_2439.JPG
+4544b5e5f9a0840b449e10fd3dc1fd0d45059a27  IMG_2439.JPG
+[whikloj@net227.lib.umanitoba.ca 8:54 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: sha1=4544b5e5f9a0840b449e10fd3dc1fd0d45059a26" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/
+HTTP/1.1 100 Continue
+
+HTTP/1.1 409 Conflict
+Date: Tue, 30 Aug 2016 13:54:57 GMT
+Content-Type: text/turtle
+Content-Length: 125
+Server: Jetty(9.3.1.v20150714)
+
+Checksum Mismatch of urn:sha1:4544b5e5f9a0840b449e10fd3dc1fd0d45059a26 and urn:sha1:4544b5e5f9a0840b449e10fd3dc1fd0d45059a27
+[whikloj@net227.lib.umanitoba.ca 8:54 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: sha1=4544b5e5f9a0840b449e10fd3dc1fd0d45059a27" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/
+HTTP/1.1 100 Continue
+
+HTTP/1.1 201 Created
+Date: Tue, 30 Aug 2016 13:55:18 GMT
+ETag: "78b5261049d811e259833e8741fded2a199e551f"
+Last-Modified: Tue, 30 Aug 2016 13:55:18 GMT
+Link: &lt;http://localhost:8080/rest/bc/b5/e6/ef/bcb5e6ef-266e-4ca7-a5f8-2c53d1306fe4/fcr:metadata&gt;; rel="describedby"; anchor="http://localhost:8080/rest/bc/b5/e6/ef/bcb5e6ef-266e-4ca7-a5f8-2c53d1306fe4"
+Location: http://localhost:8080/rest/bc/b5/e6/ef/bcb5e6ef-266e-4ca7-a5f8-2c53d1306fe4
+Content-Type: text/plain
+Content-Length: 75
+Server: Jetty(9.3.1.v20150714)
+
+http://localhost:8080/rest/bc/b5/e6/ef/bcb5e6ef-266e-4ca7-a5f8-2c53d1306fe4%
+</pre>
+</div></div>
+
+<p>Tested MD5</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[whikloj@net227.lib.umanitoba.ca 8:55 ] 
+[/Users/whikloj/Desktop] 
+&gt; md5 IMG_2439.JPG 
+MD5 (IMG_2439.JPG) = 4e2479207155ab91dcd459c1d363e2e6
+[whikloj@net227.lib.umanitoba.ca 8:55 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: sha1=4e2479207155ab91dcd459c1d363e2e6" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/
+HTTP/1.1 100 Continue
+
+HTTP/1.1 409 Conflict
+Date: Tue, 30 Aug 2016 13:55:46 GMT
+Content-Type: text/turtle
+Content-Length: 117
+Server: Jetty(9.3.1.v20150714)
+
+Checksum Mismatch of urn:sha1:4e2479207155ab91dcd459c1d363e2e6 and urn:sha1:4544b5e5f9a0840b449e10fd3dc1fd0d45059a27
+[whikloj@net227.lib.umanitoba.ca 8:55 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: md5=4e2479207155ab91dcd459c1d363e2e6" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/
+HTTP/1.1 100 Continue
+
+HTTP/1.1 201 Created
+Date: Tue, 30 Aug 2016 13:56:01 GMT
+ETag: "a1df3136b05fda7e1072b63ec3c89197ac9aad02"
+Last-Modified: Tue, 30 Aug 2016 13:56:01 GMT
+Link: &lt;http://localhost:8080/rest/a5/7f/73/96/a57f7396-8001-46dc-9783-2d97de0a229e/fcr:metadata&gt;; rel="describedby"; anchor="http://localhost:8080/rest/a5/7f/73/96/a57f7396-8001-46dc-9783-2d97de0a229e"
+Location: http://localhost:8080/rest/a5/7f/73/96/a57f7396-8001-46dc-9783-2d97de0a229e
+Content-Type: text/plain
+Content-Length: 75
+Server: Jetty(9.3.1.v20150714)
+
+http://localhost:8080/rest/a5/7f/73/96/a57f7396-8001-46dc-9783-2d97de0a229e%                                                          
+</pre>
+</div></div>
+
+<p>Tested SHA-256</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[whikloj@net227.lib.umanitoba.ca 8:56 ] 
+[/Users/whikloj/Desktop] 
+&gt; shasum -a 256 IMG_2439.JPG 
+5c22d3a3bc79342da9172cc1e50981669352e1dcde616a722bb6c9c77679f313  IMG_2439.JPG
+[whikloj@net227.lib.umanitoba.ca 8:56 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: sha1=5c22d3a3bc79342da9172cc1e50981669352e1dcde616a722bb6c9c77679f313" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/
+HTTP/1.1 100 Continue
+
+HTTP/1.1 409 Conflict
+Date: Tue, 30 Aug 2016 13:56:50 GMT
+Content-Type: text/turtle
+Content-Length: 149
+Server: Jetty(9.3.1.v20150714)
+
+Checksum Mismatch of urn:sha1:5c22d3a3bc79342da9172cc1e50981669352e1dcde616a722bb6c9c77679f313 and urn:sha1:4544b5e5f9a0840b449e10fd3dc1fd0d45059a27
+[whikloj@net227.lib.umanitoba.ca 8:57 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: sha256=5c22d3a3bc79342da9172cc1e50981669352e1dcde616a722bb6c9c77679f313" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/
+HTTP/1.1 100 Continue
+
+HTTP/1.1 201 Created
+Date: Tue, 30 Aug 2016 13:57:38 GMT
+ETag: "67bfe61e512e8764aeffe56cc8bfdee80414c3d4"
+Last-Modified: Tue, 30 Aug 2016 13:57:38 GMT
+Link: &lt;http://localhost:8080/rest/1e/37/51/0a/1e37510a-1ad0-4b7d-a5e5-58b7593bc89f/fcr:metadata&gt;; rel="describedby"; anchor="http://localhost:8080/rest/1e/37/51/0a/1e37510a-1ad0-4b7d-a5e5-58b7593bc89f"
+Location: http://localhost:8080/rest/1e/37/51/0a/1e37510a-1ad0-4b7d-a5e5-58b7593bc89f
+Content-Type: text/plain
+Content-Length: 75
+Server: Jetty(9.3.1.v20150714)
+
+http://localhost:8080/rest/1e/37/51/0a/1e37510a-1ad0-4b7d-a5e5-58b7593bc89f%
+</pre>
+</div></div>
+
+<p>Tested all 3 checksums in one request.</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[whikloj@net227.lib.umanitoba.ca 8:59 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: sha256=5c22d3a3bc79342da9172cc1e50981669352e1dcde616a722bb6c9c77679f313, sha1=4544b5e5f9a0840b449e10fd3dc1fd0d45059a27, md5=4e2479207155ab91dcd459c1d363e2e" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/        
+HTTP/1.1 100 Continue
+
+HTTP/1.1 409 Conflict
+Date: Tue, 30 Aug 2016 14:02:50 GMT
+Content-Type: text/turtle
+Content-Length: 106
+Server: Jetty(9.3.1.v20150714)
+
+Checksum Mismatch of urn:md5:4e2479207155ab91dcd459c1d363e2e and urn:md5:4e2479207155ab91dcd459c1d363e2e6
+[whikloj@net227.lib.umanitoba.ca 9:02 ] 
+[/Users/whikloj/Desktop] 
+&gt; curl -i -XPOST -H"Content-type: image/jpeg" -H"Digest: sha256=5c22d3a3bc79342da9172cc1e50981669352e1dcde616a722bb6c9c77679f313, sha1=4544b5e5f9a0840b449e10fd3dc1fd0d45059a27, md5=4e2479207155ab91dcd459c1d363e2e6" --data-binary "@IMG_2439.JPG" http://localhost:8080/rest/
+HTTP/1.1 100 Continue
+
+HTTP/1.1 201 Created
+Date: Tue, 30 Aug 2016 14:03:01 GMT
+ETag: "6f35b4c70e44eadf9bd4121edb4f68b91c21b3f2"
+Last-Modified: Tue, 30 Aug 2016 14:03:01 GMT
+Link: &lt;http://localhost:8080/rest/66/a8/de/f3/66a8def3-e78f-49e5-b11a-66ae748fcb68/fcr:metadata&gt;; rel="describedby"; anchor="http://localhost:8080/rest/66/a8/de/f3/66a8def3-e78f-49e5-b11a-66ae748fcb68"
+Location: http://localhost:8080/rest/66/a8/de/f3/66a8def3-e78f-49e5-b11a-66ae748fcb68
+Content-Type: text/plain
+Content-Length: 75
+Server: Jetty(9.3.1.v20150714)
+
+http://localhost:8080/rest/66/a8/de/f3/66a8def3-e78f-49e5-b11a-66ae748fcb68%
+</pre>
+</div></div>
+
+<p>All results were as expected.</p></div></div>
+<div class="comment" id="comment-17301"><div class="by">Unknown, 2016-08-30 18:39 UTC</div><div class="text"><p>Merged via <a href="https://github.com/fcrepo4/fcrepo4/commit/0c8e261e6670fb966a84eca57a104d5224146325" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/0c8e261e6670fb966a84eca57a104d5224146325</a></p></div></div>
+<p><a href="data/FCREPO-1842.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

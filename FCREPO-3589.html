@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3589 Membership/containment not returned as inbound references</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3589</span> Membership/containment not returned as inbound references</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2021-01-06 22:11 UTC</td></tr><tr><th>Updated</th><td>2025-01-24 17:24 UTC</td></tr><tr><th>Resolved</th><td>2025-01-03 16:14 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr></table>
+<h2>Description</h2>
+<p>At the moment, membership and containment triples are not returned when making a request to a member or child object with prefer InboundReferences supplied. It appears there is an integration test for IndirectContainers (testGetObjectReferencesIndirect) that expects membership relations to show up in this situation:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/main/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L2951" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/main/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L2951</a></p>
+
+<p>Should we implement this? If so, should the inbound references only appear for membership, or should they also appear for containment?</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-21877"><div class="by">Andrew Woods, 2021-01-12 01:33 UTC</div><div class="text"><p>I think the rule should be: if a resource-A has a triple with object of resource-B, then a GET request on resource-B with "Prefer: InboundReferences" should return a response that includes resource-A.</p></div></div>
+<div class="comment" id="comment-21963"><div class="by">Jared Whiklo, 2021-01-27 18:59 UTC</div><div class="text"><p>Containment is not returned as an inbound reference in Fedora 5, but membership is.</p>
+
+<p>@prefix memento: &lt;<a href="http://mementoweb.org/ns#" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#</a>&gt; .<br/>
+@prefix rdf: &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora: &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+@prefix dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3</a>&gt;<br/>
+      rdf:type fedora:Container ;<br/>
+      rdf:type fedora:Resource ;<br/>
+      rdf:type ldp:BasicContainer ;<br/>
+      dc:title "some title &amp; other" ;<br/>
+      fedora:lastModifiedBy "fedoraAdmin" ;<br/>
+      fedora:createdBy "fedoraAdmin" ;<br/>
+      fedora:created "2021-01-22T01:40:00.315Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+      fedora:lastModified "2021-01-22T01:40:00.315Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+      rdf:type ldp:RDFSource ;<br/>
+      rdf:type ldp:Container .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3/fcr:versions</a>&gt;<br/>
+      memento:original &lt;<a href="http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/directContainer" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/directContainer</a>&gt;<br/>
+      ldp:membershipResource &lt;<a href="http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/9164bd31-5e78-4225-81f9-a123d3f47ee3</a>&gt; .</p></div></div>
+<div class="comment" id="comment-22586"><div class="by">Danny Bernstein, 2022-01-20 16:38 UTC</div><div class="text"><p>There is consensus on including containment in inbound reference queries.</p></div></div>
+<div class="comment" id="comment-24142"><div class="by">Ben Pennell, 2025-01-03 16:14 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/2106" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2106</a> </p></div></div>
+<div class="comment" id="comment-24406"><div class="by">Jared Whiklo, 2025-01-24 17:24 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/fddffaa7acfbf7f786215f8852eded9f46f1914e" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/fddffaa7acfbf7f786215f8852eded9f46f1914e</a> </p></div></div>
+<p><a href="data/FCREPO-3589.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

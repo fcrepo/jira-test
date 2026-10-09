@@ -1,0 +1,2220 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": {
+   "accountId": "6089a55c52a3d400690692f7",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+    "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+    "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+    "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+   },
+   "displayName": "Ralf Claussnitzer",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+   "timeZone": "America/Halifax"
+  },
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "PR: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo4/fcrepo4/pull/1173"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo4/fcrepo4/pull/1173",
+          "type": "text"
+         },
+         {
+          "text": " (wip)",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "The fake checksum algorithm is actually recognized, as you can see in the logs:",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "INFO 13:58:17.173 (FedoraFixity) Get fixity for 'book'",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "WARN 13:59:07.786 (FedoraBinaryImpl) No digest value was found to match the algorithm: shaJunk",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "If the algorithm cannot be recognized the calculation always falls back to SHA-1 (not really). This should, however, not lead to BAD_CHECKSUM result. The BAD_CHECKSUM result appears the problem of mixed up digest code. If the algorithm cannot be recognized, a BAD_CHECKSUM result is returned along with a default value of SHA-1 which in fact has never been applied.  ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Working on this issue revealed another problem with setting default digest algorithm:",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "First, it should not be allowed to configure an unrecognizable checksum algorithm.",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Second, one can post multiple defaults. After some testing, my resource metadata looked like this:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "{{$ curl -i ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://localhost:8080/rest/book/fcr:metadata"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://localhost:8080/rest/book/fcr:metadata",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "HTTP/1.1 200 ",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "...",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "@prefix premis:  <",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://www.loc.gov/premis/rdf/v1#"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://www.loc.gov/premis/rdf/v1#",
+          "type": "text"
+         },
+         {
+          "text": "> .",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "...",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "@prefix config:  <info:fedoraconfig/> .",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "...",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "<",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://localhost:8080/rest/book"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://localhost:8080/rest/book",
+          "type": "text"
+         },
+         {
+          "text": ">",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "rdf:type                       fedora:Binary ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "rdf:type                       fedora:Resource ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "fedora:lastModifiedBy          \"bypassAdmin\" ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "config:defaultDigestAlgorithm  \"shaJunk\" ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "config:defaultDigestAlgorithm  \"MD5\" ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "config:defaultDigestAlgorithm  \"SHA-1\" ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "premis:hasSize                 \"2808177\"^^<",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://www.w3.org/2001/XMLSchema#long"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://www.w3.org/2001/XMLSchema#long",
+          "type": "text"
+         },
+         {
+          "text": "> ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "ebucore:hasMimeType            \"application/pdf\" ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "fedora:createdBy               \"bypassAdmin\" ;",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "...}}",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-10T08:57:11.399-0400",
+     "id": "18549",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18549",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-10T09:17:43.980-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "I don't really understand this part of the description:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "content": [
+           {
+            "text": "Additionally, it would be a bonus to include better data validation on the value provided in the on-ingest \"digest\" and the on-demand results. ",
+            "type": "text"
+           }
+          ],
+          "type": "paragraph"
+         }
+        ],
+        "type": "blockquote"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-12T13:20:04.143-0400",
+     "id": "18555",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18555",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-12T13:20:04.143-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Rephrasing:",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "> Additionally, it would be a bonus to include better data validation on the value provided in the on-ingest \"digest\" and the on-demand results.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "to:",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "> As a part of this ticket, or preferably a follow-on ticket, providing immediate user-feedback when a fixity algorithm is not supported by the server would be helpful... both in the cases where the \"Digest\" header is provided on-ingest, and when an alternate default algorithm is provided (as described in this ticket). See: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://fcrepo.github.io/fcrepo-specification/#binary-fixity"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://fcrepo.github.io/fcrepo-specification/#binary-fixity",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-13T11:01:13.055-0400",
+     "id": "18558",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18558",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-13T11:01:13.055-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "attrs": {
+           "accessLevel": "",
+           "id": "6089a55c52a3d400690692f7",
+           "text": "@Ralf Claussnitzer"
+          },
+          "type": "mention"
+         },
+         {
+          "text": ", in terms of process, when your GitHub PR is ready for review, please add a link to the PR in the corresponding JIRA and click the button in the JIRA ticket that says \"Start Review\".",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Thanks.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-13T11:04:16.358-0400",
+     "id": "18559",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18559",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-13T11:04:16.358-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "I created a new ticket covering the immediate user-feedback: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://jira.duraspace.org/browse/FCREPO-2403"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://jira.duraspace.org/browse/FCREPO-2403",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-14T04:31:54.379-0400",
+     "id": "18564",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18564",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-14T04:31:54.379-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Looks good, pending response to code review comments.",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Note: please transition this JIRA ticket to \"Start Review\" once the comments have been addressed.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-14T11:59:20.791-0400",
+     "id": "18566",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18566",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-14T11:59:20.791-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "I removed all the non-functional changes and added equals code to the unit test.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "However, I think there is need for refactoring towards clean code principles. What's the process for addressing that? Improvement tickets, I guess...",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-15T03:15:43.427-0400",
+     "id": "18569",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18569",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-15T03:15:43.427-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Thanks ",
+          "type": "text"
+         },
+         {
+          "attrs": {
+           "accessLevel": "",
+           "id": "6089a55c52a3d400690692f7",
+           "text": "@Ralf Claussnitzer"
+          },
+          "type": "mention"
+         },
+         {
+          "text": ".",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "When looking through commits to understand when a certain change in behavior may have been introduced, the challenge is increased if there is a mix of functional and nonfunctional updates together.",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Therefore, as you suggested, if you would like to do some refactoring or clean-up based on clean code principles, please work that as an isolated pull-request associated with its own JIRA ticket.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-15T11:23:43.724-0400",
+     "id": "18570",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18570",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-15T11:23:43.724-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "attrs": {
+           "accessLevel": "",
+           "id": "6089a55c52a3d400690692f7",
+           "text": "@Ralf Claussnitzer"
+          },
+          "type": "mention"
+         },
+         {
+          "text": "... also, after your initial commit, please do not perform \"git push --force\" on your branch. Doing so requires a complete re-review of the entire pull-request since it is not clear what all changes have been forced.",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "After the code review is complete and ready to be merged into the master branch, you may indicate if you want certain commits to be squashed or not. Typically, if all of the commits are simply iterations on a single unit of work, your commits will be squashed by the integration manager before being merged into master.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-15T11:33:46.224-0400",
+     "id": "18571",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18571",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-15T11:33:46.224-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Resolved with: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo4/fcrepo4/commit/07db76694742ebe3043b7b6b9862f510a4b3c5aa"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo4/fcrepo4/commit/07db76694742ebe3043b7b6b9862f510a4b3c5aa",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-15T11:39:21.776-0400",
+     "id": "18572",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18572",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-15T11:39:21.776-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "I added your comment on `git push --force` to the ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://wiki.duraspace.org/display/FF/Git+Workflow"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "Git Workflow Document",
+          "type": "text"
+         },
+         {
+          "text": " in the ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://wiki.duraspace.org/display/FF/Developer+Resources"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "Developer Resources Wiki",
+          "type": "text"
+         },
+         {
+          "text": ".",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-16T06:05:22.497-0400",
+     "id": "18573",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18573",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-16T06:05:22.497-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "You are a great team member, ",
+          "type": "text"
+         },
+         {
+          "attrs": {
+           "accessLevel": "",
+           "id": "6089a55c52a3d400690692f7",
+           "text": "@Ralf Claussnitzer"
+          },
+          "type": "mention"
+         },
+         {
+          "text": ". Thank you.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2017-02-16T10:56:05.315-0400",
+     "id": "18574",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18574",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2017-02-16T10:56:05.315-0400"
+    }
+   ],
+   "maxResults": 12,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment",
+   "startAt": 0,
+   "total": 12
+  },
+  "components": [
+   {
+    "description": "Fedora 4 Core Repository",
+    "id": "10012",
+    "name": "f4-core",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/component/10012"
+   }
+  ],
+  "created": "2016-11-11T16:13:43.457-0400",
+  "creator": {
+   "accountId": "60785ded115da6006f540529",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+   },
+   "displayName": "Andrew Woods",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|04hzrb:zzz",
+  "customfield_10020": [
+   {
+    "boardId": 3,
+    "completeDate": "2017-08-15T01:51:19.244Z",
+    "endDate": "2017-03-14T14:20:00.000Z",
+    "id": 31,
+    "name": "Sprint 2017 - 19",
+    "startDate": "2017-02-14T15:20:44.774Z",
+    "state": "closed"
+   }
+  ],
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "2017-02-10T08:57:11.399-0400",
+  "customfield_10025": "1_*:*_1_*:*_7833580811_*|*_3_*:*_2_*:*_332986852_*|*_4_*:*_1_*:*_54692228_*|*_6_*:*_1_*:*_0_*|*_10002_*:*_2_*:*_56664091_*|*_10003_*:*_1_*:*_14340",
+  "customfield_10029": {
+   "accountId": "60785ded115da6006f540529",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+   },
+   "displayName": "Andrew Woods",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10030": [
+   {
+    "id": "10025",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/customFieldOption/10025",
+    "value": "Services: Fixity"
+   }
+  ],
+  "customfield_10037": null,
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "This task is to improve the fixity service response by including the algorithm that was used while calculating the binary's checksum.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "For example, ",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "content": [
+        {
+         "content": [
+          {
+           "text": "Create a binary resource",
+           "type": "text"
+          },
+          {
+           "type": "hardBreak"
+          },
+          {
+           "text": "curl -XPUT -i --data-binary @some.pdf -H\"Content-Type: application/pdf\" localhost:8080/fcrepo/rest/book",
+           "type": "text"
+          }
+         ],
+         "type": "paragraph"
+        }
+       ],
+       "type": "listItem"
+      },
+      {
+       "content": [
+        {
+         "content": [
+          {
+           "text": "Run fixity (success)",
+           "type": "text"
+          },
+          {
+           "type": "hardBreak"
+          },
+          {
+           "text": "curl -i localhost:8080/fcrepo/rest/book/fcr:fixity",
+           "type": "text"
+          }
+         ],
+         "type": "paragraph"
+        }
+       ],
+       "type": "listItem"
+      },
+      {
+       "content": [
+        {
+         "content": [
+          {
+           "text": "Change the default digest algorithm",
+           "type": "text"
+          },
+          {
+           "type": "hardBreak"
+          },
+          {
+           "text": "curl -H\"Content-Type: application/sparql-update\" --data-binary @fixity.su -XPATCH -i localhost:8080/fcrepo/rest/book/fcr:metadata",
+           "type": "text"
+          }
+         ],
+         "type": "paragraph"
+        },
+        {
+         "content": [
+          {
+           "content": [
+            {
+             "content": [
+              {
+               "text": "Where \"fixity.su\" is:",
+               "type": "text"
+              },
+              {
+               "type": "hardBreak"
+              },
+              {
+               "text": "===========",
+               "type": "text"
+              },
+              {
+               "type": "hardBreak"
+              },
+              {
+               "text": "PREFIX fedoraconfig: <",
+               "type": "text"
+              },
+              {
+               "marks": [
+                {
+                 "attrs": {
+                  "href": "http://fedora.info/definitions/v4/config#"
+                 },
+                 "type": "link"
+                }
+               ],
+               "text": "http://fedora.info/definitions/v4/config#",
+               "type": "text"
+              },
+              {
+               "text": ">",
+               "type": "text"
+              }
+             ],
+             "type": "paragraph"
+            }
+           ],
+           "type": "listItem"
+          }
+         ],
+         "type": "bulletList"
+        }
+       ],
+       "type": "listItem"
+      }
+     ],
+     "type": "orderedList"
+    },
+    {
+     "content": [
+      {
+       "text": "INSERT { <> fedoraconfig:defaultDigestAlgorithm \"shaJunk\" }",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "WHERE  {  }",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "===========",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "Result (failure):",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "---------------------------\r",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "<",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "attrs": {
+          "href": "http://localhost:8080/fcrepo/rest/book#fixity/1478895023401"
+         },
+         "type": "link"
+        }
+       ],
+       "text": "http://localhost:8080/fcrepo/rest/book#fixity/1478895023401",
+       "type": "text"
+      },
+      {
+       "text": "> a premis:Fixity , premis:EventOutcomeDetail ;",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "premis:hasEventOutcome \"BAD_CHECKSUM\"^^<",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "attrs": {
+          "href": "http://www.w3.org/2001/XMLSchema#string"
+         },
+         "type": "link"
+        }
+       ],
+       "text": "http://www.w3.org/2001/XMLSchema#string",
+       "type": "text"
+      },
+      {
+       "text": "> ;",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "premis:hasMessageDigest <urn:sha1:44c4d081c1dc3530fdb1a2fe843e570170d3d054> ;",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "premis:hasSize \"1324959\"^^<",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "attrs": {
+          "href": "http://www.w3.org/2001/XMLSchema#long"
+         },
+         "type": "link"
+        }
+       ],
+       "text": "http://www.w3.org/2001/XMLSchema#long",
+       "type": "text"
+      },
+      {
+       "text": "> .",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "---------------------------\r",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "It would be helpful to know the reason for the BAD_CHECKSUM.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "Additionally, it would be a bonus to include better data validation on the value provided in the on-ingest \"digest\" and the on-demand results.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": null,
+  "fixVersions": [
+   {
+    "archived": false,
+    "description": "Release manager: Jared Whiklo",
+    "id": "10119",
+    "name": "Fedora 4.7.4",
+    "releaseDate": "2017-08-01",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10119"
+   }
+  ],
+  "issuelinks": [
+   {
+    "id": "10855",
+    "inwardIssue": {
+     "fields": {
+      "issuetype": {
+       "avatarId": 10300,
+       "description": "An improvement or enhancement to an existing feature or task. (Migrated on 28 Apr 2021 18:14 UTC)",
+       "hierarchyLevel": 0,
+       "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10300?size=medium",
+       "id": "10009",
+       "name": "Improvement",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10009",
+       "subtask": false
+      },
+      "priority": {
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/major.svg",
+       "id": "10003",
+       "name": "Major",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10003"
+      },
+      "status": {
+       "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+       "id": "6",
+       "name": "Closed",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+       "statusCategory": {
+        "colorName": "green",
+        "id": 3,
+        "key": "done",
+        "name": "Done",
+        "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+       }
+      },
+      "summary": "Immediate feedback when a fixity algorithm is not supported"
+     },
+     "id": "12304",
+     "key": "FCREPO-2403",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12304"
+    },
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLink/10855",
+    "type": {
+     "id": "10008",
+     "inward": "is related to",
+     "name": "Related",
+     "outward": "is related to",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLinkType/10008"
+    }
+   },
+   {
+    "id": "10856",
+    "inwardIssue": {
+     "fields": {
+      "issuetype": {
+       "avatarId": 10303,
+       "description": "A problem or error.",
+       "hierarchyLevel": 0,
+       "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+       "id": "10004",
+       "name": "Bug",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10004",
+       "subtask": false
+      },
+      "priority": {
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/minor.svg",
+       "id": "10004",
+       "name": "Minor",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10004"
+      },
+      "status": {
+       "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+       "id": "6",
+       "name": "Closed",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+       "statusCategory": {
+        "colorName": "green",
+        "id": 3,
+        "key": "done",
+        "name": "Done",
+        "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+       }
+      },
+      "summary": "Fixity result ambiguous when digest algorithm and checksum don't match"
+     },
+     "id": "12295",
+     "key": "FCREPO-2400",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12295"
+    },
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLink/10856",
+    "type": {
+     "id": "10008",
+     "inward": "is related to",
+     "name": "Related",
+     "outward": "is related to",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLinkType/10008"
+    }
+   }
+  ],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10300,
+   "description": "An improvement or enhancement to an existing feature or task. (Migrated on 28 Apr 2021 18:14 UTC)",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10300?size=medium",
+   "id": "10009",
+   "name": "Improvement",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10009",
+   "subtask": false
+  },
+  "labels": [
+   "preservation"
+  ],
+  "lastViewed": null,
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/major.svg",
+   "id": "10003",
+   "name": "Major",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10003"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "60785ded115da6006f540529",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+   },
+   "displayName": "Andrew Woods",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "A fix for this issue is checked into the tree and tested.",
+   "id": "10004",
+   "name": "Fixed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10004"
+  },
+  "resolutiondate": "2017-02-15T03:15:43.412-0400",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": null,
+  "subtasks": [],
+  "summary": "Improve Fixity Result response",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2017-06-20T16:41:11.004-0300",
+  "versions": [],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-2297/votes",
+   "votes": 0
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-2297/watchers",
+   "watchCount": 2
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "12248",
+ "key": "FCREPO-2297",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>PR: <a href=\"https://github.com/fcrepo4/fcrepo4/pull/1173\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo4/fcrepo4/pull/1173</a> (wip)</p>\n\n<p>The fake checksum algorithm is actually recognized, as you can see in the logs:<br/>\nINFO 13:58:17.173 (FedoraFixity) Get fixity for 'book'<br/>\nWARN 13:59:07.786 (FedoraBinaryImpl) No digest value was found to match the algorithm: shaJunk</p>\n\n<p>If the algorithm cannot be recognized the calculation always falls back to SHA-1 (not really). This should, however, not lead to BAD_CHECKSUM result. The BAD_CHECKSUM result appears the problem of mixed up digest code. If the algorithm cannot be recognized, a BAD_CHECKSUM result is returned along with a default value of SHA-1 which in fact has never been applied.  </p>\n\n<p>Working on this issue revealed another problem with setting default digest algorithm:<br/>\nFirst, it should not be allowed to configure an unrecognizable checksum algorithm.<br/>\nSecond, one can post multiple defaults. After some testing, my resource metadata looked like this:</p>\n\n<p>{{$ curl -i <a href=\"http://localhost:8080/rest/book/fcr:metadata\" class=\"external-link\" rel=\"nofollow noreferrer\">http://localhost:8080/rest/book/fcr:metadata</a><br/>\nHTTP/1.1 200 <br/>\n...<br/>\n@prefix premis:  &lt;<a href=\"http://www.loc.gov/premis/rdf/v1#\" class=\"external-link\" rel=\"nofollow noreferrer\">http://www.loc.gov/premis/rdf/v1#</a>&gt; .<br/>\n...<br/>\n@prefix config:  &lt;info:fedoraconfig/&gt; .<br/>\n...<br/>\n&lt;<a href=\"http://localhost:8080/rest/book\" class=\"external-link\" rel=\"nofollow noreferrer\">http://localhost:8080/rest/book</a>&gt;<br/>\n        rdf:type                       fedora:Binary ;<br/>\n        rdf:type                       fedora:Resource ;<br/>\n        fedora:lastModifiedBy          \"bypassAdmin\" ;<br/>\n        config:defaultDigestAlgorithm  \"shaJunk\" ;<br/>\n        config:defaultDigestAlgorithm  \"MD5\" ;<br/>\n        config:defaultDigestAlgorithm  \"SHA-1\" ;<br/>\n        premis:hasSize                 \"2808177\"^^&lt;<a href=\"http://www.w3.org/2001/XMLSchema#long\" class=\"external-link\" rel=\"nofollow noreferrer\">http://www.w3.org/2001/XMLSchema#long</a>&gt; ;<br/>\n        ebucore:hasMimeType            \"application/pdf\" ;<br/>\n        fedora:createdBy               \"bypassAdmin\" ;<br/>\n...}}</p>",
+     "created": "10/Feb/17 8:57 AM",
+     "id": "18549",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18549",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "10/Feb/17 9:17 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>I don't really understand this part of the description:</p>\n\n<blockquote><p>Additionally, it would be a bonus to include better data validation on the value provided in the on-ingest \"digest\" and the on-demand results. </p></blockquote>",
+     "created": "12/Feb/17 1:20 PM",
+     "id": "18555",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18555",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "12/Feb/17 1:20 PM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Rephrasing:<br/>\n&gt; Additionally, it would be a bonus to include better data validation on the value provided in the on-ingest \"digest\" and the on-demand results.</p>\n\n<p>to:<br/>\n&gt; As a part of this ticket, or preferably a follow-on ticket, providing immediate user-feedback when a fixity algorithm is not supported by the server would be helpful... both in the cases where the \"Digest\" header is provided on-ingest, and when an alternate default algorithm is provided (as described in this ticket). See: <a href=\"http://fcrepo.github.io/fcrepo-specification/#binary-fixity\" class=\"external-link\" rel=\"nofollow noreferrer\">http://fcrepo.github.io/fcrepo-specification/#binary-fixity</a></p>",
+     "created": "13/Feb/17 11:01 AM",
+     "id": "18558",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18558",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "13/Feb/17 11:01 AM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p><a href=\"https://fedora-repository.atlassian.net/secure/ViewProfile.jspa?accountId=6089a55c52a3d400690692f7\" class=\"user-hover\" rel=\"6089a55c52a3d400690692f7\" data-account-id=\"6089a55c52a3d400690692f7\" accountid=\"6089a55c52a3d400690692f7\" rel=\"noreferrer\">Ralf Claussnitzer</a>, in terms of process, when your GitHub PR is ready for review, please add a link to the PR in the corresponding JIRA and click the button in the JIRA ticket that says \"Start Review\".<br/>\nThanks.</p>",
+     "created": "13/Feb/17 11:04 AM",
+     "id": "18559",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18559",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "13/Feb/17 11:04 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>I created a new ticket covering the immediate user-feedback: <a href=\"https://jira.duraspace.org/browse/FCREPO-2403\" class=\"external-link\" rel=\"nofollow noreferrer\">https://jira.duraspace.org/browse/FCREPO-2403</a></p>",
+     "created": "14/Feb/17 4:31 AM",
+     "id": "18564",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18564",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "14/Feb/17 4:31 AM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Looks good, pending response to code review comments.<br/>\nNote: please transition this JIRA ticket to \"Start Review\" once the comments have been addressed.</p>",
+     "created": "14/Feb/17 11:59 AM",
+     "id": "18566",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18566",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "14/Feb/17 11:59 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>I removed all the non-functional changes and added equals code to the unit test.</p>\n\n<p>However, I think there is need for refactoring towards clean code principles. What's the process for addressing that? Improvement tickets, I guess...</p>\n",
+     "created": "15/Feb/17 3:15 AM",
+     "id": "18569",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18569",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "15/Feb/17 3:15 AM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Thanks <a href=\"https://fedora-repository.atlassian.net/secure/ViewProfile.jspa?accountId=6089a55c52a3d400690692f7\" class=\"user-hover\" rel=\"6089a55c52a3d400690692f7\" data-account-id=\"6089a55c52a3d400690692f7\" accountid=\"6089a55c52a3d400690692f7\" rel=\"noreferrer\">Ralf Claussnitzer</a>.<br/>\nWhen looking through commits to understand when a certain change in behavior may have been introduced, the challenge is increased if there is a mix of functional and nonfunctional updates together.<br/>\nTherefore, as you suggested, if you would like to do some refactoring or clean-up based on clean code principles, please work that as an isolated pull-request associated with its own JIRA ticket.</p>",
+     "created": "15/Feb/17 11:23 AM",
+     "id": "18570",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18570",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "15/Feb/17 11:23 AM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p><a href=\"https://fedora-repository.atlassian.net/secure/ViewProfile.jspa?accountId=6089a55c52a3d400690692f7\" class=\"user-hover\" rel=\"6089a55c52a3d400690692f7\" data-account-id=\"6089a55c52a3d400690692f7\" accountid=\"6089a55c52a3d400690692f7\" rel=\"noreferrer\">Ralf Claussnitzer</a>... also, after your initial commit, please do not perform \"git push --force\" on your branch. Doing so requires a complete re-review of the entire pull-request since it is not clear what all changes have been forced.<br/>\nAfter the code review is complete and ready to be merged into the master branch, you may indicate if you want certain commits to be squashed or not. Typically, if all of the commits are simply iterations on a single unit of work, your commits will be squashed by the integration manager before being merged into master.</p>",
+     "created": "15/Feb/17 11:33 AM",
+     "id": "18571",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18571",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "15/Feb/17 11:33 AM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Resolved with: <a href=\"https://github.com/fcrepo4/fcrepo4/commit/07db76694742ebe3043b7b6b9862f510a4b3c5aa\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo4/fcrepo4/commit/07db76694742ebe3043b7b6b9862f510a4b3c5aa</a></p>",
+     "created": "15/Feb/17 11:39 AM",
+     "id": "18572",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18572",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "15/Feb/17 11:39 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>I added your comment on `git push --force` to the <a href=\"https://wiki.duraspace.org/display/FF/Git+Workflow\" class=\"external-link\" rel=\"nofollow noreferrer\">Git Workflow Document</a> in the <a href=\"https://wiki.duraspace.org/display/FF/Developer+Resources\" class=\"external-link\" rel=\"nofollow noreferrer\">Developer Resources Wiki</a>.</p>",
+     "created": "16/Feb/17 6:05 AM",
+     "id": "18573",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18573",
+     "updateAuthor": {
+      "accountId": "6089a55c52a3d400690692f7",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a55c52a3d400690692f7/7a62c587-b0f1-4cd4-982c-21b3837dc64a/48"
+      },
+      "displayName": "Ralf Claussnitzer",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a55c52a3d400690692f7",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "16/Feb/17 6:05 AM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>You are a great team member, <a href=\"https://fedora-repository.atlassian.net/secure/ViewProfile.jspa?accountId=6089a55c52a3d400690692f7\" class=\"user-hover\" rel=\"6089a55c52a3d400690692f7\" data-account-id=\"6089a55c52a3d400690692f7\" accountid=\"6089a55c52a3d400690692f7\" rel=\"noreferrer\">Ralf Claussnitzer</a>. Thank you.</p>",
+     "created": "16/Feb/17 10:56 AM",
+     "id": "18574",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment/18574",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "16/Feb/17 10:56 AM"
+    }
+   ],
+   "maxResults": 12,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248/comment",
+   "startAt": 0,
+   "total": 12
+  },
+  "components": null,
+  "created": "11/Nov/16 4:13 PM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "10/Feb/17 8:57 AM",
+  "customfield_10025": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p>This task is to improve the fixity service response by including the algorithm that was used while calculating the binary's checksum.</p>\n\n<p>For example, </p>\n<ol>\n\t<li>Create a binary resource<br/>\ncurl -XPUT -i --data-binary @some.pdf -H\"Content-Type: application/pdf\" localhost:8080/fcrepo/rest/book</li>\n\t<li>Run fixity (success)<br/>\ncurl -i localhost:8080/fcrepo/rest/book/fcr:fixity</li>\n\t<li>Change the default digest algorithm<br/>\ncurl -H\"Content-Type: application/sparql-update\" --data-binary @fixity.su -XPATCH -i localhost:8080/fcrepo/rest/book/fcr:metadata\n\t<ul class=\"alternate\" type=\"square\">\n\t\t<li>Where \"fixity.su\" is:<br/>\n===========<br/>\nPREFIX fedoraconfig: &lt;<a href=\"http://fedora.info/definitions/v4/config#\" class=\"external-link\" rel=\"nofollow noreferrer\">http://fedora.info/definitions/v4/config#</a>&gt;</li>\n\t</ul>\n\t</li>\n</ol>\n\n\n<p>INSERT </p>\n{ &lt;&gt; fedoraconfig:defaultDigestAlgorithm \"shaJunk\" }\n<p>WHERE  {  }<br/>\n===========</p>\n\n<p>Result (failure):<br/>\n---------------------------<br/>\n&lt;<a href=\"http://localhost:8080/fcrepo/rest/book#fixity/1478895023401\" class=\"external-link\" rel=\"nofollow noreferrer\">http://localhost:8080/fcrepo/rest/book#fixity/1478895023401</a>&gt; a premis:Fixity , premis:EventOutcomeDetail ;<br/>\n        premis:hasEventOutcome \"BAD_CHECKSUM\"^^&lt;<a href=\"http://www.w3.org/2001/XMLSchema#string\" class=\"external-link\" rel=\"nofollow noreferrer\">http://www.w3.org/2001/XMLSchema#string</a>&gt; ;<br/>\n        premis:hasMessageDigest &lt;urn:sha1:44c4d081c1dc3530fdb1a2fe843e570170d3d054&gt; ;<br/>\n        premis:hasSize \"1324959\"^^&lt;<a href=\"http://www.w3.org/2001/XMLSchema#long\" class=\"external-link\" rel=\"nofollow noreferrer\">http://www.w3.org/2001/XMLSchema#long</a>&gt; .<br/>\n---------------------------</p>\n\n<p>It would be helpful to know the reason for the BAD_CHECKSUM.</p>\n\n<p>Additionally, it would be a bonus to include better data validation on the value provided in the on-ingest \"digest\" and the on-demand results.</p>",
+  "duedate": null,
+  "environment": "",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "15/Feb/17 3:15 AM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": null,
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "20/Jun/17 4:41 PM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12248"
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1741 Transactions using Headers rather than URI segments</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1741</span> Transactions using Headers rather than URI segments</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>justin</td></tr><tr><th>Created</th><td>2015-09-18 14:12 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:49 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:49 UTC</td></tr></table>
+<h2>Description</h2>
+<p>A URI is the primary identifier for an object.  I posit that a URI for an object should not change when you are dealing with it from within a transaction.  It would be great if we could do something like this:</p>
+
+<p>POST /fedora/rest/transaction<br/>
+// returns a transaction token, e.g. 1001-1001-1001</p>
+
+<p>POST -H "X-fcrepo-tx:1001-1001-1001" /fedora/rest/my_object  </p>
+
+<p>POST /fedora/rest/transaction/1001-1001-1001/commit</p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-15257"><div class="by">Andrew Woods, 2015-09-18 14:17 UTC</div><div class="text"><p>A. Soroka? cb? Do you have thoughts on the RESTfulness of this approach?</p></div></div>
+<div class="comment" id="comment-15260"><div class="by">A. Soroka, 2015-09-18 14:27 UTC</div><div class="text"><p>I think it could make sense. Part of what we're up against is that transactions are basically not a RESTful concept:</p>
+
+<p><a href="http://www.infoq.com/news/2009/06/rest-ts" class="external-link" rel="nofollow noreferrer">http://www.infoq.com/news/2009/06/rest-ts</a></p>
+
+<p>is a good overview. Roy Fielding's comments are on-point for us here (both of them). As I've said before, I'd like to understand more about the use cases for transactions against Fedora, because I suspect that most of them are not actually specific to transactions but could be handled in some other, more RESTful way.</p></div></div>
+<div class="comment" id="comment-15261"><div class="by">cb, 2015-09-18 14:37 UTC</div><div class="text"><p>The approach described here is not RESTful. In fact, we discussed this approach early in the development on transactions and landed on the current implementation because objects in the scope of a transaction are different than the resources outside that scope (they certainly have different caching notions, among other behaviors).</p>
+
+<p>While adding a header may not be at odds with LDP, it is a capability that some LDP clients may be support or properly expose to consumers. In general, I think we were trying to cut down on magic HTTP headers, which can't be HATEOS'ed easily and usually exclude the browser from participating with it natively.</p>
+
+<p> I also think exposing the transaction in the URI is a simple way to expose to the client (or user) that there is something different about this request and could cut down on some classes of error (e.g. I thought I was sending it in a transaction, but actually deleted some really important object, because i forgot a header).</p>
+</div></div>
+<div class="comment" id="comment-15262"><div class="by">A. Soroka, 2015-09-18 14:39 UTC</div><div class="text"><p>I suppose one thing we could do to ameliorate @jcoyne's concern would be to include a system-managed <tt>sameAs</tt> triple in GETs inside a transaction to the resource outside that transaction.</p></div></div>
+<div class="comment" id="comment-15267"><div class="by">Former user, 2015-09-19 03:35 UTC</div><div class="text"><p>I've run into what @jcoyne is describing when working through constructing PCDM objects.  It is a bit surprising to have the uri change on you.  Or maybe it's just the fact that the optional part isn't at the end of the uri.  </p>
+
+<p>I wound up with a string processing function to make sure I can construct the uris properly whether or not I'm in a transaction.  I'm not particularity proud or fond of it, but it works.</p>
+
+<p>I'll agree that it's a quirky part of the interface, but I also agree with the desire to keep the transaction transparent.  I'm also not sure if it's worth breaking interface over.</p>
+
+<p>FWIW, a query string is a simple and obvious way to express the transaction id as an optional parameter when performing CRUD operations, though I doubt that would be a popular amendment to the API.</p></div></div>
+<div class="comment" id="comment-15275"><div class="by">A. Soroka, 2015-09-23 13:34 UTC</div><div class="text"><p>@jcoyne-- what specifically are you using transactions for?</p></div></div>
+<div class="comment" id="comment-15279"><div class="by">justin, 2015-09-23 19:39 UTC</div><div class="text"><p>For ensuring that modifications to a ore:Aggregation (linked list) happen in an atomic manner.</p></div></div>
+<div class="comment" id="comment-15280"><div class="by">A. Soroka, 2015-09-24 14:10 UTC</div><div class="text"><p>Cool, thanks @jcoyne. Are these modifications dependent on server responses to each other? To put it another way, if you had a batch operation capability that worked atomically but required you to have all of your modifications formulated at once and put into one request, would that also meet your immediate need?</p></div></div>
+<div class="comment" id="comment-15297"><div class="by">Former user, 2015-09-24 16:48 UTC</div><div class="text"><p>Atomicity is preserved with the transaction, no?  I've yet to see a transaction half-apply itself.</p>
+
+<p>A. Soroka:  Why re-invent the transaction wheel?</p></div></div>
+<div class="comment" id="comment-15301"><div class="by">A. Soroka, 2015-09-24 17:28 UTC</div><div class="text"><p>Atomicity does not <em>require</em> transactions. There may be (I think there is) an easier, better-supported way to provide atomicity that does not involve transactions. Transactions provide other functions, which may or may not be needed. Transactions in REST are hard. Very hard. At best.</p></div></div>
+<div class="comment" id="comment-22477"><div class="by">Danny Bernstein, 2021-09-17 17:49 UTC</div><div class="text"><p>Closing as part of a jira repository effort.  It is being closed for one of the following reasons:  1) it is no longer applicable,  2) it has been fixed in future version or 3) no one seems to be interested in it .</p></div></div>
+<p><a href="data/FCREPO-1741.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3852 HTTP 500 Error for web UI (accept: text/html)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3852</span> HTTP 500 Error for web UI (accept: text/html)</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Justin Merz</td></tr><tr><th>Created</th><td>2022-09-30 21:24 UTC</td></tr><tr><th>Updated</th><td>2023-03-09 16:52 UTC</td></tr><tr><th>Resolved</th><td>2023-03-09 16:52 UTC</td></tr><tr><th>Components</th><td>fcrepo-webapp</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-3818.html">FCREPO-3818</a> Path mapping exception when accessing fcrepo/rest</td></tr></table>
+<h2>Environment</h2>Docker Image: fcrepo/fcrepo:6.2.0. Running with `docker compose` with PostgreSQL and a volume mount at `/usr/local/tomcat/fcrepo-home/data`
+<h2>Description</h2>
+<p>Attempting to access the Web UI and receiving <tt>HTTP Status 500 &#8211; Internal Server Error</tt> from Tomcat.</p>
+
+<p>The server logs:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>fin-local-dev-fcrepo-1          | DEBUG 21:21:05.627 [http-nio-8080-exec-5] (ServletContainerAuthFilter) There is a servlet user: fedoraAdmin
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (ServletContainerAuthFilter) Testing role fedoraAdmin
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (ServletContainerAuthFilter) Servlet user fedoraAdmin has servlet role: fedoraAdmin
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (ServletContainerAuthFilter) Testing role fedoraUser
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (ContainerAuthToken) Setting servlet username fedoraAdmin
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (ContainerAuthToken) Adding servlet role fedoraAdmin to fedoraAdmin
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (ServletContainerAuthFilter) Credentials for servletUser = AUTHORIZED
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (ServletContainerAuthenticatingRealm) Creating principals from servlet container principal and roles
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (HttpHeaderPrincipalProvider) Checking for principals using HttpHeaderPrincipalProvider
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (HttpHeaderPrincipalProvider) Trying to get principals from header: x-fin-principal; separator: ,
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (HttpHeaderPrincipalProvider) Value for header x-fin-principal is null
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.628 [http-nio-8080-exec-5] (AbstractPrincipalProvider) New Principals not found in the request!
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.630 [http-nio-8080-exec-5] (WebACFilter) User is authenticated
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.630 [http-nio-8080-exec-5] (WebACFilter) User has fedoraAdmin role
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.634 [http-nio-8080-exec-5] (OcflPersistentSessionManager) Creating storage session 1531b7cb-aa5e-4bb5-9d36-de374b1d0bdd
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.637 [http-nio-8080-exec-5] (EtagService) Produced etag 8550C2AAAF0C5EEC43F0ADF7C7DFA9B0 for info:fedora from 9343D9AB7ABE6834894D4D653B53C4F1|*/*;q=0.8;application/signed-exchange;q=0.9;v=b3;application/xhtml+xml;application/xml;q=0.9;image/apng;image/avif;image/webp;text/html|||false|true|false|true
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.641 [http-nio-8080-exec-5] (EtagService) Produced etag 8550C2AAAF0C5EEC43F0ADF7C7DFA9B0 for info:fedora from 9343D9AB7ABE6834894D4D653B53C4F1|*/*;q=0.8;application/signed-exchange;q=0.9;v=b3;application/xhtml+xml;application/xml;q=0.9;image/apng;image/avif;image/webp;text/html|||false|true|false|true
+fin-local-dev-fcrepo-1          | INFO 21:21:05.642 [http-nio-8080-exec-5] (FedoraLdp) GET resource ''
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.644 [http-nio-8080-exec-5] (OcflPersistentStorageSession) Getting triples for info:fedora at null
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.647 [http-nio-8080-exec-5] (OcflPersistentStorageSession) Getting triples for info:fedora at null
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.649 [http-nio-8080-exec-5] (ContainmentIndexImpl) getContains for info:fedora in transaction 1531b7cb-aa5e-4bb5-9d36-de374b1d0bdd and instant null
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.650 [http-nio-8080-exec-5] (HttpTripleUtil) Adding additional HTTP context triples to stream
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.651 [http-nio-8080-exec-5] (StreamingBaseHtmlProvider) Checking to see if type: org.fcrepo.http.commons.responses.RdfNamespacedStream is serializable to mimeType: text/html;charset=utf-8
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.652 [http-nio-8080-exec-5] (StreamingBaseHtmlProvider) Checking to see if type: org.fcrepo.http.commons.responses.RdfNamespacedStream is serializable to mimeType: text/html;charset=utf-8
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.658 [http-nio-8080-exec-5] (HttpTripleUtil) Adding response information using: httpApiResources
+fin-local-dev-fcrepo-1          | DEBUG 21:21:05.659 [http-nio-8080-exec-5] (StreamingBaseHtmlProvider) Using template: http://fedora.info/definitions/v4/repository#RepositoryRoot
+fin-local-dev-fcrepo-1          | WARN 21:21:05.660 [http-nio-8080-exec-5] (WildcardExceptionMapper) Unmapped exception
+fin-local-dev-fcrepo-1          | java.lang.IllegalArgumentException: Cannot translate NULL path extracted from URI http://localhost:8080/fcrepo/rest/
+fin-local-dev-fcrepo-1          |       at org.fcrepo.http.commons.api.rdf.HttpIdentifierConverter.toInternalId(HttpIdentifierConverter.java:83)
+fin-local-dev-fcrepo-1          |       at org.fcrepo.http.commons.api.rdf.HttpIdentifierConverter.toInternalId(HttpIdentifierConverter.java:58)
+fin-local-dev-fcrepo-1          |       at org.fcrepo.http.api.responses.StreamingBaseHtmlProvider.writeTo(StreamingBaseHtmlProvider.java:205)
+fin-local-dev-fcrepo-1          |       at org.fcrepo.http.api.responses.StreamingBaseHtmlProvider.writeTo(StreamingBaseHtmlProvider.java:83)</pre>
+</div></div>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-22713"><div class="by">Danny Bernstein, 2022-10-06 15:26 UTC</div><div class="text"><p>This issue should be resolved when <a href="FCREPO-3818.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3818</a> is fixed.</p></div></div>
+<div class="comment" id="comment-22735"><div class="by">Justin Merz, 2022-10-19 20:36 UTC</div><div class="text"><p>Just a follow up incase this helps, I do see a fix is pending.  Reproducible docker-compose setup: </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>version: '3'
+
+services:
+  proxy:
+    image: mikesplain/nginx-proxy-pass
+    environment:
+      - TARGET_SERVER=fcrepo:8080
+    ports:
+      - 3000:80
+
+  fcrepo:
+    image: fcrepo/fcrepo:6.2.0
+    ports:
+      - 8080:8080</pre>
+</div></div>
+
+<p>Access via <a href="http://localhost:3000/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:3000/fcrepo/rest</a> THEN access via <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a> reproduces error for me.  If you <tt>docker compose down</tt> and access 8080 THEN 3000, you should be able to see issue as well.</p></div></div>
+<div class="comment" id="comment-22785"><div class="by">Dan Field, 2023-01-24 15:47 UTC</div><div class="text"><p>Justin Merz I am no longer able to replicate this issue using your provided docker-compose config</p>
+
+<p>Are you in a position to confirm that the fix has worked for you ?</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ curl -u "fedoraAdmin:fedoraAdmin" -v http://localhost:8080/fcrepo/rest
+*   Trying 127.0.0.1:8080...
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+* Server auth using Basic with user 'fedoraAdmin'
+&gt; GET /fcrepo/rest HTTP/1.1
+&gt; Host: localhost:8080
+&gt; Authorization: Basic ZmVkb3JhQWRtaW46ZmVkb3JhQWRtaW4=
+&gt; User-Agent: curl/7.84.0
+&gt; Accept: */*
+&gt;
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 200</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ curl -u "fedoraAdmin:fedoraAdmin" -v http://localhost:3000/fcrepo/rest
+*   Trying 127.0.0.1:3000...
+* Connected to localhost (127.0.0.1) port 3000 (#0)
+* Server auth using Basic with user 'fedoraAdmin'
+&gt; GET /fcrepo/rest HTTP/1.1
+&gt; Host: localhost:3000
+&gt; Authorization: Basic ZmVkb3JhQWRtaW46ZmVkb3JhQWRtaW4=
+&gt; User-Agent: curl/7.84.0
+&gt; Accept: */*
+&gt;
+* Mark bundle as not supporting multiuse
+&lt; HTTP/1.1 200</pre>
+</div></div></div></div>
+<p><a href="data/FCREPO-3852.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

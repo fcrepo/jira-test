@@ -1,0 +1,89 @@
+Index: src/java/fedora/server/rest/Multipart.java
+===================================================================
+--- src/java/fedora/server/rest/Multipart.java	(revision 7885)
++++ src/java/fedora/server/rest/Multipart.java	(working copy)
+@@ -5,13 +5,18 @@
+  */
+ package fedora.server.rest;
+ 
++import java.io.IOException;
+ import java.io.InputStream;
++import java.io.PipedInputStream;
++import java.io.PipedOutputStream;
+ 
+ import javax.mail.BodyPart;
+ import javax.mail.internet.MimeMultipart;
+ import javax.mail.util.ByteArrayDataSource;
+ import javax.ws.rs.core.MediaType;
+ 
++import org.apache.commons.fileupload.MultipartStream;
++
+ public class Multipart {
+     private static final MediaType MULTIPART_RELATED = RestHelper.getContentType("multipart/related");
+     private static final MediaType MULTIPART_FORM = RestHelper.getContentType("multipart/form-data");
+@@ -25,16 +30,62 @@
+         this.inputStream = is;
+         this.size = size;
+     }
++    @SuppressWarnings(value = { "deprecation" })
++  	private static Multipart createParsedPipelineMultipart(InputStream is, String mimeHeader) throws IOException {
++  		int boundaryIndex = mimeHeader.indexOf("boundary=");
++  		byte[] boundary = (mimeHeader.substring(boundaryIndex + 9)).getBytes();
+ 
++  		final MultipartStream multipartStream = new MultipartStream(is, boundary);
++  		boolean nextPart = multipartStream.skipPreamble();
++  		String ctype = null;
++  		long clen = -1;
++  		String[] hdr = null;
++  		String[] headers = null;
++  		final PipedOutputStream pout = new PipedOutputStream();
++  		PipedInputStream pin = new PipedInputStream(pout);
++  		if (nextPart) { // we only get the first part, probably not correct, but works for me.
++  			
++  			headers = multipartStream.readHeaders().split("\n");
++  			for (int i = 0; i < headers.length; i++) {//look for the content length and content type headers
++  																								//this is too brittle.
++  				 hdr = headers[i].split(":");
++  				if (hdr[0].equalsIgnoreCase("Content-Type"))
++  					ctype = hdr[1].trim();
++  				if (hdr[0].equalsIgnoreCase("Content-Length"))
++  					clen = Long.parseLong(hdr[1].trim());
++  			}
++
++
++  			//MultipartStream will parse the mime body... streamily
++  			//but we have to run a background thread to pump our blocking io
++  			//fortunately, as the Multipart is streamed into fedora, things
++  			//will block and unblock, and sort of behave in a usefull manner.
++  			Thread t = new Thread(new Runnable() {
++  				public void run() {
++  					try {
++  						multipartStream.readBodyData(pout);
++  						pout.flush();
++  						pout.close();
++  					} catch (Exception e) {
++  						throw new RuntimeException(e);
++  					}
++
++  				}
++  			});
++  			t.start();
++
++  		}
++  		return new Multipart(MediaType.parse(ctype == null ? "application/octed-stream" : ctype), pin, clen);
++
++  	}
++
+     public static Multipart extract(
+             MediaType mimeType,
+             InputStream is) throws Exception {
+ 
+         if(mimeType != null) {
+             if (mimeType.isCompatible(MULTIPART_FORM)) {
+-                ByteArrayDataSource ds = new ByteArrayDataSource(is, MULTIPART_FORM.toString());
+-                BodyPart bodyPart = new MimeMultipart(ds).getBodyPart(0);
+-                return new Multipart(RestHelper.getContentType(bodyPart.getContentType()), bodyPart.getInputStream(), bodyPart.getSize());
++                return createParsedPipelineMultipart(is, mimeType.toString());
+             } else if (mimeType.isCompatible(MULTIPART_RELATED)) {
+                 ByteArrayDataSource ds = new ByteArrayDataSource(is, MULTIPART_RELATED.toString());
+                 BodyPart bodyPart = new MimeMultipart(ds).getBodyPart(1);

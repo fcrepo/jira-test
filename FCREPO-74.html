@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-74 HTTP Requests include bad HTTP basic Auth</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-74</span> HTTP Requests include bad HTTP basic Auth</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Wayland, Rosser L (rlw)</td></tr><tr><th>Created</th><td>2007-05-01 21:41 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>I've found a troublesome quirk about how Fedora calls URLs.  This applies when a disseminator is calling the URL and when Fedora retrieves Externally Referenced content.  When calling these URLs, Fedora passes an HTTP header like this one:</p>
+
+<p>GET /2005/08/online_xslt/ HTTP/1.1<br/>
+User-Agent: Fedora<br/>
+Authorization: Basic Og==<br/>
+Host: <a href="http://www.w3.org:5050/" class="external-link" rel="nofollow noreferrer">http://www.w3.org:5050/</a></p>
+
+<p>The trouble is the Authorization line, which doesn't actually do anything.  The line should be omitted from the outgoing requests.</p>
+
+<p>Some services (like the one in this example) take the authorization line to mean that you actually do want to authenticate.  When the authentication fails, the server returns information about the failed login rather than returning the publicly available content from the URL.</p>
+
+<p>Try it yourself:</p>
+
+<p>Go to this URL in your browser:   <a href="http://www.w3.org/2005/08/online_xslt/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2005/08/online_xslt/</a></p>
+
+<p>You will see the publicly available page from that URL.</p>
+
+<p>Now create an External Reference Datastream in Fedora that points to the same URL.  Point your browser at the new datastream.  It will hang for a second and then give you an empty page.  If you monitor the TCP traffic, you will see that the w3.org server is returning a "401 Authorization Required" message.  </p>
+
+<p>If you remove the Authorization line from the headers and resend the request, the server returns the proper page.  Is there a way to get Fedora to omit that line from the header?  Conversely, in situations where I actually want Fedora to authenticate with a server when retrieving content, how can I do that?</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10132"><div class="by">Chris Wilper, 2007-05-01 21:48 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pollen3d<br/>
+Logged In: YES <br/>
+user_id=1113001<br/>
+Originator: YES</p>
+
+<p>I forgot to clarify that this bug is new in Fedora 2.2.  Fedora 2.1 does not include an Authorization line in its outgoing HTTP headers.</p></div></div>
+<div class="comment" id="comment-10133"><div class="by">Chris Wilper, 2007-05-07 21:06 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>This appears to be a problem in fedora/common/http/WebClient.java</p>
+
+<p>When the username/password credentials are given as null, <br/>
+preemptive authentication should not be set.  One way<br/>
+to fix it would be to change the test:</p>
+
+<p>if (creds != null ...)</p>
+
+<p>to this:</p>
+
+<p>if (creds != null &amp;&amp; creds.getUserName() != null &amp;&amp; creds.getUserName().length() &gt; 0 ...)</p></div></div>
+<div class="comment" id="comment-10134"><div class="by">Wayland, Rosser L (rlw), 2007-10-31 19:57 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: rwayland3<br/>
+Logged In: YES <br/>
+user_id=133148<br/>
+Originator: NO</p>
+
+<p>Followed Chris' suggestion to fix this in fedora.common.http.WebClient by checking for case where Credentials are null or Username is null or empty string and calling appropriate get method.</p>
+
+<p>For the use case mentioned in bug report, the error originated in fedora.server.storage.DefaultExternalContentManager when it accesses get method of WebClient passing username and password. In cases where username is null or empty string this was resulting in WebClient treating connection as authenticated which resulting in bogus authentication in http header.</p>
+
+<p>Also updated fedora.server.access.disseminaton.DisseminationService. It was checking for username=null and calling appropriate WebClient get method, but was not checking for empty string. This conditional code was replaced with single call to WebClient get method that passes username/password thereby letting WebClient resolve whether username=null or username is empty string.</p>
+
+<p>Committed to both maintenance-2.2 branch and to trunk.</p></div></div>
+<div class="comment" id="comment-10135"><div class="by">Chris Wilper, 2007-11-06 21:09 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>This was fixed in maintenance-2.2 rev 6244 and trunk rev 6245</p></div></div>
+<div class="comment" id="comment-10136"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: pollen3d<br/>
+Item #: 1710801<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1710801" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1710801</a><br/>
+Closed On: 2007-10-31 14:57:26<br/>
+Closed By: rwayland3</p></div></div>
+<p><a href="data/FCREPO-74.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2429 Semantic differences between exports</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2429</span> Semantic differences between exports</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Joe Atzberger</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-04-26 21:59 UTC</td></tr><tr><th>Updated</th><td>2017-05-16 15:37 UTC</td></tr><tr><th>Resolved</th><td>2017-05-16 15:37 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to resolve the issue of semantic differences in resources that have been:<br/>
+1. exported<br/>
+2. re-imported<br/>
+3. exported again</p>
+
+<p>For example, create the following resources:<br/>
+curl -i -XPUT locahost:8080/f4/rest/book<br/>
+curl -i -XPUT -d @image.jpeg -H"Content-Type: image/jpeg" locahost:8080/f4/rest/book/image</p>
+
+<p>1. Export to /data<br/>
+java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -b -d data -m export -r <a href="http://localhost:8080/f4/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/f4/rest/</a><br/>
+2. Stop, clear, start repo<br/>
+3. Import<br/>
+java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -b -d data -m import -r <a href="http://localhost:8080/f4/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/f4/rest/</a><br/>
+4. Export to /data2<br/>
+java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -b -d data2 -m export -r <a href="http://localhost:8080/f4/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/f4/rest/</a></p>
+
+<p>5. Compare the to data directories:<br/>
+diff -r data data2</p>
+
+<ul>
+	<li>See semantic differences:<br/>
+metadata.ttl:<br/>
+&gt;         rdf:type                 ldp:NonRDFSource ;</li>
+</ul>
+
+
+<p>book.ttl:<br/>
+&gt;         rdf:type               ldp:RDFSource ;<br/>
+&gt;         rdf:type               ldp:Container ;</p>
+
+<p>See: <a href="https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+Joe+Atzberger" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Sprint+3+Feedback+-+Joe+Atzberger</a></p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-18704"><div class="by">Esmé Cowles, 2017-05-15 20:08 UTC</div><div class="text"><p>FWIW, it looks like the initial export has one copy of those rdf:type statements, and the second export has two copies.  So I wouldn't characterize these differences as "semantic" — repeating the rdf type statements should not matter.</p>
+
+<p>That said, I think this indicates that we are explicitly creating a statement that is actually a server-generated statement.  We shouldn't be doing that because it might lead to other problems.</p></div></div>
+<div class="comment" id="comment-18707"><div class="by">Esmé Cowles, 2017-05-15 20:43 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/77" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/77</a></p>
+
+<p> </p>
+
+<p>Note: I didn't include test coverage for this PR because it's generally hard to check for duplicate statements using RDF tools.  We could use NTriples and write a low-level parser to avoid this, but that seemed overkill.</p></div></div>
+<div class="comment" id="comment-18715"><div class="by">Andrew Woods, 2017-05-16 15:37 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/68f9bdbb44384cce08ab3812dbf4203eb5a03e0b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/68f9bdbb44384cce08ab3812dbf4203eb5a03e0b</a></p></div></div>
+<p><a href="data/FCREPO-2429.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

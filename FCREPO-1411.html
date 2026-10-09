@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1411 PUT/PATCH of resources that are not the target of the request</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1411</span> PUT/PATCH of resources that are not the target of the request</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2015-03-20 18:18 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:43 UTC</td></tr><tr><th>Resolved</th><td>2015-07-16 22:04 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>refine</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1442.html">FCREPO-1442</a> Create test/IT for FCREPO-1411 (PUT/PATCH resources not target of request) that checks whether a solution works</td></tr><tr><th>Depends on</th><td><a href="FCREPO-1418.html">FCREPO-1418</a> POST/PATCH must advertise constraints if triples not persisted</td></tr></table>
+<h2>Description</h2>
+<p>Currently, an F4 client is able to request a PUT or PATCH on a repository resource that contains triples with other resources as their RDF subjects.<br/>
+In these cases, the repository resource that is not the target of the request can be updated. <br/>
+This is questionable behavior.</p>
+
+<p>This task is to:<br/>
+1) confirm with the F4 committer team that this behavior should be disabled<br/>
+2) implement it</p>
+
+<p>Note: Although this issue shows itself in the REST-API, the solution should be deeper within Fedora, i.e. within the kernel.</p>
+<h2>Comments (45)</h2>
+<div class="comment" id="comment-13819"><div class="by">Osman Din, 2015-03-30 14:17 UTC</div><div class="text"><p>I've e-mailed Fedora committer list.</p></div></div>
+<div class="comment" id="comment-13821"><div class="by">A. Soroka, 2015-03-30 15:47 UTC</div><div class="text"><p>+1 to disabling this behavior.</p></div></div>
+<div class="comment" id="comment-13822"><div class="by">Osman Din, 2015-03-30 16:00 UTC</div><div class="text"><p>A. Soroka Would it be possible for you to provide a minimal example of such a request so that I can make sure we're on the same page and create an IT to gauge the impact of disabling this behavior? Thanks.</p></div></div>
+<div class="comment" id="comment-13823"><div class="by">A. Soroka, 2015-03-30 16:01 UTC</div><div class="text"><p>Yes, but not until next week.</p></div></div>
+<div class="comment" id="comment-13869"><div class="by">A. Soroka, 2015-04-03 15:33 UTC</div><div class="text"><p>Osman Din can you make me a subtask for this?</p></div></div>
+<div class="comment" id="comment-13881"><div class="by">A. Soroka, 2015-04-07 14:47 UTC</div><div class="text"><p>Osman Din are you going to working on this this week?</p></div></div>
+<div class="comment" id="comment-13915"><div class="by">A. Soroka, 2015-04-09 19:34 UTC</div><div class="text"><p>Here's an example of a "bad" request:</p>
+
+<p>PUT to /some/resource:</p>
+
+<p>&lt;/some/resource&gt; &lt;info:rubydora#label&gt; "a label".<br/>
+&lt;/some/other/Location&gt; &lt;info:rubydora#label&gt; "some other label".</p>
+
+<p>The second triple should cause the request to throw a 403. Without that second triple, the request would be fine.</p></div></div>
+<div class="comment" id="comment-13962"><div class="by">Andrew Woods, 2015-04-13 14:22 UTC</div><div class="text"><p>Osman Din, do you anticipate having time this week for this ticket?</p></div></div>
+<div class="comment" id="comment-13978"><div class="by">Osman Din, 2015-04-13 20:18 UTC</div><div class="text"><p>Not sure right now how to tackle this. It seems that whenever a HTTP-supplied body stream is converted into a Model, it gets populated with F4 subjects (along with the target resource). I'm using: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"> model.listSubjects() </pre>
+</div></div>
+<p> So, I'm not sure how to distinguish between a non-target resource and a valid subject in the Model. It can definitely be checked if a subject is a F4 subject, but what if there are other legit subjects in the model? </p></div></div>
+<div class="comment" id="comment-13979"><div class="by">A. Soroka, 2015-04-13 20:22 UTC</div><div class="text"><p>The only valid subject would be the one that is created from the request target, right? All others are invalid, if I understand the ticket correctly.</p></div></div>
+<div class="comment" id="comment-13981"><div class="by">Andrew Woods, 2015-04-13 20:32 UTC</div><div class="text"><p>"created <em>or updated</em> from the request target", yes.</p></div></div>
+<div class="comment" id="comment-13982"><div class="by">Osman Din, 2015-04-13 20:34 UTC</div><div class="text"><p>Ok, I think I understand now.</p></div></div>
+<div class="comment" id="comment-13983"><div class="by">A. Soroka, 2015-04-13 20:36 UTC</div><div class="text"><p>Andrew Woods No, I meant that the RDF subject was <em>constructed</em>, <em>syntactically</em>, from the request target. The question of create vs. update doesn't obtain here. The thing that is created is an URI, not any persistent thing.</p></div></div>
+<div class="comment" id="comment-13989"><div class="by">Osman Din, 2015-04-14 15:06 UTC</div><div class="text"><p>There are a few unit tests such as the following in FedoraLdpIT:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/b94778562793ea0163a6f7aeab66d6544766b08b/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L780" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/b94778562793ea0163a6f7aeab66d6544766b08b/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L780</a></p>
+
+<p>that land subjects like the following in a Model:</p>
+
+<p><span class="error">&#91;code&#93;</span></p>
+
+<p><a href="http://fedora.info/definitions/v4/repository#jcr/xml, http://www.w3.org/2000/01/rdf-schema#label, &quot;jcr/xml&quot;^^http://www.w3.org/2001/XMLSchema#string" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#jcr/xml, http://www.w3.org/2000/01/rdf-schema#label, "jcr/xml"^^http://www.w3.org/2001/XMLSchema#string</a>&gt;</p>
+
+<p><span class="error">&#91;code&#93;</span></p>
+
+<p>So, it doesn't seem to be possible to distinguish between legit subjects when a GET is made before PUT. The ajs6f test are ok because there the Model only contains triples without the F4 namespace.</p>
+
+<p>So, </p>
+
+<p>(I) it seems that the tests will need to be re-written or adorned with @Ignore.</p>
+
+<p>(2) for @Patch, the requestBody (application/sparql-update) cannot be converted into a Model. We would have to rely on getting subjects by using a regex and having the validation logic in FedoraLdp (not the kernel). Not sure if this is good approach.</p>
+
+<p>Are you okay with 1 and 2?</p></div></div>
+<div class="comment" id="comment-13990"><div class="by">A. Soroka, 2015-04-14 15:10 UTC</div><div class="text"><p>I'm confused, Osman Din. Why is it not possible to distinguish between a triple-subject that was created from the target of the request and something like "http://fedora.info/definitions/v4/repository#jcr/xml", which is quite obviously not the target of any request?</p></div></div>
+<div class="comment" id="comment-13991"><div class="by">Osman Din, 2015-04-14 15:19 UTC</div><div class="text"><p>The test illustrates that (around 790). </p>
+
+<p>In your new IT test that there are two resources, A and B. So, when it's easy to see that when a request is made to A, B is the unwanted resource.</p>
+
+<p>But in the cited test case, the update request contains A and F4 subjects when the Model is obtained in ContentExposingResource or FedoraResourceImpl. So, it doesn't seem possible to say that F4 is okay but B is not, when looking at the Model.</p>
+
+<p>A = a JCR node<br/>
+F4 = <a href="http://fedora.info/definitions/v4/repository#jcr/xml" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#jcr/xml</a></p></div></div>
+<div class="comment" id="comment-13992"><div class="by">A. Soroka, 2015-04-14 15:23 UTC</div><div class="text"><p>I understand your objection even less now. Looking at that test, to distinguish the two kinds of triples seems even easier: those with `subjectURI` as subject are okay, all others are not. What do you mean by "A" and "F4"?</p></div></div>
+<div class="comment" id="comment-13993"><div class="by">Osman Din, 2015-04-14 15:54 UTC</div><div class="text"><p>I've pushed up a test branch that highlights the logging output difference for the following two tests:</p>
+
+
+<p>For the test that now passes OK: <a href="https://github.com/osmandin/fcrepo4/blob/1411/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L765" class="external-link" rel="nofollow noreferrer">testCreateGraphWithNonLocalTriples() </a></p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+INFO 11:46:27.623 (FedoraResourceImpl) Resource path: /14a44455-09ad-446e-a9ac-61cb2b0d9c6d
+INFO 11:46:27.631 (FedoraResourceImpl) Input model subject not target of resource: http:<span class="code-comment">//localhost:8080/43a147fa-2b00-42fd-9314-595feb1f0079</span>
+</pre>
+</div></div>
+
+
+<p>For <a href="https://github.com/osmandin/fcrepo4/blob/1411/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L823" class="external-link" rel="nofollow noreferrer">testRoundTripReplaceGraph() </a></p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+INFO 11:47:43.486 (FedoraResourceImpl) Resource path: /dd0c7b44-a084-4b92-ac85-d1f7a6f2a4e3
+INFO 11:47:43.488 (FedoraResourceImpl) Input model subject not target of resource: http:<span class="code-comment">//fedora.info/definitions/v4/repository#jcr/xml</span>
+</pre>
+</div></div>
+
+<p>The validation logic was added in <a href="https://github.com/osmandin/fcrepo4/blob/f5a400877882e6b410e18d7e7e97c4f02fa82ab6/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/FedoraResourceImpl.java#L472-481" class="external-link" rel="nofollow noreferrer">FedoraResourceImpl </a>.</p></div></div>
+<div class="comment" id="comment-13994"><div class="by">A. Soroka, 2015-04-14 16:02 UTC</div><div class="text"><p>Osman Din Please either move your branch to the main (shared) repository or give me rights to comment on your branch.</p></div></div>
+<div class="comment" id="comment-13995"><div class="by">Osman Din, 2015-04-14 16:04 UTC</div><div class="text"><p>A. Soroka I added you as a collaborator. Thanks.</p></div></div>
+<div class="comment" id="comment-13996"><div class="by">A. Soroka, 2015-04-14 16:06 UTC</div><div class="text"><p>Thanks. Can you make a PR now from that branch, so that I can give line-attached comments?</p></div></div>
+<div class="comment" id="comment-13997"><div class="by">Osman Din, 2015-04-14 16:13 UTC</div><div class="text"><p>I created a PR against fcrepo.</p></div></div>
+<div class="comment" id="comment-13998"><div class="by">A. Soroka, 2015-04-14 16:20 UTC</div><div class="text"><p>I hate to say it, but I <em>still</em> don't see the problem (other than the bad logic I noted in the PR). The logging you show looks fine to me. Changes <em>do</em> need to be made to the round-trip test. Obviously, we don't expect to do a round-trip without filtering under the "new regime". But I do not understand why writing that filter seems to present a problem. Just select (from the results of the GET) the triples with subject the same as the request target and use those for the PUT.</p></div></div>
+<div class="comment" id="comment-14014"><div class="by">Osman Din, 2015-04-14 19:30 UTC</div><div class="text"><p>For some reason Prefer header doesn't seem to be doing the trick for F4 namespace triples. I thought I'd check here before stepping into the debugger.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -i -H <span class="code-quote">"Prefer: <span class="code-keyword">return</span>=representation; omit=\"</span>http:<span class="code-comment">//fedora.info/definitions/v4/repository#jcr/xml\<span class="code-quote">";"</span> http://localhost:8080/<span class="code-keyword">rest</span>/enrique</span>
+</pre>
+</div></div>
+
+<p>Result (notice the last line in the output):</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+HTTP/1.1 200 OK
+ETag: <span class="code-quote">"9929737c699e75ad1d123961b980d685d984e337"</span>
+Last-Modified: Tue, 31 Mar 2015 15:37:54 GMT
+Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;;rel=<span class="code-quote">"type"</span>
+</span>Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Container&gt;;rel=<span class="code-quote">"type"</span>
+</span>Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#BasicContainer&gt;;rel=<span class="code-quote">"type"</span>
+</span>Accept-Patch: application/sparql-update
+Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,multipart/form-data,application/sparql-update
+Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS
+Preference-Applied: <span class="code-keyword">return</span>=representation
+Vary: Prefer
+Vary: Accept, Range, Accept-Encoding, Accept-Language
+Content-Length: 2701
+Content-Type: text/turtle
+Server: Jetty(8.1.16.v20140903)
+
+@prefix dc: &lt;http:<span class="code-comment">//purl.org/dc/elements/1.1/&gt; .
+</span>@prefix nt: &lt;http:<span class="code-comment">//www.jcp.org/jcr/nt/1.0&gt; .
+</span>@prefix ns001: &lt;http:<span class="code-comment">//abc.org/&gt; .
+</span>@prefix foaf: &lt;http:<span class="code-comment">//xmlns.com/foaf/0.1/&gt; .
+</span>@prefix test: &lt;info:fedora/test/&gt; .
+@prefix fedoraconfig: &lt;http:<span class="code-comment">//fedora.info/definitions/v4/config#&gt; .
+</span>@prefix ns002: &lt;http:<span class="code-comment">//&gt; .
+</span>@prefix ns003: &lt;http:<span class="code-comment">//purl.org/dc/terms/&gt; .
+</span>@prefix ns004: &lt;http:<span class="code-comment">//purl.org/dc/elements/&gt; .
+</span>@prefix esc: &lt;http:<span class="code-comment">//abc.org/d#&gt; .
+</span>@prefix image: &lt;http:<span class="code-comment">//www.modeshape.org/images/1.0&gt; .
+</span>@prefix xs: &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema&gt; .
+</span>@prefix xml: &lt;http:<span class="code-comment">//www.w3.org/XML/1998/namespace&gt; .
+</span>@prefix mix: &lt;http:<span class="code-comment">//www.jcp.org/jcr/mix/1.0&gt; .
+</span>@prefix premis: &lt;http:<span class="code-comment">//www.loc.gov/premis/rdf/v1#&gt; .
+</span>@prefix mode: &lt;http:<span class="code-comment">//www.modeshape.org/1.0&gt; .
+</span>@prefix rdfs: &lt;http:<span class="code-comment">//www.w3.org/2000/01/rdf-schema#&gt; .
+</span>@prefix rdf: &lt;http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+</span>@prefix sv: &lt;http:<span class="code-comment">//www.jcp.org/jcr/sv/1.0&gt; .
+</span>@prefix fedora: &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#&gt; .
+</span>@prefix xsi: &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema-instance&gt; .
+</span>@prefix ldp: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#&gt; .
+</span>
+
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/enrique&gt; a ldp:RDFSource , ldp:Container , &lt;http://www.jcp.org/jcr/nt/1.0folder&gt; , &lt;http://www.jcp.org/jcr/nt/1.0hierarchyNode&gt; , &lt;http://www.jcp.org/jcr/nt/1.0base&gt; , &lt;http://www.jcp.org/jcr/mix/1.0created&gt; , fedora:Container , fedora:Resource , fedora:Resource , &lt;http://www.jcp.org/jcr/mix/1.0created&gt; , &lt;http://www.jcp.org/jcr/mix/1.0lastModified&gt; , &lt;http://www.jcp.org/jcr/mix/1.0referenceable&gt; ;
+</span>        fedora:primaryType <span class="code-quote">"nt:folder"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        fedora:created <span class="code-quote">"2015-03-31T15:37:54.319Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:lastModified <span class="code-quote">"2015-03-31T15:37:54.319Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>        fedora:mixinTypes <span class="code-quote">"fedora:Container"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; , <span class="code-quote">"fedora:Resource"</span>^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        fedora:lastModifiedBy <span class="code-quote">"bypassAdmin"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        fedora:uuid <span class="code-quote">"45d0d6c9-a787-4379-bc50-03886c77748d"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        fedora:createdBy <span class="code-quote">"bypassAdmin"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>        fedora:writable <span class="code-quote">"<span class="code-keyword">true</span>"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#<span class="code-object">boolean</span>&gt; ;
+</span>        fedora:hasParent &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/&gt; .
+</span>
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/enrique/fcr:export?format=jcr/xml&gt; dc:format &lt;http://fedora.info/definitions/v4/repository#jcr/xml&gt; .
+</span>
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/enrique&gt; fedora:exportsAs &lt;http://localhost:8080/<span class="code-keyword">rest</span>/enrique/fcr:export?format=jcr/xml&gt; .
+</span>
+&lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#jcr/xml&gt; rdfs:label <span class="code-quote">"jcr/xml"</span>^^&lt;http://www.w3.org/2001/XMLSchema#string&gt; .</span>
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-14020"><div class="by">A. Soroka, 2015-04-14 20:26 UTC</div><div class="text"><p>Osman Din I feel a bit weird about that last triple that you're pointing to here. I can't understand what its meaning really is or exactly how (or why) we are generating it. Do you know how it arises in the RDF-generation processes? I don't think it has anything to do with namespaces: the subject "http://fedora.info/definitions/v4/repository#jcr/xml" seems a bit weird, too. In short, I'm wondering whether you have discovered a bug in RDF generation...</p></div></div>
+<div class="comment" id="comment-14021"><div class="by">A. Soroka, 2015-04-14 20:28 UTC</div><div class="text"><p>Also, I don't see that the subject there dereferences into anything in the legitimate repository namespace/ontology.</p></div></div>
+<div class="comment" id="comment-14023"><div class="by">Osman Din, 2015-04-14 20:45 UTC</div><div class="text"><p>A. Soroka It's "expanding" from the "http://localhost:8080/.../fcr:export?jcr/xml"  perhaps?</p></div></div>
+<div class="comment" id="comment-14024"><div class="by">A. Soroka, 2015-04-14 20:49 UTC</div><div class="text"><p>Perhaps, Osman Din, and that is the only other place I see that "jcr/xml" string occurring, but how and why? Why would we be generating labeling triples anyway...?</p></div></div>
+<div class="comment" id="comment-14048"><div class="by">Osman Din, 2015-04-15 19:50 UTC</div><div class="text"><p>Removing that triple failed, but still failing on (at least) the following:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ BibOntologyIT.testExampleRecord:28-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;403&gt;
+  BibframeIT.testBibframe:69-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;403&gt;
+  ModsRdfIT.testRoundtripModsRDF:165-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;403&gt;
+  MusicOntologyIT.testExampleRecord:28-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;403&gt;
+  OpenAnnotationIT.testOpenAnnotationChoice:51-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;403&gt;
+
+</pre>
+</div></div>
+
+<p>For BibIT triples are:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+
+
+INFO 15:57:39.485 (FedoraResourceImpl) Model: &lt;ModelCom   {http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @dcterms:date <span class="code-quote">"2007-05-01"</span>; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @dcterms:creator http://tmp.apassant.net/foaf.rdf#alex; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @rdf:type bibo:Article; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @dcterms:partOf http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @dcterms:title <span class="code-quote">"An Architecture to Discover and Query Decentralized RDF Data"</span>; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @bibo:status bibo:status/accepted; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @dcterms:relation http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11.pdf; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @bibo:status bibo:status/peerReviwed; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @bibo:authorList 7db0b0442bfef5839c705c9285f1dd42; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @dcterms:creator http://fgiasson.com/me/; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @bibo:status bibo:status/published; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11 @dcterms:creator http://captsolo.net/semweb/foaf-captsolo.rdf#Uldis_Bojars; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#proceedings.pdf @rdf:type bibo:Document; http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#proceedings.pdf @bibo:uri <span class="code-quote">"http://ftp.informatik.rwth-aachen.de/Publications/CEUR-WS/Vol-248/proceedings.pdf"</span>; 60757f767a2af1493eeec64a7c3fa74b @rdf:type rdf:Seq; 60757f767a2af1493eeec64a7c3fa74b @rdf:_4 http://www.dfki.uni-kl.de/~grimnes/foaf.rdf#ggrimnes; 60757f767a2af1493eeec64a7c3fa74b @rdf:_3 http://kmi.open.ac.uk/people/tom/...} |  [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/dc/terms/date, <span class="code-quote">"2007-05-01"</span>] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/dc/terms/creator, http://tmp.apassant.net/foaf.rdf#alex] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://www.w3.org/1999/02/22-rdf-syntax-ns#type, http://purl.org/ontology/bibo/Article] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/dc/terms/partOf, http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/dc/terms/title, <span class="code-quote">"An Architecture to Discover and Query Decentralized RDF Data"</span>] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/ontology/bibo/status, http://purl.org/ontology/bibo/status/accepted] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/dc/terms/relation, http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11.pdf] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/ontology/bibo/status, http://purl.org/ontology/bibo/status/peerReviwed] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/ontology/bibo/authorList, 7db0b0442bfef5839c705c9285f1dd42] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/dc/terms/creator, http://fgiasson.com/me/] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/ontology/bibo/status, http://purl.org/ontology/bibo/status/published] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11, http://purl.org/dc/terms/creator, http://captsolo.net/semweb/foaf-captsolo.rdf#Uldis_Bojars] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#proceedings.pdf, http://www.w3.org/1999/02/22-rdf-syntax-ns#type, http://purl.org/ontology/bibo/Document] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#proceedings.pdf, http://purl.org/ontology/bibo/uri, <span class="code-quote">"http://ftp.informatik.rwth-aachen.de/Publications/CEUR-WS/Vol-248/proceedings.pdf"</span>] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#type, http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#_4, http://www.dfki.uni-kl.de/~grimnes/foaf.rdf#ggrimnes] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#_3, http://kmi.open.ac.uk/people/tom/] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#_2, http://www.bizer.de#chris] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#_1, http://www.auer.cx/soeren] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11.pdf, http://www.w3.org/1999/02/22-rdf-syntax-ns#type, http://purl.org/ontology/bibo/Document] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11.pdf, http://purl.org/ontology/bibo/uri, <span class="code-quote">"http://ftp.informatik.rwth-aachen.de/Publications/CEUR-WS/Vol-248/paper11.pdf"</span>] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/shortTitle, <span class="code-quote">"SFSW2007"</span>] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/dc/terms/hasPart, http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/editor, http://kmi.open.ac.uk/people/tom/] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/dc/terms/date, <span class="code-quote">"2007-05-01"</span>] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/dc/terms/relation, http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#proceedings.pdf] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/dc/terms/partOf, http://sunsite.informatik.rwth-aachen.de/Publications/CEUR-WS/] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://www.w3.org/1999/02/22-rdf-syntax-ns#type, http://purl.org/ontology/bibo/Proceeding] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/editor, http://www.dfki.uni-kl.de/~grimnes/foaf.rdf#ggrimnes] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/volume, <span class="code-quote">"248"</span>] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/contributorList, 60757f767a2af1493eeec64a7c3fa74b] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/status, http://purl.org/ontology/bibo/status/published] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/editor, http://www.auer.cx/soeren] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/ontology/bibo/editor, http://www.bizer.de#chris] [http://localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c, http://purl.org/dc/terms/title, <span class="code-quote">"SFSW '07 Scripting <span class="code-keyword">for</span> the Semantic Web"</span>] [7db0b0442bfef5839c705c9285f1dd42, http://www.w3.org/1999/02/22-rdf-syntax-ns#type, http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq] [7db0b0442bfef5839c705c9285f1dd42, http://www.w3.org/1999/02/22-rdf-syntax-ns#_3, http://fgiasson.com/me/] [7db0b0442bfef5839c705c9285f1dd42, http://www.w3.org/1999/02/22-rdf-syntax-ns#_2, http://tmp.apassant.net/foaf.rdf#alex] [7db0b0442bfef5839c705c9285f1dd42, http://www.w3.org/1999/02/22-rdf-syntax-ns#_1, http://captsolo.net/semweb/foaf-captsolo.rdf#Uldis_Bojars]&gt;
+</span>
+</pre>
+</div></div>
+
+<p>That is,</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+
+INFO 15:57:39.508 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.509 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.510 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.510 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.510 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.510 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.511 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.511 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.511 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.512 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.512 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.512 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#paper11
+</span>INFO 15:57:39.512 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#proceedings.pdf
+</span>INFO 15:57:39.514 (FedoraResourceImpl) Eval subject: http:<span class="code-comment">//localhost:8080/de950614-0f9d-44d1-a404-3e323cfd2c6c#proceedings.pdf
+</span>INFO 15:57:39.514 (FedoraResourceImpl) Eval subject: 60757f767a2af1493eeec64a7c3fa74b
+INFO 15:57:39.514 (FedoraResourceImpl) Input model subject not target of resource: 60757f767a2af1493eeec64a7c3fa74b
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-14050"><div class="by">A. Soroka, 2015-04-15 19:54 UTC</div><div class="text"><p>That looks a bit like success to me. I think we must now examine those tests and determine whether they still measure the expected behavior under the new regime. We may need to alter those tests as Osman Din altered the roundtrip IT in fcrepo-http-api.</p></div></div>
+<div class="comment" id="comment-14051"><div class="by">Osman Din, 2015-04-15 20:01 UTC</div><div class="text"><p>A. Soroka I think we have an extra triple again. Please see the last line. I don't know if it's legit.</p></div></div>
+<div class="comment" id="comment-14052"><div class="by">A. Soroka, 2015-04-15 20:05 UTC</div><div class="text"><p>The last line of what, Osman Din?</p></div></div>
+<div class="comment" id="comment-14053"><div class="by">Andrew Woods, 2015-04-15 20:10 UTC</div><div class="text"><p>The last line... of all lines. The LAST.</p></div></div>
+<div class="comment" id="comment-14054"><div class="by">Osman Din, 2015-04-15 20:11 UTC</div><div class="text"><p>The last line of the code block. That is, this triple:</p>
+
+<p>INFO 15:57:39.514 (FedoraResourceImpl) Input model subject not target of resource: 60757f767a2af1493eeec64a7c3fa74b\</p>
+
+<p>But I can also see that there's an extra one when I run testCreateGraphWithBlanknodes() in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L738" class="external-link" rel="nofollow noreferrer">FedoraLdpIT </a>.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ e.setContent(<span class="code-keyword">new</span> ByteArrayInputStream(
+                (<span class="code-quote">"&lt;"</span> + subjectURI + <span class="code-quote">"&gt; &lt;info:some-predicate&gt; _:a ."</span> +
+                        <span class="code-quote">"_:a &lt;info:rubydora#label&gt; \"</span>asdfg\"").getBytes()));
+</pre>
+</div></div>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+INFO 16:06:39.516 (FedoraResourceImpl) Resource path: /5dc88728-c334-4c5b-b9ee-5f8136619c32
+INFO 16:06:39.516 (FedoraResourceImpl) Model: &lt;ModelCom   {d0445e7b398b152cf6c722e774bdb3af @info:rubydora#label <span class="code-quote">"asdfg"</span>; http:<span class="code-comment">//localhost:8080/5dc88728-c334-4c5b-b9ee-5f8136619c32 @info:some-predicate d0445e7b398b152cf6c722e774bdb3af} |  [d0445e7b398b152cf6c722e774bdb3af, info:rubydora#label, <span class="code-quote">"asdfg"</span>] [http://localhost:8080/5dc88728-c334-4c5b-b9ee-5f8136619c32, info:some-predicate, d0445e7b398b152cf6c722e774bdb3af]&gt;
+</span>INFO 16:06:39.516 (FedoraResourceImpl) Eval subject: d0445e7b398b152cf6c722e774bdb3af
+INFO 16:06:39.517 (FedoraResourceImpl) Input model subject not target of resource: d0445e7b398b152cf6c722e774bdb3af
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-14055"><div class="by">A. Soroka, 2015-04-15 20:14 UTC</div><div class="text"><p>"INFO 15:57:39.514 (FedoraResourceImpl) Input model subject not target of resource: 60757f767a2af1493eeec64a7c3fa74b\"</p>
+
+<p>is not a triple. We need to discover to what triple it belongs, and whether or not in fact that triple is legitimate. In other words, whether the test is trying to persist RDF that, under the "new regime", it should not be able to persist.</p>
+
+<p>If these subjects are skolemized blank nodes, then we need to shift the locations of skolemization and your new test on the subjects with respect to each other so that the new test encounters blank nodes before they are skolemized.</p></div></div>
+<div class="comment" id="comment-14057"><div class="by">Osman Din, 2015-04-15 20:20 UTC</div><div class="text"><p>Relevant snippet for 60757f767a2af1493eeec64a7c3fa74b:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+
+ [60757f767a2af1493eeec64a7c3fa74b, http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#_4, http://www.dfki.uni-kl.de/~grimnes/foaf.rdf#ggrimnes] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#_3, http://kmi.open.ac.uk/people/tom/] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#_2, http://www.bizer.de#chris] [60757f767a2af1493eeec64a7c3fa74b, http://www.w3.org/1999/02/22-rdf-syntax-ns#_1, http://www.auer.cx/soeren] </span>
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-14058"><div class="by">A. Soroka, 2015-04-15 20:23 UTC</div><div class="text"><p>Looks a bit like some kind of blank node being used as a list. That's the kind of junk you see a lot of in Bibframe.</p>
+</div></div>
+<div class="comment" id="comment-14059"><div class="by">Osman Din, 2015-04-15 20:26 UTC</div><div class="text"><p>"If these subjects are skolemized blank nodes, then we need to shift the locations of skolemization and your new test on the subjects with respect to each other so that the new test encounters blank nodes before they are skolemized."</p>
+
+<p>A. Soroka Does this mean that some additional PR would be needed before the above-mentioned tests can pass?</p></div></div>
+<div class="comment" id="comment-14060"><div class="by">A. Soroka, 2015-04-15 20:31 UTC</div><div class="text"><p>I'm still not sure we want them to pass in their current form. Assuming that the failures are entirely due to blank nodes and we do want them to pass, and assuming that my guess above about the interaction between your new test and skolemization is right, then yes, work will be required to move your new test into a location where it encounters blank nodes before they have been skolemized. Skolemization occurs in FedoraResourceImpl and JcrPropertyStatementListener, although perhaps for your convenience you may want to move both occurrences into FedoraResourceImpl.</p></div></div>
+<div class="comment" id="comment-14064"><div class="by">Osman Din, 2015-04-16 00:54 UTC</div><div class="text"><p>From the 30+ comments and feedback, and especially the last comment, it appears to me that work on this ticket is still blocked by either more future tickets or more work. It also seems to me that the side effects of a patch have not been analyzed yet. Having spent already a day or so on making a simple solution stick, and still not understanding the skolemization piece, I think I’m going to stop working on this ticket for a bit and mark it as unassigned for now.</p></div></div>
+<div class="comment" id="comment-14070"><div class="by">A. Soroka, 2015-04-16 13:06 UTC</div><div class="text"><p>Certainly there is more work to be done on this ticket, but not much. I think you may be overestimating what remains. Changing the qualities of "permitted" RDF is a major change to the behavior of the software, and no one should have expected this ticket to be closed in a single day. </p></div></div>
+<div class="comment" id="comment-14455"><div class="by">A. Soroka, 2015-06-04 16:07 UTC</div><div class="text"><p>This issue cannot be resolved before 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1418" >
+                <a href="FCREPO-1418.html" class="jira-issue-macro-key issue-link"  title="POST/PATCH must advertise constraints if triples not persisted" >
+            
+            FCREPO-1418
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-14707"><div class="by">A. Soroka, 2015-07-13 19:26 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/836" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/836</a></p></div></div>
+<div class="comment" id="comment-14714"><div class="by">Andrew Woods, 2015-07-13 22:41 UTC</div><div class="text"><p>Looks good, pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-14749"><div class="by">Andrew Woods, 2015-07-16 22:04 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/6e755b2768b5a4e7496119efbcdddef1f009c163" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/6e755b2768b5a4e7496119efbcdddef1f009c163</a></p></div></div>
+<p><a href="data/FCREPO-1411.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

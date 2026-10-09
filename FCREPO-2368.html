@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2368 provide full DEBUG-level logging for import-export verification tool</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2368</span> provide full DEBUG-level logging for import-export verification tool</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-12-17 13:51 UTC</td></tr><tr><th>Updated</th><td>2017-05-19 17:30 UTC</td></tr><tr><th>Resolved</th><td>2017-05-18 18:45 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-verify-0.1.0</td></tr><tr><th>Labels</th><td>import-export-phase-2, verification</td></tr></table>
+<h2>Description</h2>
+<p>To facilitate debugging of issues with the verifcation tool, provide fully detailed logging at the DEBUG level.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-18276"><div class="by">Joshua Allan Westgard, 2016-12-18 04:36 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/18" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/18</a></p></div></div>
+<div class="comment" id="comment-18699"><div class="by">Joshua Allan Westgard, 2017-05-15 15:30 UTC</div><div class="text"><p>Danny Bernstein: I've reviewed the attached PR and remember the backstory on this now.  I created PR 18 to change the way logging worked and some of the default behaviors of the tool, as well as tweaking some aspects of the command line interface to make it more intuitive (I thought).  During the review, however, some questions came up about whether we had sufficient user input about what they want or expect the verification tool to do, so we decided to solicit more feedback on the PR (early January).  By the end of February we hadn't gotten any additional feedback so I ended up closing the PR until we could reevaluate the situation and get more input on what users want.</p>
+
+<p>For this sprint it would be great if as a first step you could look at how the tool works currently and provide some feedback on whether any of the changes in this PR would be beneficial or not.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-18709"><div class="by">Danny Bernstein, 2017-05-16 04:44 UTC</div><div class="text"><p>Joshua Allan Westgard : Sure.  That seems like a good step now that I'm all set up with my environment.   I've taken a look at the verify.py code.  I'll look at the PR and make some comment.  Let's talk tomorrow (Tuesday)  on IRC how to proceed.  I have a few ideas to share.</p></div></div>
+<div class="comment" id="comment-18710"><div class="by">Danny Bernstein, 2017-05-16 05:49 UTC</div><div class="text"><p>So  both having reviewed the previous pull request  and having played a bit with the tool I would suggest that we consider the following changes: </p>
+<ol>
+	<li> Standard out shows runtime summary of the tool.  
+	<ol>
+		<li>It should answer at a glance: 
+		<ol>
+			<li>Configuration information</li>
+			<li>Progress
+			<ol>
+				<li>% complete</li>
+				<li># of success</li>
+				<li># of failures</li>
+			</ol>
+			</li>
+			<li>estimated time to completion (if possible) </li>
+		</ol>
+		</li>
+		<li>It should print updated stats every 10 seconds. </li>
+	</ol>
+	</li>
+	<li>File-based log
+	<ol>
+		<li>includes everything from standard out as well as  all log messages you are showing in verbose mode - ie resource level info with details (rel, orig, dest, and success/failure info and details) plus any warnings or errors. </li>
+		<li>Turning on -v would log debug level log messages such as http requests and responses, retries, etc. </li>
+	</ol>
+	</li>
+	<li>All log messages would include timestamps,  message level,  file and line information in addition to messages for easier debugging.</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-18735"><div class="by">Jim Coble, 2017-05-17 15:42 UTC</div><div class="text"><p>Joshua Allan Westgard Couple of things ...</p>
+<ul>
+	<li>The proposal made by Danny Bernstein sounds good to me.</li>
+	<li>This is probably a "blue sky" thing that may be too much work for too little return but, when there is a triples mismatch, I could see it being useful for the log message (at the debug level) to provide some information about what the mismatch was.  That might make it easier to identity bugs in certain situations.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-18744"><div class="by">Joshua Allan Westgard, 2017-05-17 21:14 UTC</div><div class="text"><p>Great! Thanks, Jim Coble.  Your second wish is not out of the question. Right now the tool sets for each resource checked (1) a boolean "verified" property and (2) a string "verification" property explaining the reason.  This "verification" property could also be a list of triples or some other summary of the diff between the original and destination.</p></div></div>
+<div class="comment" id="comment-18745"><div class="by">Joshua Allan Westgard, 2017-05-17 21:16 UTC</div><div class="text"><p>Danny Bernstein, one thing occurs to me on this: I'm not sure % complete will really be possible.  Because we envision use cases with very large repositories, the tool uses a streaming interface where it is not aware of how big the respository will be.</p></div></div>
+<div class="comment" id="comment-18747"><div class="by">Joshua Allan Westgard, 2017-05-17 21:19 UTC</div><div class="text"><p>We could display the number of resources remaining to be checked, but that might go up as well as down, as new resources are 'discovered' during traversal.</p></div></div>
+<div class="comment" id="comment-18769"><div class="by">Danny Bernstein, 2017-05-18 18:45 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/27" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/27</a></p></div></div>
+<div class="comment" id="comment-18790"><div class="by">Joshua Allan Westgard, 2017-05-19 16:52 UTC</div><div class="text"><p>resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/c17863890de5df970279852637e45881fffa3bc6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/c17863890de5df970279852637e45881fffa3bc6</a></p></div></div>
+<p><a href="data/FCREPO-2368.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

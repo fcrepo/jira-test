@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1214 RISearchServlet chrashes if stylesheets unaccessable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1214</span> RISearchServlet chrashes if stylesheets unaccessable</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2014-07-21 14:01 UTC</td></tr><tr><th>Updated</th><td>2014-08-17 20:36 UTC</td></tr><tr><th>Resolved</th><td>2014-08-17 20:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.7.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.0</td></tr></table>
+<h2>Environment</h2>Debain 7 (32 bit), default Tomcat7
+<h2>Description</h2>
+<p>Installation of Fedora to standard Debain Tomcat via deployment descriptor files (fedora.xml context description in /var/lib/tomcat7/conf/Catalina/localhost) doesn't set up the webapp directory in the way RISearchServlet (and probably other components) is expecting it. In particular the directory /ri (containing stylesheets) is missing.</p>
+
+<p>However, the set up of RISearchServlet doesn't check for existence/accessibility of these files on initialization.</p>
+
+<p>Part of the problem seems to be, that Trippi needs absolute File path to the stylesheet files, instead of resource URL (obtained by calling getResource).</p>
+
+<p>Maybe connected to this issue:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-534" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-534</a></p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-12606"><div class="by">Benjamin Armintor, 2014-08-08 03:21 UTC</div><div class="text"><p>Fedora is running in standard Debian 7 Tomcat installation as a webapp configured with deployment descriptor in /etc/tomcat7/catalina/localhost/fedora.xml:</p>
+
+<p>&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br/>
+&lt;Context docBase="/opt/fedora/install/fedora.war"&gt;<br/>
+  &lt;Parameter name="fedora.home" value="/opt/fedora" /&gt;<br/>
+&lt;/Context&gt;</p>
+
+<p>In this environment $CATALINA_HOME usually points to /usr/share/tomcat7. As you can see here, all the Fedora files are located in /opt/fedora.</p>
+
+<p>The stylesheets you mentioned are present in /var/lib/tomcat7/work/Catalina/localhost/fedora/WEB-INF/classes/ri and thus should be in the classpath.</p></div></div>
+<div class="comment" id="comment-12607"><div class="by">Benjamin Armintor, 2014-08-08 04:12 UTC</div><div class="text"><p>Ralf: Can you try to install a build from source at 3.7.2-SNAPSHOT under this configuration? It would help our pre-release testing.</p></div></div>
+<div class="comment" id="comment-12608"><div class="by">Benjamin Armintor, 2014-08-08 04:30 UTC</div><div class="text"><p>Actually, since you also have to build/install trippi from snapshot, let me re-phrase: Can we ask you to test when the release candidate is ready? Should be within the week.</p></div></div>
+<div class="comment" id="comment-12609"><div class="by">Ralf Claussnitzer, 2014-08-08 12:39 UTC</div><div class="text"><p>Sure, I can do that by next week. Will wait for RC...</p>
+
+<p>I'm still having trouble building the project with a fresh Maven installation (<a href="https://jira.duraspace.org/browse/FCREPO-1219" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1219</a>) but I can work around that.</p>
+
+<p>1- From what I got from the code, having /ri in the classpath doesn't help because some of the stylesheets have to be in webroot to be accessible by the browser when rendering RI output. Is that correct?</p>
+
+<p>I had a look at the patch (27a6bd1):<br/>
+2-  What is the correlation with SOAPClient?</p>
+
+<p>3- The Trippi-component needs absolute path (File objects) for initialization. Correct? Did you address this?</p></div></div>
+<div class="comment" id="comment-12610"><div class="by">Benjamin Armintor, 2014-08-08 17:15 UTC</div><div class="text"><p>1) I don't believe so: Though the directory name is the same, the classpath resources are xsl, the html links are css<br/>
+2) Probably an obsolete servlet, but it was the other place getRealPath was used.<br/>
+3) Yes: I added a constructor for that class that takes URLs rather than String paths: <a href="https://github.com/fcrepo3/trippi/commit/ca0c67b33f2a56f5a492dcbfbe1ec7e21a625552" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/trippi/commit/ca0c67b33f2a56f5a492dcbfbe1ec7e21a625552</a> </p></div></div>
+<div class="comment" id="comment-12616"><div class="by">Benjamin Armintor, 2014-08-14 18:18 UTC</div><div class="text"><p>Ralf-<br/>
+The dependent library updates are out, so you should be able to do acceptance testing against the branch at <a href="https://github.com/fcrepo3/fcrepo/tree/3.8.0-SNAPSHOT" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo3/fcrepo/tree/3.8.0-SNAPSHOT</a></p></div></div>
+<div class="comment" id="comment-12628"><div class="by">Ralf Claussnitzer, 2014-08-17 20:17 UTC</div><div class="text"><p>Hi Benjamin,</p>
+
+<p>I tested a very basic Fedora installation on a Debian VM. Everything looks OK to me.</p>
+
+<p>Step by step:<br/>
+1. Build Fedora 3.8.0-SNAPSHOT <br/>
+2. Set up Debian 7.6 VM (Linux debian 3.2.0-4-486 #1 Debian 3.2.60-1+deb7u3 i686 GNU/Linux)<br/>
+3. Install default Tomcat7 (req. Open JDK 6)<br/>
+4. Use fcrepo-installer to install to /opt/fedora using the existing Tomcat (install.properties below)<br/>
+5. Set FEDORA_HOME environment variable to /opt/fedora via /etc/profile.d/fedora.sh<br/>
+6. Remove all /usr/lib/tomcat7/webapps/fedora, /usr/lib/tomcat7/webapps/fedora.war, /usr/lib/tomcat7/work/fedora<br/>
+7. Edit /etc/tomcat7/Catalina/localhost/fedora.xml to set docBase="/opt/fedora/install/fedora.war"<br/>
+8. Restart Tomcat7<br/>
+9. Check fedora/risearch Servlet... Works.</p>
+
+<p>Maybe one should consider automating this kind of integration test. Vagrant <span class="error">&#91;1&#93;</span> looks promising, but I'm not yet able to build up a working Debian7 image.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://www.vagrantup.com/" class="external-link" rel="nofollow noreferrer">http://www.vagrantup.com/</a></p>
+
+<p>&#8212; install.properties &#8212;<br/>
+#Install Options<br/>
+#Sun Aug 17 16:25:55 CEST 2014<br/>
+ri.enabled=true<br/>
+messaging.enabled=true<br/>
+apia.auth.required=false<br/>
+database.jdbcDriverClass=org.apache.derby.jdbc.EmbeddedDriver<br/>
+upstream.auth.enabled=false<br/>
+ssl.available=false<br/>
+database.jdbcURL=jdbc\:derby\:/opt/fedora/derby/fedora3;create\=true<br/>
+messaging.uri=vm\:(broker\:(tcp\://localhost\:61616))<br/>
+database.password=fedoraAdmin<br/>
+database.username=fedoraAdmin<br/>
+fesl.authz.enabled=false<br/>
+tomcat.shutdown.port=8005<br/>
+deploy.local.services=true<br/>
+xacml.enabled=false<br/>
+tomcat.http.port=8080<br/>
+fedora.serverHost=localhost<br/>
+database=included<br/>
+database.driver=included<br/>
+fedora.serverContext=fedora<br/>
+llstore.type=akubra-fs<br/>
+tomcat.home=/var/lib/tomcat7<br/>
+fedora.home=/opt/fedora<br/>
+install.type=custom<br/>
+servlet.engine=existingTomcat<br/>
+fedora.admin.pass=fedoraAdmin</p></div></div>
+<div class="comment" id="comment-12629"><div class="by">Benjamin Armintor, 2014-08-17 20:36 UTC</div><div class="text"><p>Ralf-<br/>
+  Thanks for testing!  I agree that vagrant looks promising: Hopefully the testing procedures we develop for Fedora 4 can be backported. In the meantime, I'm going to close this issue. Thanks again for the report and the confirmation.</p></div></div>
+<p><a href="data/FCREPO-1214.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

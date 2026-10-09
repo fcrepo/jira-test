@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2505 Error import with HTTP 412 Precondition Failed</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2505</span> Error import with HTTP 412 Precondition Failed</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Situ, Longshou</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-05-26 23:28 UTC</td></tr><tr><th>Updated</th><td>2017-06-01 23:34 UTC</td></tr><tr><th>Resolved</th><td>2017-06-01 23:34 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>Import plant patent dataset produce error "HTTP 412 Precondition Failed":<br/>
+WARN 15:53:55.499 (Importer) Adding If-Unmodified-Since header: Fri, 26 May 2017 22:53:22 GMT<br/>
+ERROR 15:53:55.501 (Importer) Error while importing .../fcrepo/rest/fd/e3/a3/e1/fde3a3e1-c6cd-46af-a859-254627e6258a.ttl (412): HTTP 412 Precondition Failed</p>
+
+<p>Step to replicate:</p>
+<ul class="alternate" type="square">
+	<li>Start Fedora 4.8.0-SNAPSHOT:<br/>
+$ java -Dfcrepo.properties.management=relaxed -jar bin/fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar --port 8080 --headless --contextPath /fcrepo</li>
+	<li>Restore plant patent dataset:<br/>
+curl -i -X POST --data-binary "1473315261896-0" "http://localhost:8080/fcrepo/rest/fcr:restore"</li>
+	<li>Export the dataset:<br/>
+java -jar -Dfcrepo.log.importexport=DEBUG bin/fcrepo-import-export-0.1.1-SNAPSHOT.jar -b -m export -d data -r <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a></li>
+	<li>Start another server:<br/>
+$ java -Dfcrepo.home=fcrepo4-data-2 -Dfcrepo.dynamic.jms.port=61717 -Dfcrepo.dynamic.stomp.port=61713 -Dfcrepo.properties.management=relaxed -jar bin/fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar --port 8686 --headless --contextPath /f4</li>
+	<li>Import the exported dataset:<br/>
+$ java -jar bin/fcrepo-import-export-0.1.1-SNAPSHOT.jar -m import -d data -M <a href="http://localhost:8080/fcrepo/rest,http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest,http://localhost:8686/f4/rest</a> -r <a href="http://localhost:8686/f4/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest</a></li>
+</ul>
+
+
+<p>The "HTTP 412 Precondition Failed" error will appear repeatedly.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19031"><div class="by">Andrew Woods, 2017-05-26 23:57 UTC</div><div class="text"><p>I have verified the existence of this bug.</p>
+
+<p>I suspect it is due to the fact that the resource that fails (fde3a3e1-c6cd-46af-a859-254627e6258a) gets updated after its last-modified date is collected... due to the fact that it has children resources.</p>
+
+<p> </p>
+
+<p>In thinking about this more, is there any reason that we do not simply use something like <tt>Instant.now()</tt> as the If-Unmodified-Since header value?</p>
+
+<p> </p>
+
+<p>It looks like this Travis error may be related to this same issue: <a href="https://travis-ci.org/fcrepo4-labs/fcrepo-import-export/builds/236746989#L3975" class="external-link" rel="nofollow noreferrer">https://travis-ci.org/fcrepo4-labs/fcrepo-import-export/builds/236746989#L3975</a> (the /res1 resource has children that will affect /res1's last-modified date).</p></div></div>
+<div class="comment" id="comment-19046"><div class="by">Esmé Cowles, 2017-05-28 01:06 UTC</div><div class="text"><p>Andrew Woods, it's strange, but I haven't been able to trigger the 412 error locally (I even spun up a Linux VM to see if it was somehow a Mac/Linux thing).</p>
+
+<p>But I would be fine with using the current time in the If-Unmodified-Since header — given the use to restore old content, the intention here is to explicitly overwrite whatever is there, so using something like that will always succeed seems reasonable.</p></div></div>
+<div class="comment" id="comment-19051"><div class="by">Andrew Woods, 2017-05-30 16:38 UTC</div><div class="text"><p>Esmé Cowles: As a note, running the steps documented in the ticket description, I get 100 "412 Precondition Failed" errors.</p>
+
+<p>I am running the current master of import/export (68826375) and current master of Fedora (<a href="https://s3.amazonaws.com/f4-artifacts/fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar" class="external-link" rel="nofollow noreferrer">https://s3.amazonaws.com/f4-artifacts/fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar</a>)</p>
+
+<p>All of the combinations result in 412s:</p>
+<ol>
+	<li>Fedora relaxed mode (-Dfcrepo.properties.management=relaxed)
+	<ol>
+		<li>import/export legacy mode</li>
+		<li>import/export default mode</li>
+	</ol>
+	</li>
+	<li>Fedora default mode
+	<ol>
+		<li>import/export legacy mode</li>
+		<li>import/export default mode</li>
+	</ol>
+	</li>
+</ol>
+
+
+<p>Ben Pennell? Danny Bernstein? Joshua Allan Westgard? are you seeing this error?</p></div></div>
+<div class="comment" id="comment-19060"><div class="by">Esmé Cowles, 2017-06-01 15:36 UTC</div><div class="text"><p>I wasn't able to get a working test to demonstrate this issue, but I expect this is the fix: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/compare/if-modified-since-now" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/compare/if-modified-since-now</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19068"><div class="by">Andrew Woods, 2017-06-01 23:34 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/4350b8334b6a149d2114193d068c00a7e66ae295" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/4350b8334b6a149d2114193d068c00a7e66ae295</a></p></div></div>
+<p><a href="data/FCREPO-2505.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

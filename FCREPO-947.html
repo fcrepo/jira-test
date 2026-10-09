@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-947 /validate fails tests when using postgresql</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-947</span> /validate fails tests when using postgresql</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2011-05-21 11:21 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr></table>
+<h2>Environment</h2>Linux + postgresql
+<h2>Description</h2>
+<p>Test fail in configA: TestRESTApi testValidate(), but only apparently under postgresql.  Problem does not seem to appear with derby or mysql.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-11964"><div class="by">Aaron Birkland, 2011-05-21 21:07 UTC</div><div class="text"><p>Apppears to always occur when there is an asOfDateTime specified:  <a href="http://localhost:8080/fedora/objects/demo:REST/validate?asOfDateTime=2011-05-21T15:54:50.215Z" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/demo:REST/validate?asOfDateTime=2011-05-21T15:54:50.215Z</a>.  Need to find out why the choice of database makes a difference, though.</p></div></div>
+<div class="comment" id="comment-11965"><div class="by">Stephen Bayliss, 2011-05-23 15:57 UTC</div><div class="text"><p>I've reproduced this.</p>
+
+<p>The failure is on demo:REST - and this object has its date/time settings set to the current date/time - and the asOfDateTime is set to exactly the same value.</p>
+
+<p>So I wonder if this is something to do with date comparison/precision that is specific to postgresql</p>
+
+<p>The validation is failing because of a missing DC datastream, which is of course impossible - so I'd suggest that it is not actually picking the datastream up because of something awry in the date/time querying/comparison.</p>
+</div></div>
+<div class="comment" id="comment-11969"><div class="by">Stephen Bayliss, 2011-05-25 11:21 UTC</div><div class="text"><p>Further observations</p>
+
+<p>String datetime is set to current date (new Date()) as a static at class level</p>
+
+<p>test object demo:REST has CREATED set for datastreams RELS-EXT and RELS-INT, but <b>not</b> for DC to this value</p>
+
+<p>Ingest will take place (theoretically?) <b>after</b> datetime - so DC will have a created date later than datetime (as will the object creation date/time)</p>
+
+<p>So the validate is failing correctly - it is validating the object at an earlier datetime than the created date for DC - so DC won't have any versions present.</p>
+
+<p>The behaviour now seems correct to me - but I have no idea why this should have not been failing on other databases - perhaps with Derby the whole thing is running faster and the ingest date/time is in fact (to the date/time precision) the same as datetime set at class level?  I would have expected the odd spurious test failure from time-to-time.</p></div></div>
+<div class="comment" id="comment-11970"><div class="by">Stephen Bayliss, 2011-05-25 11:50 UTC</div><div class="text"><p>Testing the validate method with alternative date/time values:</p>
+
+<p>validate at now + 10 mins - success<br/>
+validate at now - 10 mins - fail - expected</p>
+
+<p>So this would fix the test case.</p>
+
+<p>I note that in the REST API tests at least, there is very little explicit testing of asOfDateTime parameter to check it gets the right version (especially at a degree of precision; we should be testing 1ms before, now, 1ms after on a few methods to check this behaviour).</p>
+
+<p>So in conclusion, no idea why this was specifically failing on Postgresql, I can only suggest that the alternative database caused some variation in execution time of various methods in the test class, and that triggered the error.  But I don't think that this failure was revealing an underlying bug.</p></div></div>
+<div class="comment" id="comment-13127"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-947.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

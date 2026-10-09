@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3544 Migration failure: Unable to resolve internal ID</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3544</span> Migration failure: Unable to resolve internal ID</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Created</th><td>2020-11-30 15:16 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 16:39 UTC</td></tr><tr><th>Resolved</th><td>2020-12-01 15:50 UTC</td></tr><tr><th>Components</th><td>migration-utils</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Environment</h2>Linux
+<h2>Description</h2>
+<p>I just briefly tried the current migration-utils tool on a Fedora3 data set. All fedora "internal" objects where handled just fine - as it seems from looking at the OCFL structure. However, the utility refused to actually migrate content objects:</p>
+<blockquote><p>INFO 07:38:25.294 (Migrator) Processing "qucosa:34072"...<br/>
+ERROR 07:38:25.298 (Migrator) MIGRATION_FAILURE: UNREADABLE_OBJECT: message="MIGRATION_FAILURE: pid="qucosa:34072", message="Unable to resolve internal ID "qucosa:34072+ATT-0+ATT-0.0"!""<br/>
+java.lang.RuntimeException: MIGRATION_FAILURE: pid="qucosa:34072", message="Unable to resolve internal ID "qucosa:34072+ATT-0+ATT-0.0"!"<br/>
+ at org.fcrepo.migration.Migrator.run(Migrator.java:169) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at org.fcrepo.migration.PicocliMigrator.call(PicocliMigrator.java:269) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at org.fcrepo.migration.PicocliMigrator.call(PicocliMigrator.java:58) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at picocli.CommandLine.executeUserObject(CommandLine.java:1743) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at picocli.CommandLine.access$900(CommandLine.java:145) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at picocli.CommandLine$RunLast.handle(CommandLine.java:2101) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at picocli.CommandLine$RunLast.handle(CommandLine.java:2068) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:1935) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at picocli.CommandLine.execute(CommandLine.java:1864) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at org.fcrepo.migration.PicocliMigrator.main(PicocliMigrator.java:149) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+Caused by: java.lang.RuntimeException: Unable to resolve internal ID "qucosa:34072+ATT-0+ATT-0.0"!<br/>
+ at org.fcrepo.migration.foxml.DirectoryScanningIDResolver.resolveInternalID(DirectoryScanningIDResolver.java:130) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at org.fcrepo.migration.foxml.FoxmlInputStreamFedoraObjectProcessor$Foxml11DatastreamVersion.&lt;init&gt;(FoxmlInputStreamFedoraObjectProcessor.java:363) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at org.fcrepo.migration.foxml.FoxmlInputStreamFedoraObjectProcessor.processObject(FoxmlInputStreamFedoraObjectProcessor.java:144) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ at org.fcrepo.migration.Migrator.run(Migrator.java:161) ~<span class="error">&#91;migration-utils-6.0.0-SNAPSHOT-driver.jar:na&#93;</span><br/>
+ ... 9 common frames omitted</p></blockquote>
+
+<p>The objects datastreams show just fine in the running Fedora 3 instance.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-21772"><div class="by">Ralf Claussnitzer, 2020-12-01 14:41 UTC</div><div class="text"><p>Seems to be a user error. I started the migration with: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">--source-type=legacy</pre>
+</div></div>
+<p> instead of </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">--source-type=akubra</pre>
+</div></div>
+<p> against Fedora 3.8.1.<br/>
+When using the Akubra source type everything is fine. Just some OCFL hash errors on objects with fixity problems.</p>
+
+<p>Side note: I noticed a directory ".run" which is created in the project root when executing the migration in IntelliJ. This should probably be mentioned in the .gitignore file.</p></div></div>
+<p><a href="data/FCREPO-3544.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2816 External-Content redirects to local files are allowed, but unretrievable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2816</span> External-Content redirects to local files are allowed, but unretrievable</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2018-06-29 14:40 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-09-10 16:04 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-2818.html">FCREPO-2818</a> Redirect requests are very slow</td></tr></table>
+<h2>Description</h2>
+<p>You can create a redirect to a local file via</p>
+
+<p><tt>&gt; curl -i -H"Link: &lt;<a href="file:///Users/whikloj/Desktop/wonderful.tiff" class="external-link" rel="nofollow noreferrer">file:///Users/whikloj/Desktop/wonderful.tiff</a>&gt;; rel=\"http://fedora.info/definitions/fcrepo#ExternalContent\"; handling=\"redirect\"; type=\"image/tiff\"" -XPUT -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test_redirect_local_file" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file</a></tt><br/>
+ <tt>HTTP/1.1 201 Created</tt><br/>
+ <tt>Date: Fri, 29 Jun 2018 14:20:56 GMT</tt><br/>
+ <tt>Set-Cookie: JSESSIONID=559b07adeovzyw74bwx807n0;Path=/</tt><br/>
+ <tt>Expires: Thu, 01 Jan 1970 00:00:00 GMT</tt><br/>
+ <tt>Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Thu, 28-Jun-2018 14:20:56 GMT</tt><br/>
+ <tt>ETag: "359967083c14e82bbe3efec343b99a5607ede2e7"</tt><br/>
+ <tt>Last-Modified: Fri, 29 Jun 2018 14:20:56 GMT</tt><br/>
+ <tt>Link: &lt;<a href="http://localhost:8080/rest/test_redirect_local_file/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file/fcr:metadata</a>&gt;; rel="describedby"; anchor="http://localhost:8080/rest/test_redirect_local_file"</tt><br/>
+ <tt>Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"</tt><br/>
+ <tt>Content-Location: <a href="file:///Users/whikloj/Desktop/wonderful.tiff" class="external-link" rel="nofollow noreferrer">file:/Users/whikloj/Desktop/wonderful.tiff</a></tt><br/>
+ <tt>Link: &lt;<a href="http://localhost:8080/rest/test_redirect_local_file/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file/fcr:acl</a>&gt;; rel="acl"</tt><br/>
+ <tt>Location: <a href="http://localhost:8080/rest/test_redirect_local_file" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file</a></tt><br/>
+ <tt>Content-Type: text/plain</tt><br/>
+ <tt>Content-Length: 51</tt><br/>
+ <tt>Server: Jetty(9.3.1.v20150714)</tt><tt><a href="http://localhost:8080/rest/test_redirect_local_file" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file</a></tt></p>
+
+<p> </p>
+
+<p>But then you can't get the file as the request hangs trying to follow the redirect and required (in my case) a Ctrl-C to exit.</p>
+
+<p> </p>
+
+<p><tt>&gt; curl -i <a href="http://localhost:8080/rest/test_redirect_local_file" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file</a> -ufedoraAdmin:fedoraAdmin</tt><br/>
+ <tt>HTTP/1.1 307 Temporary Redirect</tt><br/>
+ <tt>Date: Fri, 29 Jun 2018 14:22:17 GMT</tt><br/>
+ <tt>Set-Cookie: JSESSIONID=119fek7k909091czntsc38qt4i;Path=/</tt><br/>
+ <tt>Expires: Thu, 01 Jan 1970 00:00:00 GMT</tt><br/>
+ <tt>Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Thu, 28-Jun-2018 14:22:17 GMT</tt><br/>
+ <tt>ETag: "359967083c14e82bbe3efec343b99a5607ede2e7"</tt><br/>
+ <tt>Last-Modified: Fri, 29 Jun 2018 14:20:56 GMT</tt><br/>
+ <tt>Content-Type: image/tiff</tt><br/>
+ <tt>Accept-Ranges: bytes</tt><br/>
+ <tt>Content-Disposition: attachment; filename=""; creation-date="Fri, 29 Jun 2018 14:20:56 GMT"; modification-date="Fri, 29 Jun 2018 14:20:56 GMT"; size=14761236</tt><br/>
+ <tt>Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"</tt><br/>
+ <tt>Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;;rel="type"</tt><br/>
+ <tt>Link: &lt;<a href="http://localhost:8080/rest/test_redirect_local_file/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file/fcr:acl</a>&gt;; rel="acl"</tt><br/>
+ <tt>Content-Location: <a href="file:///Users/whikloj/Desktop/wonderful.tiff" class="external-link" rel="nofollow noreferrer">file:/Users/whikloj/Desktop/wonderful.tiff</a></tt><br/>
+ <tt>Link: &lt;<a href="http://localhost:8080/rest/test_redirect_local_file/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_redirect_local_file/fcr:metadata</a>&gt;; rel="describedby"</tt><br/>
+ <tt>Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"</tt><br/>
+ <tt>Accept-External-Content-Handling: copy,redirect,proxy</tt><br/>
+ <tt>Allow: DELETE,HEAD,GET,PUT,OPTIONS</tt><br/>
+ <tt>Location: <a href="file:///Users/whikloj/Desktop/wonderful.tiff" class="external-link" rel="nofollow noreferrer">file:/Users/whikloj/Desktop/wonderful.tiff</a></tt><br/>
+ <tt>Content-Length: 14761236</tt><br/>
+ <tt>Server: Jetty(9.3.1.v20150714)</tt><br/>
+<tt>^C</tt></p>
+
+<p> </p>
+
+<p><tt>Perhaps this interaction should not be allowed?</tt></p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-20026"><div class="by">Jared Whiklo, 2018-06-29 16:17 UTC</div><div class="text"><p>I realized my redirect request was also slow, so I waited out the above request just in case. So to confirm it does timeout because the Content-Length is never reached</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl: (18) transfer closed with 14761236 bytes remaining to read </pre>
+</div></div></div></div>
+<div class="comment" id="comment-20185"><div class="by">Jared Whiklo, 2018-09-10 16:04 UTC</div><div class="text"><p>Resolved by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2818" >
+                <a href="FCREPO-2818.html" class="jira-issue-macro-key issue-link"  title="Redirect requests are very slow" >
+            
+            FCREPO-2818
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<p><a href="data/FCREPO-2816.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

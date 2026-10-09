@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2736 Remove RDFSource link header expectation from FedoraVersioning ITs.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2736</span> Remove RDFSource link header expectation from FedoraVersioning ITs.</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Situ, Longshou</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2018-03-16 17:13 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-04-24 01:15 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>easy, versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Memento need to include the RdfSource link header. See integration test FedoraVersioningIT#testVersionListHeaders().</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19901"><div class="by">Jared Whiklo, 2018-04-20 20:05 UTC</div><div class="text"><p>Headers from a RDFSource</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;;rel=<span class="code-quote">"type"</span>
+</span>Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Container&gt;;rel=<span class="code-quote">"type"</span>
+</span>Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#BasicContainer&gt;;rel=<span class="code-quote">"type"</span></span></pre>
+</div></div>
+<p> </p>
+
+<p>But headers for NonRDFSource</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;;rel=<span class="code-quote">"type"</span>
+</span>Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#NonRDFSource&gt;;rel=<span class="code-quote">"type"</span></span></pre>
+</div></div>
+<p>and for a <tt>fcr:metadata</tt> endpoint</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;;rel=<span class="code-quote">"type"</span>
+</span>Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#RDFSource&gt;;rel=<span class="code-quote">"type"</span></span></pre>
+</div></div></div></div>
+<div class="comment" id="comment-19903"><div class="by">Jared Whiklo, 2018-04-23 13:37 UTC</div><div class="text"><p>This behaviour has been in-place since 2014.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/9b6bd6f5bbcfb045a4f7fd9a7e0536efb3bb6126#diff-d372035f89c8d0846920e20bd13e0145R436" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/9b6bd6f5bbcfb045a4f7fd9a7e0536efb3bb6126#diff-d372035f89c8d0846920e20bd13e0145R436</a></p>
+
+<p>In looking at the example requests in the W3C LDP spec I noticed that while the initial responses use</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#RDFSource&gt;; rel=<span class="code-quote">"type"</span>,
+</span>&lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;; rel=<span class="code-quote">"type"</span></span>
+</pre>
+</div></div>
+<p>once they start to implement a DirectContainer the response headers change to</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#DirectContainer&gt;; rel=<span class="code-quote">"type"</span>,
+</span>&lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;; rel=<span class="code-quote">"type"</span></span></pre>
+</div></div>
+<p>Replacing the RDFSource with the explicit container definition. I am guessing this is why cb did it this way originally.</p></div></div>
+<div class="comment" id="comment-19911"><div class="by">Jared Whiklo, 2018-04-23 16:52 UTC</div><div class="text"><p>Based on the above discovery this ticket is to correct the test's expectations.</p></div></div>
+<div class="comment" id="comment-19917"><div class="by">Jared Whiklo, 2018-04-23 20:09 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1336" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1336</a></p></div></div>
+<div class="comment" id="comment-19920"><div class="by">Andrew Woods, 2018-04-24 01:15 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/4dd03a784b7dbf030369f2db95305603889eb31d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/4dd03a784b7dbf030369f2db95305603889eb31d</a></p></div></div>
+<p><a href="data/FCREPO-2736.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

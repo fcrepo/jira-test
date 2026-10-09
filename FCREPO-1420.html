@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1420 Make sure that generated messages contain enough information to create event RDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1420</span> Make sure that generated messages contain enough information to create event RDF</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-03-30 12:12 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-01 18:30 UTC</td></tr><tr><th>Components</th><td>f4-audit, f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr><tr><th>Addresses</th><td><a href="FCREPO-1421.html">FCREPO-1421</a> Create Camel workflow to process messages and create event RDF in an external triplestore</td></tr></table>
+<h2>Description</h2>
+<p>The Audit requirements list the information that must be recorded for events:</p>
+
+<p><a href="https://wiki.duraspace.org/display/FF/Design+-+Audit+Service#Design-AuditService-Functional-Write/Import" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+Audit+Service#Design-AuditService-Functional-Write/Import</a></p>
+
+<ul>
+	<li>Agent (end user)</li>
+	<li>Date/Time</li>
+	<li>Activity (event type)</li>
+	<li>Entity (repository resource being acted on)</li>
+</ul>
+
+
+<p>Make sure this information is available in the JMS messages being generated (so the events can be processed without needing to retrieve further info from the repository).  If any information is missing, create additional tickets for adding it.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-13826"><div class="by">Former user, 2015-03-30 20:15 UTC</div><div class="text"><p>The messages currently have the fedora object URI, timestamp, and event type (although in a different vocabulary which will require some mapping).</p>
+
+<p>It looks easy to add the userID (which is populated in the JCR Event instance automatically), and it shouldn't be too hard to pass the client user agent like we currently pass the baseURL.</p></div></div>
+<div class="comment" id="comment-13827"><div class="by">Former user, 2015-03-31 14:16 UTC</div><div class="text"><p>I've added userID and userAgent to the JMS events being emitted:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/760" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/760</a></p>
+
+<p>However, the userAgent is passed using the ObservationManager which has caused problems in the past.  I believe cb's fix for this will continue to work (see <a href="https://github.com/fcrepo4/fcrepo4/pull/537" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/537</a>), and I haven't been able to trigger a problem by doing thousands of POSTs like in the past.  But we should be careful to avoid a regression here.</p></div></div>
+<div class="comment" id="comment-13840"><div class="by">A. Soroka, 2015-04-01 18:30 UTC</div><div class="text"><p>Fixed with <a href="https://github.com/fcrepo4/fcrepo4/commit/f374e808cb64f81b096d4e4d1704bff8c20cfc4b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f374e808cb64f81b096d4e4d1704bff8c20cfc4b</a></p></div></div>
+<p><a href="data/FCREPO-1420.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

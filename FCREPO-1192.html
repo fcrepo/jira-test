@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1192 REST API can not upload files greater than 2^31-1 in size</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1192</span> REST API can not upload files greater than 2^31-1 in size</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>jgm106@psu.edu</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2013-06-20 04:24 UTC</td></tr><tr><th>Updated</th><td>2013-07-26 00:42 UTC</td></tr><tr><th>Resolved</th><td>2013-07-26 00:42 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Environment</h2>RHEL 6.x. Tomcat 7.x Fedora 3.5.
+<h2>Description</h2>
+<p>I have a version of  fedora 3.5 running that errors with</p>
+
+<p>javax.ws.rs.WebApplicationException: org.fcrepo.server.errors.StreamWriteException: Error writing temp stream<br/>
+      at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:172)<br/>
+      at org.fcrepo.server.rest.DatastreamResource.addOrUpdateDatastream(DatastreamResource.java:583)<br/>
+	…</p>
+
+<p>when I write a file 2GB in size (1024*1024*2048) via the API:<br/>
+	curl -H "Content-type:application/octet-stream" -X POST -u "name:pass" --upload-file 3g.data \<br/>
+	<a href="http://host:8080/fedora/objects/scholarsphere:5425k9692/datastreams/blah?controlGroup=M" class="external-link" rel="nofollow noreferrer">http://host:8080/fedora/objects/scholarsphere:5425k9692/datastreams/blah?controlGroup=M</a></p>
+
+<p>But when I write a 2GB-1MB file (1024*1024*2047) via the API, it works without issue. Multipart uploads also do not work.</p>
+
+<p>Ben Armintor has been working with me on this and first identified <a href="https://jira.duraspace.org/browse/FCREPO-704" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-704</a> as a potential starting place. He has since followed up with:</p>
+
+<p>  I've got a test verifying a bug in FCRepo 3.6 (and earlier) for content posted in the request body- I'll push a fix today (I think).  There are two places in the REST library in which signed ints are being used got content-length in the kind of upload you have:<br/>
+<a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/RestUtil.java#L74" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/RestUtil.java#L74</a><br/>
+(where it's implicit in the j2ee interface, so we just have to ignore it and parse the header)<br/>
+and at <a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/RestUtil.java#L63" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/rest/RestUtil.java#L63</a><br/>
+(our fault- that was clearly a place we missed when an earlier bug in this line was fixed 3 years ago).</p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1192/10176_trace_curl.txt">trace_curl.txt</a>, 7404 bytes, added by jgm106@psu.edu on 2013-06-20</li>
+<li><a href="attachments/FCREPO-1192/10177_trace_fedora.txt">trace_fedora.txt</a>, 8152 bytes, added by jgm106@psu.edu on 2013-06-20</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12538"><div class="by">Benjamin Armintor, 2013-07-26 00:42 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/49d62cca9ba4a8ff916d3d0692ef5c00ff85d214" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/49d62cca9ba4a8ff916d3d0692ef5c00ff85d214</a></p></div></div>
+<p><a href="data/FCREPO-1192.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

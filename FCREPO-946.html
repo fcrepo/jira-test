@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-946 Rebuilder does not terminate</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-946</span> Rebuilder does not terminate</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2011-05-21 10:16 UTC</td></tr><tr><th>Updated</th><td>2011-07-18 16:50 UTC</td></tr><tr><th>Resolved</th><td>2011-07-18 16:50 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-873.html">FCREPO-873</a> Thread-safety issue in Trippi - RIOTripleIterator</td></tr></table>
+<h2>Environment</h2>Linux
+<h2>Description</h2>
+<p>After rebuilder finishes, it does not exit on its own.  It appears to freeze until ^C </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-946/10131_fcrepo-946-trippi-hang-demo.zip">fcrepo-946-trippi-hang-demo.zip</a>, 3261 bytes, added by Chris Wilper on 2011-07-01</li>
+</ul>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-11968"><div class="by">Aaron Birkland, 2011-05-25 10:12 UTC</div><div class="text"><p>Installer started hanging at commit c8c9b8b0c447dd9a0c9513d90f7af9d464d8c99f (Merge in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-648" >
+                <a href="FCREPO-648.html" class="jira-issue-macro-key issue-link"  title="Initial move to a modern dependency injection framework" >
+            
+            FCREPO-648
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ - Integration with Spring).  This merge was done before the migration to git, so its history is not immediately available.  At least we now know where to look, though</p></div></div>
+<div class="comment" id="comment-11971"><div class="by">Aaron Birkland, 2011-05-26 00:38 UTC</div><div class="text"><p>Rebuilder does eventually terminate after one minute if left to wait.  This wait is independent on rebuild task (db vs triplestore), or database impl.   Inspecting thread state does not point to an obvious culprit</p></div></div>
+<div class="comment" id="comment-11989"><div class="by">Chris Wilper, 2011-06-28 15:14 UTC</div><div class="text"><p>I'm seeing the same behavior here, with embedded Derby. I also noticed that when exiting via option 4, I get a NPE and the app hangs indefinitely (doesn't exit after a minute like it does when you run a rebuild). Maybe related, maybe not.</p></div></div>
+<div class="comment" id="comment-11991"><div class="by">Chris Wilper, 2011-06-28 16:08 UTC</div><div class="text"><p>Here's a thread dump I just got after running a SQL rebuild, for reference:</p>
+
+<p>2011-06-28 07:02:09<br/>
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (17.1-b03-307 mixed mode):</p>
+
+<p>"DestroyJavaVM" prio=5 tid=11e728800 nid=0x100501000 waiting on condition <span class="error">&#91;00000000&#93;</span><br/>
+   java.lang.Thread.State: RUNNABLE</p>
+
+<p>"pool-1-thread-1" prio=5 tid=102d8f800 nid=0x11fc0a000 waiting on condition <span class="error">&#91;11fc09000&#93;</span><br/>
+   java.lang.Thread.State: TIMED_WAITING (parking)<br/>
+        at sun.misc.Unsafe.park(Native Method)</p>
+<ul class="alternate" type="square">
+	<li>parking to wait for  &lt;1193f5b08&gt; (a java.util.concurrent.SynchronousQueue$TransferStack)<br/>
+        at java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:198)<br/>
+        at java.util.concurrent.SynchronousQueue$TransferStack.awaitFulfill(SynchronousQueue.java:424)<br/>
+        at java.util.concurrent.SynchronousQueue$TransferStack.transfer(SynchronousQueue.java:323)<br/>
+        at java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:874)<br/>
+        at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:945)<br/>
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:907)<br/>
+        at java.lang.Thread.run(Thread.java:680)</li>
+</ul>
+
+
+<p>"Low Memory Detector" daemon prio=5 tid=102849800 nid=0x11d707000 runnable <span class="error">&#91;00000000&#93;</span><br/>
+   java.lang.Thread.State: RUNNABLE</p>
+
+<p>"CompilerThread1" daemon prio=9 tid=102848800 nid=0x11d604000 waiting on condition <span class="error">&#91;00000000&#93;</span><br/>
+   java.lang.Thread.State: RUNNABLE</p>
+
+<p>"CompilerThread0" daemon prio=9 tid=102847000 nid=0x11d501000 waiting on condition <span class="error">&#91;00000000&#93;</span><br/>
+   java.lang.Thread.State: RUNNABLE</p>
+
+<p>"Signal Dispatcher" daemon prio=9 tid=11e804000 nid=0x11c784000 waiting on condition <span class="error">&#91;00000000&#93;</span><br/>
+   java.lang.Thread.State: RUNNABLE</p>
+
+<p>"Finalizer" daemon prio=8 tid=102846800 nid=0x11c417000 in Object.wait() <span class="error">&#91;11c416000&#93;</span><br/>
+   java.lang.Thread.State: WAITING (on object monitor)<br/>
+        at java.lang.Object.wait(Native Method)</p>
+<ul class="alternate" type="square">
+	<li>waiting on &lt;11b418858&gt; (a java.lang.ref.ReferenceQueue$Lock)<br/>
+        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:118)</li>
+	<li>locked &lt;11b418858&gt; (a java.lang.ref.ReferenceQueue$Lock)<br/>
+        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:134)<br/>
+        at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:159)</li>
+</ul>
+
+
+<p>"Reference Handler" daemon prio=10 tid=102845800 nid=0x11c314000 in Object.wait() <span class="error">&#91;11c313000&#93;</span><br/>
+   java.lang.Thread.State: WAITING (on object monitor)<br/>
+        at java.lang.Object.wait(Native Method)</p>
+<ul class="alternate" type="square">
+	<li>waiting on &lt;11b418970&gt; (a java.lang.ref.Reference$Lock)<br/>
+        at java.lang.Object.wait(Object.java:485)<br/>
+        at java.lang.ref.Reference$ReferenceHandler.run(Reference.java:116)</li>
+	<li>locked &lt;11b418970&gt; (a java.lang.ref.Reference$Lock)</li>
+</ul>
+
+
+<p>"VM Thread" prio=9 tid=102843000 nid=0x11c211000 runnable</p>
+
+<p>"GC task thread#0 (ParallelGC)" prio=5 tid=102803000 nid=0x102301000 runnable</p>
+
+<p>"GC task thread#1 (ParallelGC)" prio=5 tid=102803800 nid=0x102404000 runnable</p>
+
+<p>"GC task thread#2 (ParallelGC)" prio=5 tid=102804000 nid=0x102507000 runnable</p>
+
+<p>"GC task thread#3 (ParallelGC)" prio=5 tid=102804800 nid=0x10260a000 runnable</p>
+
+<p>"VM Periodic Task Thread" prio=10 tid=10285a000 nid=0x11f101000 waiting on condition</p>
+
+<p>"Exception Catcher Thread" prio=10 tid=102801800 nid=0x10173b000 runnable<br/>
+JNI global references: 1578</p>
+
+<p>Heap<br/>
+ PSYoungGen      total 57344K, used 43357K [117c10000, 11bc10000, 11bc10000)<br/>
+  eden space 49152K, 76% used [117c10000,11a0f1bf8,11ac10000)<br/>
+  from space 8192K, 68% used [11b410000,11b985980,11bc10000)<br/>
+  to   space 8192K, 0% used [11ac10000,11ac10000,11b410000)<br/>
+ PSOldGen        total 196608K, used 0K [10bc10000, 117c10000, 117c10000)<br/>
+  object space 196608K, 0% used [10bc10000,10bc10000,117c10000)<br/>
+ PSPermGen       total 29120K, used 28965K [106810000, 108480000, 10bc10000)<br/>
+  object space 29120K, 99% used [106810000,1084597a0,108480000)</p></div></div>
+<div class="comment" id="comment-11992"><div class="by">Chris Wilper, 2011-06-28 16:15 UTC</div><div class="text"><p>Here are the diffs from the 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-648" >
+                <a href="FCREPO-648.html" class="jira-issue-macro-key issue-link"  title="Initial move to a modern dependency injection framework" >
+            
+            FCREPO-648
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ merge, for reference:</p>
+
+<p><a href="https://svn.duraspace.org/view/fcrepo-mirror?view=rev&amp;revision=8833" class="external-link" rel="nofollow noreferrer">https://svn.duraspace.org/view/fcrepo-mirror?view=rev&amp;revision=8833</a></p></div></div>
+<div class="comment" id="comment-11993"><div class="by">Chris Wilper, 2011-06-28 19:37 UTC</div><div class="text"><p>It turns out that adding a System.exit(0) after normal execution (and a System.exit(1) after failed execution) in the rebuilder's main() method prevents this delay.</p></div></div>
+<div class="comment" id="comment-11996"><div class="by">Chris Wilper, 2011-06-29 01:23 UTC</div><div class="text"><p>Just an update...I verified that NotificationInvocationHandler is <b>not</b> the cause of this issue; the Management module does <b>not</b> get started as part of the rebuilder.</p></div></div>
+<div class="comment" id="comment-12000"><div class="by">Chris Wilper, 2011-07-01 02:00 UTC</div><div class="text"><p>Another tidbit: I used jdb to determine that when the rebuilder first starts, the thread named "pool-1-thread-1" does not exist. Only after requesting a rebuild be run is it created. I think I can use this fact to zero in on how this thread comes into existence through a series of strategically placed thread dumps...</p></div></div>
+<div class="comment" id="comment-12002"><div class="by">Chris Wilper, 2011-07-01 07:28 UTC</div><div class="text"><p>So far, using strategically placed thread dumps, I've narrowed down the creation of pool-1-thread-1 to somewhere in the execution of FOXMLDODeserializer.deserialize. It exists after the first time that method is called from within Rebuild.addObject, and doesn't go away on its own. Hmm.</p></div></div>
+<div class="comment" id="comment-12003"><div class="by">Chris Wilper, 2011-07-01 08:44 UTC</div><div class="text"><p>I've now narrowed it (the creation of pool-1-thread-1) down to somewhere in org.fcrepo.server.storage.RDFRelationshipReader#readRelationships. This is basically a thin wrapper around some calls to Trippi, which ultimately uses RIOTripleIterator to parse the stream of triples. RIOTripleIterator has historically used a separate thread to parse the triples. Looking at recent changes to Trippi, I see <a href="https://github.com/fcrepo/trippi/commit/62b0725f7abc1d7517566d8dfdbf763516d2f81c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/trippi/commit/62b0725f7abc1d7517566d8dfdbf763516d2f81c</a>  ...which switched to using a java.util.concurrent.ExecutorService (thread pool) instead of spinning up a thread itself. However, the EXECUTOR field is final static, and only typed as an Executor, which doesn't have a shutdown() method like ExecutorService does. Therefore, ExecutorService.shutdown() can never possibly be called.</p>
+
+<p>Now I'm pretty sure this is the cause, because the javadoc for Executors.newCachedThreadPool()<span class="error">&#91;1&#93;</span> says:</p>
+
+<p>"Threads that have not been used for sixty seconds are terminated and removed from the cache."</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://download.oracle.com/javase/6/docs/api/java/util/concurrent/Executors.html#newCachedThreadPool%28%29" class="external-link" rel="nofollow noreferrer">http://download.oracle.com/javase/6/docs/api/java/util/concurrent/Executors.html#newCachedThreadPool%28%29</a></p></div></div>
+<div class="comment" id="comment-12004"><div class="by">Chris Wilper, 2011-07-01 10:48 UTC</div><div class="text"><p>Attached demo maven project to reproduce the hang by calling Trippi's TripleIterator.fromStream method, when RIOTripleIterator is used. See README in zip file for instructions.</p></div></div>
+<div class="comment" id="comment-12005"><div class="by">Chris Wilper, 2011-07-01 16:57 UTC</div><div class="text"><p>Fixed in Trippi 1.5.2 by moving back to a thread-per-parse model. See <a href="https://github.com/fcrepo/trippi/commit/4ef40ea22b4a6b359de73c4b4d8b5a9fe432a594" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/trippi/commit/4ef40ea22b4a6b359de73c4b4d8b5a9fe432a594</a></p>
+
+<p>If you change the trippi version to 1.5.2 in the attached project's pom, you'll see that it exits immediately now.</p></div></div>
+<div class="comment" id="comment-12007"><div class="by">Chris Wilper, 2011-07-06 01:52 UTC</div><div class="text"><p>Just a note that the final fix for this was the same as that for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-873" >
+                <a href="FCREPO-873.html" class="jira-issue-macro-key issue-link"  title="Thread-safety issue in Trippi - RIOTripleIterator" >
+            
+            FCREPO-873
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+. See <a href="https://github.com/fcrepo/trippi/commit/eed9d49fe9b03e3e18658c8c8804ee37a415d169" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/trippi/commit/eed9d49fe9b03e3e18658c8c8804ee37a415d169</a> <a href="https://github.com/fcrepo/trippi/commit/229cf6a71f7705c57a097b19fa6397762392b656" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/trippi/commit/229cf6a71f7705c57a097b19fa6397762392b656</a> and <a href="https://github.com/fcrepo/fcrepo/commit/391bc9af8544bcb1033b01311db7d0f5ade0d05d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/391bc9af8544bcb1033b01311db7d0f5ade0d05d</a></p></div></div>
+<p><a href="data/FCREPO-946.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1596 enable migration-utils to accept Fedora 2.2-created FOXML</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1596</span> enable migration-utils to accept Fedora 2.2-created FOXML</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2015-06-22 18:50 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-08-05 17:36 UTC</td></tr><tr><th>Components</th><td>legacy - community extensions</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr><tr><th>Labels</th><td>fedora-3-to-4-migration</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1605.html">FCREPO-1605</a> Create tutorial and code for custom data mapping in migration-utils.</td></tr></table>
+<h2>Description</h2>
+<p>When pointed at FOXML files from Fedora 2.2, migration-utils expects a 'version' attribute in the foxml:digitalObject element, resulting in a NullPointerException when this attribute is not found.  A stacktrace and header from an example legacy FOXML type are attached below.</p>
+
+<p>Exception in thread "main" java.lang.NullPointerException <br/>
+ 	at org.fcrepo.migration.foxml11.Foxml11InputStreamFedoraObjectProcessor.&lt;init&gt;(Foxml11InputStreamFedoraObjectProcessor.java:87) <br/>
+ 	at org.fcrepo.migration.foxml11.FoxmlDirectoryDFSIterator.next(FoxmlDirectoryDFSIterator.java:89)<br/>
+ 	at org.fcrepo.migration.foxml11.FoxmlDirectoryDFSIterator.next(FoxmlDirectoryDFSIterator.java:22)<br/>
+	at org.fcrepo.migration.Migrator.run(Migrator.java:105)<br/>
+	at org.fcrepo.migration.Migrator.main(Migrator.java:46)```</p>
+
+<p>&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br/>
+&lt;foxml:digitalObject xmlns:foxml="info:fedora/fedora-system:def/foxml#"<br/>
+           xmlns:fedoraxsi="http://www.w3.org/2001/XMLSchema-instance"<br/>
+           xmlns:audit="info:fedora/fedora-system:def/audit#"<br/>
+           fedoraxsi:schemaLocation="info:fedora/fedora-system:def/foxml# <a href="http://www.fedora.info/definitions/1/0/foxml1-0.xsd" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/definitions/1/0/foxml1-0.xsd</a>"<br/>
+           PID="umd:22337"&gt;</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1596/10227_UMDM-2-DC.xlsx">UMDM-2-DC.xlsx</a>, 10089 bytes, added by Joshua Allan Westgard on 2015-06-26</li>
+</ul>
+<h2>Comments (18)</h2>
+<div class="comment" id="comment-14577"><div class="by">Michael Durbin, 2015-06-26 16:49 UTC</div><div class="text"><p>The foxml is pretty darned similar, so I think I can make it work relatively easily except for the disseminators.   I'm content to drop them with a warning message if that'll work for you Joshua Allan Westgard or throw an exception if they're encountered.  </p></div></div>
+<div class="comment" id="comment-14581"><div class="by">Joshua Allan Westgard, 2015-06-26 18:37 UTC</div><div class="text"><p>Mapping elements of our Univ. MD descriptive metadata schema to DC terms.</p></div></div>
+<div class="comment" id="comment-14582"><div class="by">Joshua Allan Westgard, 2015-06-26 18:42 UTC</div><div class="text"><p>Thanks, Michael Durbin, for taking a look at this!  I have no problem with disseminators just being dropped.</p>
+
+<p>I'm attaching a copy of a mapping document that we have created showing how we hope eventually to be able to translate some of our descriptive metadata from our homegrown XML schema to RDF properties.  I don't know to what extent this sort of mapping is a "pluggable" feature of the migration-utils as they stand right now, so if that's a totally separate issue please feel free to say so.  I thought it  doesn't hurt to pass along the file so you can see what we are hoping to achieve.  </p>
+
+<p>The lines in red just don't map well into a linked data context so our inclination is to just ignore those for now.</p></div></div>
+<div class="comment" id="comment-14585"><div class="by">Michael Durbin, 2015-06-26 19:46 UTC</div><div class="text"><p>That is useful, though you're right it's another ticket.  I've created and linked that ticket.</p></div></div>
+<div class="comment" id="comment-14586"><div class="by">Michael Durbin, 2015-06-26 19:52 UTC</div><div class="text"><p>I've created a PR that demonstrates added support for fedora 2 foxml.  <a href="https://github.com/fcrepo4-labs/migration-utils/pull/28" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/pull/28</a>  I think I want to build out the new example distributable zip with more examples after I merge in changes associated with the last PR, so it's not ready to be merged.  </p>
+
+<p>If you want to play with it Joshua Allan Westgard, download that branch, go ahead.  There's a tailored  xml configuration in conf/fedora2-native.xml that ingests files from fedora2 directly from the object and datastream stores.</p></div></div>
+<div class="comment" id="comment-14685"><div class="by">Andrew Woods, 2015-07-10 14:45 UTC</div><div class="text"><p>Michael Durbin, to be clear, are you saying you do not want PR-28 reviewed with an eye towards merging it to master?</p></div></div>
+<div class="comment" id="comment-14686"><div class="by">Michael Durbin, 2015-07-10 14:57 UTC</div><div class="text"><p>Nah, it's ready to go.... I wanted to let Joshua test it a few weeks ago before merging it.  When I merged in the last commit and marked it as "ready for test" that indicated that it was ready for review.</p></div></div>
+<div class="comment" id="comment-14691"><div class="by">Andrew Woods, 2015-07-10 17:51 UTC</div><div class="text"><p>The code looks good, and the generated zip package is very helpful. Here is feedback from after running the build, unzipping the package and executing the following four ingests:<br/>
+-------<br/>
+java -jar migration-utils-4.2.1-SNAPSHOT-driver.jar conf/fedora3-exported.xml</p>
+<ul>
+	<li>ingest successful, but: DS3 and DS4 do not exist</li>
+	<li>How are the blanknode, event resources being created? They do not reference the affected resource.</li>
+</ul>
+
+
+<p>-------<br/>
+java -jar migration-utils-4.2.1-SNAPSHOT-driver.jar conf/fedora3-legacy.xml</p>
+<ul>
+	<li>ingest successful, but: DS3 and DS4 do not exist</li>
+</ul>
+
+
+<p>-------<br/>
+java -jar migration-utils-4.2.1-SNAPSHOT-driver.jar conf/fedora3-akubra.xml</p>
+<ul>
+	<li>ingest successful, but: DS3 and DS4 do not exist</li>
+</ul>
+
+
+<p>-------<br/>
+java -jar migration-utils-4.2.1-SNAPSHOT-driver.jar conf/fedora2-native.xml</p>
+<ul>
+	<li>ingest not successful</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-14698"><div class="by">Joshua Allan Westgard, 2015-07-12 00:38 UTC</div><div class="text"><p>Sorry, Michael Durbin and Andrew Woods, I have been out since 07/01 and haven't had a chance to test this yet, but I will be back on Monday and am looking forward to giving it a whirl this week.</p></div></div>
+<div class="comment" id="comment-14843"><div class="by">Michael Durbin, 2015-07-24 16:46 UTC</div><div class="text"><p>Andrew Woods, I tested these 4 cases again and didn't experience missing datastreams.  Could you post the "id-minter.log" and the output of the command and then what you get when you request the appropriate resource so I can try to debug it?  As for the fedora2 example, you <b>should</b> get an error indicating that it won't transfer disseminators.  There's a very clear comment in the example configuration explaining how to override that.  I think it's critically important for the default example to bring to the users' attention that a) they have disseminators and b) they won't be migrated.  If the user points that configuration at that user's content and doesn't use disseminators, everything should migrate without issue.</p>
+
+<p>Let me know if there's still an issue... I think these examples will make use of this tool eaiser for people, so would like to roll it in as soon as we are sure it works.</p>
+</div></div>
+<div class="comment" id="comment-14844"><div class="by">Joshua Allan Westgard, 2015-07-24 18:58 UTC</div><div class="text"><p>I tried to test, but I think it may be beyond me to set up the test. I managed to get maven to build, but I'm hitting null pointer exceptions that make me think I've failed to configure correctly, or to set up my exported Fedora 2 objects correctly.  I will probably need to enlist the help of one of the developers here to test this against our objects.</p></div></div>
+<div class="comment" id="comment-14845"><div class="by">Andrew Woods, 2015-07-24 21:16 UTC</div><div class="text"><p>Michael Durbin, I just re-ran the first test, after having unpacked the zip file into its own directory:<br/>
+java -jar migration-utils-4.2.1-SNAPSHOT-driver.jar conf/fedora3-exported.xml</p>
+
+<p>No errors, and on the surface everything looks great.<br/>
+When I navigate in the HTML UI to the newly created resource that contains DS3 and DS4, and then into each of the datastreams, all looks good.<br/>
+However, when I select "Download" on either of those datastreams &#8212; boom!<br/>
+--------<br/>
+HTTP ERROR 404<br/>
+Problem accessing /rest/null73/e0/98/54/73e09854-8b9e-4732-9d41-e29d63704f25/DS2. Reason:<br/>
+    Not Found<br/>
+--------<br/>
+Notice the error message references DS2, and contains "/rest/null73/..." hmm? even though I am trying to download DS3 (as well as DS4, same message).</p>
+
+<p>Also, I still have the question:<br/>
+How are the blanknode, event resources being created? They do not reference the affected resource.</p>
+
+<p>Once we get this first example sorted out, we can see if the other three are still an issue.</p></div></div>
+<div class="comment" id="comment-14910"><div class="by">Michael Durbin, 2015-08-05 13:45 UTC</div><div class="text"><p>I fixed the bug for those datastreams.</p>
+
+<p>Blank nodes are being created with sparql like the following: </p>
+
+<p>INSERT DATA </p>
+{
+  &lt;&gt; fedoraaccess:objState "Active" .
+  &lt;&gt; fedora3model:label "This is an example object." .
+  &lt;&gt; fedora3model:ownerId "exampleOwner" .
+  &lt;&gt; &lt;http://www.loc.gov/premis/rdf/v1#hasDateCreatedByApplication&gt; "2015-01-27T19:07:33.120Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; .
+  &lt;&gt; &lt;http://www.loc.gov/premis/rdf/v1#hasEvent&gt; _:b0 .
+  _:b0 &lt;http://www.loc.gov/premis/rdf/v1#hasEventType&gt; &lt;http://fedora.info/definitions/v4/audit#metadataModification&gt; .
+  _:b0 &lt;http://www.loc.gov/premis/rdf/v1#hasEventDateTime&gt; "2015-01-27T20:26:16.998Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; .
+}</div></div>
+<div class="comment" id="comment-14911"><div class="by">Andrew Woods, 2015-08-05 13:46 UTC</div><div class="text"><p>Michael Durbin, is there a PR?</p></div></div>
+<div class="comment" id="comment-14912"><div class="by">Michael Durbin, 2015-08-05 13:48 UTC</div><div class="text"><p>I added a commit to the PR <a href="https://github.com/fcrepo4-labs/migration-utils/pull/28" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/pull/28</a></p></div></div>
+<div class="comment" id="comment-14919"><div class="by">Andrew Woods, 2015-08-05 16:41 UTC</div><div class="text"><p>With your latest commit, this all looks good. Is there anything else you are wanting to do on this ticket, or is it ready for merge?</p></div></div>
+<div class="comment" id="comment-14923"><div class="by">Michael Durbin, 2015-08-05 17:20 UTC</div><div class="text"><p>I think it'd be good to merge it.</p></div></div>
+<div class="comment" id="comment-14924"><div class="by">Andrew Woods, 2015-08-05 17:36 UTC</div><div class="text"><p>Resolved with: <br/>
+<a href="https://github.com/fcrepo4-labs/migration-utils/commit/2f1f3e51573c398e180ce70f8001fb78955ef106" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/commit/2f1f3e51573c398e180ce70f8001fb78955ef106</a> and<br/>
+<a href="https://github.com/fcrepo4-labs/migration-utils/commit/ea3b76e8211978b46aac25acf6125614c9aefc5d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/migration-utils/commit/ea3b76e8211978b46aac25acf6125614c9aefc5d</a></p></div></div>
+<p><a href="data/FCREPO-1596.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1161 DateTimeUtil does create a lot of &quot;SimpleDateFormat&quot; objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1161</span> DateTimeUtil does create a lot of &quot;SimpleDateFormat&quot; objects</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>frank asseg</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2012-10-18 18:40 UTC</td></tr><tr><th>Updated</th><td>2013-07-26 21:35 UTC</td></tr><tr><th>Resolved</th><td>2013-07-26 21:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1156.html">FCREPO-1156</a> Performance degradation when adding a lot of datastreams</td></tr></table>
+<h2>Description</h2>
+<p>DateTimeUtil does allocate 1 SimpleDateFormat object at least for each datastream/version. Since SimpleDateFormat is not thread-safe as pointed out by Ben this could be done via a ThreadLocal&lt;&gt; rather than a static object reference. I'll check into that and maybe try out other formatter as well.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-12478"><div class="by">frank asseg, 2012-10-26 14:50 UTC</div><div class="text"><p>As discussed in yesterday's committer call i conducted some tests with the Java API and Joda Time:</p>
+
+<p>Java API I                      55593.13 ns<br/>
+Java API II                       5386.17 ns<br/>
+Joda Time I                    51827.76 ns<br/>
+Joda Time II                     9197.76 ns</p>
+
+<p>The tests marked "I" have been constructing a DateFormatter for each parsing cycle, while the tests marked with "II" have been reusing an instance.<br/>
+Since Java's SimpleDateFormat is not thread safe the "Java API II" test is not eligible for usage in fedora but was added for comparison.<br/>
+Since JodaTime's DateFormatter is thread-safe "Joda Time II" seems a valid way to improve the performance a slight bit and decreasing object allocation.<br/>
+I'll implement a DateUtil using JodaTime and send Adam a request for review.</p></div></div>
+<div class="comment" id="comment-12480"><div class="by">frank asseg, 2012-10-26 20:06 UTC</div><div class="text"><p>pushed a new branch to <a href="https://github.com/fcrepo/fcrepo/compare/fcrepo-1161" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/compare/fcrepo-1161</a></p></div></div>
+<div class="comment" id="comment-12550"><div class="by">Benjamin Armintor, 2013-07-26 21:35 UTC</div><div class="text"><p>Merged into master for 3.7</p></div></div>
+<p><a href="data/FCREPO-1161.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

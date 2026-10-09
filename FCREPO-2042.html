@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2042 Support recursion in PersistingRdfStreamConsumer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2042</span> Support recursion in PersistingRdfStreamConsumer</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Christopher Johnson</td></tr><tr><th>Created</th><td>2016-05-31 13:43 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr></table>
+<h2>Description</h2>
+<p>From <a href="https://github.com/fcrepo4/fcrepo4/issues/1045" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/1045</a></p>
+
+<p>I have a N3 graph that looks like this.</p>
+
+<p>&lt;<a href="http://localhost:8080/fcrepo/rest/object/id:0001" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/object/id:0001</a>&gt; &lt;p1&gt; &lt;o1&gt; ;  ...  ; &lt;p30&gt; &lt;o30&gt;  .<br/>
+&lt;<a href="http://localhost:8080/fcrepo/rest/object/id:0002" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/object/id:0002</a>&gt; &lt;p1&gt; &lt;o1&gt; ;  ...  ; &lt;p30&gt; &lt;o30&gt;  .</p>
+
+<p>and so on for many thousands of ids. I would like to just run a command like this:</p>
+
+<p>$&gt; curl -X PUT -H "Content-Type: application/n-triples" -H"Prefer: handling=lenient; received="minimal"" --data-binary "@update_rdf.n3" "http://localhost:8080/fcrepo/rest/object"</p>
+
+<p>and have the consumer understand that the subjects are just children of the topic. AFAIK, this is not yet supported and the only way to do this is to create separate data-binary import files for each subject and then point the target command at each child. (If there is an existing method I am missing, please let me know!)</p>
+
+<p>The motivation for this is in line with LDP UC4: Update existing resource (<a href="https://dvcs.w3.org/hg/ldpwg/raw-file/default/ldp-ucr.html#dfn-f4.2" class="external-link" rel="nofollow noreferrer">https://dvcs.w3.org/hg/ldpwg/raw-file/default/ldp-ucr.html#dfn-f4.2</a>)</p>
+
+<p>The workflow is index the Fedora data into Fuseki, do a selective SPARQL UPDATE, construct and reserialize the graph as N3, and replace the parent container in Fedora.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-16782"><div class="by">A. Soroka, 2016-05-31 13:51 UTC</div><div class="text"><p>I'd like to ask you, Christopher Johnson (who filed the Github issue), to comment a bit more about the immediate use case. Are you trying to avoid the cost of <em>managing</em> the many separate requests that would normally be use for this action or trying to avoid the <em>performance penalty</em> of many HTTP requests, or something else entirely?</p>
+
+<p>What Esmé Cowles said about HTTP/2 is quite true, of course, but there are many more problems with the idea of batch action. That's part of why LDP Batch did not become part of the larger LDP standard. Sending serialized commands against a special endpoint is not RESTful at all. Fedora is pretty grim and serious about its RESTfulness.</p>
+
+<p>If you are trying to avoid the overhead of management, a simple approach in which you use some external tool like a script to factor a large graph into many graphs and produce requests for each would seem to work. Otherwise, we can parse out your requirements a bit more before proceeding.</p></div></div>
+<div class="comment" id="comment-16784"><div class="by">A. Soroka, 2016-05-31 14:21 UTC</div><div class="text"><p>Given the fact that Christopher Johnson is getting his triples from a triplestore, another way to deal with this need would be to extend the current Camel machinery to have a bidirectional triplestore "recipe".</p></div></div>
+<div class="comment" id="comment-16812"><div class="by">Christopher Johnson, 2016-06-01 21:18 UTC</div><div class="text"><p>Thank you for looking in to this. <br/>
+@esc I had not considered the hash option at all in the URI design.  I have tested it with data and realize now that it is not possible to target and return only a single fragment with GET.  So, this is definitely not going to work.  I also do not think that the single container will be an option for the batch updates of fcr:metadata, as the curl command would still look like this:</p>
+
+<blockquote><p>$&gt; curl -X PUT -H "Content-Type: application/n-triples" -H"Prefer: handling=lenient; received="minimal"" --data-binary "@update_rdf.n3" "http://localhost:8080/fcrepo/rest/res#0092.tif/fcr:metadata"</p></blockquote>
+
+
+<p>@ajs6f@virginia.edu  My use case is driven by practical management costs rather than performance needs.  I am comfortable with manipulating graphs with SPARQL.  For example, adding or changing a property for an entire graph based arbitrary criteria is quite simple.  So my flow is driven by administration first.  For example, I build the dataset with bulk construct updates, like modifying the svcs:has_service base URI in fcr:metadata (from the IIIF Presentation API).  It is possible of course to create a script that does this on a "one off" basis in fcrepo, though it is much easier to do in the triplestore or in an exported graph file directly.  </p>
+
+<p> As far as a bidirectional indexer in fcrepo-camel, this might work, though I would worry about it if it had any automation.  I kind of view the triplestore as a "development" environment, and fcrepo as the "production" environment, so any production updates would need to be triggered. </p>
+
+<p>It seems to me that some kind of "topic to child subject inheritance" could be part of the consumer API.  The parent topic can simply deliver the request to its children if it knows that the subject is within its scope.  Similar to a transitive property path algorithm, I guess. I do not know anything about the mechanics of the update process of the consumer, however.  I hope that this helps!</p></div></div>
+<div class="comment" id="comment-16814"><div class="by">A. Soroka, 2016-06-02 13:25 UTC</div><div class="text"><p>It's really not a question to me of mechanics, but of whether this is an approach that actually fits the Fedora API, and I rather think it isn't. The Fedora API is a RESTful API for an object repository, which means that it expects to be addressed at a given identifier with properties for that identified resource, not a probably-related set of resources with syntactically-similar identifiers (keep in mind that the syntactic hierarchy immediately available from Fedora has no semantic beyond LDP containment).</p>
+
+<p>What are your needs for atomicity? If a SPARQL Update fired and only some of the resources received their modifications, would that be catastrophic, annoying, or no big deal?</p></div></div>
+<div class="comment" id="comment-16815"><div class="by">A. Soroka, 2016-06-02 13:44 UTC</div><div class="text"><p>My suggestion of a script for "factoring" your update was indeed given with the example of an exported graph in mind:</p>
+
+<ol>
+	<li>Make modifications in your triplestore as desired, using whatever techniques are useful.</li>
+	<li>Export a big fat graph.</li>
+	<li>Open a repository transaction.</li>
+	<li>Use a script to loop over all repository resources named in the big graph and:
+	<ol>
+		<li>Split out a single graph for a single resource from the big graph.</li>
+		<li>Fire an update with that small graph at that single resource.</li>
+	</ol>
+	</li>
+	<li>Commit the transaction.</li>
+</ol>
+
+
+<p>With proper design, I shouldn't think that script would have to be a "one-off", and it should give you both control of when the delta is moved and (if you do need it) atomicity. If you'd like some help with writing that kind of script, I think we can arrange for that.</p></div></div>
+<div class="comment" id="comment-16823"><div class="by">Christopher Johnson, 2016-06-03 06:11 UTC</div><div class="text"><p>re:Atomicity I would expect all or nothing as a single commit of the delta, because it is possible to create duplicate records with SPARQL insert and this would be unmanageable with a large (unordered) graph, (unless the partial transactions could be rolled back with a journaled delete).</p>
+
+<p>re:LDP containment.  In the spec, for HTTP POST to an <b>Indirect container</b> <a href="https://www.w3.org/TR/ldp/#ldpic" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp/#ldpic</a><br/>
+"5.5.2.1 LDPCs whose ldp:insertedContentRelation triple has an object other than ldp:MemberSubject and that create new resources must add a triple to the container whose subject is the container's URI, whose predicate is ldp:contains, and whose object is the newly created resource's URI (which will be different from the member-derived URI in this case). This ldp:contains triple can be the only link from the container to the newly created resource in certain cases."  I am not an expert on the LDP, but this seems to imply some sort of mechanism where ldp:insertedContentRelation object can be any other container URI?.</p>
+
+<p>The suggestion for a script seems workable, basically another iterator consumer class, right?  Though, If the LDP spec provides for this indirect functionality, perhaps understanding how to implement it could be a more progressive solution. </p></div></div>
+<div class="comment" id="comment-16828"><div class="by">A. Soroka, 2016-06-03 13:48 UTC</div><div class="text"><p>I'm not quite clear on what you mean by: "it is possible to create duplicate records with SPARQL insert…" SPARQL (nor RDF itself) has no notion of "record". It is not possible to create duplicate triples within a graph in the RDF model. Are you discussing the possibility of your SPARQL Updates generating more than one copy of the same triple? If so, there might be a problem with the data model you are intending to use with Fedora, and we should discuss that as a separate point.</p>
+
+<p>Fedora currently does implement LDP Indirect Containers, so if that functionality would meet your need (I admit that it's not clear to me how it would) then that would be wonderful-- you have a road forward.</p>
+
+<p>I am beginning to suspect that I'm not going to be able to help you as well as you deserve without a fuller understanding of the whole use case you have for Fedora. Would it be feasible for you to join one of our <a href="https://wiki.duraspace.org/display/FF/Meetings" class="external-link" rel="nofollow noreferrer">weekly tech calls</a> to talk about what you are doing and the problems you face? </p></div></div>
+<div class="comment" id="comment-16853"><div class="by">Christopher Johnson, 2016-06-03 23:16 UTC</div><div class="text"><p>Thank you for the invitation to the tech call.  Would this be the Thursday 11:00 AM EST Meeting?  </p>
+
+<p>You are correct about the possibility of a duplicate statement (record).  I had recalled (mistakenly) when I had done an UPDATE (modification) without first deleting the existing triple and ended up with a duplicate property with two values.  With the same value, there is no possibility of duplication.  And, furthermore, I am not actually clear on the distinction between a Fedora INSERT and a SPARQL UPDATE (if there is one), but I would rather reserve "SPARQL" for use in the context of the triplestore, so there is no confusion. </p>
+
+<p>At the moment, I have no real "problems", fortunately.  The data model that I intend to use is rather <a href="https://github.com/blumenbach/iiif-builder/blob/master/HOWTO.md" class="external-link" rel="nofollow noreferrer">complex </a>.  However, the way that I am managing updates to the data en masse still depends on jcr/xml rather than RDF.  I would rather simply be able to import an RDF graph in a similar way to a jcr/xml sv:node import, but this is not supported (yet).  One alternative approach that I have also considered is rewriting an RDF graph as jcr/xml, though this seems rather backwards.   </p></div></div>
+<div class="comment" id="comment-22331"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2042.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-680 REST API throws NPE when adding new datastream without providing media- and mime type</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-680</span> REST API throws NPE when adding new datastream without providing media- and mime type</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2010-04-06 16:00 UTC</td></tr><tr><th>Updated</th><td>2010-08-20 00:03 UTC</td></tr><tr><th>Resolved</th><td>2010-05-18 09:17 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 1, Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-777.html">FCREPO-777</a> REST API:  Determine and set appropriate mime-type when a new managed datastream is added without a specified media or mime type</td></tr></table>
+<h2>Description</h2>
+<p>if neither mediaType nor mimeType are provided and the datastream to be added is new, Fedora will throw a NPE because it tries to access the mime type of the nonexisting datastream. </p>
+
+<p>see: <a href="http://fisheye.fedora-commons.org/browse/FCREPO/trunk/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java?r=8493" class="external-link" rel="nofollow noreferrer">http://fisheye.fedora-commons.org/browse/FCREPO/trunk/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java?r=8493</a>, line 389</p>
+
+
+<p>Here is the log:</p>
+<ul class="alternate" type="square">
+	<li>&gt;&gt; "POST /fedora/objects/changeme:1006/datastreams/FFFFF?versionable=true&amp;controlGroup=R&amp;dsLocation=http%3A%2F%2Flocalhost%3A8080 HTTP/1.1<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Accept: <b>/</b><span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Content-Length: 0<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Host: localhost:8080<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Connection: Keep-Alive<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "User-Agent: Apache-HttpClient/4.0 (java 1.5)<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Cookie: JSESSIONID=DA331916CEDC7FA7365C4071A052C51A<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Cookie2: $Version=1<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Authorization: Basic xxxx=<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "Accept-Encoding: gzip,deflate<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&gt;&gt; "<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "HTTP/1.1 500 Internal Server Error<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "Server: Apache-Coyote/1.1<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "Content-Type: text/plain<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "Transfer-Encoding: chunked<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "Date: Tue, 06 Apr 2010 14:40:39 GMT<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "Connection: close<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;EOL&#93;</span>"<br/>
+2010-04-06 16:40:39,260 DEBUG  HTTPBuilder - Parsed data to instance of: class java.io.InputStreamReader</li>
+	<li>&lt;&lt; "1167<span class="error">&#91;EOL&#93;</span>"</li>
+	<li>&lt;&lt; "javax.ws.rs.WebApplicationException: java.lang.NullPointerException<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:164)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.rest.DatastreamResource.addOrUpdateDatastream(DatastreamResource.java:480)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.rest.DatastreamResource.addDatastream(DatastreamResource.java:322)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at sun.reflect.GeneratedMethodAccessor57.invoke(Unknown Source)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at java.lang.reflect.Method.invoke(Method.java:597)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.model.method.dispatch.EntityParamDispatchProvider$ResponseOutInvoker._dispatch(EntityParamDispatchProvider.java:157)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.model.method.dispatch.ResourceJavaMethodDispatcher.dispatch(ResourceJavaMethodDispatcher.java:67)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.uri.rules.HttpMethodRule.accept(HttpMethodRule.java:124)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:71)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:63)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:555)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:514)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:505)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:359)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at javax.servlet.http.HttpServlet.service(HttpServlet.java:717)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.security.servletfilters.FilterRestApiFlash.doFilter(FilterRestApiFlash.java:79)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:293)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:849)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:583)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:454)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at java.lang.Thread.run(Thread.java:637)<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "Caused by: java.lang.NullPointerException<span class="error">&#91;\n&#93;</span>"</li>
+	<li>&lt;&lt; "<span class="error">&#91;0x9&#93;</span>at org.fcrepo.server.rest.DatastreamResource.addOrUpdateDatastream(DatastreamResource.java:389)<span class="error">&#91;\n&#93;</span>"</li>
+</ul>
+
+
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-680/10090_fcrepo-680-test-output.txt">fcrepo-680-test-output.txt</a>, 6894 bytes, added by Scott Prater on 2010-08-19</li>
+</ul>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-11555"><div class="by">Scott Prater, 2010-08-19 23:55 UTC</div><div class="text"><p>See the fcrepo-680-test-output.txt attachment for test outputs. </p></div></div>
+<p><a href="data/FCREPO-680.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

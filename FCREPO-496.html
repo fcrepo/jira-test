@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-496 Permgen grows when Fedora deployed/undeployed w/o restarting Tomcat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-496</span> Permgen grows when Fedora deployed/undeployed w/o restarting Tomcat</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-06-02 11:48 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:02 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:02 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.4, Fedora 3.2</td></tr><tr><th>Depends on</th><td><a href="FCREPO-452.html">FCREPO-452</a> Move away from Axis 1.3</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-630.html">FCREPO-630</a> Switch to SLF4J with Logback as primary logging framework</td></tr></table>
+<h2>Environment</h2>Tomcat
+<h2>Description</h2>
+<p>Reported by Graham Triggs:</p>
+
+<p>When repeatedly deploying/undeploying the Fedora webapp (without restarting Tomcat), the JVM permgen size continues to grow.  This can lead to an eventual out-of-memory condition.</p>
+
+<p>This is caused by a failure of classes to be unloaded.</p>
+
+<p>Graham has seen this before, and has dealt with it by using a "cleanup context listener" that gets invoked at shutdown time.  Part of this is due to JDBC drivers not being automatically unregistered when the webapp is stopped (this is what the attached java file deals with).  Part also appears to be caused by a JAXP DocumentBuilderImpl reference that is being held by a ThreadLocal.  This reference hasn't been tracked down fully yet.</p>
+
+<p>While investigating this issue, Graham came across a flaw in the shutdown code that can prevent clean shutdown if ManagementModule doesn't shut down properly:</p>
+
+<p>"...during the shutdown code, the ManagementModule hadn't been fully initialised, so it was then throwing an exception during shutdown (not an MSE), so all the remaining modules never had their shutdown code called (and so the Thread wasn't stopped, and Tomcat couldn't stop).</p>
+
+<p>The local fix is to add a null check to ManagementModule's shutdown procedure:</p>
+
+<p>    public void shutdownModule() throws ModuleShutdownException {<br/>
+        if (invocationHandlers != null) {<br/>
+            for (AbstractInvocationHandler h : invocationHandlers) </p>
+{
+                h.close();
+            }
+<p>        }<br/>
+    }</p>
+
+<p>Thus preventing an NPE that can occur. Although the shutdown method in Server should probably be more defensive and catch Throwables (not just MSEs) to ensure that all remaining modules are at least attempted to be cleaned up."</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-496/10055_CleanupContextListener.java">CleanupContextListener.java</a>, 2440 bytes, added by Chris Wilper on 2009-06-02</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-10970"><div class="by">Former user, 2009-07-13 14:45 UTC</div><div class="text"><p>After writing a ServletContextListener dedicated to cleaning up all the usual suspects (using the suggested fix above, jdbc driver deregistration, explicit shutdown of Log4j and commons logging) there are still classes left that prevent Fedora from being fully garbage collected while undeploying the application. The responsible libraries can be narrowed down to Xerces, Axis and Derby:</p>
+
+<p>Xerces-J<br/>
+Tomcat uses a sax parser for parsing the configuration files. As Xerces is included in Fedora's WEB-INF/lib directory, Tomcat apparently <br/>
+uses parts of Xerces from Fedora rather than the one bundled with the JRE. This in turn creates a dependence of Tomcat on the Fedora classloader which can't be collected any more. The Tomcat documentation on class loading suggests otherwise<span class="error">&#91;1&#93;</span> but following the tip at <span class="error">&#91;2&#93;</span> and removing xerces.jar from Fedora solves the problem. A heap dump taken after the removal of Xerces from Fedora shows no signs of uncollected DocumentBuilderImpl instances or classes. </p>
+
+<p>Axis<br/>
+Most remaining shortest paths to the gc rootset appeared to be linked to Axis.<br/>
+All Axis framework versions 1.3 and 1.4 suffer from a known class loader leak<span class="error">&#91;3&#93;</span>. This leak<br/>
+stems from a Cache that uses a ThreadLocal and fails to clean it up properly during shutdown. The issue hasn't been fixed. A cusom retrofitted fix <br/>
+for 1.3 (the version used) along with some more tweaking of the ThreadLocal used for caching showed the successful removal of all Axis related classes.</p>
+
+<p>Derby<br/>
+Derby also seems to have some classloader leaks. After fixing Xerces and Axis related problems only classes from Derby appeard in the root set preventing the classloader from being collected. The Derby issues are significantly harder to trace down, but appear to be linked to Derby's ConcurrentCache.</p>
+
+<p>Solution:<br/>
+It appears that in order to fix all classloader leaks Xerces has to be removed, Axis patched or upgraded to 2.x and Derby probably has to be patched as well. <br/>
+After fixing the Xerces and Axis related problems and substituting Derby with PostgreSQL the OOM does no longer occur. Heap dumps don't reveal any more classes that are not supposed to be loaded and JConsole shows the successful collection of PermGen after some time.</p>
+
+<p>Method used:<br/>
+In order to reproduce the issue the following steps were taken:<br/>
+1. deploy fedora<br/>
+2. check permgen<br/>
+3. undeploy fedora<br/>
+4. check permgen<br/>
+5. trigger heap dump<br/>
+6. analyze heap dump with Yourkit Profiler or Eclipse Memory Analyzer, search for classes that are not supposed to be loaded, identify the respective leaking classloader and find the shortest paths from gc root </p>
+
+<p>Environment: Java 1.6.0_13, OSX, Fedora 3.2.1 default installation, Tomcat 5.5.26</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://tomcat.apache.org/tomcat-5.5-doc/class-loader-howto.html" class="external-link" rel="nofollow noreferrer">http://tomcat.apache.org/tomcat-5.5-doc/class-loader-howto.html</a><br/>
+<span class="error">&#91;2&#93;</span> <a href="http://ampedandwired.com/2008/05/09/causes-of-java-permgen-memory-leaks" class="external-link" rel="nofollow noreferrer">http://ampedandwired.com/2008/05/09/causes-of-java-permgen-memory-leaks</a><br/>
+<span class="error">&#91;3&#93;</span> <a href="https://issues.apache.org/jira/browse/AXIS-2674" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/jira/browse/AXIS-2674</a></p></div></div>
+<div class="comment" id="comment-10972"><div class="by">Chris Wilper, 2009-07-14 15:31 UTC</div><div class="text"><p>Found this re:Derby: <a href="https://issues.apache.org/jira/browse/DERBY-3745" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/jira/browse/DERBY-3745</a></p></div></div>
+<div class="comment" id="comment-10973"><div class="by">Chris Wilper, 2009-07-14 15:35 UTC</div><div class="text"><p>Discussed on Jul 14th call, for xerces, will test more to see if we can drop it.  For Derby, will punt (and point to the outstanding issue) since it's not a recommended db for running Fedora in production in anyway.</p></div></div>
+<div class="comment" id="comment-10979"><div class="by">Bill Branan, 2009-07-21 16:43 UTC</div><div class="text"><p>Discussed in July 21 committer call. Migration away from Axis 1.3 is a large effort that will likely not happen soon. Plan for this issue is to patch Axis 1.3 as necessary to allow garbage collection of the Fedora classloader, then look into 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-452" >
+                <a href="FCREPO-452.html" class="jira-issue-macro-key issue-link"  title="Move away from Axis 1.3" >
+            
+            FCREPO-452
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ at a later date.</p></div></div>
+<div class="comment" id="comment-10988"><div class="by">Former user, 2009-07-31 15:27 UTC</div><div class="text"><p>Patched Axis and found another leak. After undeploy there are two remaining Instances of org.apache.commons.logging.impl.Log4jLogger being held on by Tomcat. It seems that this kind of issue has been known for some time, see <span class="error">&#91;1&#93;</span>. After having unsuccessfully tried a number of options (upgrading commons logging, searching for possible leak scenarios in the code base, removing commons logging and replacing tomcat/bin/commons-logging-api.jar), only removing both log4j and commons logging from the webapp and placing them in tomcat/common/lib fixed this remaining classloader leak. <br/>
+Given the many problems that the dynamic binding approach of commons logging brings along, it should be considered abandoning commons logging in favor of slf4j. The slf4j approach avoids classloader issues altogether by using a static binding approach, see <span class="error">&#91;1&#93;</span> and <span class="error">&#91;2&#93;</span>.</p>
+
+<p>There is one other thing that influences memory during undeploy: the finalizer. As there are some classes in the Fedora codebase that override the finalize() method, memory usage can build up when the webapp is deployed/undeployed in rapid succession. It takes at least two GCs until a finalizable object can be collected, and the finalizer queue may not keep up with finalizing its objects because the finalizer is a low priority thread and therefore eventually cause an OOM. For "normal" deploy/undeploy cycles this should however not be an issue.</p>
+
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://www.qos.ch/logging/classloader.jsp" class="external-link" rel="nofollow noreferrer">http://www.qos.ch/logging/classloader.jsp</a><br/>
+<span class="error">&#91;2&#93;</span> <a href="http://www.slf4j.org" class="external-link" rel="nofollow noreferrer">http://www.slf4j.org</a></p></div></div>
+<div class="comment" id="comment-11009"><div class="by">Stephen Bayliss, 2009-09-16 10:04 UTC</div><div class="text"><p>There's a post on the OrbeonForms mailing list with some useful comments on tuning the JVM for PermGen problems:-</p>
+
+<p><a href="http://mail.ow2.org/wws/arc/ops-users/2009-09/msg00129.html" class="external-link" rel="nofollow noreferrer">http://mail.ow2.org/wws/arc/ops-users/2009-09/msg00129.html</a></p></div></div>
+<div class="comment" id="comment-13131"><div class="by">Andrew Woods, 2015-01-16 21:02 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-496.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

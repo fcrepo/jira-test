@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1841 Two versionable datastreams with same identifier</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1841</span> Two versionable datastreams with same identifier</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Nicolas Franck</td></tr><tr><th>Created</th><td>2015-11-17 10:17 UTC</td></tr><tr><th>Updated</th><td>2016-02-12 15:54 UTC</td></tr><tr><th>Resolved</th><td>2016-02-12 15:54 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.7.1</td></tr><tr><th>Labels</th><td>fedora3</td></tr></table>
+<h2>Environment</h2>OS: Centos 6.6<br/>
+4GB RAM<br/>
+2 CPU (Intel Xeon)<br/>
+<br/>
+All fedora storage, including tomcat temporary folders, are located on a NFS mount.<br/>
+
+<h2>Description</h2>
+<p>The islandora software creates objects, and stores them<br/>
+in our fedora-commons installation, using the REST-API.</p>
+
+<p>Every object has a datastream "TN", which is jpeg-file,<br/>
+that serves as a "thumbnail". This datastream is versionable.</p>
+
+<p>Mostly, all goes fine. But sometimes, the new version is registered<br/>
+by fedora, but strangely disappears from the underlying filesystem,<br/>
+without fedora noting this in the datastream description.</p>
+
+<p>All I could was this in the log files:</p>
+
+<p><span class="error">&#91;..&#93;</span><br/>
+INFO 2015-10-22 10:59:58.035 <span class="error">&#91;http-8080-16&#93;</span> (DatastreamResource) addOrUpdate<br/>
+INFO 2015-10-22 10:59:58.035 <span class="error">&#91;http-8080-16&#93;</span> (DefaultManagement) Completed getDatastream(pid: islandora:20401, datastreamID: TN, asOfDateTime: null)<br/>
+INFO 2015-10-22 10:59:58.045 <span class="error">&#91;http-8080-50&#93;</span> (DatastreamResource) addOrUpdate<br/>
+INFO 2015-10-22 10:59:58.046 <span class="error">&#91;http-8080-50&#93;</span> (DefaultManagement) Completed getDatastream(pid: islandora:20401, datastreamID: TN, asOfDateTime: null)<br/>
+INFO 2015-10-22 10:59:58.049 <span class="error">&#91;http-8080-16&#93;</span> (DefaultDOManager) Committing modification of islandora:20401<br/>
+INFO 2015-10-22 10:59:58.049 <span class="error">&#91;http-8080-16&#93;</span> (DefaultDOManager) Getting managed datastream from internal uploaded location: uploaded://133842 for islandora:20401<br/>
+INFO 2015-10-22 10:59:58.066 <span class="error">&#91;http-8080-16&#93;</span> (DefaultDOManager) Replaced managed datastream location with internal id: islandora:20401+TN+TN.0<br/>
+INFO 2015-10-22 10:59:58.067 <span class="error">&#91;http-8080-16&#93;</span> (DefaultDOManager) Adding to ResourceIndex<br/>
+INFO 2015-10-22 10:59:58.075 <span class="error">&#91;http-8080-16&#93;</span> (DefaultDOManager) Updating dissemination index for islandora:20401<br/>
+INFO 2015-10-22 10:59:58.075 <span class="error">&#91;http-8080-16&#93;</span> (DefaultDOManager) Updating FieldSearch index<br/>
+INFO 2015-10-22 10:59:58.077 <span class="error">&#91;http-8080-16&#93;</span> (DefaultManagement) Completed addDatastream(pid: islandora:20401, dsID: TN, altIDs: , dsLabel: Thumbnail, versionable: true, MIMEType: image/jpeg, formatURI: , dsLocation: uploaded://133842, controlGroup: M, dsState: A, checksumType: DISABLED, checksum: null, logMessage: Copied datastream from islandora:20401.)<br/>
+INFO 2015-10-22 10:59:58.081 <span class="error">&#91;http-8080-16&#93;</span> (DefaultManagement) Completed getDatastream(pid: islandora:20401, datastreamID: TN, asOfDateTime: null)<br/>
+INFO 2015-10-22 10:59:58.083 <span class="error">&#91;http-8080-50&#93;</span> (DefaultDOManager) Committing modification of islandora:20401<br/>
+INFO 2015-10-22 10:59:58.084 <span class="error">&#91;http-8080-50&#93;</span> (DefaultDOManager) Getting managed datastream from internal uploaded location: uploaded://133843 for islandora:20401<br/>
+INFO 2015-10-22 10:59:58.098 <span class="error">&#91;http-8080-50&#93;</span> (DefaultDOManager) Replaced managed datastream location with internal id: islandora:20401+TN+TN.0<br/>
+INFO 2015-10-22 10:59:58.098 <span class="error">&#91;http-8080-50&#93;</span> (DefaultDOManager) Removed purged datastream version from low level storage (token = islandora:20401+TN+TN.0)<br/>
+INFO 2015-10-22 10:59:58.100 <span class="error">&#91;http-8080-50&#93;</span> (DefaultDOManager) Adding to ResourceIndex<br/>
+INFO 2015-10-22 10:59:58.118 <span class="error">&#91;http-8080-50&#93;</span> (DefaultDOManager) Updating dissemination index for islandora:20401<br/>
+INFO 2015-10-22 10:59:58.118 <span class="error">&#91;http-8080-50&#93;</span> (DefaultDOManager) Updating FieldSearch index<br/>
+INFO 2015-10-22 10:59:58.120 <span class="error">&#91;http-8080-50&#93;</span> (DefaultManagement) Completed addDatastream(pid: islandora:20401, dsID: TN, altIDs: , dsLabel: Thumbnail, versionable: true, MIMEType: image/jpeg, formatURI: , dsLocation: uploaded://133843, controlGroup: M, dsState: A, checksumType: DISABLED, checksum: null, logMessage: Copied datastream from islandora:20401.)<br/>
+INFO 2015-10-22 10:59:58.131 <span class="error">&#91;http-8080-50&#93;</span> (DefaultManagement) Completed getDatastream(pid: islandora:20401, datastreamID: TN, asOfDateTime: null)</p>
+
+<p><span class="error">&#91;..&#93;</span></p>
+
+<p>As you can see, the file is uploaded two times. <br/>
+The first file "uploaded://133842" gets the identifier "islandora:20401+TN+TN.0".<br/>
+The second file "uploaded://133843" also gets the <br/>
+identifier "islandora:20401+TN+TN.0".</p>
+
+<p>This double identifier probably causes the deletion of the underlying file,<br/>
+as reported in the log:</p>
+
+<p>Removed purged datastream version from low level storage (token = islandora:20401+TN+TN.0)</p>
+
+<p>The method "deletePurgedDatastreams" in DefaultDOManager<br/>
+does this?<br/>
+Is this behaviour intented? What can I do to prevent this?</p>
+
+<p>Thanks in advance</p>
+
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-15858"><div class="by">Nicolas Franck, 2015-11-19 12:17 UTC</div><div class="text"><p>Update: islandora updates the datastream TN using two concurrent processes.</p>
+
+<p>And indeed, if you use two concurrent threads, this problem occurs.</p>
+
+<p>Can this be prevented, or is this fixed in another version of Fedora?</p>
+
+<p>cf. <a href="https://jira.duraspace.org/browse/FCREPO-1284" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1284</a></p></div></div>
+<div class="comment" id="comment-16131"><div class="by">Andrew Woods, 2016-02-12 15:53 UTC</div><div class="text"><p>Nicolas Franck, if you have not already done so, I would suggest posting this issue to the fedora-tech@googlegroups.com mailing list. As you know, Fedora 3.8.1 was the last release in the 3.x line. There will be no more updates or releases on the 3.x line.</p></div></div>
+<p><a href="data/FCREPO-1841.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

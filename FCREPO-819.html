@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-819 Memory leak due to Mulgara bug</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-819</span> Memory leak due to Mulgara bug</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Asger Askov Blekinge</td></tr><tr><th>Created</th><td>2010-11-11 16:48 UTC</td></tr><tr><th>Updated</th><td>2011-02-21 23:25 UTC</td></tr><tr><th>Resolved</th><td>2011-01-11 22:20 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4, Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Description</h2>
+<p>We have been running our system with Mulgara. We have been running a very long ingest procedure, and we have been able to see that the time to process one record (actually a few fedora objects) increase from about 3 seconds to 9 seconds after a few hours. Heap dumps and examination revealed that for most of the time was spent by the GC. It turned out that after some hours, the com.sun.corba.se.impl.util.Utility had allocated 566 mb of ram.</p>
+
+<p>Examination about what caused this lead us to <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6534290" class="external-link" rel="nofollow noreferrer">http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6534290</a> It seems there is a bug with corba, where cache miss information is not garbage collected but retained in a static map.</p>
+
+<p>I found this post to be of great help <a href="http://old.nabble.com/Memory-leak-when-using-JbossCache-and-JOTM-td9497014.html#a9497014" class="external-link" rel="nofollow noreferrer">http://old.nabble.com/Memory-leak-when-using-JbossCache-and-JOTM-td9497014.html#a9497014</a> According to this post, if you do not include the jotm-iiop-stubs.jar, you will have a memory leak. Mulgara uses jotm but does not include that jar. I have currently added it by hand to the lib folder of my fedora instance, and restarted everything. If this fixes the leak, we have a fix, which needs to go upstream to mulgara or be implemented by fedora.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11700"><div class="by">Chris Wilper, 2010-11-23 23:34 UTC</div><div class="text"><p>Discussed on Nov 23 call.  We need to make sure Paul is aware of this, and also, before Fedora 3.5 is released, make sure our pom includes this dependency.</p></div></div>
+<div class="comment" id="comment-11752"><div class="by">Stephen Bayliss, 2011-01-05 14:47 UTC</div><div class="text"><p>I've had a report that this seems to fix issues with certain TQL queries (particularly those of the style used by the OAI provider, ie date range queries, where these return large numbers of results).  There've been occasional reports of this on the users list.  These queries were previously generating out of memory errors.</p>
+
+<p>Would be good if we could include the dependency in the POM for the next release.</p></div></div>
+<p><a href="data/FCREPO-819.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

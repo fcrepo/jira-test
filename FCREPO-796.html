@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-796 Fedora objects are not valid xml when using inline datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-796</span> Fedora objects are not valid xml when using inline datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Asger Askov Blekinge</td></tr><tr><th>Created</th><td>2010-09-03 18:27 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-60.html">FCREPO-60</a> Validation error when namespace for in-line XML...</td></tr><tr><th>Is duplicated by</th><td><a href="FCREPO-60.html">FCREPO-60</a> Validation error when namespace for in-line XML...</td></tr><tr><th>Is related to</th><td><a href="FCREPO-190.html">FCREPO-190</a> Inline XML Canonicalization (c14n) for SIZE and CHECKSUM</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1195.html">FCREPO-1195</a> There is a namespace issue with audit datastreams migrating from legacy to akubra</td></tr></table>
+<h2>Description</h2>
+<p>Try the attached file.</p>
+
+<p>This is a valid object, and conforms to all the xml specifications. The trick here is that the xsi namespace is not redefined in the DC datastream. </p>
+
+<p>It cannot ingest, as the DCFields class attempts to parse solely the contents of the DC datastream. But the contents of the DC datastream are valid, in the context of the object.</p>
+
+<p>Reproducing this bug in production</p>
+
+<p>1. getObjectXML on ANY fedora object<br/>
+2. Parse this xml as a document (xsi is defined both on the top level, and in the DC datastream)<br/>
+3. Do something with the document<br/>
+4. Convert the document to xml (xsi is only defined on the top level)<br/>
+5. Ingest the new xml (error, xsi:schemaLocation not bound)</p>
+
+<p>The point here is that the standard XML parsers do NOT know that they MUST repeat the global namespaces in the root elements inside &lt;xmlContent&gt;. They do not know this, because this is not required by the xml specification. </p>
+
+
+<p>I my repository we use templates, ie. data objects that we clone. We do the clone by exporting the template object, change the pid, and reingest the object. This fails, of course, because upon ingest the xsi:schemaLocation is added to the oai_dc:dc element by Fedora (why?). Parsing the exported object as a document then simplifies the namespace declaration. The resulting object then cannot reingest. We solve it by forcefully removing the xsi:schemaLocation attribute from the DC stream, even through we did not put it there. </p>
+
+<p>If we really want to support Inline xml, we should adhere to the xml specification. The more I think about it, the more problematic inline xml is. We cannot have the xmlcontent of a datastream live separately from context of the object, they are part of the same document, and they will interact. One general solution could be to add namespace declarations for all top level namespaces to the root element of any inline datastream, when the content is requested. </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-796/10101_4.xml">4.xml</a>, 1738 bytes, added by Asger Askov Blekinge on 2010-09-03</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11599"><div class="by">Stephen Bayliss, 2010-09-03 19:11 UTC</div><div class="text"><p>Seems to be the same issue or similar.</p></div></div>
+<div class="comment" id="comment-11600"><div class="by">Stephen Bayliss, 2010-09-03 19:12 UTC</div><div class="text"><p>+1 from me.  Valid, well-formed XML should be treated as such, and the placing of namespace declarations should not cause a problem so long as the XML remains well-formed and valid.</p></div></div>
+<div class="comment" id="comment-11601"><div class="by">Stephen Bayliss, 2010-09-07 21:07 UTC</div><div class="text"><p>We should include this in the 4.0 design discussions</p></div></div>
+<div class="comment" id="comment-11691"><div class="by">IssueT, 2010-11-17 03:03 UTC</div><div class="text"><p>One approach to this would possibly be to only emit canonical XML, but people might be dissatisfied with that style of output because it does tend to be excessively verbose.</p></div></div>
+<div class="comment" id="comment-12652"><div class="by">Stuart Yeates, 2014-11-12 19:01 UTC</div><div class="text"><p>There are important use cases in the TEI community (<a href="http://www.tei-c.org/" class="external-link" rel="nofollow noreferrer">http://www.tei-c.org/</a>) where (due to the existence of tools allowing end-users to customise their XML vocabularies) there are effectively a constellation of slightly different XML vocabularies, each with their own DTD, RelaxNG and schematron schemas. Most of documents use the tei: xml prefix. Many of the documents also use the <a href="http://www.tei-c.org/ns/1.0/" class="external-link" rel="nofollow noreferrer">http://www.tei-c.org/ns/1.0/</a> namespace, which is valid when a local customisation is in use if the local customisation is a strict subset of the standard TEI, but not when elements or attributes have been added.  </p></div></div>
+<div class="comment" id="comment-13076"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-796.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

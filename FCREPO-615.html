@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-615 With FeSL enabled, authentication is required for every resource</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-615</span> With FeSL enabled, authentication is required for every resource</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2009-12-20 02:55 UTC</td></tr><tr><th>Updated</th><td>2010-09-01 16:11 UTC</td></tr><tr><th>Resolved</th><td>2010-03-18 14:33 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-753.html">FCREPO-753</a> Credentials not passed through for API-A REST calls when FeSL AuthN enabled</td></tr></table>
+<h2>Description</h2>
+<p>When FeSL in enabled in the installer, the generated Fedora web.xml sets the AuthFilterJAAS with a wildcard url-pattern which requires authentication for every resource, even if APIA-Auth is not required.</p>
+
+<p>For example, if you set API-A authentication to false (the installer default), but enable FeSL, requests to API-A resources such as <a href="http://localhost:8080/fedora/search" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/search</a> still require authentication. Also, requests to resources such as <a href="http://localhost:8080/fedora/ri/index.xsl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/ri/index.xsl</a> also require authentication.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11195"><div class="by">eddie, 2009-12-20 02:59 UTC</div><div class="text"><p>This is partly a bug in the installer, which creates the filter-mapping with a wildcard url-pattern regardless of install options. However, even if the installer is corrected to create individual filter-mappings for the various API-A/M servlets, there's still the problem of REST-API requests. That is, if API-A auth is false, then REST-API requests that map to API-A should not require authentication.</p>
+
+<p>Notably, with the legacy authentication system, REST-API calls are differentiated via a special filter when API-A auth is false: fedora.server.security.servletfilters.FilterRestApiAuthn which explicitly checks for HTTP GETs and bypasses authN except for known API-M uri-patterns.</p>
+
+<p>Seems like something similar would have to be done to AuthFilterJAAS. However, the workaround employed in FilterRestApiAuthn has the disadvantage that there's no way to further customize what requests should be allowed to pass without authentication. Moreover, there's the potential for authN settings for the SOAP API methods to get out of sync w/ the REST API methods.</p></div></div>
+<div class="comment" id="comment-11255"><div class="by">Chris Wilper, 2010-03-11 11:44 UTC</div><div class="text"><p>Given the commits in r8467 to address this (the authnAPIA init-param for AuthFilterJAAS), should this be closed? Maybe the issue of the non-ideal nature of this solution should be logged as a separate issue.  Also closely related is 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-521" >
+                <a href="FCREPO-521.html" class="jira-issue-macro-key issue-link"  title="Merge API-A and M across the board, simplifying AuthN" >
+            
+            FCREPO-521
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, which endeavors to get rid of the API-A/M distinction altogether in the Fedora APIs. That's likely a 4.0 thing, though.</p></div></div>
+<div class="comment" id="comment-11261"><div class="by">Chris Wilper, 2010-03-18 13:26 UTC</div><div class="text"><p>This was also addressed in maintenance-3.3 with changeset 8488</p></div></div>
+<div class="comment" id="comment-11262"><div class="by">Chris Wilper, 2010-03-18 14:33 UTC</div><div class="text"><p>This has been addressed in trunk and maintenance-3.3.  This is now equivalent to the AuthN challenge control offered by Fedora 3.2, which, as noted, is still not ideal.  See followup issue, 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-668" >
+                <a href="FCREPO-668.html" class="jira-issue-macro-key issue-link"  title="Improved Authentication Challenge Control" >
+            
+            FCREPO-668
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ (Improved AuthN challenge control).</p></div></div>
+<p><a href="data/FCREPO-615.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

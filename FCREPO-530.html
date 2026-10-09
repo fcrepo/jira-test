@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-530 Adding a RELS-EXT relationship with a literal object fails validation due to platform default character encoding</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-530</span> Adding a RELS-EXT relationship with a literal object fails validation due to platform default character encoding</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-09-09 10:32 UTC</td></tr><tr><th>Updated</th><td>2009-12-08 04:45 UTC</td></tr><tr><th>Resolved</th><td>2009-11-02 01:39 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1, Fedora 3.2, Fedora 3.2.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>Particularly where the platform default character encoding is not UTF-8, eg Windows
+<h2>Description</h2>
+<p>SimpleDOWriter is converting between strings and bytes without specifying the character encoding - the platform default is used.  The original encoding is ignored resulting in invalid UTF-8 strings.</p>
+
+<p>See this thread for more info, example code and a potential fix:<br/>
+<a href="http://sourceforge.net/mailarchive/forum.php?thread_name=439139C994945E41B9886BE89789549B01C5E07882%40EXNSW-MBX05.nexus.csiro.au&amp;forum_name=fedora-commons-developers" class="external-link" rel="nofollow noreferrer">http://sourceforge.net/mailarchive/forum.php?thread_name=439139C994945E41B9886BE89789549B01C5E07882%40EXNSW-MBX05.nexus.csiro.au&amp;forum_name=fedora-commons-developers</a></p>
+
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11003"><div class="by">Stephen Bayliss, 2009-09-09 10:41 UTC</div><div class="text"><p>Reproduced on Windows.  JVM argument  -Dfile.encoding can be used to change the platform default encoding, so it should be possible to reproduce this on Linux by, for example, using -Dfile.encoding=cp1252</p></div></div>
+<div class="comment" id="comment-11004"><div class="by">Stephen Bayliss, 2009-09-09 17:59 UTC</div><div class="text"><p>Investigating this in a bit more detail</p>
+
+<p>SimpleDOWriter.addRelationship writes the new triple to a ByteArrayOutputStream in the format org.trippi.RDFFormat.RDF_XML - this format specifies UTF-8 (and not the platform default encoding).</p>
+
+<p>Subsequently when converting this stream to a string (xmlContent) no encoding is specified, so it is incorrectly interpreted using the platform default encoding.  The string is then converted back to bytes and assigned to the datastream, which by default uses UTF-8.</p>
+
+<p>There appears to be no need for this intermediate string xmlContent, instead out.toByteArray() can be used directly, as this will be UTF-8.</p>
+
+<p>As RDFormat.RDF_XML is UTF-8 and by default DatastreamXMLMetadata is UTF-8 by default this should be fine.  A better solution could be to construct the DatastreamXMLMetadata and explicitly specify the encoding as RDFFormat.RDF_XML.getEncoding().</p></div></div>
+<div class="comment" id="comment-11005"><div class="by">Stephen Bayliss, 2009-09-14 08:59 UTC</div><div class="text"><p>Carsten Friedrich has verified that removing the String xmlContent at line 291 and using out.toByteArray() directly to assign to the datastream object fixes this problem.</p></div></div>
+<div class="comment" id="comment-11047"><div class="by">Stephen Bayliss, 2009-11-02 01:39 UTC</div><div class="text"><p>This is in branch 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-549" >
+                <a href="FCREPO-549.html" class="jira-issue-macro-key issue-link"  title="RELS-EXT is not validated on creation, only validated when updated" >
+            
+            FCREPO-549
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p>
+
+<p>Note that integration tests only pick up an issue if the server platform encoding is not utf-8, eg use java opt -Dfile.encoding=cp1252</p>
+
+<p>Also bug 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-569" >
+                <a href="FCREPO-569.html" class="jira-issue-macro-key issue-link"  title="fedora/risearch GET query returns incorrect result when querying on literal object that contains multibyte utf-8 sequences" >
+            
+            FCREPO-569
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ discovered whilst implementing integration tests for this; work-around implemented pending resolution of this.</p></div></div>
+<p><a href="data/FCREPO-530.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

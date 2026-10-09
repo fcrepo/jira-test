@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3310 DELETE DATA sparql-updates appear to succeed but don&#x27;t happen</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3310</span> DELETE DATA sparql-updates appear to succeed but don&#x27;t happen</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-05-08 18:33 UTC</td></tr><tr><th>Updated</th><td>2020-06-23 20:23 UTC</td></tr><tr><th>Resolved</th><td>2020-06-23 20:15 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>loose-end</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>If you attempt to use a PATCH request with a statement using DELETE DATA it returns the 204 No Content response but did not actually change anything. This happens with both normal users and admin users.</p>
+
+<p>The below example works because there is an ACL allowing testuser read/write access at <a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2</a></p>
+
+<p> </p>
+
+<p>&gt; curl -utestuser:testpass <a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect</a> <br/>
+@prefix rdf: &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora: &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+@prefix dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect</a>&gt;<br/>
+ ldp:insertedContentRelation &lt;<a href="http://example.org/test#something" class="external-link" rel="nofollow noreferrer">http://example.org/test#something</a>&gt; ;<br/>
+ dc:title "The indirect container" ;<br/>
+ ldp:hasMemberRelation &lt;<a href="http://example.org/test#predicateToCreate" class="external-link" rel="nofollow noreferrer">http://example.org/test#predicateToCreate</a>&gt; ;<br/>
+ ldp:membershipResource &lt;<a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/mockTarget" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/mockTarget</a>&gt; ;<br/>
+ rdf:type ldp:RDFSource ;<br/>
+ rdf:type ldp:Container ;<br/>
+ rdf:type fedora:Container ;<br/>
+ rdf:type fedora:Resource ;<br/>
+ fedora:created "2020-05-08T18:22:01.397496Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+ fedora:lastModified "2020-05-08T18:29:16.946769Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+ rdf:type ldp:IndirectContainer .</p>
+
+<p> </p>
+
+<p>&gt; curl -i -utestuser:testpass -XPATCH -H"Content-type: application/sparql-update" --data "prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; DELETE DATA { &lt;&gt; ldp:membershipResource &lt;<a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/mockTarget" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/mockTarget</a>&gt; }" <a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect</a><br/>
+HTTP/1.1 204 No Content<br/>
+Date: Fri, 08 May 2020 18:31:40 GMT<br/>
+Set-Cookie: JSESSIONID=node0npx9jrp3wbiy845m0csbmc0n134.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Thu, 07-May-2020 18:31:40 GMT<br/>
+ETag: W/"F560D3C6690B4CF9C661C9F89B9F3A60"<br/>
+X-State-Token: F560D3C6690B4CF9C661C9F89B9F3A60<br/>
+Last-Modified: Fri, 08 May 2020 18:29:16 GMT<br/>
+Server: Jetty(9.4.24.v20191120)</p>
+
+<p> </p>
+
+<p>&gt; curl -utestuser:testpass <a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect</a><br/>
+@prefix rdf: &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora: &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+@prefix dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/indirect</a>&gt;<br/>
+ ldp:insertedContentRelation &lt;<a href="http://example.org/test#something" class="external-link" rel="nofollow noreferrer">http://example.org/test#something</a>&gt; ;<br/>
+ dc:title "The indirect container" ;<br/>
+ ldp:hasMemberRelation &lt;<a href="http://example.org/test#predicateToCreate" class="external-link" rel="nofollow noreferrer">http://example.org/test#predicateToCreate</a>&gt; ;<br/>
+ ldp:membershipResource &lt;<a href="http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/mockTarget" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test_indirect/336ca60e-d771-47c7-bba7-eaaf667556a2/mockTarget</a>&gt; ;<br/>
+ rdf:type ldp:RDFSource ;<br/>
+ rdf:type ldp:Container ;<br/>
+ rdf:type fedora:Container ;<br/>
+ rdf:type fedora:Resource ;<br/>
+ fedora:created "2020-05-08T18:22:01.397496Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+ fedora:lastModified "2020-05-08T18:31:40.401404Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+ rdf:type ldp:IndirectContainer .</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-21294"><div class="by">Danny Bernstein, 2020-06-23 20:15 UTC</div><div class="text"><p>I just tested the "DELETE ... WHERE {}" and "DELETE DATA" queries and was able to successfully delete the triples. </p>
+
+<p>My commands: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+# create resource
+  curl -u fedoraAdmin:fedoraAdmin <span class="code-quote">"http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test1"</span> -X PUT;
+</span># insert triples
+ curl -u fedoraAdmin:fedoraAdmin <span class="code-quote">"http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test1"</span> -X PATCH -H <span class="code-quote">"Content-Type: application/sparql-update"</span> --data "INSERT DATA { &lt;http://localhost:8080/<span class="code-keyword">rest</span>/test1&gt; &lt;http://example/&gt; &lt;http://localhost:8080/<span class="code-keyword">rest</span>/test101&gt;. }
+</span>
+# I verified it was there in the OCFL.  Then verified it was there in the response:
+curl -u fedoraAdmin:fedoraAdmin <span class="code-quote">"http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test1"</span> 
+</span># Then I confirmed that is was deleted via
+curl -u fedoraAdmin:fedoraAdmin <span class="code-quote">"http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test1"</span> -X PATCH -H <span class="code-quote">"Content-Type: application/sparql-update"</span> --data <span class="code-quote">"DELETE { &lt;http://localhost:8080/<span class="code-keyword">rest</span>/test1&gt; &lt;http://example/&gt; &lt;http://localhost:8080/<span class="code-keyword">rest</span>/test101&gt;. } WHERE {}"</span>
+</span># repeated the above but tried deleting using the DELETE DATA syntax.
+ <span class="code-quote">"Content-Type: application/sparql-update"</span> --data <span class="code-quote">"DELETE DATA { &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test1&gt; &lt;http://example/&gt; &lt;http://localhost:8080/<span class="code-keyword">rest</span>/test101&gt;. }"</span></span></pre>
+</div></div>
+<p> </p>
+
+<p>There <em>is a related issue</em> with external ids not being properly translated to internal ids,  which is captured in this ticket: </p>
+
+<p><a href="https://jira.lyrasis.org/browse/FCREPO-3311" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3311</a></p>
+
+<p> </p></div></div>
+<p><a href="data/FCREPO-3310.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

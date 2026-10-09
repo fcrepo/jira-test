@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3355 Fedora fails to start when the root object is index but does not exist</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3355</span> Fedora fails to start when the root object is index but does not exist</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-06-18 18:56 UTC</td></tr><tr><th>Updated</th><td>2020-12-04 21:25 UTC</td></tr><tr><th>Resolved</th><td>2020-12-04 21:25 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>Demian Katz reported in Slack that they were getting errors when attempting to start F6 on top of migrated F3 objects.</p>
+
+<p>org.springframework.dao.DuplicateKeyException: PreparedStatementCallback; SQL <span class="error">&#91;INSERT INTO ocfl_id_map (fedora_id, fedora_root_id, ocfl_id) VALUES (?, ?, ?)&#93;</span>; Unique index or primary key violation: "PUBLIC.PRIMARY_KEY_6 ON PUBLIC.OCFL_ID_MAP(FEDORA_ID) VALUES 1"; SQL statement:<br/>
+INSERT INTO ocfl_id_map (fedora_id, fedora_root_id, ocfl_id) VALUES (?, ?, ?) <span class="error">&#91;23505-200&#93;</span>; nested exception is org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException: Unique index or primary key violation: "PUBLIC.PRIMARY_KEY_6 ON PUBLIC.OCFL_ID_MAP(FEDORA_ID) VALUES 1"; SQL statement:<br/>
+INSERT INTO ocfl_id_map (fedora_id, fedora_root_id, ocfl_id) VALUES (?, ?, ?) <span class="error">&#91;23505-200&#93;</span></p>
+
+<p>This exception is caused by attempting to insert duplicate Fedora IDs into the OCFL index table.</p>
+
+<p>Demian had initially started F6 on an empty repository before restarting it on their migrated objects, which is when the error occurred. After they removed their H2 file, they were able to start F6 ontop of the F3 objects as expected.</p>
+
+<p>The root cause of the issue is that when F6 was first started on the empty repository, it created the Fedora root object. Then, when it was started a second time, it did not attempt to reindex because the reindex conditions were not met (OCFL objects existed and the Fedora root object was in the index). However, the init code then attempted to retrieve the root object, which was indexed, but was unable to because the object was never created in the migrated OCFL repository. So, the init code attempted to create a new root object, which result in the above exception because the root object was already in the index.</p>
+
+<p>One possible solution to this problem, is to expand the criteria for reindexing to include the OCFL repository not containing the Fedora root object. However, in order to do this, the Fedora root object must be assigned a static OCFL id.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-21712"><div class="by">Andrew Woods, 2020-11-18 15:39 UTC</div><div class="text"><p>This will likely be a problem commonly observed in the Beta testing phase. Changing to "high".</p></div></div>
+<div class="comment" id="comment-21753"><div class="by">Jared Whiklo, 2020-11-26 15:32 UTC</div><div class="text"><p>So I started a repository, added a couple hundred objects.<br/>
+ Shut it down.<br/>
+ Deleted the root object directory (/Users/whikloj/www/fcrepo4/ocfl_temp/storage_root/141/964/af8/141964af842132b7a706ed010474c410514b472acc0d7d8f805c23e748578b8b). Actually I deleted up to /964/.<br/>
+Restarted the repository. <br/>
+Did a GET to the root object. <br/>
+No issue.</p>
+
+<hr />
+
+<p><span class="error">&#91;INFO&#93;</span> Initializing Spring root WebApplicationContext<br/>
+INFO 09:26:47.915 (OcflPropsConfig) Fedora storage type: ocfl-fs<br/>
+INFO 09:26:47.918 (OcflPropsConfig) Fedora staging: /Users/whikloj/www/fcrepo4/ocfl_temp/staging<br/>
+INFO 09:26:47.918 (OcflPropsConfig) Fedora OCFL temp: /Users/whikloj/www/fcrepo4/ocfl_temp/temp<br/>
+INFO 09:26:47.918 (OcflPropsConfig) Fedora OCFL reindexing threads: 11<br/>
+INFO 09:26:47.918 (OcflPropsConfig) Fedora OCFL reindexing batch size: 100<br/>
+INFO 09:26:47.918 (OcflPropsConfig) Fedora OCFL reindexing fail on error: true<br/>
+INFO 09:26:47.919 (OcflPropsConfig) Fedora OCFL root: /Users/whikloj/www/fcrepo4/ocfl_temp/storage_root<br/>
+INFO 09:26:48.084 (FedoraPropsConfig) Fedora home: /Users/whikloj/www/fcrepo4/ocfl_temp<br/>
+INFO 09:26:54.120 (DbFedoraToOcflObjectIndex) Applying ddl: sql/default-ocfl-index.sql<br/>
+INFO 09:26:54.156 (ContainmentIndexImpl) Applying ddl: sql/default-containment.sql<br/>
+INFO 09:26:54.219 (ReferenceServiceImpl) Applying ddl: sql/default-references.sql<br/>
+INFO 09:26:54.487 (RepositoryInitializer) Repository root (info:fedora) not found. Creating...<br/>
+INFO 09:26:54.653 (RepositoryInitializer) Successfully create repository root (info:fedora).<br/>
+<span class="error">&#91;INFO&#93;</span> Started o.e.j.m.p.JettyWebAppContext@55a29589{Fedora Repository,/,<a href="file:///Users/whikloj/www/fcrepo4/fcrepo4/fcrepo-webapp/src/main/webapp/,AVAILABLE" class="external-link" rel="nofollow noreferrer">file:///Users/whikloj/www/fcrepo4/fcrepo4/fcrepo-webapp/src/main/webapp/,AVAILABLE</a>}</p>
+{file:///Users/whikloj/www/fcrepo4/fcrepo4/fcrepo-webapp/src/main/webapp/}
+<p><span class="error">&#91;INFO&#93;</span> Started ServerConnector@2b98c310{HTTP/1.1, (http/1.1)}</p>
+{0.0.0.0:8080}
+<p><span class="error">&#91;INFO&#93;</span> Started @17824ms<br/>
+<span class="error">&#91;INFO&#93;</span> Started Jetty Server<br/>
+INFO 09:27:58.219 (FedoraLdp) GET resource ''</p>
+
+<hr />
+
+<p>Perhaps because they initially were pointed at one location for OCFL and then moved to a different one?</p></div></div>
+<div class="comment" id="comment-21789"><div class="by">Peter Winckles, 2020-12-03 13:22 UTC</div><div class="text"><p>This essentially just happened to Ralf, except Fedora did not error out.</p>
+
+<p>Basically, it's confusing for users to know how to start Fedora after they migrate their content. Ralf did a sensible thing. He started F6 normally, looked at the structure it made, moved his migrated content into the correct location in that structure, and restarted Fedora. However, he didn't see any of his objects because the content was not reindexed.</p>
+
+<p>I can see two improvements here:</p>
+
+<p>1. When Fedora starts, it should look to see if it can find `info:fedora/` in the ocfl repository. Currently, it just checks to see if the the repository contains any objects and that the index contains the root object. Another option would be to select a random resource from the index or repository and ensure that it's in both locations.<br/>
+2. Perhaps the migration tooling should produce the same directory structure that Fedora 6 expects so that it is easy to start F6 on top of it. So, it writes the migrated objects to: fcrepo-home/data/ocfl-root.</p></div></div>
+<div class="comment" id="comment-21790"><div class="by">Peter Winckles, 2020-12-03 14:59 UTC</div><div class="text"><p>PR for changing reindex trigger: <a href="https://github.com/fcrepo/fcrepo/pull/1827" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1827</a></p></div></div>
+<div class="comment" id="comment-21814"><div class="by">Andrew Woods, 2020-12-04 21:25 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo/fcrepo/commit/e15fe2509718c965a163af43291e074f06bbd3d3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/e15fe2509718c965a163af43291e074f06bbd3d3</a></p></div></div>
+<p><a href="data/FCREPO-3355.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-569 fedora/risearch GET query returns incorrect result when querying on literal object that contains multibyte utf-8 sequences</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-569</span> fedora/risearch GET query returns incorrect result when querying on literal object that contains multibyte utf-8 sequences</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-11-02 00:45 UTC</td></tr><tr><th>Updated</th><td>2010-02-19 19:31 UTC</td></tr><tr><th>Resolved</th><td>2009-11-04 10:38 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>Windows XP client and server (same machine), Server platform encoding set to utf-8 (also occurs when set to cp1252
+<h2>Description</h2>
+<p>Issuing a "GET" iTQL query to fedora/risearch, constraining the object on a string literal that is a multibyte utf-8 string returns incorrect results.</p>
+
+<p>To reproduce, create an object with the following relationship in RELS-EXT:</p>
+
+<p>(the byte sequence for the literal below is 0xE2, 0x80, 0x9C, 0xCE, 0x910x20, 0xC2, 0xBF, 0xE2, 0x80, 0x9D<br/>
+which is: left double quotes; capital alpha; space; inverted question mark; right double quotes)</p>
+
+<p>&lt;info:fedora/some:pid&gt; &lt;urn:bar&gt; '"Α ¿"'</p>
+
+<p>The sample iTQL query for this is:<br/>
+select $s from &lt;#ri&gt; where $s &lt;urn:bar&gt; '"Α ¿"'</p>
+
+<p>Issuing this in the fedora/risearch web interface (ie via POST) works fine - the tuple is returned.</p>
+
+<p>The GET version of this is as follows (url-encoded)<br/>
+<a href="http://localhost:8080/fedora/risearch?query=select+%24s+from+%3C%23ri%3E+where+%24s+%3Curn%3Abar%3E+%27%E2%80%9C%CE%91+%C2%BF%E2%80%9D%27&amp;type=tuples&amp;lang=itql&amp;flush=true&amp;format=Sparql" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/risearch?query=select+%24s+from+%3C%23ri%3E+where+%24s+%3Curn%3Abar%3E+%27%E2%80%9C%CE%91+%C2%BF%E2%80%9D%27&amp;type=tuples&amp;lang=itql&amp;flush=true&amp;format=Sparql</a></p>
+
+<p>This returns no results.</p>
+
+<p>This currently impacts integration tests for example fedora.test.api.TestRelationships.testAddRelationship() when tests are added for multibyte utf-8 literals.</p>
+
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11048"><div class="by">Stephen Bayliss, 2009-11-02 11:13 UTC</div><div class="text"><p>Reproduced using a simpler test case using the copyright symbol: ©<br/>
+Including &lt;dc:rights&gt;©&lt;/dc:rights&gt; in the DC datastream results in the correct triple in the resource index.</p>
+
+<p>URL-encoding this character (for HTTP GET RI query) gives %c2%a9</p>
+
+<p>Using this in the query returns no results.</p>
+
+<p>However using just the ASCII equivalent, ie %a9 does return results.</p>
+
+<p>So it would appear that where the query parameter is being url-decoded, this is not done wrt utf-8 correctly.</p></div></div>
+<div class="comment" id="comment-11049"><div class="by">Former user, 2009-11-02 14:47 UTC</div><div class="text"><p>I can reproduce this on OSX. <br/>
+I believe the UTF based URIs are not properly decoded by Tomcat with the current default configuration. The Tomcat Configuration Reference<span class="error">&#91;1&#93;</span> states:  "This <span class="error">&#91;URIEncoding&#93;</span> specifies the character encoding used to decode the URI bytes, after %xx decoding the URL. If not specified, ISO-8859-1 will be used." The property is not set, so it defaults to ISO-8859-1. After setting this property in server.xml the query seems to be encoded correctly. </p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://tomcat.apache.org/tomcat-5.5-doc/config/http.html" class="external-link" rel="nofollow noreferrer">http://tomcat.apache.org/tomcat-5.5-doc/config/http.html</a></p></div></div>
+<div class="comment" id="comment-11050"><div class="by">Stephen Bayliss, 2009-11-02 15:51 UTC</div><div class="text"><p>I can confirm Kai's solution - that adding URIEncoding="UTF-8" to the connector in server.xml resolves this on Windows.</p>
+
+<p>Suggest we<br/>
+(1) document this; and<br/>
+(2) modify fedora.utilities.install.container.TomcatServerXML to add this attribute<br/>
+or<br/>
+(1) standardise on ISO-8859-1 url-encoding throughout Fedora; however this may cause more issues as UTF-8 encoding is pretty much standardised on outside of URLs</p>
+
+<p>W3C recommendation is to use UTF-8:<br/>
+<a href="http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars</a><br/>
+<a href="http://java.sun.com/j2se/1.5.0/docs/api/java/net/URLEncoder.html#encode%28java.lang.String,%20java.lang.String%29" class="external-link" rel="nofollow noreferrer">http://java.sun.com/j2se/1.5.0/docs/api/java/net/URLEncoder.html#encode%28java.lang.String,%20java.lang.String%29</a></p></div></div>
+<div class="comment" id="comment-11054"><div class="by">Chris Wilper, 2009-11-03 15:58 UTC</div><div class="text"><p>Sounds like UTF-8 is the right option, I agree with your first solution (document it and modify TomcatServerXML to add the attribute).  Too bad Tomcat doesn't default to that, though.  I wonder what other appservers do.</p>
+
+<p>Note: The document to update is <a href="http://fedora-commons.org/confluence/display/FCR30/Installation+and+Configuration+Guide" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/confluence/display/FCR30/Installation+and+Configuration+Guide</a></p></div></div>
+<p><a href="data/FCREPO-569.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1774 API to return Fedora version number</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1774</span> API to return Fedora version number</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jim Coble</td></tr><tr><th>Created</th><td>2015-10-16 02:01 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 18:23 UTC</td></tr><tr><th>Resolved</th><td>2024-01-11 18:23 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.1.2</td></tr></table>
+<h2>Description</h2>
+<p>Fedora 3 provided an API method ('describe') which would return the Fedora software version number (among other things).  As near as I can tell, Fedora 4 only reports the version number in HTML (on the top level /fcrepo page).  It would be good to be able to get the version number via an API call as in Fedora 3.</p>
+<h2>Comments (27)</h2>
+<div class="comment" id="comment-15697"><div class="by">Andrew Woods, 2015-11-02 01:27 UTC</div><div class="text"><p>Nianli Ma, it would be good to add the same version information that is found in the root HTML page as RDF triples on the rest/ endpoint. We can discuss the exact predicates that would make sense.</p></div></div>
+<div class="comment" id="comment-15804"><div class="by">Andrew Woods, 2015-11-11 21:29 UTC</div><div class="text"><p>Esmé Cowles? Nick Ruest? A. Soroka? others? We would like to create three new triples on the repository root:<br/>
+&lt;root&gt; &lt;p0&gt; &lt;release#&gt;<br/>
+&lt;root&gt; &lt;p1&gt; &lt;build#&gt;<br/>
+&lt;root&gt; &lt;p2&gt; &lt;build-date&gt;</p>
+
+<p>Note: This is the same information that is presently rendered at the bottom-right of the root HTML page:<br/>
+<a href="http://demo.fcrepo.org:8080/fcrepo/" class="external-link" rel="nofollow noreferrer">http://demo.fcrepo.org:8080/fcrepo/</a></p>
+
+<p>Do you have any suggestions for what appropriate predicates (p0, p1, and p2) may be?</p></div></div>
+<div class="comment" id="comment-15805"><div class="by">A. Soroka, 2015-11-11 21:34 UTC</div><div class="text"><p>No idea. <tt>fedora:yourFlavorOfPain</tt>?</p></div></div>
+<div class="comment" id="comment-15806"><div class="by">Nick Ruest, 2015-11-11 23:23 UTC</div><div class="text"><p>Andrew Woods</p>
+
+<p>Are these new predicates for the Fedora ontology? </p>
+
+<p>I found this: The Software Ontology <a href="http://theswo.sourceforge.net/" class="external-link" rel="nofollow noreferrer">http://theswo.sourceforge.net/</a> &#8211; I can't find the ontology published anywhere, but:</p>
+
+<ul>
+	<li>versionName &#8211; could be releaseNumber</li>
+	<li>don't see anything for buildNumber or buildDate</li>
+</ul>
+
+
+<p>An aside, has JIRA changed? It took me to a new page to reply.</p>
+
+<p>&#8212;</p>
+
+<p>A. Soroka skos:related Dinosaur Jr.</p></div></div>
+<div class="comment" id="comment-15807"><div class="by">Andrew Woods, 2015-11-11 23:44 UTC</div><div class="text"><p>There was a small change to JIRA today that removed the option to create a login via JIRA directly, but that does not sound related to what you are seeing.</p></div></div>
+<div class="comment" id="comment-15809"><div class="by">Esmé Cowles, 2015-11-12 14:23 UTC</div><div class="text"><p>Another option would be to use DOAP: <a href="http://usefulinc.com/ns/doap#" class="external-link" rel="nofollow noreferrer">http://usefulinc.com/ns/doap#</a></p>
+
+<p>&lt;/&gt; doap:release &lt;/#release&gt;    <br/>
+&lt;/#release&gt; a doap:Version;<br/>
+    doap:name "build 1234";<br/>
+    doap:created "2015-11-12";<br/>
+    doap:revision "4.4.4" .</p></div></div>
+<div class="comment" id="comment-15810"><div class="by">A. Soroka, 2015-11-12 14:26 UTC</div><div class="text"><p>I had forgotten about DOAP. Apache uses DOAP. +1 to DOAP.</p>
+
+<p>DOAP DOAP DOAP!</p></div></div>
+<div class="comment" id="comment-15811"><div class="by">Andrew Woods, 2015-11-12 14:27 UTC</div><div class="text"><p>...and it gives us a chance to eat our own hash-food. +1, Thanks Esmé Cowles.</p></div></div>
+<div class="comment" id="comment-15812"><div class="by">Esmé Cowles, 2015-11-12 14:33 UTC</div><div class="text"><p>And if DOAP is, well, dope, we could also add some triples describing the project to the root too.</p></div></div>
+<div class="comment" id="comment-15813"><div class="by">Nick Ruest, 2015-11-12 14:35 UTC</div><div class="text"><p>Sounds good to me!</p></div></div>
+<div class="comment" id="comment-15821"><div class="by">Andrew Woods, 2015-11-12 17:57 UTC</div><div class="text"><p>For review/debugging, not for merging:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/948" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/948</a></p></div></div>
+<div class="comment" id="comment-15832"><div class="by">Andrew Woods, 2015-11-13 01:34 UTC</div><div class="text"><p>Nianli Ma, Here is a PR against your PR-948 that gets the filtering to work. This still needs testing, error handling, and clean-up.<br/>
+<a href="https://github.com/nianma/fcrepo4/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/nianma/fcrepo4/pull/1</a></p></div></div>
+<div class="comment" id="comment-15843"><div class="by">Nianli Ma, 2015-11-15 16:19 UTC</div><div class="text"><p>@awoods Is there a way to access the property file in src/main/resources when maven run tests? I have null pointer error for object.getTriples(subjects, RootRdfContext.class).asModel().getGraph() in "FedoraResourceImplIT.testRepositoryRootGraph", which actually call the build-info property file I added in src/main/resources. If skip tests, it passed the build. </p></div></div>
+<div class="comment" id="comment-15878"><div class="by">Andrew Woods, 2015-11-29 15:27 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-16220"><div class="by">Andrew Woods, 2016-02-29 17:19 UTC</div><div class="text"><p>Nianli Ma, ping</p></div></div>
+<div class="comment" id="comment-16640"><div class="by">A. Soroka, 2016-05-12 15:41 UTC</div><div class="text"><p>Hey, Jim Coble! We have discussed this ticket a bit on today's tech call. We think we could do this without too much trouble, but we wanted to check with you to understand the need a bit better. Are you trying to negotiate capabilities with your Fedora instances? Are you trying to understand whether a given interaction can successfully begin or complete?</p>
+
+<p>As you've probably noticed, we want to push folks as much as possible towards a REST HATEOS style of interaction, which implies discovering capabilities as part of HTTP interactions. So we want to make sure that you have a way to do what you need to do that doesn't depend on anything as fragile as parsing build numbers or the like.</p></div></div>
+<div class="comment" id="comment-16641"><div class="by">A. Soroka, 2016-05-12 16:10 UTC</div><div class="text"><p>See also: <a href="https://github.com/fcrepo4/fcrepo4/commit/87b29507574b51a917eaf29138ea5d0cff080c2b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/87b29507574b51a917eaf29138ea5d0cff080c2b</a></p></div></div>
+<div class="comment" id="comment-16642"><div class="by">Jim Coble, 2016-05-12 17:09 UTC</div><div class="text"><p>A. Soroka Our need is actually fairly simple.  When certain activities happen in our application, we want to be able to log the version of Fedora we were using at the time, without having to parse it out of an HTML page.  Let me know if you need further information.</p></div></div>
+<div class="comment" id="comment-16663"><div class="by">Andrew Woods, 2016-05-16 22:24 UTC</div><div class="text"><p>Jim Coble, In other words, the recent patch will not suit your needs?<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/87b29507574b51a917eaf29138ea5d0cff080c2b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/87b29507574b51a917eaf29138ea5d0cff080c2b</a></p></div></div>
+<div class="comment" id="comment-16666"><div class="by">Jim Coble, 2016-05-17 11:59 UTC</div><div class="text"><p>Andrew Woods That would not be our preferred means of retrieving the version information.  Retrieving and parsing an HTML page for data seems a bit brittle.  On the other hand, this isn't a deal breaker for us by any means.  if we are the only ones who care about this functionality, there are undoubtedly higher priority issues for fcrepo developers to be working on.</p></div></div>
+<div class="comment" id="comment-17785"><div class="by">Unknown, 2016-10-11 18:46 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1116" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1116</a></p>
+
+<p>There is not an integration test for this because Grizzly simply removes the Server header and replaces it with its own value, but this has been manually tested in both Jetty and Tomcat. Either way, given the principle of HATEOS, a client should not rely on this value, especially since proxy servers are often wont to strip out a Server header.</p></div></div>
+<div class="comment" id="comment-17787"><div class="by">Andrew Woods, 2016-10-11 22:04 UTC</div><div class="text"><p>This looks good, but the integration tests in fcrepo-http-api need help.</p></div></div>
+<div class="comment" id="comment-17870"><div class="by">Andrew Woods, 2016-10-24 19:55 UTC</div><div class="text"><p>Please rebase on master</p></div></div>
+<div class="comment" id="comment-17871"><div class="by">Unknown, 2016-10-25 00:50 UTC</div><div class="text"><p>Rebased.</p></div></div>
+<div class="comment" id="comment-17982"><div class="by">Unknown, 2016-11-08 23:24 UTC</div><div class="text"><p>I am closing the PR I proposed for this &#8211; it seems that the best approach would be to push this functionality into an extension module. I would be fine with closing the ticket as "Won't Fix".</p></div></div>
+<div class="comment" id="comment-17983"><div class="by">Andrew Woods, 2016-11-08 23:36 UTC</div><div class="text"><p>Thanks for giving this a try. An extension module or not, I suspect Fedora clients will often times want to know which version of Fedora they are working against.</p></div></div>
+<div class="comment" id="comment-22945"><div class="by">Jared Whiklo, 2024-01-11 18:23 UTC</div><div class="text"><p>Fedora 5 is unsupported for new features. This feature is available in Fedora 6.x</p></div></div>
+<p><a href="data/FCREPO-1774.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2828 GET for proxied resource throws stacktrace if remote URI is unavailable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2828</span> GET for proxied resource throws stacktrace if remote URI is unavailable</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2018-07-11 03:02 UTC</td></tr><tr><th>Updated</th><td>2018-08-01 16:48 UTC</td></tr><tr><th>Resolved</th><td>2018-07-13 18:04 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr></table>
+<h2>Description</h2>
+<p>If you create an External-Content with handling=proxy and then the remote server goes away Fedora responds to GET/HEAD requests with a 500 Server Error and a stacktrace</p>
+
+<p>&gt; curl -ufedoraAdmin:fedoraAdmin -i <a href="http://localhost:8080/rest/simple_proxy_test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/simple_proxy_test</a><br/>
+HTTP/1.1 500 Internal Server Error<br/>
+Date: Wed, 11 Jul 2018 02:00:18 GMT<br/>
+Set-Cookie: JSESSIONID=xyy78u96ho351x4c3zhplvty;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Tue, 10-Jul-2018 02:00:18 GMT<br/>
+ETag: "1b0fbabd5ec2b840cd4f054b696293476dc23e0e"<br/>
+Last-Modified: Tue, 10 Jul 2018 20:09:48 GMT<br/>
+Content-Type: text/plain;charset=utf-8<br/>
+Accept-Ranges: bytes<br/>
+Content-Disposition: attachment; filename=""; creation-date="Tue, 10 Jul 2018 19:20:26 GMT"; modification-date="Tue, 10 Jul 2018 20:09:48 GMT"; size=305517<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/simple_proxy_test/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/simple_proxy_test/fcr:metadata</a>&gt;; rel="describedby"<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Accept-External-Content-Handling: copy,redirect,proxy<br/>
+Allow: DELETE,HEAD,GET,PUT,OPTIONS<br/>
+Link: &lt;<a href="http://localhost:8080/rest/simple_proxy_test/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/simple_proxy_test/fcr:acl</a>&gt;; rel="acl"<br/>
+Content-Location: <a href="http://localhost:8111/wonderful.jp2" class="external-link" rel="nofollow noreferrer">http://localhost:8111/wonderful.jp2</a><br/>
+Content-Length: 7971<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p>java.net.ConnectException: Connection refused<br/>
+ at java.net.PlainSocketImpl.socketConnect(Native Method)<br/>
+ at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:345)<br/>
+ at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206)<br/>
+ at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188)<br/>
+ at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)<br/>
+ at java.net.Socket.connect(Socket.java:589)<br/>
+ at java.net.Socket.connect(Socket.java:538)<br/>
+ at sun.net.NetworkClient.doConnect(NetworkClient.java:180)<br/>
+ at sun.net.www.http.HttpClient.openServer(HttpClient.java:432)<br/>
+ at sun.net.www.http.HttpClient.openServer(HttpClient.java:527)<br/>
+ at sun.net.www.http.HttpClient.&lt;init&gt;(HttpClient.java:211)<br/>
+ at sun.net.www.http.HttpClient.New(HttpClient.java:308)<br/>
+ at sun.net.www.http.HttpClient.New(HttpClient.java:326)<br/>
+ at sun.net.www.protocol.http.HttpURLConnection.getNewHttpClient(HttpURLConnection.java:1168)<br/>
+ at sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1104)<br/>
+ at sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:998)<br/>
+ at sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:932)<br/>
+ at sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1512)<br/>
+ at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1440)<br/>
+ at java.net.URL.openStream(URL.java:1038)<br/>
+ at org.fcrepo.kernel.modeshape.UrlBinary.getContent(UrlBinary.java:85)<br/>
+ at org.fcrepo.kernel.modeshape.FedoraBinaryImpl.getContent(FedoraBinaryImpl.java:133)<br/>
+ at org.fcrepo.http.api.ContentExposingResource.getBinaryContent(ContentExposingResource.java:400)<br/>
+ at org.fcrepo.http.api.ContentExposingResource.getContent(ContentExposingResource.java:241)<br/>
+ at org.fcrepo.http.api.FedoraLdp.getResource(FedoraLdp.java:305)<br/>
+ at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+ at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+ at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.lang.reflect.Method.invoke(Method.java:497)<br/>
+ at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:161)<br/>
+ at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:160)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:99)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:389)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:347)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:102)<br/>
+ at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:326)<br/>
+ at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+ at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+ at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)<br/>
+ at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)<br/>
+ at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)<br/>
+ at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)<br/>
+ at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)<br/>
+ at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:816)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1684)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:61)<br/>
+ at org.fcrepo.auth.webac.WebACFilter.doFilter(WebACFilter.java:101)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:84)<br/>
+ at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+ at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:262)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1667)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:581)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+ at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:513)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:226)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1113)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:511)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1047)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:213)<br/>
+ at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:109)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:119)<br/>
+ at org.eclipse.jetty.server.Server.handle(Server.java:517)<br/>
+ at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:302)<br/>
+ at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:242)<br/>
+ at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:238)<br/>
+ at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:95)<br/>
+ at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:57)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceAndRun(ExecuteProduceConsume.java:213)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:147)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:654)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:572)<br/>
+ at java.lang.Thread.run(Thread.java:745)</p>
+
+<p> </p>
+
+<p>This should be caught <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/UrlBinary.java#L85" class="external-link" rel="nofollow noreferrer">here</a> and returned as a 502 Bad Gateway instead.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-20065"><div class="by">Jared Whiklo, 2018-07-13 16:01 UTC</div><div class="text"><p>PR - <a href="https://github.com/fcrepo4/fcrepo4/pull/1370" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1370</a></p></div></div>
+<div class="comment" id="comment-20067"><div class="by">Danny Bernstein, 2018-07-13 18:04 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/30b6509f82dfdecd9fb3a8a8be7bd9b52592da81" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/30b6509f82dfdecd9fb3a8a8be7bd9b52592da81</a></p></div></div>
+<p><a href="data/FCREPO-2828.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2217 Perform import/export of LUBM2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2217</span> Perform import/export of LUBM2</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Nick Ruest</td></tr><tr><th>Created</th><td>2016-09-16 14:40 UTC</td></tr><tr><th>Updated</th><td>2016-09-19 13:04 UTC</td></tr><tr><th>Resolved</th><td>2016-09-19 13:04 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2219.html">FCREPO-2219</a> Unable to import exported LUBM02 dataset</td></tr></table>
+<h2>Description</h2>
+<p>This task is to:<br/>
+1. load the following dataset with /fcr:restore<br/>
+2. export it with the import/export utility<br/>
+3. start an empty fcrepo<br/>
+4. import the exported resources into the empty fcrepo</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-sample-dataset/blob/master/additional_datasets/lubm/LUBM_02.tar.gz" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-sample-dataset/blob/master/additional_datasets/lubm/LUBM_02.tar.gz</a></p>
+
+<p>Each of the steps above should be successful.<br/>
+Any errors should result in new JIRA tickets being created.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-17542"><div class="by">Andrew Woods, 2016-09-16 14:43 UTC</div><div class="text"><p>Nick Ruest, do you have time for this one?</p></div></div>
+<div class="comment" id="comment-17543"><div class="by">Nick Ruest, 2016-09-16 14:46 UTC</div><div class="text"><p>Today, possibly. Before Monday, definitely.</p></div></div>
+<div class="comment" id="comment-17544"><div class="by">Nick Ruest, 2016-09-16 16:02 UTC</div><div class="text"><p>Export worked perfectly. </p>
+
+<p>Import; I'm getting the following error:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+[nruest@LB-SC-S1B4DB:fcrepo-<span class="code-keyword">import</span>-export] (git)-[master]-$ java -jar target/fcrepo-<span class="code-keyword">import</span>-export-0.0.1-SNAPSHOT.jar --mode <span class="code-keyword">import</span> --resource http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/ --descDir /tmp/test/rdf --binDir /tmp/test/bin 2&gt;&amp;1 | tee /tmp/FCREPO-2217-<span class="code-keyword">import</span>.log
+</span>INFO 11:57:17.819 (ArgParser) Configuration file exists, <span class="code-keyword">new</span> file will NOT be created: /tmp/importexport.config
+ERROR 11:57:18.076 (ImportExportDriver) Error performing <span class="code-keyword">import</span>/export: Source is required <span class="code-keyword">for</span> <span class="code-keyword">import</span>!
+
+[nruest@LB-SC-S1B4DB:fcrepo-<span class="code-keyword">import</span>-export] (git)-[master]-$ cat /tmp/importexport.config
+-m
+export
+-r
+http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>
+</span>-d
+/tmp/test/desc
+-b
+/tmp/test/bin
+</pre>
+</div></div>
+</div></div>
+<div class="comment" id="comment-17545"><div class="by">Andrew Woods, 2016-09-16 16:47 UTC</div><div class="text"><p>As the message suggests, you need to provide the <tt>source</tt> argument:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>-s http://localhost:8080/rest
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-17546"><div class="by">Nick Ruest, 2016-09-16 16:51 UTC</div><div class="text"><p>My bad.</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+[nruest@LB-SC-S1B4DB:fcrepo-<span class="code-keyword">import</span>-export] (git)-[master]-$ java -jar target/fcrepo-<span class="code-keyword">import</span>-export-0.0.1-SNAPSHOT.jar --mode <span class="code-keyword">import</span> --resource http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/ --source http://localhost:8080/<span class="code-keyword">rest</span> --descDir /tmp/test/rdf --binDir /tmp/test/bin 2&gt;&amp;1 | tee /tmp/FCREPO-2217-<span class="code-keyword">import</span>.log
+</span>INFO 12:50:18.419 (ArgParser) Configuration file exists, <span class="code-keyword">new</span> file will NOT be created: /tmp/importexport.config
+INFO 12:50:18.425 (Importer) Running importer...
+INFO 12:50:19.679 (Importer) Importing container /tmp/test/rdf/<span class="code-keyword">rest</span>/University217.edu.ttl to http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/University217.edu
+</span>ERROR 12:50:20.408 (ImportExportDriver) Error performing <span class="code-keyword">import</span>/export: Error <span class="code-keyword">while</span> importing /tmp/test/rdf/<span class="code-keyword">rest</span>/University217.edu.ttl (400): javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/Department8.University0.edu/GraduateStudent102'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+javax.jcr.PathNotFoundException: No node exists at path <span class="code-quote">'/Department8.University0.edu/GraduateStudent29'</span> in workspace <span class="code-quote">"<span class="code-keyword">default</span>"</span>
+</pre>
+</div></div>
+
+<p>This is an empty 4.6.0 repository.</p></div></div>
+<div class="comment" id="comment-17547"><div class="by">Andrew Woods, 2016-09-16 16:53 UTC</div><div class="text"><p>Perfect. Looks like a new bug ticket is in order.</p></div></div>
+<div class="comment" id="comment-17549"><div class="by">Nick Ruest, 2016-09-16 22:10 UTC</div><div class="text"><p>I've created <a href="https://jira.duraspace.org/browse/FCREPO-2219" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2219</a></p>
+
+<p>Shall we close this issue?</p></div></div>
+<div class="comment" id="comment-17555"><div class="by">Andrew Woods, 2016-09-18 23:50 UTC</div><div class="text"><p>Could you change 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2219" >
+                <a href="FCREPO-2219.html" class="jira-issue-macro-key issue-link"  title="Unable to import exported LUBM02 dataset" >
+            
+            FCREPO-2219
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ to specify the second error you documented above? Then we can close this ticket.</p></div></div>
+<div class="comment" id="comment-17558"><div class="by">Nick Ruest, 2016-09-19 13:00 UTC</div><div class="text"><p>Andrew Woods updated!</p></div></div>
+<p><a href="data/FCREPO-2217.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

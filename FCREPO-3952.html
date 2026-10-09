@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3952 Uncommitted transactions stay in index after container restart</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3952</span> Uncommitted transactions stay in index after container restart</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>David Novák</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2024-07-26 23:02 UTC</td></tr><tr><th>Updated</th><td>2024-10-01 15:25 UTC</td></tr><tr><th>Resolved</th><td>2024-09-18 15:37 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.4.0</td></tr></table>
+<h2>Description</h2>
+<p>If an uncommitted transaction exists when the container restarts, it is automatically removed from the ocfl storage after the restart. However, it will remain registered in the DB index tables, where it must be manually removed (rollback via API no longer works - the transaction is not found).</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-23317"><div class="by">Ben Pennell, 2024-09-10 20:45 UTC</div><div class="text"><p>I have confirm that this happens with postgres and h2, which should be helpful for testing. I’ve also noticed that staged files do not get cleaned up for resources that were created during a transaction that was not committed before shutting down fcrepo. With <tt>mvn jetty:run</tt> they are located in <tt>target/fcrepo-home/data/staging/</tt></p>
+
+<p>As noted on the other ticket, there is no database entry for a transaction. Fedora effectively just keeps track of transactions using an in-memory <tt>ConcurrentHashMap</tt>, along with some additional in memory transactions for tracking file changes associated with the OCFL session bound to the transaction. So after restart all of that is gone. </p>
+
+<p>There is not currently a mechanism to rollback/cleanup transactions either at shutdown or startup time. Since the map doesn’t exist anymore after a restart, it can’t lookup transaction ids supplied by the user in order to manually rollback transactions, plus all the other OCFL state would be gone.</p>
+
+<p>While the database does have <tt>containment_transaction</tt> and the other transaction tables which could provide us with a list of TX ids leftover from before a restart, I don’t think there is much we can do with that due to losing the details about what files were going to be changed in OCFL.</p>
+
+<p>So the only approaches I can think of to resolve this are:</p>
+
+<ol>
+	<li>Brute force method, where at startup with wipe the <tt>_transaction</tt> tables and delete everything in staging. It feels slightly scary, but its effectively what we’d do with a more systematic rollback approach anyways. All changes in a TX are isolated from the persisted OCFL and database states, so it’s probably safe.</li>
+	<li>Attempt to cleanup/rollback transactions before shutdown. We would still have all the state info at that time so rollbacks could work, assuming we are able to trigger it early enough in the shutdown process. However, this wouldn’t help with unceremoniously shutdowns, like running out of memory or hard kills of the process, so we would still end up with leftover records occasionally.</li>
+	<li>Rework transaction implementation to be more persistent, so that we could retain all the details of the transaction through a shutdown, so we could either rollback or revive transactions on restart. I’m not really sure it’s worth the effort just so we can rollback immediately, and it seems a little opposite the point of transactions.</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-23350"><div class="by">Jared Whiklo, 2024-09-11 17:10 UTC</div><div class="text"><p>Thanks for digging into this Ben Pennell , I wonder if implementing both #1 and #2 would be alleviate any concerns. Attempt to clean up all transactions in a shutdown hook but then wipe the staging directory or even iterate over the objects in the staging directory and remove them.</p></div></div>
+<div class="comment" id="comment-23449"><div class="by">Ben Pennell, 2024-09-18 15:15 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/2092" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2092</a> </p>
+
+<p>The PR rolls back transactions and ocfl sessions during shutdown. During startup it only cleans up transaction database entries, so staging directory files will not get cleaned up in a hard shutdown scenario. My reasoning for this was:</p>
+
+<ol>
+	<li>If OCFL clients other than fedora interacted with the same OCFL root, fedora wouldn't be able to differentiate which staged data belonged to it.</li>
+	<li>ocfl-java and fcrepo-storage-ocfl do not provide a way to address the staging directory or purge all staging directories without having active sessions, so it felt unsafe to go around its back, and may potentially have not worked in cloud storage environment.</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-23581"><div class="by">Jared Whiklo, 2024-10-01 15:25 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo/fcrepo/commit/68bd82738d1999a977447dbdf82c2eb00e014eab" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/68bd82738d1999a977447dbdf82c2eb00e014eab</a></p></div></div>
+<p><a href="data/FCREPO-3952.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

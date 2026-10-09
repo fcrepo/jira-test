@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2879 Omit server managed triples does NOT remove ldp:contains triples</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2879</span> Omit server managed triples does NOT remove ldp:contains triples</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2018-09-28 19:45 UTC</td></tr><tr><th>Updated</th><td>2018-10-08 15:59 UTC</td></tr><tr><th>Resolved</th><td>2018-10-05 15:55 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2877.html">FCREPO-2877</a> Ensure that all server managed triples  are suppressed in RDF body when omitting Server Managed Triples </td></tr></table>
+<h2>Description</h2>
+<p>When working on the HTML UI I discovered that if you have a LDP-RS with contained resources and you GET with the header</p>
+
+<p><tt>Prefer: return=representation; omit="http://fedora.info/definitions/v4/repository#ServerManaged"</tt></p>
+
+<p><tt>You still get the ldp:contains triple, but you can't PUT that body back without getting a 409 Conflict</tt></p>
+
+<p> </p>
+
+<p><tt>Example.</tt></p>
+
+<p><tt>curl -o output_turtle -H"Accept: text/turtle" -H'Prefer: return=representation; omit="http://fedora.info/definitions/v4/repository#ServerManaged"' <a href="http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9</a> -ufedoraAdmin:fedoraAdmin</tt></p>
+
+<p><tt>Returns the document</tt></p>
+
+<p> </p>
+
+<p>@prefix premis: &lt;<a href="http://www.loc.gov/premis/rdf/v1#" class="external-link" rel="nofollow noreferrer">http://www.loc.gov/premis/rdf/v1#</a>&gt; .<br/>
+@prefix test: &lt;info:fedora/test/&gt; .<br/>
+@prefix pcdm: &lt;<a href="http://pcdm.org/models#" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#</a>&gt; .<br/>
+@prefix memento: &lt;<a href="http://mementoweb.org/ns#" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#</a>&gt; .<br/>
+@prefix rdfs: &lt;<a href="http://www.w3.org/2000/01/rdf-schema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/01/rdf-schema#</a>&gt; .<br/>
+@prefix webac: &lt;<a href="http://fedora.info/definitions/v4/webac#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#</a>&gt; .<br/>
+@prefix acl: &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt; .<br/>
+@prefix vcard: &lt;<a href="http://www.w3.org/2006/vcard/ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2006/vcard/ns#</a>&gt; .<br/>
+@prefix ns003: &lt;<a href="http://www.w3.org/ns/auth/acl#acl:" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#acl:</a>&gt; .<br/>
+@prefix ns002: &lt;<a href="http://www.iana.org/assignments/relation/" class="external-link" rel="nofollow noreferrer">http://www.iana.org/assignments/relation/</a>&gt; .<br/>
+@prefix ns001: &lt;<a href="http://example/" class="external-link" rel="nofollow noreferrer">http://example/</a>&gt; .<br/>
+@prefix xsi: &lt;<a href="http://www.w3.org/2001/XMLSchema-instance" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema-instance</a>&gt; .<br/>
+@prefix xmlns: &lt;<a href="http://www.w3.org/2000/xmlns/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/xmlns/</a>&gt; .<br/>
+@prefix rdf: &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora: &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix xml: &lt;<a href="http://www.w3.org/XML/1998/namespace" class="external-link" rel="nofollow noreferrer">http://www.w3.org/XML/1998/namespace</a>&gt; .<br/>
+@prefix ebucore: &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#</a>&gt; .<br/>
+@prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+@prefix dcterms: &lt;<a href="http://purl.org/dc/terms/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/</a>&gt; .<br/>
+@prefix xs: &lt;<a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a>&gt; .<br/>
+@prefix fedoraconfig: &lt;<a href="http://fedora.info/definitions/v4/config#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/config#</a>&gt; .<br/>
+@prefix foaf: &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt; .<br/>
+@prefix dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9</a>&gt;<br/>
+ rdf:type ldp:Container ;<br/>
+ rdf:type ldp:BasicContainer ;<br/>
+ dcterms:description "This is a crud container for the Fedora API Test Suite." ;<br/>
+ dcterms:title "Container class Container" ;<br/>
+ ldp:contains &lt;<a href="http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9/d484e667-c2d6-4bb3-b038-1564d7268f7c" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9/d484e667-c2d6-4bb3-b038-1564d7268f7c</a>&gt; ;<br/>
+ ldp:contains &lt;<a href="http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9/11981b1b-b8b6-41bd-9c07-fa94e2d4acdd" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9/11981b1b-b8b6-41bd-9c07-fa94e2d4acdd</a>&gt; .</p>
+
+<p> </p>
+
+<p>PUTting that back</p>
+
+<p> </p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin -XPUT -H"Content-type: text/turtle" -d"@output_turtle" -H"Prefer: handling=lenient; received=minimal" -H"Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel=\"type\"" <a href="http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/48d04ae0-d733-44f1-bed0-d25d2bd0f9c9</a><br/>
+HTTP/1.1 100 Continue</p>
+
+<p>HTTP/1.1 409 Conflict<br/>
+Date: Fri, 28 Sep 2018 19:23:51 GMT<br/>
+Set-Cookie: JSESSIONID=ycyys6dun3gbrwk8gtik42nk;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Thu, 27-Sep-2018 19:23:51 GMT<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ServerManagedPropertyException.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Content-Type: text/plain;charset=utf-8<br/>
+Content-Length: 125<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p>Could not persist triple containing predicate <a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a> to node /48d04ae0-d733-44f1-bed0-d25d2bd0f9c9</p>
+
+<p> </p>
+
+<p> </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-20315"><div class="by">Danny Bernstein, 2018-10-01 22:47 UTC</div><div class="text"><p>To clarify - the work of this ticket is to ensure that no server managed triples are returned so that a GET with Prefer omit SMTs returns a document that can be PUT back. </p></div></div>
+<div class="comment" id="comment-20317"><div class="by">Jared Whiklo, 2018-10-02 13:47 UTC</div><div class="text"><p>For reference. When we PUT triples into Fedora it is handled by the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/utils/iterators/RdfAdder.java" class="external-link" rel="nofollow noreferrer">RdfAdder</a>  and <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/utils/iterators/RdfRemover.java" class="external-link" rel="nofollow noreferrer">RdfRemover</a> which extend the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/utils/iterators/PersistingRdfStreamConsumer.java" class="external-link" rel="nofollow noreferrer">PersistingRdfStreamConsumer</a> which seems to do <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/utils/iterators/PersistingRdfStreamConsumer.java#L161" class="external-link" rel="nofollow noreferrer">this test</a> (though there must be more).</p>
+
+<p>When we GET triples from Fedora it is handled by the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java" class="external-link" rel="nofollow noreferrer">ContentExposingResource</a> at the HTTP layer and it seems to use <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java#L343" class="external-link" rel="nofollow noreferrer">this</a> which passes off to <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java#L445-L447" class="external-link" rel="nofollow noreferrer">getTriples()</a> which calls to the <a href="https://github.com/fcrepo4/fcrepo4/blob/9d0d40261d7944b80a2f6409fbb83543ab401566/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraResourceImpl.java#L908" class="external-link" rel="nofollow noreferrer">FedoraResource.getTriples()</a> which uses the LDP_CONTAINMENT context which maps to <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/impl/ChildrenRdfContext.java" class="external-link" rel="nofollow noreferrer">ChildrenRdfContext</a> which doesn't seem to have any filters applied.</p>
+
+<p>My guess is that we need to filter based on the Prefer tags like we do for <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java#L331" class="external-link" rel="nofollow noreferrer">properties</a>.</p></div></div>
+<div class="comment" id="comment-20347"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-10-05 15:54 UTC</div><div class="text"><p>Completed with PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1433" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1433</a></p>
+
+<p>This depends on FCREPO-2877  so wait for PR <a href="https://github.com/fcrepo4/fcrepo4/pull/1424" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1424</a> to merged before testing this.</p></div></div>
+<div class="comment" id="comment-20359"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-10-05 21:11 UTC</div><div class="text"><p>Created updated PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1436" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1436</a></p></div></div>
+<div class="comment" id="comment-20363"><div class="by">Andrew Woods, 2018-10-08 15:59 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/a03ae2d27cd4a49cd202deb9a21217a671479a3f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a03ae2d27cd4a49cd202deb9a21217a671479a3f</a></p></div></div>
+<p><a href="data/FCREPO-2879.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

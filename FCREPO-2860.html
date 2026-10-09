@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2860 No constraints link returned when remote group listing is referenced.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2860</span> No constraints link returned when remote group listing is referenced.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2018-09-13 04:49 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-09-13 05:24 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>According to the spec, if an implementation chooses to reject requests concerning remote Group Listings, it must advertise the restriction with a rel="http://www.w3.org/ns/ldp#constrainedBy" link in the Link response header.  </p>
+
+<p>To reproduce the problem:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-comment">//Create a resource:
+</span>curl -v -u fedoraAdmin:fedoraAdmin -X POST http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>
+</span><span class="code-comment">//Create the following file: cross-domain.ttl 
+</span>@prefix acl: &lt;http:<span class="code-comment">//www.w3.org/ns/auth/acl#&gt; .
+</span>&lt;#restricted&gt; a acl:Authorization ;
+ acl:agentGroup &lt;https:<span class="code-comment">//example.com/acl&gt; ;
+</span> acl:mode acl:Read .
+
+ <span class="code-comment">//create the acl using the following 
+</span>curl -v -u fedoraAdmin:fedoraAdmin -X POST resourceUri/fcr:acl --data-binary <span class="code-quote">"@cross-domain.ttl"</span> -H <span class="code-quote">"Content-Type: text/turtle"</span>
+</pre>
+</div></div>
+<p> </p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-20208"><div class="by">Danny Bernstein, 2018-09-13 05:24 UTC</div><div class="text"><p>Wasn't a bug after all.</p></div></div>
+<p><a href="data/FCREPO-2860.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

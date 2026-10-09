@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2339 Separate OSGI (blueprint) code from the JAVA code in fcrepo-camel-toolbox</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2339</span> Separate OSGI (blueprint) code from the JAVA code in fcrepo-camel-toolbox</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-12-08 14:32 UTC</td></tr><tr><th>Updated</th><td>2016-12-15 14:49 UTC</td></tr><tr><th>Resolved</th><td>2016-12-15 14:49 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>fcrepo-camel-toolbox-4.6.2</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox-4.7.0</td></tr><tr><th>Required by</th><td><a href="FCREPO-2358.html">FCREPO-2358</a> Fix OPTIONS handling in fcrepo-ldpath</td></tr></table>
+<h2>Description</h2>
+<p>At present, the camel-toolbox components each contain a Blueprint-based configuration. This is convenient, but it makes it impossible to run multiple instances of any of the components in a single container. It also prevents "advanced" customization of the various components.</p>
+
+<p>What I propose is removing the blueprint configuration for the existing fcrepo-* artifacts, and then creating separate artifacts with the OSGI configuration. The included features.xml file should be updated so that the installation process doesn't change from a user's perspective.</p>
+
+<p>A README note mentioning how to extend these routes would be good, too.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-18146"><div class="by">Unknown, 2016-12-12 14:54 UTC</div><div class="text"><p>Aaron Birkland I would be curious to know what you think of this ticket and the prospect of getting it into the fcrepo-camel-toolbox/4.7.0 release.</p>
+
+<p>I see two particular use cases for this &#8211; one is a use case that I have at Amherst, and another is something I've heard from Peter Matthew Eichman.</p>
+
+<p>The basic issue here is that, by separating the blueprint configuration from the java code, it is possible to do more "advanced" configuration of the toolbox components. For example:</p>
+
+<p>At Amherst, we will be using some linked data endpoints in combination with fcrepo-ldpath that aren't supported "out of the box", such as Getty endpoints. By customizing the blueprint configuration, I can reuse all of the other code. An alternate option is to put the Getty customizations into the main configuration &#8211; but the reason I'm hesitant to do that is that I don't know where that would stop &#8211; do we cut a new release every time someone wants to add a specialized endpoint (e.g. a new Stanbol entityhub or some new linked data endpoint)? That seems like an unnecessary combination of code and configuration. By separating the configuration, it will allow us to provide a minimal blueprint configuration for general use while making it possible to customize this.</p>
+
+<p>The other use case that I have heard comes from UMD. At present, it is not possible to run multiple toolbox components in the same Karaf container &#8211; e.g. a triplestore indexer for the production repo and an indexer for the dev repo. By separating the blueprint config from the fcrepo-indexing-triplestore bundle, that fcrepo-indexing-triplestore bundle can be reused by multiple blueprint configurations &#8211; e.g. a "simple" one &#8211; i.e. like what currently exists and a custom one based on different configuration properties.</p>
+
+<p>While this change would be entirely transparent to users, I still think it falls under the category of "breaking changes" since the core OSGi bundles would no longer export the blueprint configuration (those would be exported by other bundles).</p>
+
+<p>Thoughts?</p>
+
+<p>And this would be the last bit of development work before the release of fcrepo-camel/4.5 and fcrepo-camel-toolbox/4.7</p></div></div>
+<div class="comment" id="comment-18153"><div class="by">Unknown, 2016-12-12 16:12 UTC</div><div class="text"><p>Daniel Lamb Bethany Seeger do you have any thoughts on this ticket?</p></div></div>
+<div class="comment" id="comment-18156"><div class="by">Daniel Lamb, 2016-12-12 16:20 UTC</div><div class="text"><p>Behind the scenes, that's a pretty big change.  But I certainly see the benefit, particularly when it comes to running two instances of a program with slightly different configurations.  I personally don't have a use case for this, but am not opposed to the changes.</p></div></div>
+<div class="comment" id="comment-18157"><div class="by">Bethany Seeger, 2016-12-12 16:32 UTC</div><div class="text"><p>@acoburn - I think this kind of change sounds like a good idea and necessary.   How much, if anything, would the end user have to change when upgrading to a release with this change in it? </p></div></div>
+<div class="comment" id="comment-18160"><div class="by">Aaron Birkland, 2016-12-12 17:02 UTC</div><div class="text"><p>I'm having a hard time envisioning the pattern in my head - would the existing bundles export all their packages; new bundles import all relevant packages, and contain just a blueprint.xml file that builds the beans and exports services?  Would you then need to build and deploy distinct blueprint bundles for each configuration?  </p>
+
+<p>Let me know if I'm on the right track to understanding the proposal.</p>
+
+<p>Also, it may be worthwhile to look into Declarative Services and the Service Component Runtime (SCR) at some point; I don't think it'd be incompatible with this approach, and could be retrofitted into the now-blueprint-free existing bundles at any point, should need arise. </p>
+
+<p>One aspect I like about Declarative Services (which may be relevant to the use cases driving this ticket) is how it interacts with ConfigurationAdmin.  I'm particular, it's easy (via the way Karaf wires felix fileinstall into its ConfigurationAdmin) to create new instances of services merely by dropping new configuration files into /etc or /deploy.  </p>
+
+<p>In particular, I've used the following pattern before with some success</p>
+<ul>
+	<li>If a feature is deployed, nothing runs by default</li>
+	<li>Drop a config file with a name like <tt>org.example.whatever-A</tt> into /etc, then it deploys an instance of the service initialized with the properties from that file</li>
+	<li>Drop another config file with a name like <tt>org.example.whatever-B</tt> into /etc, then it deployes a second instance of the service, initialized with the properties of -B</li>
+	<li>Remove a configuration file to remove the service instance associated with it.</li>
+</ul>
+
+
+<p>So the above pattern would work well for multiple instances of toolbox services that differ only in properties configuration.  I have <b>not</b> found a way to get that pattern to work with Blueprint; only DS and SCR.  So if blueprint is removed from the existing bundles, there's an opportunity to non-invasively enable the above behavior with a little bit of effort.</p>
+
+
+</div></div>
+<div class="comment" id="comment-18162"><div class="by">Unknown, 2016-12-12 17:03 UTC</div><div class="text"><p>Bethany Seeger As I see it, this change would be entirely transparent for end users. Here's a specific example with the fcrepo-indexing-triplestore:</p>
+
+<p>At present, there is a single bundle called <tt>fcrepo-indexing-triplestore</tt>, which contains both the Java classes (which implement the Camel routes) and the Blueprint data for tying everything together: the ActiveMQ broker, the Karaf-based configuration properties and the Java implementation code. The Karaf features.xml file includes only that <tt>fcrepo-indexing-triplestore</tt> bundle (plus other dependencies).</p>
+
+<p>The change would be like so: the implementation code would still reside in the <tt>fcrepo-indexing-triplestore</tt> bundle, but that bundle would not contain the <tt>OSGI-INF/blueprint/blueprint.xml</tt> configuration. Instead, the Blueprint data would be in a separate artifact, say <tt>fcrepo-indexing-triplestore-blueprint</tt>. The <tt>features.xml</tt> file would then <em>also</em> reference the blueprint-based artifact.</p>
+
+<p>This way, if one wants the "standard" indexer, one would simply do the standard: <tt>feature:install fcrepo-indexing-triplestore</tt> command. But one could <em>also</em> add a custom blueprint.xml file to the <tt>./deploy</tt> directory with separate configuration values (and perhaps a separate message broker), and the two indexers would work well in the same container.</p></div></div>
+<div class="comment" id="comment-18163"><div class="by">Unknown, 2016-12-12 17:12 UTC</div><div class="text"><p>Aaron Birkland yes, you are exactly on the right track in understanding this proposal. I have done some work with declarative services, and it seems that this may be very much compatible with where I'd like this to go.</p></div></div>
+<div class="comment" id="comment-18164"><div class="by">Aaron Birkland, 2016-12-12 17:22 UTC</div><div class="text"><p>Unknown Great.  Also, your comment to Bethany Seeger revealed that Karaf can just deploy blueprint.xml files directly, which I had completely forgotten about.  It sounds like a big win without any obvious drawbacks</p></div></div>
+<div class="comment" id="comment-18165"><div class="by">Daniel Lamb, 2016-12-12 17:25 UTC</div><div class="text"><p>modularity ftw</p></div></div>
+<div class="comment" id="comment-18170"><div class="by">Unknown, 2016-12-12 18:05 UTC</div><div class="text"><p>Thanks everyone for the feedback! I'll proceed with working this ticket, and (as always) will appreciate any review comments.</p></div></div>
+<div class="comment" id="comment-18191"><div class="by">Unknown, 2016-12-13 15:31 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/124" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/124</a></p></div></div>
+<div class="comment" id="comment-18237"><div class="by">Unknown, 2016-12-15 14:49 UTC</div><div class="text"><p>Merged into master via <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/8edaaec380dd54dd300128b22d8cb819df30cbf0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/8edaaec380dd54dd300128b22d8cb819df30cbf0</a></p></div></div>
+<p><a href="data/FCREPO-2339.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

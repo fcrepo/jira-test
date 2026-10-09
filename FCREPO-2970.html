@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2970 Cannot version RDF resource with a blank node</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2970</span> Cannot version RDF resource with a blank node</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2018-12-17 15:52 UTC</td></tr><tr><th>Updated</th><td>2019-01-28 18:17 UTC</td></tr><tr><th>Resolved</th><td>2018-12-20 21:37 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.1</td></tr></table>
+<h2>Description</h2>
+<p>Aaron Coburn reported to me that there is a problem with <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L91-L92" class="external-link" rel="nofollow noreferrer">this regex</a></p>
+<blockquote><p>In that regular expression, there's a "\w" for matching a hash URI. That regex class is defined to include the following character ranges: A-Z, a-z, 0-9 and the _<br/>
+As it turns out, though, there are many other legitimate characters that can be part of a hash URI, most notably, the - character, which incidentally is used for any blank-node skolemization.</p>
+
+<p>To reproduce this, just create a resource with this RDF:</p>
+
+<p>&lt;&gt; &lt;<a href="http://purl.org/dc/terms/subject" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/subject</a>&gt; [ a &lt;<a href="http://example.com/Subject" class="external-link" rel="nofollow noreferrer">http://example.com/Subject</a>&gt; ] .</p>
+
+<p>Then, try to version that resource. You can't. This will be a pretty significant gotcha for anyone who happens to rely on bnode skolemization in fedora.</p></blockquote>
+<p>Verified, by myself.</p>
+
+<p>curl -i -XPUT -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/fcrepo/rest/test_regex" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test_regex</a> -H"Content-type: text/turtle" -d"&lt;&gt; &lt;<a href="http://purl.org/dc/terms/subject" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/subject</a>&gt; [ a &lt;<a href="http://example.com/Subject" class="external-link" rel="nofollow noreferrer">http://example.com/Subject</a>&gt; ] ."</p>
+
+<p>HTTP/1.1 201 Created</p>
+
+<p>curl -i -XPOST -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/fcrepo/rest/test_regex/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/test_regex/fcr:versions</a></p>
+
+
+<p>HTTP/1.1 400 Bad Request<br/>
+Server: Apache-Coyote/1.1<br/>
+Set-Cookie: JSESSIONID=CC4DC918CEBCEFD2EA7B4A4A251EEA66; Path=/fcrepo/; HttpOnly<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/fcrepo; Max-Age=0; Expires=Sun, 16-Dec-2018 15:48:40 GMT<br/>
+Link: &lt;<a href="http://localhost:8080/fcrepo/static/constraints/MalformedRdfException.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/static/constraints/MalformedRdfException.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Content-Type: text/plain;charset=utf-8<br/>
+Content-Length: 53<br/>
+Date: Mon, 17 Dec 2018 15:48:39 GMT<br/>
+Connection: close</p>
+
+<p>Error converting "fcr:versions" from String to a Name</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20599"><div class="by">Andrew Woods, 2018-12-19 01:59 UTC</div><div class="text"><p>Pull-request: <a href="https://github.com/fcrepo4/fcrepo4/pull/1492" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1492</a></p></div></div>
+<div class="comment" id="comment-20601"><div class="by">Danny Bernstein, 2018-12-19 19:13 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/082cf8afdefecaed3ca97bb0b898c59e40dee29b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/082cf8afdefecaed3ca97bb0b898c59e40dee29b</a></p></div></div>
+<div class="comment" id="comment-20603"><div class="by">Andrew Woods, 2018-12-20 21:37 UTC</div><div class="text"><p>Merge to master above.<br/>
+Merge to 5.x-maintenance: <a href="https://github.com/fcrepo4/fcrepo4/commit/511d172c50e05810539c04fcd87e51c188c99c40" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/511d172c50e05810539c04fcd87e51c188c99c40</a></p></div></div>
+<p><a href="data/FCREPO-2970.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

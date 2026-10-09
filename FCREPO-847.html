@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-847 Supplying auxiliary attributes for XACML via Context.FEDORA_AUX_SUBJECT_ATTRIBUTES can never work</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-847</span> Supplying auxiliary attributes for XACML via Context.FEDORA_AUX_SUBJECT_ATTRIBUTES can never work</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2011-01-12 02:01 UTC</td></tr><tr><th>Updated</th><td>2011-06-11 21:21 UTC</td></tr><tr><th>Resolved</th><td>2011-06-11 21:21 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.3, Fedora 2.2.4, Fedora 3.2, Fedora 3.2.1, Fedora 3.3, Fedora 3.4, Fedora 3.3.1, Fedora 3.4.1</td></tr></table>
+<h2>Description</h2>
+<p>I've verified this issue with Bill Niebel, the author of the code in question. He agrees with my assessment and we have a patch available. The bug occurs in:</p>
+
+<p>org.fcrepo.server.security.servletfilters.FilterFinalize.doThisSubclass()</p>
+
+<p>wherein incoming requests are locked (with an invocation of ExtendedHttpServletRequestWrapper.lockWrapper()) <em>before</em> the auxiliary attributes are added to them. This causes an exception to be thrown without exception (pun thoroughly intended). The solution is to move the locking of the request to the end of the doThisSubclass() method. With that in place, the system works as advertised here:</p>
+
+<p><a href="https://wiki.duraspace.org/display/FCR30/Authentication+and+User+Attributes" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FCR30/Authentication+and+User+Attributes</a></p>
+
+<p>I haven't the gearing up right now to run a full test series, so that has yet to be done, but I can make that time if it's desired.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-847/10120_FilterFinalize.patch">FilterFinalize.patch</a>, 701 bytes, added by A. Soroka on 2011-01-12</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11777"><div class="by">Chris Wilper, 2011-01-18 23:21 UTC</div><div class="text"><p>Hmm...I thought that was actually still usable, based on this discussion re:FeSL AuthN (I wanted to make sure it kept working, even when FeSL AuthN was on, and the non-FeSL AuthZ was on): <a href="http://www.mail-archive.com/fedora-commons-developers@lists.sourceforge.net/msg00789.html" class="external-link" rel="nofollow noreferrer">http://www.mail-archive.com/fedora-commons-developers@lists.sourceforge.net/msg00789.html</a></p></div></div>
+<div class="comment" id="comment-11779"><div class="by">A. Soroka, 2011-01-19 01:26 UTC</div><div class="text"><p>Chris-- That was not my experience. It did not work for me, FeSL or no FeSL. Actually, I don't see a resolution for the original question in that email thread, but more importantly, from what Bill Niebel saw (and he wrote that code) it could never have worked, FeSL or no FeSL. Do you know of any installation using it?</p></div></div>
+<div class="comment" id="comment-11796"><div class="by">Chris Wilper, 2011-02-01 21:19 UTC</div><div class="text"><p>Coming back to this, I think the reason this worked for me is that I was using the FeSL AuthN when I tested (org.fcrepo.security.jaas.* &#8211; not org.fcrepo.security.servletfilters.<b>).  FeSL encompasses both AuthN and AuthZ...I'm just talking about the AuthN part, which you can choose at install-time as an alternative to the older servletfilters.</b> classes.  When you say "FeSL or no FeSL", do you mean the AuthN part or the AuthZ part?  If the former, that would seem to also indicate a bug in FeSL's AuthN code.</p>
+
+<p>Regarding the patch, I can't claim to understand it yet...it will take a bit of setup to get an LDAP service up and running in order to test this.</p></div></div>
+<div class="comment" id="comment-11797"><div class="by">A. Soroka, 2011-02-01 21:33 UTC</div><div class="text"><p>No FeSL in play at all at our shop. Neither AuthN nor AuthZ. We're using Shibboleth for our institutional IdM (authn <em>and</em> authz attributes), so we have no easy (or to my knowledge, <em>any</em>) way to integrate with FeSL/JAAS. It does concern me that FeSL is slated to replace the old-school servlet filters entirely. I realize that it is much superior in many ways and more elegant, but it simply does not meet our use case.</p>
+
+<p>As far as goes the patch, the key is in that ExtendedHttpServletRequestWrapper.lockWrapper() call. Once that method has been called, the wrapper can have no attributes added to it. But that call is made before trying to add the FEDORA_AUX_SUBJECT_ATTRIBUTES Map to the wrapper. Moving the location of that call solves the problem. Feel free to contact me for a walkthrough (via Skype) of what Bill and I determined to be happening here. You should be able to test without an LDAP store simply by putting a filter in the chain that tries to inject something into that request attribute. I'm happy to send you code for such a one or post it here, if that seems appropriate.</p></div></div>
+<div class="comment" id="comment-11798"><div class="by">A. Soroka, 2011-02-01 23:12 UTC</div><div class="text"><p>After some discussion among the committers, it seems wise to take a look around and make sure that there isn't some road towards integrating Shibboleth and things like it under JAAS. In particular, Eddie mentioned the SPIE project at Oxford, which wound down in 2007. I can't find any of their code or their website-- at this point, I'm not confident, but I'll send some emails that way and see what I find.</p></div></div>
+<div class="comment" id="comment-11980"><div class="by">A. Soroka, 2011-06-11 21:21 UTC</div><div class="text"><p>This issue is now obsolete, because this work has been subsumed into the larger-scope project of refactoring the servlet filters for authentication. See 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-893" >
+                <a href="FCREPO-893.html" class="jira-issue-macro-key issue-link"  title="Refactor authN/authZ servlet filters." >
+            
+            FCREPO-893
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<p><a href="data/FCREPO-847.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

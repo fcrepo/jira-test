@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-433 JSR-170 support</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-433</span> JSR-170 support</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Created</th><td>2007-08-23 17:18 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>Implement JSR-170 (level 2 compliance) in Fedora.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10205"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: pangloss<br/>
+Item #: 1780436<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1780436" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1780436</a></p></div></div>
+<div class="comment" id="comment-11222"><div class="by">Benjamin Armintor, 2010-01-28 16:04 UTC</div><div class="text"><p>This is becoming an issue at work, as there is a desire for a new CMS to have access to objects in Fedora.  I'm not sure what the right preposition is here ("JSR 170 in Fedora" or "JSR 170 on Fedora"), but I'll try to update the comments as I get a clearer picture.  There are some readily available analogies, although it touches on other questions in the 3.x community (e.g., whether datastreams are "first class" DO's or not).</p></div></div>
+<div class="comment" id="comment-11225"><div class="by">Benjamin Armintor, 2010-01-29 19:21 UTC</div><div class="text"><p>Focusing on the repository model:<br/>
+Nodes and nodeType:<br/>
+There is a strong affinity of JCR nodeType to Fedora Content Model, although the former requires an inheritance structure that is not currently supported in the CMA (although Asger's ECM-related work touches on it; see the thread at:<br/>
+ <a href="https://fedora-commons.org/confluence/spaces/viewthread.action?key=DEV&amp;id=13140053" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/confluence/spaces/viewthread.action?key=DEV&amp;id=13140053</a><br/>
+).  Digital Objects and Datastreams both probably model as nodes.  The notion of primary typing of a JCR node doesn't immediately translate to the Fedora CMA.</p>
+
+<p>UUID's could be built in as an auxiliary to, or replacement for, PIDs, particularly if pid generation were modularized.</p>
+
+<p>Properties:<br/>
+JCR nodeProperties correspond to a number of entities in Fedora: Datastreams, RELS-EXT triples, and system properties to name a few.  The parent-child organizational properties might be modelled as RELS-EXT/INT relationships (again, ECM has something to say to this), but there's no explicit action on such properties in Fedora.</p>
+
+<p>Workspaces:<br/>
+Because the relationships in Fedora all exist in the same graph, I don't immediately see a way to have a Fedora repository act as multiple workspaces without a very awkward translation of organizational relationships to DO's in their own right, or a change to the way that DO's are serialized.</p></div></div>
+<div class="comment" id="comment-11226"><div class="by">Benjamin Armintor, 2010-02-02 16:50 UTC</div><div class="text"><p>After some more thought, most of what would go into a level 1 compliant implementation would probably fit best into a Fedora-Create project of objects and Pluggable modules:</p>
+
+<p>1. A package of default content models (for node and resource types) and system objects (root node)<br/>
+2. A DOManager/Reader implementation that would assign UUIDs and inject a default location for node objects that don't specify a parent node<br/>
+3. A FieldSearch module to index the parent-child relationships and node types<br/>
+4. A BasicServer extension or a new module that implements the javax.jcr.Repository interface and listens on an RMI interface, including a way to authenticate clients in a manageable way (ideally through the user filter? or maybe as back-end security?)</p>
+
+<p>The one immediately obvious departure is that the JSR specifies node type inheritance, which doesn't exist yet in the Fedora CMA ( see <a href="https://fedora-commons.org/confluence/spaces/viewthread.action?key=DEV&amp;id=13140061" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/confluence/spaces/viewthread.action?key=DEV&amp;id=13140061</a> for thoughts, including implementation efforts under the ECM project).  This would also bring to the fore the question of service deployment resolution for Fedora objects.</p>
+
+<p>As an aside, the JSR 170 DOM-like model of nodes and properties is structurally similar to the aggregator/resource model of NCore ( <a href="http://ncore.nsdl.org/index.php?menu=services&amp;submenu=services!EduPak" class="external-link" rel="nofollow noreferrer">http://ncore.nsdl.org/index.php?menu=services&amp;submenu=services!EduPak</a> ) and not unlike the RODA data model ( <a href="http://www.fedora-commons.org/about/examples/roda" class="external-link" rel="nofollow noreferrer">http://www.fedora-commons.org/about/examples/roda</a> )</p></div></div>
+<div class="comment" id="comment-12961"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-433.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

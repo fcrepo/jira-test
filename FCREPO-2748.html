@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2748 Implement new External Content Handling Interaction for Redirects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2748</span> Implement new External Content Handling Interaction for Redirects</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2018-04-09 16:20 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-05-08 18:52 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>external_content, hard</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Addresses</th><td><a href="FCREPO-2656.html">FCREPO-2656</a> Support external binaries of access-type=local-file</td></tr></table>
+<h2>Description</h2>
+<p>Section 3.9 of the Fedora Specification defines a new interaction pattern for external content.  The Fedora 4.x interaction is defined here: <a href="https://wiki.duraspace.org/display/FEDORA4x/External+Content" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/External+Content</a>.  In a short the external content handling interaction  is triggered via the use of a special variation of the ContentType header.  The new interaction, defined in <a href="https://fcrepo.github.io/fcrepo-specification/#external-content" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#external-content</a> , uses a link header instead. </p>
+
+<p>This task is to remove the old pathway for creating external binary (LDP-NR) content, ie using in a PUT or POST with the following header: </p>
+
+<p>Content-Type: message/external-body; access-type=URL; URL="http://example.com/external/content/file"</p>
+
+<p>and replace it with the new handling:  </p>
+
+<p>Link: &lt;<a href="http://example.com/external/content/file" class="external-link" rel="nofollow noreferrer">http://example.com/external/content/file</a>&gt; ;<br/>
+      rel="http://fedora.info/definitions/fcrepo#ExternalContent";<br/>
+      handling="redirect";<br/>
+      type="text/plain"</p>
+
+<p>Any Content-Type header in the request should be ignored.</p>
+
+<p>When serving requests for the the newly created resource servers should use HTTP redirect (302) responses with the Content-Location header specifying the external content location.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-19996"><div class="by">Bethany Seeger, 2018-05-08 18:52 UTC</div><div class="text"><p>Will probably need tweaks, but here's the PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1357" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1357</a></p></div></div>
+<div class="comment" id="comment-19997"><div class="by">Bethany Seeger, 2018-05-08 18:52 UTC</div><div class="text"><p>Note that that covers the foundation for all three types of External content – copy/redirect/proxy.  </p></div></div>
+<div class="comment" id="comment-20009"><div class="by">Andrew Woods, 2018-05-23 17:50 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/a33bf625496505a4ee475e3abe57fe9e4efc66d8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/a33bf625496505a4ee475e3abe57fe9e4efc66d8</a></p></div></div>
+<p><a href="data/FCREPO-2748.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

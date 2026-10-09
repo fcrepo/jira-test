@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1519 Camel Serialize to disk</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1519</span> Camel Serialize to disk</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2015-05-05 18:20 UTC</td></tr><tr><th>Updated</th><td>2016-04-02 01:23 UTC</td></tr><tr><th>Resolved</th><td>2015-12-10 16:05 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox 4.5.0</td></tr><tr><th>Labels</th><td>external, preservation</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1666.html">FCREPO-1666</a> Deprecate fcr:import/export</td></tr></table>
+<h2>Description</h2>
+<p>This task is to create a Camel component that writes repository updates to disk to satisfy the need for a human-readable backup.  This should be part of the <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox</a> repository along with other Camel components.</p>
+
+<p>It would be ideal if such a module were configurable to allow users to define if the RDF and/or the binary resources should be persisted to disk.</p>
+
+<p>This was implemented with the fcrepo-message-consumer as documented here:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/RdfPersistenceIndexer" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/RdfPersistenceIndexer</a></p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-14986"><div class="by">Former user, 2015-08-10 18:07 UTC</div><div class="text"><p>I've done some research on using the LoC BagIt library with hard and symbolic links on disk: <a href="https://wiki.duraspace.org/pages/viewpage.action?pageId=69832398" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/pages/viewpage.action?pageId=69832398</a> &#8211; in short, it's easy to create a data directory with hard or soft links and then create a valid Bag.</p>
+
+<p>I have revised the requirements list based on the comments and the BagIt library functionality: <a href="https://wiki.duraspace.org/display/FF/Design+-+Transparent+Persistence#Design-TransparentPersistence-Requirements" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Design+-+Transparent+Persistence#Design-TransparentPersistence-Requirements</a></p></div></div>
+<div class="comment" id="comment-15038"><div class="by">Osman Din, 2015-08-18 13:29 UTC</div><div class="text"><p>Andrew Woods I can probably take a look at this &#8211; unless this feature is needed right away. Please let me know.</p></div></div>
+<div class="comment" id="comment-15040"><div class="by">Andrew Woods, 2015-08-18 13:39 UTC</div><div class="text"><p>Osman Din, go for it.</p></div></div>
+<div class="comment" id="comment-15250"><div class="by">Bethany Seeger, 2015-09-17 18:18 UTC</div><div class="text"><p>Hi Andrew Woods, <br/>
+I can take this on to work on during the next few weeks. <br/>
+I think it will fit in well with what I'm learning here at Amherst College.  Sound good?<br/>
+-Bethany</p></div></div>
+<div class="comment" id="comment-15254"><div class="by">Andrew Woods, 2015-09-17 20:57 UTC</div><div class="text"><p>That would be awesome. Former user, please keep in touch with Bethany Seeger if you need this sooner than it is happening.</p></div></div>
+<div class="comment" id="comment-15467"><div class="by">Esmé Cowles, 2015-10-14 17:23 UTC</div><div class="text"><p>Bethany Seeger: Any progress on this?  Or should I jump in?</p></div></div>
+<div class="comment" id="comment-15468"><div class="by">Bethany Seeger, 2015-10-14 17:33 UTC</div><div class="text"><p>Hi  Esmé Cowles &#8211; I've got some stuff checked in, but I'm not sure it's totally functional yet.  You can take a look at it:  <a href="https://github.com/bseeger/fcrepo-camel-toolbox/tree/fcrepo-1519/fcrepo-serialization/" class="external-link" rel="nofollow noreferrer">https://github.com/bseeger/fcrepo-camel-toolbox/tree/fcrepo-1519/fcrepo-serialization/</a></p>
+
+<p>I'm working on testing it now and it's still a little rough around the edges.  <br/>
+-Bethany</p></div></div>
+<div class="comment" id="comment-15471"><div class="by">Esmé Cowles, 2015-10-14 19:33 UTC</div><div class="text"><p>Bethany Seeger: Great &#8211; I did a little work on this and here's my branch with RDF serialization working:</p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/disk-indexer/fcrepo-indexing-disk" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/disk-indexer/fcrepo-indexing-disk</a></p>
+
+<p>It has a working integration test, but doesn't handle binaries at all.</p>
+
+<p>I've also seen some strange issues with fcrepo-camel-toolbox: building the existing project doesn't work for me.  And building my fcrepo-indexing-disk module works if I build from the top level (using "mvn clean install -pl :fcrepo-indexing-disk"), but building inside the fcrepo-indexing-disk directory fails because the features.xml file can't be found.</p></div></div>
+<div class="comment" id="comment-15874"><div class="by">Bethany Seeger, 2015-11-24 22:20 UTC</div><div class="text"><p>Issued pull request: </p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/65" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/65</a></p></div></div>
+<div class="comment" id="comment-15897"><div class="by">Andrew Woods, 2015-12-04 01:51 UTC</div><div class="text"><p>This looks really good. However, when deleting a resource, I am seeing errors in the karaf log and the serialization is not removed.</p></div></div>
+<div class="comment" id="comment-15909"><div class="by">Bethany Seeger, 2015-12-08 18:17 UTC</div><div class="text"><p>Hi Andrew, </p>
+
+<p>My latest update to the pull request should fix this issue you were seeing. </p>
+
+<p>Thanks!</p></div></div>
+<div class="comment" id="comment-15912"><div class="by">Bethany Seeger, 2015-12-10 16:05 UTC</div><div class="text"><p>It seems to delete things properly now.   I've tested all the scenarios I could think of, but may have missed some (in the category of "things I don't know about fedora"). </p></div></div>
+<div class="comment" id="comment-15929"><div class="by">Andrew Woods, 2015-12-13 15:41 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/4198ccc523069e28208c479a1b64e6890c9b58d8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/4198ccc523069e28208c479a1b64e6890c9b58d8</a></p>
+
+<p>Follow-on documentation task: <a href="https://jira.duraspace.org/browse/FCREPO-1856" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1856</a></p></div></div>
+<p><a href="data/FCREPO-1519.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

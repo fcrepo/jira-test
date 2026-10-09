@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1797 Investigate backuping leveldb while fedora is up</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1797</span> Investigate backuping leveldb while fedora is up</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2015-10-26 20:09 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:49 UTC</td></tr><tr><th>Resolved</th><td>2015-12-22 17:30 UTC</td></tr><tr><th>Components</th><td>f4-vagrant</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>preservation</td></tr></table>
+<h2>Description</h2>
+<p>Test if filesystem backups from the fcrepo home of a live repository could be used to reliably restore the repository.<br/>
+Steps:</p>
+<ul class="alternate" type="square">
+	<li>Spin up a fedora repository.</li>
+	<li>Use multiple client scripts to load test data to the repository</li>
+	<li>Backup the fcrepo home directory while load scripts are actively ingesting new objects.</li>
+	<li>Use the backup to start a new fcrepo repository.</li>
+	<li>Verify that the repository starts without any issues (such as leveldb getting corrupted).</li>
+	<li>Make the tests repeatable</li>
+</ul>
+
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-15573"><div class="by">Andrew Woods, 2015-10-27 15:07 UTC</div><div class="text"><p>Yes, the "Make the tests repeatable" is very important. If you could script this work, that would be helpful.</p></div></div>
+<div class="comment" id="comment-15599"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-10-29 01:07 UTC</div><div class="text"><p>PR created: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/28" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/28</a></p>
+
+<p>All live backups restored successfully. There were some stacktraces related to ActiveMQ which I need to investigate further.</p>
+
+<p>I will update the confluence page with results soon.</p></div></div>
+<div class="comment" id="comment-15636"><div class="by">Andrew Woods, 2015-10-30 16:02 UTC</div><div class="text"><p>Is this ready for review?<br/>
+Also, since it sounds like you did not hit any issues, it would be valuable to further explore the following:</p>
+<ul class="alternate" type="square">
+	<li>Real issue hit by a user who ran out of disk space and had a corrupted LevelDB</li>
+	<li>LevelDB backup, i.e.
+	<ul>
+		<li><a href="https://groups.google.com/forum/#!topic/leveldb/9dftnHN7z5w" class="external-link" rel="nofollow noreferrer">https://groups.google.com/forum/#!topic/leveldb/9dftnHN7z5w</a></li>
+		<li><a href="http://stackoverflow.com/questions/12939927/does-leveldb-supports-hot-backups-or-equivalent" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/12939927/does-leveldb-supports-hot-backups-or-equivalent</a></li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>Please feel free to create new tickets for these, Mohamed Mohideen Abdul Rasheed</p></div></div>
+<div class="comment" id="comment-15638"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-10-30 17:21 UTC</div><div class="text"><p>I have made some small updates to the scripts. This is ready for review now.</p></div></div>
+<div class="comment" id="comment-15645"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-10-30 18:15 UTC</div><div class="text"><p>Andrew Woods, can you help me get the corrupt LevelDB from the user for testing?</p></div></div>
+<div class="comment" id="comment-15649"><div class="by">Andrew Woods, 2015-10-30 22:38 UTC</div><div class="text"><p>done... see email.</p></div></div>
+<div class="comment" id="comment-15913"><div class="by">Nick Ruest, 2015-12-10 16:23 UTC</div><div class="text"><p>Reviewed on December 10 Tech Call, and we're curious if there is any updates on this.</p></div></div>
+<div class="comment" id="comment-15920"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-12-11 14:42 UTC</div><div class="text"><p>Nick Ruest, After the initial work confirming that leveldb hot backups work, we decided that this issue is completed. We created 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1816" >
+                <a href="FCREPO-1816.html" class="jira-issue-macro-key issue-link"  title="Investigate and document leveldb hot backup reliability " >
+            
+            FCREPO-1816
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ to  verify the reliability and consistency of the leveldb backups, which is currently in review with Andrew Woods.</p></div></div>
+<div class="comment" id="comment-15923"><div class="by">Nick Ruest, 2015-12-11 14:55 UTC</div><div class="text"><p>Cool. Thanks Mohamed Mohideen Abdul Rasheed!</p>
+
+<p>I'll leave it up to Andrew Woods to adjust this ticket as needed.</p></div></div>
+<div class="comment" id="comment-15931"><div class="by">Andrew Woods, 2015-12-13 18:27 UTC</div><div class="text"><p>This looks good; however, I am unable to complete the <tt>hot_backup_runner.sh</tt> command due to "out of space" errors. Is there a way of capping the required disk usage so that the test can complete? If not, how much total disk is required?</p></div></div>
+<div class="comment" id="comment-15937"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-12-15 17:15 UTC</div><div class="text"><p>Added a response in github: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/28#discussion_r47667185" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/28#discussion_r47667185</a></p></div></div>
+<div class="comment" id="comment-15972"><div class="by">Andrew Woods, 2015-12-22 17:30 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/f359465359634b5bddff1fc98db48b096f4e6de3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/f359465359634b5bddff1fc98db48b096f4e6de3</a></p></div></div>
+<p><a href="data/FCREPO-1797.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2061 Add ssl authentication capability to the fcrepo-indexing-solr</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2061</span> Add ssl authentication capability to the fcrepo-indexing-solr</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2016-06-24 19:17 UTC</td></tr><tr><th>Updated</th><td>2016-07-16 02:20 UTC</td></tr><tr><th>Resolved</th><td>2016-07-16 02:20 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>fcrepo-camel-toolbox 4.5.2</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox-4.6.0</td></tr></table>
+<h2>Description</h2>
+<p>The fcrepo-indexing-solr camel route currently can not talk to solr servers that require ssl client authentication. Add the ssl client authentication capability to fcrepo-indexing-solr module.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-16906"><div class="by">Mohamed Mohideen Abdul Rasheed, 2016-06-24 19:19 UTC</div><div class="text"><p>Added PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/92" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/92</a></p></div></div>
+<div class="comment" id="comment-16907"><div class="by">Mohamed Mohideen Abdul Rasheed, 2016-06-24 19:22 UTC</div><div class="text"><p>Unknown, Please let me know if the PR looks good or if it needs any amends.</p></div></div>
+<div class="comment" id="comment-16920"><div class="by">Unknown, 2016-06-27 01:43 UTC</div><div class="text"><p>I would suggest a different implementation here, as described in the github PR.</p></div></div>
+<div class="comment" id="comment-16921"><div class="by">Unknown, 2016-06-27 01:45 UTC</div><div class="text"><p>and Mohamed Mohideen Abdul Rasheed, if you do make this change to <tt>fcrepo-indexing-solr</tt> would you be willing to make a similar change to <tt>fcrepo-indexing-triplestore</tt>? Thanks!</p></div></div>
+<div class="comment" id="comment-16931"><div class="by">Mohamed Mohideen Abdul Rasheed, 2016-06-29 16:31 UTC</div><div class="text"><p>Unknown, Created a new PR with the implementation changes. PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/93" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/93</a></p>
+
+<blockquote><p>...And assuming that you already made those changes and still get an error, another option is to leave the mocking code as it is (expecting "http4*") and set solrURL as "http4://localhost:8983/solr/collection1".</p></blockquote>
+<p>For getting the tests to pass, I had to set the solrURL as "http4:localhost:8983/solr/collection1" - without the // after http4. Otherwise the test failed with the following message.</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>testUpdateRouter(org.fcrepo.camel.indexing.solr.RouteTest)  Time elapsed: 12.068 sec  &lt;&lt;&lt; FAILURE!
+java.lang.AssertionError: mock://http4://localhost:8983/solr/collection1/update Received message count. Expected: &lt;1&gt; but was: &lt;0&gt;
+	at org.apache.camel.component.mock.MockEndpoint.fail(MockEndpoint.java:1448)
+	at org.apache.camel.component.mock.MockEndpoint.assertEquals(MockEndpoint.java:1430)
+	at org.apache.camel.component.mock.MockEndpoint.doAssertIsSatisfied(MockEndpoint.java:407)
+	at org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied(MockEndpoint.java:386)
+	at org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied(MockEndpoint.java:374)
+	at org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied(MockEndpoint.java:212)
+	at org.apache.camel.test.junit4.CamelTestSupport.assertMockEndpointsSatisfied(CamelTestSupport.java:744)
+	at org.fcrepo.camel.indexing.solr.RouteTest.testUpdateRouter(RouteTest.java:277)
+
+testDeleteRouter(org.fcrepo.camel.indexing.solr.RouteTest)  Time elapsed: 11.059 sec  &lt;&lt;&lt; FAILURE!
+java.lang.AssertionError: mock://http4://localhost:8983/solr/collection1/update Received message count. Expected: &lt;1&gt; but was: &lt;0&gt;
+	at org.apache.camel.component.mock.MockEndpoint.fail(MockEndpoint.java:1448)
+	at org.apache.camel.component.mock.MockEndpoint.assertEquals(MockEndpoint.java:1430)
+	at org.apache.camel.component.mock.MockEndpoint.doAssertIsSatisfied(MockEndpoint.java:407)
+	at org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied(MockEndpoint.java:386)
+	at org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied(MockEndpoint.java:374)
+	at org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied(MockEndpoint.java:212)
+	at org.apache.camel.test.junit4.CamelTestSupport.assertMockEndpointsSatisfied(CamelTestSupport.java:744)
+	at org.fcrepo.camel.indexing.solr.RouteTest.testDeleteRouter(RouteTest.java:304)
+
+</pre>
+</div></div>
+
+<p>Yes, I will make the same changes to triplestore once we get the solr route finished.</p></div></div>
+<div class="comment" id="comment-17059"><div class="by">Unknown, 2016-07-16 02:20 UTC</div><div class="text"><p>Merged to master via <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/2488daf5abd3db4ee0130e7082bf7c66916674c2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/2488daf5abd3db4ee0130e7082bf7c66916674c2</a></p></div></div>
+<p><a href="data/FCREPO-2061.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

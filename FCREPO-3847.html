@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3847 Migration Utils does not support the DISABLED digest type from FoxML schema</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3847</span> Migration Utils does not support the DISABLED digest type from FoxML schema</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2022-09-20 14:38 UTC</td></tr><tr><th>Updated</th><td>2023-02-16 15:48 UTC</td></tr><tr><th>Resolved</th><td>2023-02-16 15:48 UTC</td></tr><tr><th>Components</th><td>migration-utils</td></tr><tr><th>Affects versions</th><td>migration-utils-6.3.0</td></tr><tr><th>Fix versions</th><td>migration-utils-6.4.0</td></tr><tr><th>Labels</th><td>easy, migration</td></tr></table>
+<h2>Description</h2>
+<p>Currently the validation of inline datastreams throws an exception for UNREADABLE OBJECT</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/etc/alternatives/java_sdk_18_openjdk/bin/java  -jar target/migration-utils-6.3.0-SNAPSHOT-driver.jar -t legacy -d ./datastre
+ams  -a /tmp/FCREPO-3847-data -i /tmp/FCREPO-3847-working -o ./objects  --debug
+INFO 12:01:45.138 (InternalIDResolver) Building an index of all the datastreams in "./datastreams"...
+DEBUG 12:01:46.481 (ResumePidListManager) Resume pid file: /tmp/FCREPO-3847-working/pid/resume.txt, accept all? true
+DEBUG 12:01:47.214 (UserProvidedPidListManager) PID: llgc-id:1591190, accept? true
+DEBUG 12:01:47.217 (ResumePidListManager) PID: llgc-id:1591190, accept? true
+INFO 12:01:47.217 (Migrator) Processing "llgc-id:1591190"...
+MIGRATION_FAILURE: UNREADABLE_OBJECT: message="MIGRATION_FAILURE: pid="llgc-id:1591190", message="java.security.NoSuchAlgorithmException: DISABLED MessageDigest not available""
+java.lang.RuntimeException: MIGRATION_FAILURE: UNREADABLE_OBJECT: message="MIGRATION_FAILURE: pid="llgc-id:1591190", message="java.security.NoSuchAlgorithmException: DISABLED MessageDigest not available""
+        at org.fcrepo.migration.Migrator.run(Migrator.java:186)
+        at org.fcrepo.migration.PicocliMigrator.call(PicocliMigrator.java:337)
+        at org.fcrepo.migration.PicocliMigrator.call(PicocliMigrator.java:51)
+        at picocli.CommandLine.executeUserObject(CommandLine.java:1743)
+        at picocli.CommandLine.access$900(CommandLine.java:145)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2101)
+        at picocli.CommandLine$RunLast.handle(CommandLine.java:2068)
+        at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:1935)
+        at picocli.CommandLine.execute(CommandLine.java:1864)
+        at org.fcrepo.migration.PicocliMigrator.main(PicocliMigrator.java:179)
+Caused by: java.lang.RuntimeException: MIGRATION_FAILURE: pid="llgc-id:1591190", message="java.security.NoSuchAlgorithmException: DISABLED MessageDigest not available"
+        at org.fcrepo.migration.Migrator.run(Migrator.java:169)
+        ... 9 more
+Caused by: java.lang.IllegalArgumentException: java.security.NoSuchAlgorithmException: DISABLED MessageDigest not available
+        at org.apache.commons.codec.digest.DigestUtils.getDigest(DigestUtils.java:135)
+        at org.fcrepo.migration.foxml.FoxmlInputStreamFedoraObjectProcessor$Foxml11DatastreamVersion.validateInlineXml(FoxmlInputStreamFedoraObjectProcessor.java:478)
+        at org.fcrepo.migration.foxml.FoxmlInputStreamFedoraObjectProcessor.processObject(FoxmlInputStreamFedoraObjectProcessor.java:196)
+        at org.fcrepo.migration.Migrator.run(Migrator.java:161)
+        ... 9 more
+Caused by: java.security.NoSuchAlgorithmException: DISABLED MessageDigest not available
+        at java.base/sun.security.jca.GetInstance.getInstance(GetInstance.java:159)
+        at java.base/java.security.MessageDigest.getInstance(MessageDigest.java:185)
+        at org.apache.commons.codec.digest.DigestUtils.getDigest(DigestUtils.java:133)
+        ... 12 more</pre>
+</div></div>
+
+<p>Adding a test to <tt>FoxmlInputStreamFedoraObjectProcessor.java</tt> for the digetsType of “DISABLED“ would allow the code to progress. You can not validate the digest when there isn’t one to validate. As far as I can tell, it is a legitimate use-case.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3847/10371_objectXML.xml">objectXML.xml</a>, 46460 bytes, added by Dan Field on 2022-10-10</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-22702"><div class="by">Dan Field, 2022-09-20 15:01 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo-exts/migration-utils/pull/190" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/pull/190</a></p></div></div>
+<div class="comment" id="comment-22711"><div class="by">Danny Bernstein, 2022-09-29 15:54 UTC</div><div class="text"><p>The fcrepo-migration-validator  will need to be updated to take this situation into account.</p>
+
+<p>Michael Ritter  offered to test this.  Michael Ritter  can you also add a ticket for the migration validator? </p></div></div>
+<div class="comment" id="comment-22718"><div class="by">Dan Field, 2022-10-10 11:06 UTC</div><div class="text"><p>I’ve updated the ticket description with the full stack trace and attached the offending FoxML</p></div></div>
+<div class="comment" id="comment-22769"><div class="by">Dan Field, 2022-11-29 12:12 UTC</div><div class="text"><p>PR has had a few commits to add an integrastion test and further logic to test for ‘none’ digest. If someone could take a look to sanity check over the logic, it would be appreciated. I’m new to OCFL and hope that I’m not breaking anything in this fix</p></div></div>
+<div class="comment" id="comment-22775"><div class="by">Dan Field, 2023-01-04 16:27 UTC</div><div class="text"><p>This could do with a second pair of eyes looking over it by someone more familiar with OCFL in case if pushes the issue down the road to the OCFL implementation some how</p></div></div>
+<div class="comment" id="comment-22800"><div class="by">Jared Whiklo, 2023-02-16 15:48 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo-exts/migration-utils/commit/bad1e17f7bbb12df79ce048ef1725be61cbbf147" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/bad1e17f7bbb12df79ce048ef1725be61cbbf147</a></p></div></div>
+<p><a href="data/FCREPO-3847.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

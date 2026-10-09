@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3423 ACLs not displayed properly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3423</span> ACLs not displayed properly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-09-12 12:40 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 21:32 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3424.html">FCREPO-3424</a> Repository root is missing its root acl</td></tr></table>
+<h2>Description</h2>
+<p>ACLs are not displayed properly in the web view. If you navigate to an ACL in the web view all of its properties are empty.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3423/10352_screenshot-1.png">screenshot-1.png</a>, 124612 bytes, added by Peter Winckles on 2020-11-18</li>
+<li><a href="attachments/FCREPO-3423/10359_Screen_Shot_2021-11-22_at_3.18.34_PM.png">Screen Shot 2021-11-22 at 3.18.34 PM.png</a>, 177308 bytes, added by Jared Whiklo on 2021-11-22</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-21600"><div class="by">Jared Whiklo, 2020-11-13 20:53 UTC</div><div class="text"><p>ACLs were never managed/displayed via the HTML UI in Fedora 5 and before. This is a good idea but I'd suggest it is an improvement and not a bug which can be done after Beta.</p></div></div>
+<div class="comment" id="comment-21691"><div class="by">Peter Winckles, 2020-11-18 14:41 UTC</div><div class="text"><p> <span class="image-wrap" style=""><a id="10352_thumb" href="attachments/FCREPO-3423/10352_screenshot-1.png" title="screenshot-1.png" file-preview-type="image" file-preview-id="10352" file-preview-title="screenshot-1.png"><jira-attachment-thumbnail url="https://fedora-repository.atlassian.net/rest/api/3/attachment/thumbnail/10352?default=false" jira-url="https://fedora-repository.atlassian.net/rest/api/3/attachment/thumbnail/10352" filename="screenshot-1.png"><img src="attachments/FCREPO-3423/10352_screenshot-1.png" data-attachment-name="screenshot-1.png" data-attachment-type="thumbnail" data-media-services-id="358e18c1-9dc9-474e-a11f-a7be7983a961" data-media-services-type="file" style="border: 0px solid black" /></jira-attachment-thumbnail></a></span> </p>
+
+<p>At the very least, the root acl would display in F5</p></div></div>
+<div class="comment" id="comment-21718"><div class="by">Andrew Woods, 2020-11-19 00:16 UTC</div><div class="text"><p>When I create and ACL and navigate to it in the HTML UI, I am seeing the ACL content and properties. This appears to no longer be an issue.</p>
+
+<p>Steps:</p>
+<ul class="alternate" type="square">
+	<li>mvn jetty:run -pl fcrepo-webapp/</li>
+	<li>curl -XPUT -u fedoraAdmin:fedoraAdmin  localhost:8080/rest/box  -i</li>
+	<li>curl -XPUT -u fedoraAdmin:fedoraAdmin -H"Content-Type: text/turtle" --data-binary @acl.ttl localhost:8080/rest/box/fcr:acl  -i</li>
+	<li>Where acl.ttl is:<br/>
+   ```<br/>
+   @prefix acl: &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt;.<br/>
+   &lt;#authz&gt; a acl:Authorization;<br/>
+      acl:accessTo &lt;/rest/box&gt;;<br/>
+      acl:agent "user1";<br/>
+      acl:mode acl:Read.<br/>
+   ```</li>
+	<li>Open browser to: <a href="http://localhost:8080/rest/box/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/box/fcr:acl</a> &#8211; all good</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-22566"><div class="by">Jared Whiklo, 2021-11-22 21:20 UTC</div><div class="text"><p>Tested with <a href="https://github.com/fcrepo/fcrepo/commit/058e670df1f54a7f6c8ddd6e4d7db6acf0ffd4a9" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/058e670df1f54a7f6c8ddd6e4d7db6acf0ffd4a9</a> and it seems to work.</p>
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3423/10359_Screen_Shot_2021-11-22_at_3.18.34_PM.png" height="889" width="1038" style="border: 0px solid black" /></span></p></div></div>
+<p><a href="data/FCREPO-3423.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

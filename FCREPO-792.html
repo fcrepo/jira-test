@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-792 Cache fedora-users.xml for FeSL AuthN</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-792</span> Cache fedora-users.xml for FeSL AuthN</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2010-09-01 16:22 UTC</td></tr><tr><th>Updated</th><td>2012-10-18 20:16 UTC</td></tr><tr><th>Resolved</th><td>2012-10-18 20:16 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - FeSL</td></tr><tr><th>Fix versions</th><td>Fedora 3.6.2</td></tr></table>
+<h2>Description</h2>
+<p>As noted in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-790" >
+                <a href="FCREPO-790.html" class="jira-issue-macro-key issue-link"  title="FeSL AuthN fedora-users.xml not closed properly after each use" >
+            
+            FCREPO-790
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, FeSL's fedora-users.xml authentication implementation reads this file for every request to the repository.  This file should not have to be re-read and parsed for every request &#8211; the info it contains should be cached in some way for performance.  For example, a reasonable out-of-box behavior would be to refresh from the file if it has been &gt; 60 seconds since the last request.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-11594"><div class="by">Stephen Bayliss, 2010-09-02 02:12 UTC</div><div class="text"><p>Comment from Nish on developers list - "the file should only gets parsed when a user authenticates for the first time to a session. Subsequent auth requests pull the Subject from the session instead of authenticating for each request."</p>
+
+<p>Might still be worth introducing some caching though, particularly if people have scripts etc where they are not maintaining a session between requests.</p></div></div>
+<div class="comment" id="comment-11602"><div class="by">Stephen Bayliss, 2010-09-07 21:08 UTC</div><div class="text"><p>There is some caching in the existing XACML implementation which would provide a starting point.</p></div></div>
+<div class="comment" id="comment-12466"><div class="by">Benjamin Armintor, 2012-10-17 20:04 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/0734775dc81c0da2a3d8acfd59c47aebd8627de1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/0734775dc81c0da2a3d8acfd59c47aebd8627de1</a></p>
+
+<p>Checks the time of modification on every request before re-parsing, and caches the DOM.</p></div></div>
+<div class="comment" id="comment-12467"><div class="by">Benjamin Armintor, 2012-10-17 21:01 UTC</div><div class="text"><p>Whoops, LoginModules are created for each request.  The caches need to be static.</p></div></div>
+<div class="comment" id="comment-12475"><div class="by">Benjamin Armintor, 2012-10-18 20:16 UTC</div><div class="text"><p>This time for real: <a href="https://github.com/fcrepo/fcrepo/commit/821fe8e8b3201d703104a37299ab8856327c6ead" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/821fe8e8b3201d703104a37299ab8856327c6ead</a></p></div></div>
+<p><a href="data/FCREPO-792.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

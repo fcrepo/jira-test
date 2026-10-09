@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3332 Implement Side-Loading</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3332</span> Implement Side-Loading</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2020-05-28 18:43 UTC</td></tr><tr><th>Updated</th><td>2020-12-18 07:47 UTC</td></tr><tr><th>Resolved</th><td>2020-12-02 22:03 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0, fcrepo-6.0.0-alpha-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>Implement and Document Side-Loading based on this design document: <a href="https://docs.google.com/document/d/1oqKZvpEBqPR9ddHbl8dMBFRUYgizvWuKVI-RBBpIyLY/edit#" class="external-link" rel="nofollow noreferrer">https://docs.google.com/document/d/1oqKZvpEBqPR9ddHbl8dMBFRUYgizvWuKVI-RBBpIyLY/edit#</a></p>
+<ul>
+	<li>make an http POST to initiate the indexing of side-loaded OCFL ID/object.</li>
+	<li>If the OCFL Object is not Fedora Ready an appropriate HTTP error code and explanation should be returned.</li>
+	<li>On success,  object creation messages should be emitted.</li>
+</ul>
+
+
+<p> </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-21480"><div class="by">David Cook, 2020-10-07 22:45 UTC</div><div class="text"><p>Andrew Woods let me know about this proposal, and it sounds very exciting. I think that it would really help us when doing ingests of large volumes (ie thousands) of large objects (e.g. 1GB-1TB).</p>
+
+<p>At the moment, we have to send a large binary file to Fedora and then have Fedora send that to Object Storage, which is 1 more hop than I'd like. In Fedora 4, the Modeshape is also using outdated S3 client methods, which buffer objects in memory and cause other problems, so I'm excited at the thought of being able to use the latest object storage tooling to upload binary files, and then just have Fedora fetch the metadata after the fact. That would be amazing for our processing.</p>
+
+<p>I don't quite understand the workflow specified in that Google document, but I would ask that consideration be put into creating an API endpoint that could reindex/accept a large number of new objects.</p>
+
+<p>In Fedora 4, I've found that making large volumes of HTTP calls, even short ones, over even a local network is prohibitively slow for integrated applications. In practice, this means I collocate integrated applications on the same server as Fedora (as connecting via the local loopback device rather than a network socket provided speeds that were 6x faster if I recall correctly). While this worked for my use case in the short-term, it's not a scalable approach, and it makes it difficult to work in "cloud native" environments where you ideally want your services to be separated out to ease management and deployments. </p>
+
+<p>Anyway, I'm very excited for Fedora 6, and look forward to seeing more!</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21678"><div class="by">Andrew Woods, 2020-11-18 14:23 UTC</div><div class="text"><p>This is an important feature for the Beta.</p></div></div>
+<div class="comment" id="comment-21786"><div class="by">Danny Bernstein, 2020-12-02 21:39 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/1826" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1826</a></p></div></div>
+<div class="comment" id="comment-21833"><div class="by">Andrew Woods, 2020-12-10 16:10 UTC</div><div class="text"><p>Targeting Alpha2</p></div></div>
+<div class="comment" id="comment-21846"><div class="by">Andrew Woods, 2020-12-16 22:05 UTC</div><div class="text"><p>Resolved by: <a href="https://github.com/fcrepo/fcrepo/commit/e046d00ebbb54094590252988997193c950284f1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/e046d00ebbb54094590252988997193c950284f1</a></p></div></div>
+<p><a href="data/FCREPO-3332.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

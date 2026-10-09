@@ -1,0 +1,77 @@
+TEST:  PUT (modifyObject) leaves state unchanged...
+  Creating a test object via the REST API:  test:ModifyObjectStateChangeTestREST (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPOST "http://localhost:9091/fedora/objects/test:ModifyObjectStateChangeTestREST?label=ModifyObjectStateChangeTestREST" --data "" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test%3AModifyObjectStateChangeTestREST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 16:43:35 GMT
+
+test:ModifyObjectStateChangeTestREST
+
+  Verify that the state of the created object 'test:ModifyObjectStateChangeTestREST' is active (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:ModifyObjectStateChangeTestREST?format=xml"
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 16:43:35 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><objectProfile  xmlns="http://www.fedora.info/definitions/1/0/access/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/access/ http://www.fedora.info/definitions/1/0/objectProfile.xsd" pid="test:ModifyObjectStateChangeTestREST" ><objLabel>ModifyObjectStateChangeTestREST</objLabel><objOwnerId>fedoraAdmin</objOwnerId><objModels><model>info:fedora/fedora-system:FedoraObject-3.0</model></objModels><objCreateDate>2010-08-19T16:43:35.440Z</objCreateDate><objLastModDate>2010-08-19T16:43:35.440Z</objLastModDate><objDissIndexViewURL>http://localhost:9091/fedora/objects/test%3AModifyObjectStateChangeTestREST/methods/fedora-system%3A3/viewMethodIndex</objDissIndexViewURL><objItemIndexViewURL>http://localhost:9091/fedora/objects/test%3AModifyObjectStateChangeTestREST/methods/fedora-system%3A3/viewItemIndex</objItemIndexViewURL><objState>A</objState></objectProfile>
+
+  Modifying the test object via the REST API:  set state to Inactive (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPUT "http://localhost:9091/fedora/objects/test:ModifyObjectStateChangeTestREST?state=I" --data "" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 16:43:35 GMT
+
+2010-08-19T16:43:35.537Z
+
+  Verify that the state of the created object 'test:ModifyObjectStateChangeTestREST' is inactive (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:ModifyObjectStateChangeTestREST?format=xml -u fedoraAdmin:xxxxxxx"
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 16:43:35 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><objectProfile  xmlns="http://www.fedora.info/definitions/1/0/access/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/access/ http://www.fedora.info/definitions/1/0/objectProfile.xsd" pid="test:ModifyObjectStateChangeTestREST" ><objLabel>ModifyObjectStateChangeTestREST</objLabel><objOwnerId>fedoraAdmin</objOwnerId><objModels><model>info:fedora/fedora-system:FedoraObject-3.0</model></objModels><objCreateDate>2010-08-19T16:43:35.440Z</objCreateDate><objLastModDate>2010-08-19T16:43:35.537Z</objLastModDate><objDissIndexViewURL>http://localhost:9091/fedora/objects/test%3AModifyObjectStateChangeTestREST/methods/fedora-system%3A3/viewMethodIndex</objDissIndexViewURL><objItemIndexViewURL>http://localhost:9091/fedora/objects/test%3AModifyObjectStateChangeTestREST/methods/fedora-system%3A3/viewItemIndex</objItemIndexViewURL><objState>I</objState></objectProfile>
+
+  Modifying the test object via the REST API:  change the label (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPUT "http://localhost:9091/fedora/objects/test:ModifyObjectStateChangeTestREST?label=ModifyObjectStateChangeTestRESTInactive" --data "" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 16:43:35 GMT
+
+2010-08-19T16:43:35.587Z
+
+  Verify that the state of the object 'test:ModifyObjectStateChangeTestREST' remained inactive, that the label has been nmodified (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:ModifyObjectStateChangeTestREST?format=xml -u fedoraAdmin:xxxxxxx"
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 16:43:35 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><objectProfile  xmlns="http://www.fedora.info/definitions/1/0/access/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/access/ http://www.fedora.info/definitions/1/0/objectProfile.xsd" pid="test:ModifyObjectStateChangeTestREST" ><objLabel>ModifyObjectStateChangeTestRESTInactive</objLabel><objOwnerId>fedoraAdmin</objOwnerId><objModels><model>info:fedora/fedora-system:FedoraObject-3.0</model></objModels><objCreateDate>2010-08-19T16:43:35.440Z</objCreateDate><objLastModDate>2010-08-19T16:43:35.587Z</objLastModDate><objDissIndexViewURL>http://localhost:9091/fedora/objects/test%3AModifyObjectStateChangeTestREST/methods/fedora-system%3A3/viewMethodIndex</objDissIndexViewURL><objItemIndexViewURL>http://localhost:9091/fedora/objects/test%3AModifyObjectStateChangeTestREST/methods/fedora-system%3A3/viewItemIndex</objItemIndexViewURL><objState>I</objState></objectProfile>
+

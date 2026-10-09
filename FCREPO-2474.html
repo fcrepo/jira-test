@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2474 import-export does not respect containment predicates when pointed at rest/</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2474</span> import-export does not respect containment predicates when pointed at rest/</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-05-23 21:43 UTC</td></tr><tr><th>Updated</th><td>2017-05-24 14:52 UTC</td></tr><tr><th>Resolved</th><td>2017-05-24 14:52 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>If I point import-export at <a href="http://localhost:8080/rest/pcdm" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/pcdm</a> it will recurse through the repository according to ldp:contains relationships.</p>
+
+<p>If I point it at <a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a> it will export that top container only, even though there are two resources (and many more contained within those) in that container:</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a>&gt;<br/>
+        fedora:lastModified            "2017-04-12T23:21:32.652Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+        rdf:type                       ldp:RDFSource ;<br/>
+        rdf:type                       ldp:Container ;<br/>
+        rdf:type                       ldp:BasicContainer ;<br/>
+        fedora:writable                "true"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#boolean" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#boolean</a>&gt; ;<br/>
+        rdf:type                       fedora:RepositoryRoot ;<br/>
+        rdf:type                       fedora:Resource ;<br/>
+        rdf:type                       fedora:Container ;<br/>
+        ldp:contains                   &lt;<a href="http://localhost:8080/rest/pcdm" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/pcdm</a>&gt; ;<br/>
+        ldp:contains                   &lt;<a href="http://localhost:8080/rest/baddatatest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/baddatatest</a>&gt; ;<br/>
+        fedora:hasTransactionProvider  &lt;<a href="http://localhost:8080/rest/fcr:tx" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/fcr:tx</a>&gt; .</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-18872"><div class="by">Andrew Woods, 2017-05-24 01:37 UTC</div><div class="text"><p>This is a new bug... introduced with the following commit: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5240eae2bd4629f76f6fc397f8b280c1f40f4349" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5240eae2bd4629f76f6fc397f8b280c1f40f4349</a></p></div></div>
+<div class="comment" id="comment-18879"><div class="by">Esmé Cowles, 2017-05-24 14:12 UTC</div><div class="text"><p>I believe this is fixed by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/90" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/90</a></p>
+
+<p>The commit referenced in the ticket made the checking more strict (making sure that the subject of the triple was the resource being retrieved: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5240eae2bd4629f76f6fc397f8b280c1f40f4349#diff-230835395ae42488584f0706d8828ad4R343" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/5240eae2bd4629f76f6fc397f8b280c1f40f4349#diff-230835395ae42488584f0706d8828ad4R343</a> ).</p>
+
+<p>But I think that was overly strict, both because trailing slashes are added and removed in different places, and because hash URIs or other subjects are possible (particularly for other impl. which might not have the single-subject requirement).  So I've removed the requirement for the subject: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/90/files#diff-230835395ae42488584f0706d8828ad4R340" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/90/files#diff-230835395ae42488584f0706d8828ad4R340</a></p></div></div>
+<div class="comment" id="comment-18884"><div class="by">Andrew Woods, 2017-05-24 14:52 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/d4780ca2a36d7bf6b61120e176b928cfc52c078f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/d4780ca2a36d7bf6b61120e176b928cfc52c078f</a></p></div></div>
+<p><a href="data/FCREPO-2474.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

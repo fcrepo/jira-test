@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4065 WebAC randomly denying access to PUT on a container. solved by a restart</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4065</span> WebAC randomly denying access to PUT on a container. solved by a restart</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2026-01-28 16:53 UTC</td></tr><tr><th>Updated</th><td>2026-03-04 10:22 UTC</td></tr><tr><th>Resolved</th><td>2026-03-04 10:22 UTC</td></tr></table>
+<h2>Description</h2>
+<p>David Novák reported on Slack:</p>
+
+<p><em>We experience some strange and inconsistent behaviour while evaluating effective authorization for specific container. In our set up, the default ACL is set for the info:fedora/AMCR/record (see image in first reply), which should handle all child containers. It seems to be properly propagated in the index tables (containment, ocfl_id_map, reference; see images in first reply).However, when we I tried to update info:fedora/AMCR/record/P-1223-000360/metadata record using AMCR account, Fedora rejected to authorise the PUT operation (code 403), despite the user should have inherited write permissions. It is well visible in the attached log file.The strangest thing is that at the same time, authorization worked for other containers well. What helped was restarting Fedora (without reindexing).It was not the first time this happened. It is extremely difficult to reproduce, as it is unpredictable. But when it happens, it is full blocker.Did some of you ever experienced something similar? Is there any known solution or the way how to avoid this?So far, we experienced this just in the test environment, but I am afraid it can happened even in production, which would be big issue for us.</em></p>
+
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>DEBUG 11:47:45.654 [http-nio-8080-exec-1] (ServletContainerAuthFilter) There is a servlet user: AMCR
+DEBUG 11:47:45.654 [http-nio-8080-exec-1] (ServletContainerAuthFilter) Testing role fedoraAdmin
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (ServletContainerAuthFilter) Testing role fedoraUser
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (ServletContainerAuthFilter) Servlet user AMCR has servlet role: fedoraUser
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (ContainerAuthToken) Setting servlet username AMCR
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (ContainerAuthToken) Adding servlet role fedoraUser to AMCR
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (ServletContainerAuthFilter) Credentials for servletUser = AUTHORIZED
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (ServletContainerAuthenticatingRealm) Creating principals from servlet container principal and roles
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (HttpHeaderPrincipalProvider) Checking for principals using HttpHeaderPrincipalProvider
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (HttpHeaderPrincipalProvider) Trying to get principals from header: On-Behalf-Of; separator: no-separator
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (HttpHeaderPrincipalProvider) Value for header On-Behalf-Of is null
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (AbstractPrincipalProvider) New Principals not found in the request!
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (WebACFilter) User is authenticated
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Getting roles for path /AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.655 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Testing FedoraResource for /AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.657 [http-nio-8080-exec-1] (WebACRolesProvider) Getting agent roles for resource: info:fedora/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.659 [http-nio-8080-exec-1] (FedoraAcl) Getting root ACL from classpath: /root-authorization.ttl
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACRolesProvider) Unfiltered ACL: {http://xmlns.com/foaf/0.1/Agent=[http://www.w3.org/ns/auth/acl#Read]}
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACAuthorizingRealm) User has principal with name: AMCR
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACAuthorizingRealm) User has principal with name: fedoraUser
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Basic user principal username: AMCR
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACAuthorizingRealm) No header principals found!
+DEBUG 11:47:45.661 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.662 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Getting roles for path /AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.662 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Testing FedoraResource for /AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.663 [http-nio-8080-exec-1] (WebACRolesProvider) Getting agent roles for resource: info:fedora/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.665 [http-nio-8080-exec-1] (FedoraAcl) Getting root ACL from classpath: /root-authorization.ttl
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACRolesProvider) Unfiltered ACL: {http://xmlns.com/foaf/0.1/Agent=[http://www.w3.org/ns/auth/acl#Read]}
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACAuthorizingRealm) User has principal with name: AMCR
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACAuthorizingRealm) User has principal with name: fedoraUser
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Basic user principal username: AMCR
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACAuthorizingRealm) No header principals found!
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACFilter) User has fedoraUser role
+DEBUG 11:47:45.667 [http-nio-8080-exec-1] (WebACFilter) Request URI is https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.673 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Getting roles for path /AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.673 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Testing FedoraResource for /AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.674 [http-nio-8080-exec-1] (WebACRolesProvider) Getting agent roles for resource: info:fedora/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.675 [http-nio-8080-exec-1] (FedoraAcl) Getting root ACL from classpath: /root-authorization.ttl
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACRolesProvider) Unfiltered ACL: {http://xmlns.com/foaf/0.1/Agent=[http://www.w3.org/ns/auth/acl#Read]}
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACAuthorizingRealm) User has principal with name: AMCR
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACAuthorizingRealm) User has principal with name: fedoraUser
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Basic user principal username: AMCR
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACAuthorizingRealm) No header principals found!
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACAuthorizingRealm) Adding permissions gathered for URI https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata
+DEBUG 11:47:45.677 [http-nio-8080-exec-1] (WebACFilter) PUT prohibited to existing resource without [http://www.w3.org/ns/auth/acl#Write https://fedora-test.aiscr.cz/rest/AMCR/record/P-1223-000360/metadata] permission
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ServletContainerAuthFilter) There is a servlet user: AMCRAdmin
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ServletContainerAuthFilter) Testing role fedoraAdmin
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ServletContainerAuthFilter) Servlet user AMCRAdmin has servlet role: fedoraAdmin
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ServletContainerAuthFilter) Testing role fedoraUser
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ContainerAuthToken) Setting servlet username AMCRAdmin
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ContainerAuthToken) Adding servlet role fedoraAdmin to AMCRAdmin
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ServletContainerAuthFilter) Credentials for servletUser = AUTHORIZED
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (ServletContainerAuthenticatingRealm) Creating principals from servlet container principal and roles
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (HttpHeaderPrincipalProvider) Checking for principals using HttpHeaderPrincipalProvider
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (HttpHeaderPrincipalProvider) Trying to get principals from header: On-Behalf-Of; separator: no-separator
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (HttpHeaderPrincipalProvider) Value for header On-Behalf-Of is null
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (AbstractPrincipalProvider) New Principals not found in the request!
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (WebACFilter) User is authenticated
+DEBUG 11:47:45.726 [http-nio-8080-exec-10] (WebACFilter) User has fedoraAdmin role
+INFO 11:47:45.727 [http-nio-8080-exec-10] (Transactions) Rollback transaction '092a1208-79f4-4d27-be91-788dec1f51b9'</pre>
+</div></div>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-27547"><div class="by">Dan Field, 2026-01-28 17:01 UTC</div><div class="text"><p>This may be due to WebACRolesProvider using Optional on ACLHandle allowing for cache poisening. This would allow for an empty ACL to be stored if getEffectiveAcl() ever encountered a transient issue during processing. On restart, the cache would be purged and requests would use a new working ACL fetch which would fix the issue for the user going forward. </p></div></div>
+<div class="comment" id="comment-27580"><div class="by">David Novák, 2026-01-28 18:35 UTC</div><div class="text"><p>We may have find out a way to reproduce it, as it break for records where we previously call <em>info:fedora/AMCR/record/P-1223-000360/metadata/fcr:versions</em> with the same account. This leads to fail of the next PUT operation on the <em>info:fedora/AMCR/record/P-1223-000360/metadata</em> (just to note: <em>info:fedora/AMCR/record/P-1223-000360</em> is an archival group). After some time it somehow unlocks itself and the operation passes.</p></div></div>
+<div class="comment" id="comment-27613"><div class="by">David Novák, 2026-01-28 19:55 UTC</div><div class="text"><p>I can confirm that it is cache-related issue. Setting:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>fcrepo.cache.webac.acl.size.entries=0
+fcrepo.cache.webac.acl.timeout.minutes=0</pre>
+</div></div>
+
+<p>as previously suggested is a confirmed workaround which prevents it from happening.</p>
+
+<p>EDIT:</p>
+
+<p>Our programmer’s guess what is happening:</p>
+
+<ul>
+	<li>When reading the container versions without a transaction (i.e., read-only), the rights are cached.</li>
+	<li>When writing, the rights are taken from the cache, regardless of whether there are different rights for the transaction.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-27712"><div class="by">David Novák, 2026-02-01 13:13 UTC</div><div class="text"><p>Further info form Jan Havrlant, our programmer:</p>
+
+<p>I analyzed the error and I see two problems.</p>
+
+<p>In the getRoles( <a href="https://github.com/fcrepo/fcrepo/blob/80b52f906b695784e92e9b3c6a7b54bea2567082/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L154" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/80b52f906b695784e92e9b3c6a7b54bea2567082/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L154</a>  ) function, caching occurs using a key that does not contain fcr:versions, see the getResourceId(<a href="https://github.com/fcrepo/fcrepo/blob/b05ed9400b0d4dc7943beb5f05a36500a820adb8/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/identifiers/FedoraId.java#L215" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/b05ed9400b0d4dc7943beb5f05a36500a820adb8/fcrepo-kernel-api/src/main/java/org/fcrepo/kernel/api/identifiers/FedoraId.java#L215</a> ) function.</p>
+
+<p>Furthermore, the getEffectiveAcl (<a href="https://github.com/fcrepo/fcrepo/blob/80b52f906b695784e92e9b3c6a7b54bea2567082/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L451" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/80b52f906b695784e92e9b3c6a7b54bea2567082/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L451</a> ) function cannot find the ACL correctly, it is probably necessary to define a getDescribedResource method for the TimeMapImpl class similar to here( <a href="https://github.com/fcrepo/fcrepo/blob/e06850a38a9e3a2cfd2527b2eb7ef6b2019f17d6/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/models/NonRdfSourceDescriptionImpl.java#L61" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/e06850a38a9e3a2cfd2527b2eb7ef6b2019f17d6/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/models/NonRdfSourceDescriptionImpl.java#L61</a>  ), now it returns itself and not the parent object.</p></div></div>
+<div class="comment" id="comment-28044"><div class="by">Dan Field, 2026-02-26 08:44 UTC</div><div class="text"><p>David Novák are you in a position to build fedora from the main branch to test this functionality again? I did some work towards this in <a href="FCREPO-4066.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-4066</a> and I am curious if this has resolved the issue for you. If not, we can release the fix in 7.0.0-beta1which will have a Docker release as well as a war file for self deployment </p></div></div>
+<div class="comment" id="comment-28045"><div class="by">Dan Field, 2026-02-26 08:46 UTC</div><div class="text"><p>This was rolled into <a href="FCREPO-4066.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-4066</a> so is ready for test. I’ve asked David if he is in a capacity to test from main or whether we should roll this into beta1 for more accessible testing </p></div></div>
+<div class="comment" id="comment-28214"><div class="by">David Novák, 2026-03-01 12:05 UTC</div><div class="text"><p>Dan Field Sorry for late response, I was out of office.</p>
+
+<p>Thank you for rollout in fcrepo-7.0.0-beta1. We will test it and provide feedback. </p></div></div>
+<div class="comment" id="comment-28247"><div class="by">David Novák, 2026-03-03 20:23 UTC</div><div class="text"><p>Dan Field We can confirm it works. Thank you for the fix!</p></div></div>
+<div class="comment" id="comment-28280"><div class="by">Dan Field, 2026-03-04 10:22 UTC</div><div class="text"><p>David Novák Thank you David. That’s great to hear. </p></div></div>
+<p><a href="data/FCREPO-4065.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

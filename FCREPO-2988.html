@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2988 Creating versions of containers containing tombstones issue</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2988</span> Creating versions of containers containing tombstones issue</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2019-02-08 21:11 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:42 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.5</td></tr></table>
+<h2>Description</h2>
+<p>Given a container containing a child:</p>
+
+<p>c1 --&gt; c2</p>
+
+<p>If you delete c2 and then create version v0 of c1, when you look at the contents of c1/fcr:versions/v0 you will see it listing c2 as a child of the version, and c2 will have the same contents it had before it was deleted even though it was deleted before creating the version.</p>
+
+<p>If you delete c1/c2/fcr:tombstone and create version v1 of c1, then v1 will not list c2 as a child. So it appears that if you don't clean up the tombstone fedora will restore deleted children when creating a snapshot.</p>
+
+<p>It can be replicated as follows (tested in 4.7.5 and 4.7.3)</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+
+curl -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1
+</span>curl -XPUT http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/c2
+</span>
+curl -XDELETE http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/c2
+</span>
+curl -XPOST http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/fcr:versions -H<span class="code-quote">"Slug: v0"</span>
+</span>
+curl http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/fcr:versions/v0/c2
+</span># Status: 200
+# &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/fcr:versions/v0/c2&gt;
+</span>#         rdf:type          fedora:Version ;
+#         fedora:createdBy  <span class="code-quote">"bypassAdmin"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string&gt; ;
+</span>#         fedora:created    <span class="code-quote">"2019-02-08T21:05:24.907Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>#         rdf:type          ldp:RDFSource ;
+#         rdf:type          ldp:Container ;
+#         rdf:type          ldp:BasicContainer ;
+#         fedora:writable   <span class="code-quote">"<span class="code-keyword">true</span>"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#<span class="code-object">boolean</span>&gt; ;
+</span>#         fedora:hasParent  &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/fcr:versions/v0&gt; .
+</span>
+curl http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/c2
+</span># Status: 410
+
+curl -XDELETE http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/c2/fcr:tombstone
+</span>
+curl -XPOST http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/fcr:versions -H<span class="code-quote">"Slug: v1"</span>
+</span>
+curl http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/fcr:versions/v1/c2
+</span># Status: 400
+# Prefix fcr has not been registered
+
+curl http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/c1/c2
+</span># Status: 404
+
+</pre>
+</div></div>
+<p> </p>
+<p><a href="data/FCREPO-2988.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

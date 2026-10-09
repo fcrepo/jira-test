@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3516 NPE in getSystemTypes called from EventAccumulator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3516</span> NPE in getSystemTypes called from EventAccumulator</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-11-05 23:19 UTC</td></tr><tr><th>Updated</th><td>2020-11-06 18:31 UTC</td></tr><tr><th>Resolved</th><td>2020-11-06 18:31 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>Only appears if you have DEBUG logging on.</p>
+
+<p>Create a resource.<br/>
+curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/box" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/box</a> -XPUT</p>
+
+<p>Delete the resource<br/>
+curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/box" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/box</a> -XDELETE</p>
+
+<p>In the Fedora log</p>
+
+<p>INFO 17:15:49.536 (FedoraLdp) Delete resource 'box'<br/>
+DEBUG 17:15:49.536 (AbstractDeleteResourceService) operating on info:fedora/box<br/>
+DEBUG 17:15:49.538 (ContainmentIndexImpl) getContains for info:fedora/box in transaction cfc05119-1954-4355-956c-e91060762e8c found 0 children<br/>
+DEBUG 17:15:49.540 (DeleteResourceService) starting delete of info:fedora/box<br/>
+DEBUG 17:15:49.542 (DeleteResourcePersister) Deleting info:fedora/box from info:fedora/box<br/>
+DEBUG 17:15:49.554 (ContainmentIndexImpl) Marking containment relationship between parent (info:fedora) and child (info:fedora/box) deleted<br/>
+DEBUG 17:15:49.558 (ReferenceServiceImpl) getOutboundReferences for info:fedora/box in transaction cfc05119-1954-4355-956c-e91060762e8c found 0 references<br/>
+DEBUG 17:15:49.558 (DeleteResourceService) deleted info:fedora/box<br/>
+DEBUG 17:15:49.558 (TransactionImpl) Committing transaction cfc05119-1954-4355-956c-e91060762e8c<br/>
+DEBUG 17:15:49.571 (OcflPersistentStorageSession) Committed storage session cfc05119-1954-4355-956c-e91060762e8c<br/>
+DEBUG 17:15:49.577 (MembershipIndexManager) Completed commit, 0 ended, 0 adds, 0 operations<br/>
+DEBUG 17:15:49.577 (EventAccumulatorImpl) Emitting events for transaction cfc05119-1954-4355-956c-e91060762e8c<br/>
+DEBUG 17:15:49.580 (EventAccumulatorImpl) Could not load resource types for info:fedora/box<br/>
+java.lang.NullPointerException: null<br/>
+ at java.base/java.net.URI$Parser.parse(URI.java:3106)<br/>
+ at java.base/java.net.URI.&lt;init&gt;(URI.java:600)<br/>
+ at java.base/java.net.URI.create(URI.java:881)<br/>
+ at org.fcrepo.kernel.impl.models.FedoraResourceImpl.getSystemTypes(FedoraResourceImpl.java:249)<br/>
+ at org.fcrepo.kernel.impl.models.FedoraResourceImpl.getTypes(FedoraResourceImpl.java:237)<br/>
+ at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.loadResourceTypes(EventAccumulatorImpl.java:112)<br/>
+ at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.lambda$emitEvents$1(EventAccumulatorImpl.java:90)<br/>
+ at com.google.common.collect.Maps$KeySet.lambda$forEach$0(Maps.java:3705)<br/>
+ at java.base/java.util.HashMap.forEach(HashMap.java:1336)<br/>
+ at com.google.common.collect.Maps$KeySet.forEach(Maps.java:3705)<br/>
+ at org.fcrepo.kernel.impl.observer.EventAccumulatorImpl.emitEvents(EventAccumulatorImpl.java:82)<br/>
+ at org.fcrepo.kernel.impl.TransactionImpl.commit(TransactionImpl.java:92)<br/>
+ at org.fcrepo.kernel.impl.TransactionImpl.commitIfShortLived(TransactionImpl.java:191)<br/>
+ at org.fcrepo.http.api.FedoraLdp.deleteObject(FedoraLdp.java:347)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+ at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+ at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+ at java.base/java.lang.reflect.Method.invoke(Method.java:566)<br/>
+ at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:124)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:167)<br/>
+ at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)<br/>
+ at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:79)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:469)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:391)<br/>
+ at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:80)<br/>
+ at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:253)<br/>
+ at org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)<br/>
+ at org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:292)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:274)<br/>
+ at org.glassfish.jersey.internal.Errors.process(Errors.java:244)<br/>
+ at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)<br/>
+ at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:232)<br/>
+ at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:680)<br/>
+ at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:392)<br/>
+ at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:365)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:318)<br/>
+ at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)<br/>
+ at org.eclipse.jetty.servlet.ServletHolder$NotAsyncServlet.service(ServletHolder.java:1400)<br/>
+ at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:760)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1617)<br/>
+ at org.eclipse.jetty.websocket.server.WebSocketUpgradeFilter.doFilter(WebSocketUpgradeFilter.java:226)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1604)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:61)<br/>
+ at org.fcrepo.auth.webac.WebACFilter.doFilterInternal(WebACFilter.java:243)<br/>
+ at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:86)<br/>
+ at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+ at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:358)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:271)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1596)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:545)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+ at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:555)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:235)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:1607)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1297)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:485)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:1577)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1212)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:221)<br/>
+ at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)<br/>
+ at org.eclipse.jetty.server.Server.handle(Server.java:500)<br/>
+ at org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:383)<br/>
+ at org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:547)<br/>
+ at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:375)<br/>
+ at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:270)<br/>
+ at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)<br/>
+ at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:103)<br/>
+ at org.eclipse.jetty.io.ChannelEndPoint$2.run(ChannelEndPoint.java:117)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:336)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:313)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:171)<br/>
+ at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.produce(EatWhatYouKill.java:135)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:806)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:938)<br/>
+ at java.base/java.lang.Thread.run(Thread.java:834)<br/>
+DEBUG 17:15:49.581 (EventAccumulatorImpl) Emitting event: EventImpl{eventId='urn:uuid:89e55883-ba17-43b5-8de2-898ac20b4fcf', fedoraId=info:fedora/box, types=<span class="error">&#91;RESOURCE_DELETION&#93;</span>, resourceTypes=[], userID='fedoraAdmin', userURI=info:fedora/local-user#fedoraAdmin, userAgent=curl/7.64.1, baseUrl=<a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a>, date=2020-11-05T23:15:49.558626Z}</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21555"><div class="by">Jared Whiklo, 2020-11-06 14:03 UTC</div><div class="text"><p>Also fixed by <a href="https://github.com/fcrepo/fcrepo/pull/1792" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1792</a></p></div></div>
+<div class="comment" id="comment-21557"><div class="by">Andrew Woods, 2020-11-06 18:31 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo/fcrepo/commit/60c464fae469e484952015622cc66bdeb441f9e0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/60c464fae469e484952015622cc66bdeb441f9e0</a></p></div></div>
+<p><a href="data/FCREPO-3516.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

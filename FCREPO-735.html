@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-735 Test config files are out-of-date</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-735</span> Test config files are out-of-date</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-06-29 15:13 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-08-20 12:02 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 4, Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-736.html">FCREPO-736</a> System test failures when fesl authn enabled (fesl authz disabled)</td></tr><tr><th>Is related to</th><td><a href="FCREPO-768.html">FCREPO-768</a> Installer defaults to Akubra if no option is specified in an install.properties file</td></tr></table>
+<h2>Description</h2>
+<p>The resources/scripts/test properties files are out of date.  For instance they use fesl.enabled, whereas the installer now uses fesl.authn.enabled and fesl.authz.enabled.</p>
+
+<p>Maybe we could have an installer-generated warning so when reading a properties file during installation, if an expected value is not found and the default is used, this could be reported?</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-11452"><div class="by">Stephen Bayliss, 2010-06-29 15:41 UTC</div><div class="text"><p>Furthermore, the defaults specified in WebXMLOptions.java are not consistent with those specified in OptionDefinition.properties - the constructor appears to be setting its own default values.</p>
+
+<p>test case:</p>
+<ul class="alternate" type="square">
+	<li>don't specify fesl.authz.enabled and fesl.authn.enabled:  ConfigA and ConfigB tests pass</li>
+	<li>specify the default values (authn true, authz false): tests fail.</li>
+</ul>
+
+
+<p>In the first case the default values should have been used, however this appears not to be the case.</p></div></div>
+<div class="comment" id="comment-11453"><div class="by">Stephen Bayliss, 2010-06-29 15:57 UTC</div><div class="text"><p>Suggestion:  InstallOptions methods for getting values should not allow specifying defaults - instead these should come from the OptionDefinitions.properties</p></div></div>
+<div class="comment" id="comment-11454"><div class="by">Stephen Bayliss, 2010-06-29 21:46 UTC</div><div class="text"><p>Config files modified to use fesl.authn.enabled and fesl.authz.enabled - both set to false currently pending resolution of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-736" >
+                <a href="FCREPO-736.html" class="jira-issue-macro-key issue-link"  title="System test failures when fesl authn enabled (fesl authz disabled)" >
+            
+            FCREPO-736
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.  Once resolved these tests should use the installation default - ie true.</p></div></div>
+<div class="comment" id="comment-11461"><div class="by">Stephen Bayliss, 2010-07-01 23:09 UTC</div><div class="text"><p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-736" >
+                <a href="FCREPO-736.html" class="jira-issue-macro-key issue-link"  title="System test failures when fesl authn enabled (fesl authz disabled)" >
+            
+            FCREPO-736
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ fixed, config files set to use fesl.authn.enabled=true</p></div></div>
+<div class="comment" id="comment-11462"><div class="by">Stephen Bayliss, 2010-07-02 01:58 UTC</div><div class="text"><p>Leaving issue open for now (although the files are now up-to-date) pending finding a way of detecting if they get out of date.</p></div></div>
+<div class="comment" id="comment-11491"><div class="by">Stephen Bayliss, 2010-07-28 14:22 UTC</div><div class="text"><p>Suggested solution:</p>
+<ul class="alternate" type="square">
+	<li>If the installer is using a properties file, and a property needed by the installation is not found in the properties file, emit a warning message (but continue to use the default value as at present)</li>
+	<li>Include the Fedora version number in the properties file, if a properties file from an earlier version is being used by the installer, emit a warning message</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11522"><div class="by">Stephen Bayliss, 2010-08-11 00:36 UTC</div><div class="text"><p>Would be good to get done in time for 3.4, depends on how much time I have</p></div></div>
+<div class="comment" id="comment-11529"><div class="by">Stephen Bayliss, 2010-08-16 11:28 UTC</div><div class="text"><p>Note svn commit r8759 - this is the kind of issue to be addressed by this (so possibly worth reviewing this commit once we have mechanisms in place to deal with changes between properties files between versions).</p></div></div>
+<div class="comment" id="comment-11564"><div class="by">Stephen Bayliss, 2010-08-20 12:02 UTC</div><div class="text"><p>Closing as the system test files are now up-to-date, and the remaining installer issues are covered by the issue linked to this.</p></div></div>
+<p><a href="data/FCREPO-735.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

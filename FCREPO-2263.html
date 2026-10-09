@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2263 Reserved Characters in fragments are encoded by UriBuilder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2263</span> Reserved Characters in fragments are encoded by UriBuilder</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Christopher Johnson</td></tr><tr><th>Created</th><td>2016-10-09 21:21 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 22:03 UTC</td></tr><tr><th>Resolved</th><td>2024-01-11 20:55 UTC</td></tr><tr><th>Components</th><td>f4-camel, f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.1.1</td></tr><tr><th>Labels</th><td>fcrepo-6.1.0</td></tr></table>
+<h2>Description</h2>
+<p>If I have an RDF body triple that looks like this:<br/>
+&lt;_:e0c3ccbf985465c1f29a63ae9532ea3e&gt; &lt;<a href="http://www.w3.org/ns/oa#hasTarget" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/oa#hasTarget</a>&gt; &lt;<a href="http://localhost:8080/fcrepo/rest/collection/test/009/canvas/001#xywh=0,0,2137,3293" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/collection/test/009/canvas/001#xywh=0,0,2137,3293</a>&gt; </p>
+
+<p>When the object value is created in Fedora, it looks like this:<br/>
+<a href="http://localhost:8080/fcrepo/rest/collection/test/009/canvas/001#xywh=0%2C0%2C2137%2C3293" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/collection/test/009/canvas/001#xywh=0%2C0%2C2137%2C3293</a></p>
+
+<p>I should also point out that &lt;<a href="http://localhost:8080/fcrepo/rest/collection/test/009/canvas/001" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/collection/test/009/canvas/001</a>&gt; exists as an LDP Container prior to the update, and the hash is a schema specific identifier that is used by the client .  </p>
+
+<p>This happens both with FcrepoClient and directly with curl.  It does not occur if an update is made directly through the UI, however.  </p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-17801"><div class="by">Unknown, 2016-10-12 16:21 UTC</div><div class="text"><p>I have reproduced this, but only for in-domain resources. That is: the problem does not appear with URIs such as &lt;<a href="http://example.org/location#xywh=0,0,2034,2454" class="external-link" rel="nofollow noreferrer">http://example.org/location#xywh=0,0,2034,2454</a>&gt;</p>
+
+<p>This points to the HttpResourceConverter class in fcrepo-http-commons as the culprit.</p></div></div>
+<div class="comment" id="comment-17822"><div class="by">Andrew Woods, 2016-10-14 15:09 UTC</div><div class="text"><p>Thanks, Unknown. Is it your belief that we should not be URL-encoding in-domain URLs?<br/>
+<a href="https://www.ietf.org/rfc/rfc3986.txt" class="external-link" rel="nofollow noreferrer">https://www.ietf.org/rfc/rfc3986.txt</a> <span class="error">&#91;2.4.  When to Encode or Decode&#93;</span></p></div></div>
+<div class="comment" id="comment-17838"><div class="by">Unknown, 2016-10-14 21:25 UTC</div><div class="text"><p>I don't have a particular opinion related to RFC 3986, I was just noticing that we're being inconsistent. I would generally prefer that the URL representations are consistent. Does your reading of RFC 3986 suggest that our use of URL-encoded URIs is consistent with their guidelines?</p></div></div>
+<div class="comment" id="comment-17843"><div class="by">Christopher Johnson, 2016-10-15 13:38 UTC</div><div class="text"><p>Note also that URI.create(url) used in  <a href="https://github.com/acoburn/fcrepo-camel/blob/master/src/main/java/org/fcrepo/camel/FcrepoProducer.java#L158" class="external-link" rel="nofollow noreferrer">FcrepoProducer</a> will throw a "java.lang.IllegalArgumentException: Illegal character in fragment".</p>
+
+<p>EDIT:  This exception was rather caused by this URI:<br/>
+<a href="http://localhost:8080/fcrepo/rest/collection/test/003/canvas/10&#35;xywh&amp;&#35;61;1426,4053,279,47" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/collection/test/003/canvas/10&amp;#35;xywh&amp;&amp;#35;61;1426,4053,279,47</a> which clearly has problems.  It seems that my code generated an HTML representation of an "=".   This has nothing to do with the ",".</p>
+
+<p>I can work around the "," issue by just replacing the percent encoding in a SPARQL query, so having it encoded in the repository is OK for my use case. </p></div></div>
+<div class="comment" id="comment-17859"><div class="by">Unknown, 2016-10-18 15:26 UTC</div><div class="text"><p>It seems that this is <em>definitely</em> a problem that needs to be fixed in the Camel machinery. I would also like to see it fixed in Fedora core, so that, at the very least there is consistency in URI representations.</p></div></div>
+<div class="comment" id="comment-17860"><div class="by">Christopher Johnson, 2016-10-18 17:01 UTC</div><div class="text"><p>The percent encoding of reserved characters in a fragment problem I believe is a bug in <a href="https://docs.oracle.com/javaee/7/api/javax/ws/rs/core/UriBuilder.html#fragment-java.lang.String-" class="external-link" rel="nofollow noreferrer">UriBuilder.fragment()</a>.  <br/>
+The docs say that it supports query parameters per RFC 3986, but apparently they have not considered the possibility of reserved characters in the value of a fragment.  Perhaps I raise the question to them directly?</p>
+
+<p>This method is indeed used in <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L178" class="external-link" rel="nofollow noreferrer">HttpResourceConverter</a></p>
+
+<p>The variety of hash URI creation/manipulation in core is very confusing.  In the webapp, it seems that this is just using URI.create(uri) and not UriBuilder, which is why it works.  Also, the "internal" (/#/..) versus "external" (/#...) representation adds a lot of complexity.  </p></div></div>
+<div class="comment" id="comment-17996"><div class="by">Christopher Johnson, 2016-11-15 09:18 UTC</div><div class="text"><p>Finally received response from java.com bug report filed here: <a href="http://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8168268" class="external-link" rel="nofollow noreferrer">http://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8168268</a></p>
+
+<p>Have resubmitted new issue here: <a href="https://java.net/jira/browse/JAX_RS_SPEC-536" class="external-link" rel="nofollow noreferrer">https://java.net/jira/browse/JAX_RS_SPEC-536</a></p></div></div>
+<div class="comment" id="comment-21759"><div class="by">Jared Whiklo, 2020-11-27 15:44 UTC</div><div class="text"><p>Testing this issue with Fedora 6.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -i -ufedoraAdmin:fedoraAdmin -XPUT -H"Content-type: text/turtle" -d " &lt;_:e0c3ccbf985465c1f29a63ae9532ea3e&gt; &lt;http://www.w3.org/ns/oa#hasTarget&gt; &lt;http://localhost:8080/rest/collection/test/009/canvas/001#xywh=0,0,2137,3293&gt; . &lt;_:e0c3ccbf985465c1f29a63ae9532ea3e&gt; &lt;http://www.w3.org/ns/oa#hasTarget&gt; &lt;http://external.site/rest/collection/test/009/canvas/001#xywh=0,0,2137,3293&gt; "
+</pre>
+</div></div>
+
+<p>Results in an object that looks like</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+@prefix ldp: &lt;http://www.w3.org/ns/ldp#&gt; .
+
+_:b0 &lt;http://www.w3.org/ns/oa#hasTarget&gt; &lt;http://localhost:8080/rest/collection/test/009/canvas/001#xywh=0,0,2137,3293&gt; ;
+        &lt;http://www.w3.org/ns/oa#hasTarget&gt; &lt;http://external.site/rest/collection/test/009/canvas/001#xywh=0,0,2137,3293&gt; .
+
+&lt;http://localhost:8080/rest/test1&gt;
+       fedora:created "2020-11-27T15:40:51.688283Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+       fedora:lastModified "2020-11-27T15:40:51.688283Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+       fedora:createdBy "fedoraAdmin" ;
+       fedora:lastModifiedBy "fedoraAdmin" ;
+       rdf:type ldp:BasicContainer ;
+       rdf:type ldp:Resource ;
+       rdf:type fedora:Resource ;
+       rdf:type ldp:RDFSource ;
+       rdf:type ldp:Container ;
+       rdf:type fedora:Container .
+</pre>
+</div></div>
+
+<p>Not sure if that means we are good, but wanted to bring the findings back.</p>
+
+<p>*<b>edit</b>*: Jira formatting is horrible.</p></div></div>
+<div class="comment" id="comment-22558"><div class="by">Jared Whiklo, 2021-11-17 16:20 UTC</div><div class="text"><p>In my humble opinion, this issue is resolved. It works in Fedora 6 (though we could add an integration test if desired) as expected by the original reporter. Also this issue is so old that no one is tracking it and the original Java issue link below points to a site which no longer exists. </p></div></div>
+<div class="comment" id="comment-22587"><div class="by">Danny Bernstein, 2022-01-20 16:41 UTC</div><div class="text"><p>We should confirm that this is no longer an issue with the latest Fedora java client.</p></div></div>
+<div class="comment" id="comment-22957"><div class="by">Jared Whiklo, 2024-01-11 20:55 UTC</div><div class="text"><p>Cannot replicate, may have been fixed by some other change.</p></div></div>
+<p><a href="data/FCREPO-2263.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

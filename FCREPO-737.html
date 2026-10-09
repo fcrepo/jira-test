@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-737 Fedora xsd schemas are wrong</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-737</span> Fedora xsd schemas are wrong</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Asger Askov Blekinge</td></tr><tr><th>Assignee</th><td>Asger Askov Blekinge</td></tr><tr><th>Created</th><td>2010-06-29 20:12 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3</td></tr></table>
+<h2>Description</h2>
+<p>Several of the fedora supplied schemas are wrong, or the demo objects are wrong. This has not been apparent before the validate method became available</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11457"><div class="by">Stephen Bayliss, 2010-06-29 23:22 UTC</div><div class="text"><p>See also <a href="http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/5471" class="external-link" rel="nofollow noreferrer">http://permalink.gmane.org/gmane.comp.cms.fedora-commons.user/5471</a> for a report of this from the users list.</p></div></div>
+<div class="comment" id="comment-11466"><div class="by">Chris Wilper, 2010-07-04 12:24 UTC</div><div class="text"><p>Asger fixed these schemas for the 3.4-RC1 release</p></div></div>
+<div class="comment" id="comment-11467"><div class="by">Chris Wilper, 2010-07-04 12:27 UTC</div><div class="text"><p>Keeping this issue open for now, as some data objects may still need to be fixed...not sure yet.  At least the "N/A" and "ref" issues that Mark Roy reported in the thread Steve pointed to should be checked for validity, or fixed in the wiki.</p></div></div>
+<div class="comment" id="comment-11468"><div class="by">Chris Wilper, 2010-07-04 20:44 UTC</div><div class="text"><p>All schema issues reported by Mark are fixed, except the WSDL issue.</p>
+
+<p>There are actually a few problems regarding the WSDL:<br/>
+1) The WSDL-SCHEMA datastream of the fedora-system:ServiceDeployment-3.0 object is never ingested properly.  If you look at the source, the XML declares that the CONTROL_GROUP is "X" but it's referenced.  Interestingly, validation of the object at ingest time doesn't catch this fact and silently ignores it, so that the WSDL datastream is actually never found.<br/>
+2) Given that the WSDL-SCHEMA datastream, referenced by the DS-COMPOSITE-MODEL of the object is absent from the content model object, I would also think this would cause a runtime error to occur when the new ECM method "validate" is called via the REST API.  No such error occurs.<br/>
+3) A cursory glance at the actual wsdl schema at xmlsoap.org indicates that several of the demo objects, as well as the example service deployment object in the wiki page, are wrong for the reason Mark indicated ("/" and " " are not allowed in NCNames)</p></div></div>
+<div class="comment" id="comment-11469"><div class="by">Asger Askov Blekinge, 2010-07-05 14:33 UTC</div><div class="text"><p>The WSDL schema have been inlined in the content model. The demo objects are now validated. All validate, after I fixed them. Have not looked at the examples on the wiki</p></div></div>
+<div class="comment" id="comment-13039"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-737.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3906 FCREPO uses json-ld-1.0 processing mode but silently accepts json-ld-1.1 directives</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3906</span> FCREPO uses json-ld-1.0 processing mode but silently accepts json-ld-1.1 directives</h1>
+<table class="meta"><tr><th>Type</th><td>Documentation</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Quinn Hart</td></tr><tr><th>Assignee</th><td>Thomas Bernhart</td></tr><tr><th>Created</th><td>2023-10-01 15:42 UTC</td></tr><tr><th>Updated</th><td>2024-01-31 17:31 UTC</td></tr><tr><th>Components</th><td>core</td></tr><tr><th>Affects versions</th><td>Fedora 6.4.0</td></tr></table>
+<h2>Description</h2>
+<p>FCREPO uses the json-ld-1.0 processing mode, but it will silently accept version 1.1 which it doesn’t process.  This can lead to users getting different data out from they thought they put in. </p>
+
+<p>Adding <tt>“@version": 1.1</tt> to the concept does stop processing </p>
+
+<p>An upgrade to json-ld version 1.1 would be a nice improvement, better documentation in the API specs might alert users.</p>
+
+<p>Here’s an example that can cause developers days for confusion 🙂 </p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-json">{
+  <span class="code-quote">"@context"</span>: {
+    <span class="code-quote">"@vocab"</span>: <span class="code-quote">"http:<span class="code-comment">//vivoweb.org/ontology/core#"</span>,
+</span>    <span class="code-quote">"vcard"</span>: <span class="code-quote">"http:<span class="code-comment">//www.w3.org/2006/vcard/ns#"</span>,
+</span>    <span class="code-quote">"person"</span>: <span class="code-quote">"http:<span class="code-comment">//ucdavis.edu/person/"</span>,
+</span>    <span class="code-quote">"hasName"</span>: {
+      <span class="code-quote">"@id"</span>: <span class="code-quote">"vcard:hasName"</span>,
+      <span class="code-quote">"@type"</span>: <span class="code-quote">"@id"</span>,
+      <span class="code-quote">"@context"</span>: {
+        <span class="code-quote">"family"</span>: {
+          <span class="code-quote">"@id"</span>: <span class="code-quote">"vcard:familyName"</span>
+        }
+      }
+    }
+  },
+  <span class="code-quote">"@id"</span>: <span class="code-quote">"person:quinn"</span>,
+  <span class="code-quote">"hasName"</span>: {
+    <span class="code-quote">"@id"</span>: <span class="code-quote">"person:quinn#name"</span>,
+    <span class="code-quote">"family"</span>: <span class="code-quote">"Hart"</span>
+  }
+}
+</pre>
+</div></div>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22891"><div class="by">Jared Whiklo, 2023-10-12 18:03 UTC</div><div class="text"><p>Currently we use java json-ld and it does not yet support version 1.1. There is discussion going on in that community. We can certainly add this to the documentation.</p></div></div>
+<div class="comment" id="comment-22965"><div class="by">Dan Field, 2024-01-12 16:29 UTC</div><div class="text"><p>Do we actually use java-jsonld? I’m struggling to find it used in the codebase and commenting it out on the pom.xml results in a clean build and I can query successfully for an application/ld+json response </p>
+
+
+
+<p>EDIT: It looks to be coming in via jena 4. jena 5 has moved to titanium but 4 includes the following in their pom</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>     &lt;!-- JSON-LD 1.0 --&gt;
+    &lt;!-- jsonld-java depends on depends on Jackson core
+         and Jackson databind. databind has had a few CVEs
+         so we exclude from jsonldjava and select the version
+         ourselves.
+         When upgrading jsonld, consult jsonld-java's
+         POM for the correct dependency versions
+         and use that or later.
+    --&gt;
+    &lt;ver.jsonldjava&gt;0.13.6&lt;/ver.jsonldjava&gt;
+    ...
+           &lt;!-- jsonld-java for JSON-LD 1.0 --&gt;
+       &lt;dependency&gt;
+         &lt;groupId&gt;com.github.jsonld-java&lt;/groupId&gt;
+         &lt;artifactId&gt;jsonld-java&lt;/artifactId&gt;
+         &lt;version&gt;${ver.jsonldjava}&lt;/version&gt;</pre>
+</div></div></div></div>
+<p><a href="data/FCREPO-3906.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2406 The binary file data remains on disk after issuing a DELETE</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2406</span> The binary file data remains on disk after issuing a DELETE</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2017-02-25 00:23 UTC</td></tr><tr><th>Updated</th><td>2017-06-20 19:40 UTC</td></tr><tr><th>Resolved</th><td>2017-03-03 17:08 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>configuration</td></tr></table>
+<h2>Description</h2>
+<p>The problem is that binary files are not removed after the resource itself or the resource's parent via the REST API.</p>
+
+<p>To reproduce the problem do the following: </p>
+
+<p>1. create a binary resource on an empty repository using the default ("file-simple") modeshape configuration.</p>
+
+<p>curl -i -X POST --data-binary "@picture.jpg" "http://localhost:8080/rest/</p>
+
+<p>2.  find the file on the file system.<br/>
+fcrepo4-data/fcrepo.binary.directory/</p>
+
+<p>3. verify the MD5 of the original file and compare to the file in the binary directory to make sure you are looking at the right file.</p>
+
+<p>4.  Delete the resource curl -X DELETE "http://localhost:8080/rest/path/to/new/resource"</p>
+
+<p>5.  curl the resource to ensure that it is gone.</p>
+
+<p>curl -v  -i "http://localhost:8080/rest/path/to/new/resource"</p>
+
+<p>6.  verify that there are now two copies of the deleted binary:  one in the /trash directory  as well as the original file that was never deleted.</p>
+
+<p>The same problem applies for children of deleted parents.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-18583"><div class="by">Unknown, 2017-02-25 02:47 UTC</div><div class="text"><p>I was under the impression that modeshape issues a "garbage collection" command every ~24 hours to clean up these deleted references. I would expect the binary to persist for some time in storage after it has been deleted through the REST API. Can you verify that the reference still exists after at least 24 hours have passed?</p></div></div>
+<div class="comment" id="comment-18584"><div class="by">Esmé Cowles, 2017-02-25 03:10 UTC</div><div class="text"><p>I was looking this up today in response to a question about data files lingering, and found this StackOverflow answer from Randall Hauch about how to configure the garbage collector:</p>
+
+<p><a href="http://stackoverflow.com/questions/25428311/modeshape-removing-node-binary-files" class="external-link" rel="nofollow noreferrer">http://stackoverflow.com/questions/25428311/modeshape-removing-node-binary-files</a></p>
+
+<p>That should make it much easier to test this without having to wait 24 hours.</p></div></div>
+<div class="comment" id="comment-18585"><div class="by">Andrew Woods, 2017-02-26 15:23 UTC</div><div class="text"><p>Agreed. I believe this is a non-issue.<br/>
+<a href="https://groups.google.com/d/msg/fedora-tech/2qLAbJ158Ek/QWWJ9M2IBwAJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/2qLAbJ158Ek/QWWJ9M2IBwAJ</a></p>
+
+<p>Danny Bernstein, can you verify?</p></div></div>
+<div class="comment" id="comment-18586"><div class="by">Esmé Cowles, 2017-02-26 18:50 UTC</div><div class="text"><p>Maybe we should update the sample repository.json files to include a garbageCollection block to make it more clear that is the approach for removing binaries and how to configure it?</p></div></div>
+<div class="comment" id="comment-18587"><div class="by">Andrew Woods, 2017-02-26 18:59 UTC</div><div class="text"><p>A PR along those lines sounds like a good way to resolve this issue.</p></div></div>
+<div class="comment" id="comment-18588"><div class="by">Danny Bernstein, 2017-02-27 17:26 UTC</div><div class="text"><p>Thanks for the feedback,  I will add in a garbageCollection block and verify that it works.</p></div></div>
+<div class="comment" id="comment-18600"><div class="by">Andrew Woods, 2017-03-02 15:57 UTC</div><div class="text"><p>Any updates, Danny Bernstein?</p></div></div>
+<div class="comment" id="comment-18601"><div class="by">Danny Bernstein, 2017-03-02 15:59 UTC</div><div class="text"><p>Yup - I've tested this to make sure that the deletes are occurring after 24 hours which they are.   But my testing of the garbargeCollection elements was less successful.  It is not clear that the settings are working as I would expect.  I got sidetracked while I was investigating that piece - I'll close that up today.</p></div></div>
+<div class="comment" id="comment-18603"><div class="by">Danny Bernstein, 2017-03-02 22:44 UTC</div><div class="text"><p>Andrew Woods:  So I verified this works - not exactly as it appears to be documented but close enough.  The initialTime field is in UTC rather than local time.    I've added the gc config to the file-simple/repository.json.  Should I add the same block to the other sample repository.json files? ie jdbc-mysql/repository.json, jdbc-postgresql/repository.json, etc?</p></div></div>
+<div class="comment" id="comment-18604"><div class="by">Andrew Woods, 2017-03-02 22:56 UTC</div><div class="text"><p>Yes, please add the GC block to all of the repository.json files.</p></div></div>
+<div class="comment" id="comment-18615"><div class="by">Andrew Woods, 2017-03-03 14:35 UTC</div><div class="text"><p>Pending response to code review comment.</p></div></div>
+<div class="comment" id="comment-18618"><div class="by">Andrew Woods, 2017-03-03 20:40 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/de9d87d7a143150c37591b9a99de520ab950bd24" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/de9d87d7a143150c37591b9a99de520ab950bd24</a></p></div></div>
+<p><a href="data/FCREPO-2406.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

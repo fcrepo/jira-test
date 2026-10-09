@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-70 LLStore rebuild uses canonical paths</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-70</span> LLStore rebuild uses canonical paths</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-04-04 19:55 UTC</td></tr><tr><th>Updated</th><td>2010-04-06 15:13 UTC</td></tr><tr><th>Resolved</th><td>2010-04-06 15:13 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2, Fedora 2.2.1, Fedora 3.0b1, Fedora 2.2.2, Fedora 3.0b2, Fedora 3.0, Fedora 2.2.3, Fedora 2.2.4, Fedora 3.1</td></tr></table>
+<h2>Description</h2>
+<p>Aaron reported this.  When running a SQL rebuild, the NSDL team noticed that the lowlevel storage file registry  writes the paths differently than Fedora normally does: it uses the "canonical" path (this is the path with any symlinks resolved).</p>
+
+<p>The desired behavior is to save the path in the way it is configured in fedora.fcfg.  That way, the symlink target is respected later, if it changes.</p>
+
+<p>To recreate this problem:</p>
+<ul class="alternate" type="square">
+	<li>install an empty fedora repository.</li>
+	<li>configure the objectPaths directory in fedora.fcfg to point to a symlink instead of a physical directory.</li>
+	<li>create an empty object</li>
+	<li>note the associated path value in the objectPaths table (it will include the symlink as part of the path name)</li>
+	<li>shut down fedora and do a sql rebuild</li>
+	<li>note the new path value in the objectPaths table (it will NOT include the symlink...instead it will contain the canonical path, which is not the desired behavior)</li>
+</ul>
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10121"><div class="by">Chris Wilper, 2007-04-04 20:04 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>It looks like the offending code is PathRegistry.java (line 83).  Changing it to .getPath() should fix this...need to test.</p></div></div>
+<div class="comment" id="comment-10122"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1694489<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1694489" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1694489</a></p></div></div>
+<div class="comment" id="comment-11273"><div class="by">Chris Wilper, 2010-04-06 15:13 UTC</div><div class="text"><p>Recommendation is to use the newer Akubra-based llstore replacement (akubra-fs), which does not have this issue.</p></div></div>
+<p><a href="data/FCREPO-70.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

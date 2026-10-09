@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-841 FeSL FedoraRIAttributeFinder attempts to locate RI attributes using hierarchical resource paths</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-841</span> FeSL FedoraRIAttributeFinder attempts to locate RI attributes using hierarchical resource paths</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-12-17 19:16 UTC</td></tr><tr><th>Updated</th><td>2011-02-21 23:25 UTC</td></tr><tr><th>Resolved</th><td>2011-01-03 18:17 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.3, Fedora 3.4, Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Description</h2>
+<p>FeSL uses the XACML 2.0 hierchical resource profile.</p>
+
+<p>This means that an incoming PID is converted to a set of XACML resource IDs, including both the PID itself and the hierarchical path to the pid.</p>
+
+<p>The FedoraRIAttributeFinder attempts to locate attribute values based on all of the resource IDs - so when it attempts this based on a hierarchical path, an exception is found as the resource is not a valid Fedora PID.</p>
+
+<p>This results in failure of policy evaluation.  ("indeterminate").</p>
+
+<p>The attribute finder should only attempt to find attributes for valid Fedora subjects, ie PIDs and DSIDs, and should return an empty bag for anything else.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11742"><div class="by">Stephen Bayliss, 2010-12-18 00:58 UTC</div><div class="text"><p>The resource identifier needs examining to see if it end in a pid or ends in pid/ds - then construct the appropriate fedora identifier to query on.</p></div></div>
+<div class="comment" id="comment-11746"><div class="by">Stephen Bayliss, 2010-12-21 22:34 UTC</div><div class="text"><p>Cross-check against original Muradora code - it was working in Muradora</p></div></div>
+<div class="comment" id="comment-11747"><div class="by">Stephen Bayliss, 2010-12-21 22:35 UTC</div><div class="text"><p>Also check XACML spec - what should be returned if no attributes found (is it empty bag?) - update: confirmed, empty bag.</p></div></div>
+<div class="comment" id="comment-11748"><div class="by">Stephen Bayliss, 2010-12-22 00:16 UTC</div><div class="text"><p>Figured out why this was working in Muradora and not in FeSL - in Muradora the code goes through RelationshipResolverHttpImpl, which contains code to examine the path and figure out the correct Fedora resource identifier (pid, pid/ds) from the hierarchical resource path.</p>
+
+<p>In FeSL it goes straight to the relationships methods without any such functionality (it calls the relationship resolver, which assumes a valid Fedora resource identifier).  </p>
+
+<p>The logical place for this splitting is within the attribute finder module.</p></div></div>
+<p><a href="data/FCREPO-841.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

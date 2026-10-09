@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-474 Remove extraneous namespace declaration on record elements</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-474</span> Remove extraneous namespace declaration on record elements</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Richard Green</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-04-07 15:17 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-04-07 15:20 UTC</td></tr><tr><th>Components</th><td>legacy - OAIProvider</td></tr><tr><th>Fix versions</th><td>OAIProvider 1.2.1</td></tr></table>
+<h2>Description</h2>
+<p>Richard Green reports:</p>
+
+<p>We have recently had a small issue with oaiprovider when the British Library tried to harvest our thesis metadata.  Using the ListRecords verb results in a set of records each wrapped as</p>
+
+<p>&lt;record xmlns="http://www.openarchives.org/OAI/2.0/ &lt;<a href="http://www.openarchives.org/OAI/2.0/" class="external-link" rel="nofollow noreferrer">http://www.openarchives.org/OAI/2.0/</a>&gt;  "&gt;<br/>
+   ...<br/>
+&lt;/record&gt;</p>
+
+<p>Instead of just</p>
+
+<p>&lt;record&gt;<br/>
+...<br/>
+&lt;/record&gt;</p>
+
+<p>This caused them some problems because one of their transforms wasn't set up to deal with this response which seems, from the OAI-PMH spec, to be non-standard.</p>
+
+<p>To fix this issue, Simon removed the following from Line 173 of FedoraOAIDriver.java :-</p>
+
+<p>out.println("&lt;record xmlns=\"http://www.openarchives.org/OAI/2.0/\"&gt;");</p>
+
+<p>And replaced with:-</p>
+
+<p>out.println("&lt;record&gt;");  </p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-10895"><div class="by">Chris Wilper, 2009-04-07 15:20 UTC</div><div class="text"><p>Applied patch.  This effectively removes the extra xmlns attribute from GetRecord and ListRecords requests.</p></div></div>
+<p><a href="data/FCREPO-474.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

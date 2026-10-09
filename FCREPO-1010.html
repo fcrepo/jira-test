@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1010 Use Apache Tika for extraction</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1010</span> Use Apache Tika for extraction</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>Gert Schmeltz Pedersen</td></tr><tr><th>Created</th><td>2011-10-12 19:21 UTC</td></tr><tr><th>Updated</th><td>2011-12-22 17:50 UTC</td></tr><tr><th>Resolved</th><td>2011-12-22 17:50 UTC</td></tr><tr><th>Components</th><td>legacy - GSearch</td></tr><tr><th>Fix versions</th><td>GSearch 2.4</td></tr><tr><th>Labels</th><td>gsearch, indexing</td></tr></table>
+<h2>Description</h2>
+<p>Apache Tika is a toolkit that can extract text and metadata from a wide variety of mimetyped formats (including PDF, via PDFBox). Employing Tika as an extraction engine in GSearch would immediately expand enormously the possible range of material over which GSearch could operate, and going forward, GSearch would benefit from new parsers and better-performing parsers created as part of that effort.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-12076"><div class="by">Chris Wilper, 2011-10-18 20:34 UTC</div><div class="text"><p>Gert, is this feature fair game for GSearch? If so, can you "Open" it?</p></div></div>
+<div class="comment" id="comment-12077"><div class="by">Chris Wilper, 2011-10-18 20:40 UTC</div><div class="text"><p>Assigning Gert just so he gets on the email list for this issue. Gert, our normal process for FCREPO issues is to review them and get concensus among committers if needed. If the issue is "fair game" for Fedora, we then put it into the Open state so people know that it can be worked on.  I figured you'd be the best judge on this issue submitted by Adam.</p></div></div>
+<div class="comment" id="comment-12078"><div class="by">A. Soroka, 2011-10-18 21:57 UTC</div><div class="text"><p>Some useful info:</p>
+
+<p>Here:</p>
+
+<p><a href="https://tika.apache.org/0.10/parser.html" class="external-link" rel="nofollow noreferrer">https://tika.apache.org/0.10/parser.html</a></p>
+
+<p>is the crucial API portion. As you can see at that link, Tika expects a SAX handler to receive information that it retrieves about an input. That seems to me to jibe quite well with the current GSearch architecture and shouldn't be difficult to integrate with any future architecture.</p>
+
+<p>Also, take a look at this format list:</p>
+
+<p><a href="https://tika.apache.org/0.10/formats.html" class="external-link" rel="nofollow noreferrer">https://tika.apache.org/0.10/formats.html</a></p>
+
+<p>A real cornucopia!</p>
+</div></div>
+<div class="comment" id="comment-12079"><div class="by">Gert Schmeltz Pedersen, 2011-10-19 18:38 UTC</div><div class="text"><p>I just published the branch fcrepo-1010 at github to get feedback.<br/>
+It uses tika 0.10, tika 1.0 is expected in November 2011.<br/>
+It is a big jar, 24mb, so PermGen space has to be raised,<br/>
+and it doubles the size of fedoragsearch.war<br/>
+The branch adds two functions to GenericOperationsImpl:</p>
+<ul class="alternate" type="square">
+	<li>getDatastreamFromTika: retrieves the text only</li>
+	<li>getDatastreamFromTikaWithMetadata: retrieves metadata also<br/>
+The branch comes with a test suite in gsearch.test.fgs24_1010, <br/>
+where the two functions are tested on both Lucene and Solr.<br/>
+The tests have docx, doc, and pdf datastreams,<br/>
+but potentially all the Tika formats are available,<br/>
+since the branch uses AutoDetectParser in Tika.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-12107"><div class="by">Gert Schmeltz Pedersen, 2011-11-09 14:26 UTC</div><div class="text"><p>Adam,<br/>
+If you can take the time, please review this issue. I added a comment with some details, when I first committed the branch fcrepo-1010. Yesterday, I committed the new Tika 1.0. Let me know, if you need more info.</p></div></div>
+<div class="comment" id="comment-12116"><div class="by">A. Soroka, 2011-11-15 04:03 UTC</div><div class="text"><p>I'm now beginning some simple testing. Further bulletins as events warrant.</p></div></div>
+<div class="comment" id="comment-12136"><div class="by">A. Soroka, 2011-12-01 22:06 UTC</div><div class="text"><p>Gert's code does very well. Extraction is possible for both content and metadata. We are following through with some discussions about the best way to expose this excellent new functionality into GSearch XSLT.</p></div></div>
+<div class="comment" id="comment-12145"><div class="by">Gert Schmeltz Pedersen, 2011-12-07 17:13 UTC</div><div class="text"><p>Based on Adam's comments, things are reconsidered.</p></div></div>
+<div class="comment" id="comment-12146"><div class="by">Gert Schmeltz Pedersen, 2011-12-07 17:20 UTC</div><div class="text"><p>New code has been committed and pushed. See the new explanation at</p>
+
+<p>FgsConfig/FgsConfigIndexTemplate/SolrTest/foxmlToSolr_fgs24_1010.xslt</p>
+
+<p>The choice between text-only, metadata-only, and both should be clearer now. Also, the tricky generation of tags is now clearer, in that all the tags are generated at the same place in TransformerToText.java</p></div></div>
+<p><a href="data/FCREPO-1010.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3737 RELS-EXT should be included in the migration to OCFL as native RDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3737</span> RELS-EXT should be included in the migration to OCFL as native RDF</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Geoff Scholl</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2021-06-28 18:39 UTC</td></tr><tr><th>Updated</th><td>2021-11-16 18:49 UTC</td></tr><tr><th>Resolved</th><td>2021-11-05 16:41 UTC</td></tr><tr><th>Components</th><td>migration-utils</td></tr><tr><th>Fix versions</th><td>migration-utils-6.1.0</td></tr></table>
+<h2>Description</h2>
+<p>Currently RELS-EXT data migrates to OCFL as a binary file. We would like the RELS-EXT, which contains RDF, to migrate to OCFL as native RDF. </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-22322"><div class="by">Peter Winckles, 2021-09-10 19:23 UTC</div><div class="text"><p>@Geoff Scholl: I was just thinking about this ticket, and I’m not sure if it makes sense to migrate RELS-EXT as an RDF container rather than as a binary.</p>
+
+<p>At UW-Madison, and my assumption is that this is true for you as well, RELS-EXT describes relationships for the Fedora 3 object. When the object is migrated to Fedora 6 it loses the distinction between an object and its datastreams. Instead, objects are modeled as RDF containers that contain all of their datastreams, which are modeled as binaries.</p>
+
+<p>Let’s look at a concrete example. We have object info:fedora/1711.dl:52O74PJ27SFY58D in Fedora 3 which has the following RELS-EXT:</p>
+
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-xml"><span class="code-tag">&lt;rdf:RDF xmlns=<span class="code-quote">"info:fedora/fedora-system:def/model#"</span> <span class="code-keyword">xmlns:dc</span>=<span class="code-quote">"http://purl.org/dc/elements/1.1/"</span> <span class="code-keyword">xmlns:fedora</span>=<span class="code-quote">"info:fedora/fedora-system:def/relations-external#"</span> <span class="code-keyword">xmlns:foxml</span>=<span class="code-quote">"info:fedora/fedora-system:def/foxml#"</span> <span class="code-keyword">xmlns:oai_dc</span>=<span class="code-quote">"http://www.openarchives.org/OAI/2.0/oai_dc/"</span> <span class="code-keyword">xmlns:rdf</span>=<span class="code-quote">"http://www.w3.org/1999/02/22-rdf-syntax-ns#"</span> <span class="code-keyword">xmlns:rdfs</span>=<span class="code-quote">"http://www.w3.org/2000/01/rdf-schema#"</span> <span class="code-keyword">xmlns:uwdc</span>=<span class="code-quote">"https://digital.library.wisc.edu/1711.dl/rdf/1.0/relations#"</span> <span class="code-keyword">xmlns:uwdcr</span>=<span class="code-quote">"https://digital.library.wisc.edu/1711.dl/vocabulary/resourcetype#"</span> <span class="code-keyword">xmlns:xsi</span>=<span class="code-quote">"http://www.w3.org/2001/XMLSchema-instance"</span> ID=<span class="code-quote">"RELS-EXT"</span>&gt;</span>
+  <span class="code-tag">&lt;rdf:Description rdf:about=<span class="code-quote">"info:fedora/1711.dl:52O74PJ27SFY58D"</span>&gt;</span>
+    <span class="code-tag">&lt;hasModel rdf:resource=<span class="code-quote">"info:fedora/1711.dl:CModelUWDCObject"</span>&gt;</span><span class="code-tag">&lt;/hasModel&gt;</span>
+    <span class="code-tag">&lt;hasModel rdf:resource=<span class="code-quote">"info:fedora/1711.dl:CModelMaster"</span>&gt;</span><span class="code-tag">&lt;/hasModel&gt;</span>
+    <span class="code-tag">&lt;hasModel rdf:resource=<span class="code-quote">"info:fedora/1711.dl:CModelSimpleText"</span>&gt;</span><span class="code-tag">&lt;/hasModel&gt;</span>
+    <span class="code-tag">&lt;fedora:isMemberOf rdf:resource=<span class="code-quote">"info:fedora/1711.dl:6YV6NVSHOUAN48A"</span>&gt;</span><span class="code-tag">&lt;/fedora:isMemberOf&gt;</span>
+    <span class="code-tag">&lt;uwdc:isMemberOfProject rdf:resource=<span class="code-quote">"https://digital.library.wisc.edu/1711.dl/WWILibraryPrj"</span>&gt;</span><span class="code-tag">&lt;/uwdc:isMemberOfProject&gt;</span>
+    <span class="code-tag">&lt;uwdc:hasAccessPolicy rdf:resource=<span class="code-quote">"https://digital.library.wisc.edu/1711.dl/Access-policy-open-access-all"</span>&gt;</span><span class="code-tag">&lt;/uwdc:hasAccessPolicy&gt;</span>
+  <span class="code-tag">&lt;/rdf:Description&gt;</span>
+<span class="code-tag">&lt;/rdf:RDF&gt;</span></pre>
+</div></div>
+
+
+
+<p>Now, when that’s migrated to Fedora 6 there will be two resources, info:fedora/1711.dl:52O74PJ27SFY58D, an RDF container, and info:fedora/1711.dl:52O74PJ27SFY58D/RELS-EXT, a binary. If we changed the second to be a container, it becomes weird because those triples would be applied to info:fedora/1711.dl:52O74PJ27SFY58D/RELS-EXT. That is to say, info:fedora/1711.dl:52O74PJ27SFY58D/RELS-EXT is not a <tt>info:fedora/1711.dl:CModelMaster</tt> – info:fedora/1711.dl:52O74PJ27SFY58D is.</p>
+
+<p>What might make sense instead is if RELS-EXT was not migrated at all and instead its triples were added to the container resource that represents the object.</p>
+
+<p>Similarly, with RELS-INT, it might make sense to not migrate it at all and add its triples to the resources that they apply to.</p></div></div>
+<div class="comment" id="comment-22323"><div class="by">Demian Katz, 2021-09-10 19:52 UTC</div><div class="text"><p>Peter Winckles , I agree – and I think the intent of our original ticket was actually exactly as you describe: that the triples from RELS-EXT be added to the container representing the original Fedora object, rather than as a binary XML datastream or a separate RDF container.</p>
+
+<p>Depending on the possible complexities and confidence levels, I suppose it might be useful to have a configuration to choose either approach, or even both approaches – e.g. migrate the triples, but also keep the original document as a binary for historical purposes.</p></div></div>
+<div class="comment" id="comment-22324"><div class="by">Peter Winckles, 2021-09-14 15:16 UTC</div><div class="text"><p><a href="https://github.com/fcrepo-exts/migration-utils/pull/171" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/pull/171</a></p></div></div>
+<div class="comment" id="comment-22329"><div class="by">Geoff Scholl, 2021-09-16 16:22 UTC</div><div class="text"><p>Tested and confirmed this is working&#33; 🎉 </p></div></div>
+<div class="comment" id="comment-22552"><div class="by">Danny Bernstein, 2021-11-05 16:41 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo-exts/migration-utils/commit/cab67b23aeef97bba24a79802606a06c15033a4d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/cab67b23aeef97bba24a79802606a06c15033a4d</a></p></div></div>
+<p><a href="data/FCREPO-3737.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

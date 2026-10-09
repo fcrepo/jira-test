@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-857 Objects with &quot;D&quot; state remain deleted in OAIProvider indefinitely</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-857</span> Objects with &quot;D&quot; state remain deleted in OAIProvider indefinitely</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2011-02-02 23:52 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - OAIProvider</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Description</h2>
+<p>On Feb 1, 2011, Luca Lelli reported this to fcrepo-user list:</p>
+
+<p>in a project we are using Fedora Commons 3.3 with PROAI for providing<br/>
+data to be harvested.<br/>
+We have seen that in some situations the cache of PROAI is not<br/>
+syncronized with Fedora Repository: i.e. some Fedora objetcs in PROAI<br/>
+cache are not present or if present are not aligned with the related<br/>
+Fedora objects. This seems to be more probable when some Fedora objects<br/>
+which are in state D (deleted)  are again activated i.e. the object<br/>
+state is modified to 'A'. The modification date of Fedora Object is<br/>
+correctly modified. But the PROAI cache signals always deleted.<br/>
+Peharps thre are some issues with proai.properties parameters<br/>
+configuration? E.g. we are using proai.driverPollSeconds = 600 and the<br/>
+other Back-End Update Behavior parameters are left with default values<br/>
+(proai.maxWorkers = 5, proai.maxWorkBatchSize = 10,<br/>
+proai.maxFailedRetries = 3, proai.maxCommitQueueSize = 120,<br/>
+proai.maxRecordsPerTransaction = 60, proai.driverPollingEnabled = true).</p>
+
+<p>Mailing list thread: <a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-problems-with-proai-properties-parameters-configuration-td5982309.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-problems-with-proai-properties-parameters-configuration-td5982309.html</a></p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11806"><div class="by">Stephen Bayliss, 2011-02-09 14:22 UTC</div><div class="text"><p>A later post in the linked thread suggests it could be an issue to do with Trippi's delayed write to the triple store; indications from the later post suggest it could be that when the query against Mulgara was issued not all updates to Mulgara had been made, as a later query to Mulgara did in fact show the correct results.  Waiting for feedback from the OP to confirm if this is the case (test by turning on sync updates).  If this is the case then it should be possible to modify the OAIProvider code to force updates before the query (flush=true?).</p></div></div>
+<div class="comment" id="comment-11829"><div class="by">Stephen Bayliss, 2011-03-01 23:01 UTC</div><div class="text"><p>Emailed the reporter of this today to chase this up.</p></div></div>
+<div class="comment" id="comment-11830"><div class="by">Stephen Bayliss, 2011-03-03 03:07 UTC</div><div class="text"><p>Luca has confirmed that setting syncUpdates to true resolves the issue.</p>
+
+<p>The OAIProvider should be modified to force a "flush" when querying the resource index, so that it is not necessary to set syncUpdates to true.</p></div></div>
+<div class="comment" id="comment-13064"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-857.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

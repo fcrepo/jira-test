@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2362 verification tool gives random incorrect responses</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2362</span> verification tool gives random incorrect responses</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-12-15 04:11 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Labels</th><td>import-export-phase-2, verification</td></tr></table>
+<h2>Description</h2>
+<p>I exported the plantpatents and then tried to verify it. It worked fine. </p>
+
+<p>Then I went into the export and altered a binary by opening it and changing some characters. This went un-noticed.</p>
+
+<p>Then I went back in the binary and deleted a line. This went un-noticed.</p>
+
+<p>Then I deleted an external.external file. This went un-noticed.</p>
+
+<p>Then I deleted the external/fcr%3Ametadata.jsonld file, the next 3 runs WITHOUT changes in between were.</p>
+
+<p>&gt; ./verify.py -u admin1:password3 -c ./log.csv -l log.log ../fcrepo-import-export/importexport.yml          <br/>
+key (predicates) and (<a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a>)<br/>
+key (source) and (<a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a>)<br/>
+key (binaries) and (True)<br/>
+key (dir) and (/sw/var/www/fcrepo4/fcrepo-import-export/fcrepo-import-export-temp)<br/>
+key (rdfLang) and (application/ld+json)<br/>
+key (mode) and (export)<br/>
+key (resource) and (<a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a>)</p>
+
+<p>Running verification on Fedora 4 export<br/>
+Checked 2 resources...<br/>
+WARN: Resource Mismatch '/rest/8b/3e/46/9f/8b3e469f-4fed-479c-a273-c90b172387b5/internal'<br/>
+<span class="error">&#91;whikloj@Jared-Whiklos-MacBook-Pro.local 22:07 &#93;</span> <br/>
+<span class="error">&#91;/sw/var/www/fcrepo4/fcrepo-import-export-verify&#93;</span> <br/>
+&gt; ./verify.py -u admin1:password3 -c ./log.csv -l log.log ../fcrepo-import-export/importexport.yml<br/>
+key (mode) and (export)<br/>
+key (dir) and (/sw/var/www/fcrepo4/fcrepo-import-export/fcrepo-import-export-temp)<br/>
+key (source) and (<a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a>)<br/>
+key (predicates) and (<a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a>)<br/>
+key (binaries) and (True)<br/>
+key (resource) and (<a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a>)<br/>
+key (rdfLang) and (application/ld+json)</p>
+
+<p>Running verification on Fedora 4 export<br/>
+Checked 2 resources...<br/>
+WARN: Resource Mismatch '/rest/68/bd/1f/32/68bd1f32-3c6f-4960-a902-f24fcf6ef4de/internal'<br/>
+<span class="error">&#91;whikloj@Jared-Whiklos-MacBook-Pro.local 22:07 &#93;</span> <br/>
+<span class="error">&#91;/sw/var/www/fcrepo4/fcrepo-import-export-verify&#93;</span> <br/>
+&gt; ./verify.py -u admin1:password3 -c ./log.csv -l log.log ../fcrepo-import-export/importexport.yml<br/>
+key (rdfLang) and (application/ld+json)<br/>
+key (dir) and (/sw/var/www/fcrepo4/fcrepo-import-export/fcrepo-import-export-temp)<br/>
+key (mode) and (export)<br/>
+key (binaries) and (True)<br/>
+key (resource) and (<a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a>)<br/>
+key (source) and (<a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a>)<br/>
+key (predicates) and (<a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a>)</p>
+
+<p>Running verification on Fedora 4 export<br/>
+Checked 2 resources...<br/>
+WARN: Resource Mismatch '/rest/11/e5/54/cd/11e554cd-edbe-4c28-89c0-158f298c5193/internal'</p>
+
+<p>The actual directory I altered was '/rest/82/34/bc/83/8234bc83-6894-4c72-8663-bf66274ee845'</p>
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-18273"><div class="by">Joshua Allan Westgard, 2016-12-16 20:13 UTC</div><div class="text"><p>So far I've seen two distinct issues:</p>
+
+<ol>
+	<li>rdf resource mismatches &#8211; these occurred when unicode-escaped characters were present in the serialized resource on disk, but not present in the turtle that Fedora was giving back.  The tool should be able to deal with these characters.</li>
+	<li>binary mismatches &#8211; Bethany Seeger and Jared Whiklo identified a place in the regular expression that is used to capture the SHA1 checksum provided by Fedora where variable lengths of whitespace can cause the match to fail.  A fix for this is being added to PR#17.</li>
+</ol>
+
+
+<p>I have confirmed that manual altering of both RDF and binary resources after export will produce a mismatch upon subsequent verification runs, so it does work at least some of the time.  The issues don't seem to be fundamental, easily reproducible problems, but rather of a more subtle type that may only occur sometimes.</p></div></div>
+<div class="comment" id="comment-18274"><div class="by">Joshua Allan Westgard, 2016-12-16 21:39 UTC</div><div class="text"><p>Jared Whiklo, when you have a chance (assuming you are still able to look at this after the sprint ends) it would be great if you could try to reproduce these errors against the current open PR branch (<a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/17" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/17</a>).  </p>
+
+<p>This branch includes a fix for the problem with variable lengths of whitespace in capturing the SHA1 from the metadata, which could be the cause of the binary checksum mismatches reported in this ticket.</p>
+
+<p>So far, I haven't been able to reproduce the failure of the tool to notice changes to either binary or RDF files, but the whitespace was causing Bethany Seeger's test to fail for binaries and the fix seems to have resolved it.</p></div></div>
+<div class="comment" id="comment-18292"><div class="by">Andrew Woods, 2016-12-22 17:32 UTC</div><div class="text"><p>Jared Whiklo, It looks like Joshua Allan Westgard is looking for your input in the comment above.</p></div></div>
+<div class="comment" id="comment-18874"><div class="by">Joshua Allan Westgard, 2017-05-24 02:03 UTC</div><div class="text"><p>We have thus far been unable to reproduce the failure of the tool to notice manual changes in a serialized resource.  If, during the testing of version 1.0 of the verification tool, we are unable to demonstrate these errors, I think we can consider this issue resolved, partly by PR17, and partly as "unable to reproduce".</p></div></div>
+<div class="comment" id="comment-18880"><div class="by">Andrew Woods, 2017-05-24 14:23 UTC</div><div class="text"><p>Agreed</p></div></div>
+<div class="comment" id="comment-22406"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2362.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-97 SQL rebuild sometimes fails to populate pidGen correctly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-97</span> SQL rebuild sometimes fails to populate pidGen correctly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-08-31 14:58 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr></table>
+<h2>Description</h2>
+<p>After running fedora-rebuild, the pidGen tables sometimes isn't populated.  This can cause an error when ingesting objects where the pid is unspecified and must be auto-generated.</p>
+
+<p>The workaround is to check this table after a rebuild and, if it is unpopulated, issue the following SQL before restarting Fedora:</p>
+
+<p>INSERT INTO pidGen (namespace, highestID)<br/>
+VALUES ($NS, $HIGHESTID)</p>
+
+<p>Where $NS is the namespace, such as "demo",<br/>
+and highestID is the higest existing numeric<br/>
+part of all PIDs in the repository, such as 10.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10206"><div class="by">Chris Wilper, 2007-08-31 20:29 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>This was caused by clearing the tables <b>after</b> the RebuildServer had started as part of the rebuild process.  The value of the last generated PID in memory differed from that in the database, and this cause the behavior to occur when the pidGen table was populated prior to running a rebuild.  The behavior wouldn't occur if the pidGen table was empty prior to a rebuild, because the value in memory would not be out of sync with the value in the db (both empty).</p>
+
+<p>The solution was to change the beginning of the SQL rebuild process so that the tables were cleared BEFORE the RebuildServer was started.</p>
+
+<p>The change has been committed to the maintenance-2.2 branch as well as the trunk.</p></div></div>
+<div class="comment" id="comment-10207"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1785608<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1785608" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1785608</a><br/>
+Closed On: 2007-08-31 15:30:05<br/>
+Closed By: cwilper</p></div></div>
+<p><a href="data/FCREPO-97.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

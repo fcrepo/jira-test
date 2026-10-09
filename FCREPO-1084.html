@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1084 Improve handling of datastream bindings for disseminations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1084</span> Improve handling of datastream bindings for disseminations</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2012-05-13 19:16 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:03 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:03 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Description</h2>
+<p>The current behavior of dissemination machinery is to URL-encode datastream addresses if the entire dissemination URL contains "=(". This is a pretty simple-minded test and makes the use of 'E' datastreams less flexible than otherwise might be the case. The test can be made more subtle.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-12289"><div class="by">A. Soroka, 2012-05-14 07:07 UTC</div><div class="text"><p>The current test for URL-encoding is:</p>
+
+<p>dissURL.indexOf("=(") != -1</p>
+
+<p>Changing this to:</p>
+
+<p>dissURL.indexOf("(" + bindingKeyPattern + ")") &gt; 0</p>
+
+<p>will create the following changes in behavior:</p>
+
+<p>Input pattern 1:<br/>
+dissURL?queryparameter=(bindingKey)</p>
+
+<p>Old output pattern:<br/>
+dissURL?queryparameter=URL-encoded-datastream-URL</p>
+
+<p>New output pattern:<br/>
+Same.</p>
+
+<p>Input pattern 2:<br/>
+dissURL/(bindingKey)</p>
+
+<p>Old output pattern:<br/>
+dissURL/NON-URL-encoded-datastream-URL</p>
+
+<p>New output pattern:<br/>
+dissURL/URL-encoded-datastream-URL</p>
+
+<p>Input pattern 3:<br/>
+(bindingKey)</p>
+
+<p>Old output pattern:<br/>
+URL-encoded-datastream-URL</p>
+
+<p>New output pattern:<br/>
+NON-URL-encoded-datastream-URL</p>
+
+<p>The immediate advantage is that using datastream URLs as part of the ultimate dissemination URL becomes practical. This allows for the storage of service addresses as external datastreams, and the <em>form</em> of action against them to be encoded in dissemination metadata.</p></div></div>
+<div class="comment" id="comment-12290"><div class="by">A. Soroka, 2012-05-14 07:20 UTC</div><div class="text"><p>The code under consideration is at:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/access/dissemination/DisseminationService.java#L455" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/access/dissemination/DisseminationService.java#L455</a></p></div></div>
+<div class="comment" id="comment-12292"><div class="by">Chris Wilper, 2012-05-17 16:12 UTC</div><div class="text"><p>This sounds like a good idea. Thanks for including the new/old examples so I could grok what you were suggesting quickly.</p>
+
+<p>One question: If we do this, can we still have a frowning face hidden somewhere deep in the code?</p>
+
+<p>=(</p></div></div>
+<div class="comment" id="comment-12557"><div class="by">Benjamin Armintor, 2013-08-06 18:20 UTC</div><div class="text"><p>Adam, this is merged as evidenced by <a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/access/dissemination/DisseminationService.java#L534" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/access/dissemination/DisseminationService.java#L534</a> , right? I'd like to delete the issue branch.</p></div></div>
+<div class="comment" id="comment-13136"><div class="by">Andrew Woods, 2015-01-16 21:03 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1084.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

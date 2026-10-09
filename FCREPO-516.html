@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-516 Fresh install of Fedora 3.2.1 missing Jena packages for successful Tomcat deployment?</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-516</span> Fresh install of Fedora 3.2.1 missing Jena packages for successful Tomcat deployment?</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jason Nugent</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2009-07-25 11:59 UTC</td></tr><tr><th>Updated</th><td>2009-12-19 01:37 UTC</td></tr><tr><th>Resolved</th><td>2009-12-19 01:37 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>SuSE Linux Enterprise Server 10 SP2
+<h2>Description</h2>
+<p>I've just done a fresh install of Fedora 3.2.1 using the internal Tomcat installation that is provided with Fedora.  The installation was completely successful, but when I start up Tomcat, an error in my logs:</p>
+
+<p>Jul 20, 2009 3:56:12 PM org.apache.catalina.startup.HostConfig deployWAR<br/>
+INFO: Deploying web application archive fedora.war</p>
+
+<p>**************************</p>
+<ul>
+	<li>
+	<ul>
+		<li>FEDORA STARTUP ERROR **<br/>
+**************************</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>Fedora startup failed<br/>
+fedora.server.errors.ServerInitializationException: java.lang.RuntimeException: fedora.server.Server.&lt;init&gt;(Server.java:665)</p>
+
+<p>Digging through my fedora.log provided the following:</p>
+
+<p>INFO 2009-07-20 15:55:01.842 [ContainerBackgroundProcessor[StandardEngine<span class="error">&#91;Catalina&#93;</span>]] (Server) Post-Initializing fedora.server.resourceIndex.ResourceIndexModule<br/>
+FATAL 2009-07-20 15:55:17.921 [ContainerBackgroundProcessor[StandardEngine<span class="error">&#91;Catalina&#93;</span>]] (Server) Fatal error while starting server<br/>
+java.lang.NoClassDefFoundError: com.hp.hpl.jena.graph.Node<br/>
+        at java.lang.J9VMInternals.verifyImpl(Native Method)<br/>
+        at java.lang.J9VMInternals.verify(J9VMInternals.java:69)<br/>
+        at java.lang.J9VMInternals.initialize(J9VMInternals.java:131)<br/>
+        at org.mulgara.resolver.LocalJRDFDatabaseSession.&lt;init&gt;(LocalJRDFDatabaseSession.java:134)<br/>
+        at org.mulgara.resolver.Database.newJRDFSession(Database.java:1022)<br/>
+        at org.mulgara.server.local.LocalSessionFactory.newJRDFSession(LocalSessionFactory.java:227)<br/>
+        at org.trippi.impl.mulgara.MulgaraSessionFactory.newSession(MulgaraSessionFactory.java:180)<br/>
+        at org.trippi.impl.base.ConfigurableSessionPool.grow(ConfigurableSessionPool.java:202)<br/>
+        at org.trippi.impl.base.ConfigurableSessionPool.&lt;init&gt;(ConfigurableSessionPool.java:61)<br/>
+        at org.trippi.impl.mulgara.MulgaraConnector.init(MulgaraConnector.java:158)<br/>
+        at org.trippi.TriplestoreConnector.init(TriplestoreConnector.java:24)<br/>
+        at fedora.server.resourceIndex.ResourceIndexModule.getConnector(ResourceIndexModule.java:137)<br/>
+        at fedora.server.resourceIndex.ResourceIndexModule.postInitModule(ResourceIndexModule.java:99)</p>
+
+<p>So, it appears that the jena.jar package was not available to Tomcat.  A quick search on the machine returned no such package.  Downloading version 2.6.0 from jena.sourceforge.net and placing it in Tomcat's common/lib directory and doing a restart resolved the issue.</p>
+
+<p>I am reporting this against Fedora 3.2.1 but it also occurred with 3.2 (and perhaps earlier versions, although I was running a 2.2.x instance prior to this so did not test others).</p>
+
+<p>If I can provide any other information, please let me know.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10982"><div class="by">Chris Wilper, 2009-07-27 22:12 UTC</div><div class="text"><p>Hi Jason, good meeting you at RIRI.  Thanks for the report and stack trace. I haven't been able to reproduce this in my environments (osx, ubuntu, windows, all with Sun's JDK), but the stack trace makes me wonder if the JVM you're using is different.  In particular, the reference to java.lang.J9VMInternals ... if I google for that I see a lot of references to IBM's JVM.</p>
+
+<p>Are you using IBM's VM?  </p>
+
+<p>We currently test and advise use of Sun's VM.  What I suspect <b>may</b> be happening is that IBM's has more strict dependency loading.... and Mulgara has <b>some</b> functionality (though unused by Fedora at runtime) that depends on Jena, and the JVM you're using is being strict about resolving all possible dependencies regardless of whether they're needed.  I did a quick search of the code looking for such dependency but couldn't find it right away...so I'm a bit baffled at the moment.</p></div></div>
+<div class="comment" id="comment-10983"><div class="by">Jason Nugent, 2009-07-27 22:22 UTC</div><div class="text"><p>Hi Chris,</p>
+
+<p>Likewise, good meeting you as well. You are correct - SuSE Linux Enterprise does in fact ship with the IBM JVM:</p>
+
+<p>jnugent@etc:~&gt; java -version<br/>
+java version "1.5.0"<br/>
+Java(TM) 2 Runtime Environment, Standard Edition (build pxa64devifx-20090327 (SR9-SSU ))<br/>
+IBM J9 VM (build 2.3, J2RE 1.5.0 IBM J9 2.3 Linux amd64-64 j9vmxa6423-20081129 (JIT enabled)<br/>
+J9VM - 20081126_26240_LHdSMr<br/>
+JIT  - 20081112_1511ifx1_r8<br/>
+GC   - 200811_07)<br/>
+JCL  - 20090327</p>
+
+<p>I do actually have the Sun JVM available to me as a package, but it's only version 1.4.2.  </p></div></div>
+<div class="comment" id="comment-10984"><div class="by">Chris Wilper, 2009-07-28 16:38 UTC</div><div class="text"><p>Talked about on Jul28 committer meeting.  Will check with Paul Gearon: "is there in fact an <b>intentional</b> soft dependency on Jena"?  (or JRDF, a transitive dependency?).  If there is (it's intentional), then we could include the jar as part of the fedora distribution.</p></div></div>
+<div class="comment" id="comment-10994"><div class="by">Chris Wilper, 2009-08-25 15:50 UTC</div><div class="text"><p>Although a prior version of Mulgara did not advertise a "soft" Jena dependency, it apparently had one.</p>
+
+<p>The latest version of Mulgara (not yet bundled with Fedora) includes a hard dependency on Jena, so it's clear that the lib must be included in future Fedora distributions when Mulgara is updated.</p></div></div>
+<div class="comment" id="comment-11192"><div class="by">Chris Wilper, 2009-12-19 01:36 UTC</div><div class="text"><p>Eddie updated us to the latest Mulgara for 3.3 and the Fedora webapp now includes Jena.</p></div></div>
+<p><a href="data/FCREPO-516.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

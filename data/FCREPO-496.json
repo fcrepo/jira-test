@@ -1,0 +1,1539 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [
+   {
+    "author": {
+     "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+     "accountType": "atlassian",
+     "active": true,
+     "avatarUrls": {
+      "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+      "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+      "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+      "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+     },
+     "displayName": "Chris Wilper",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+     "timeZone": "America/Halifax"
+    },
+    "content": "https://fedora-repository.atlassian.net/rest/api/3/attachment/content/10055",
+    "created": "2009-06-02T08:48:49.492-0300",
+    "filename": "CleanupContextListener.java",
+    "id": "10055",
+    "mimeType": "text/x-java",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/attachment/10055",
+    "size": 2440
+   }
+  ],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "After writing a ServletContextListener dedicated to cleaning up all the usual suspects (using the suggested fix above, jdbc driver deregistration, explicit shutdown of Log4j and commons logging) there are still classes left that prevent Fedora from being fully garbage collected while undeploying the application. The responsible libraries can be narrowed down to Xerces, Axis and Derby:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Xerces-J",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Tomcat uses a sax parser for parsing the configuration files. As Xerces is included in Fedora's WEB-INF/lib directory, Tomcat apparently ",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "uses parts of Xerces from Fedora rather than the one bundled with the JRE. This in turn creates a dependence of Tomcat on the Fedora classloader which can't be collected any more. The Tomcat documentation on class loading suggests otherwise[1] but following the tip at [2] and removing xerces.jar from Fedora solves the problem. A heap dump taken after the removal of Xerces from Fedora shows no signs of uncollected DocumentBuilderImpl instances or classes. ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Axis",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Most remaining shortest paths to the gc rootset appeared to be linked to Axis.",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "All Axis framework versions 1.3 and 1.4 suffer from a known class loader leak[3]. This leak",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "stems from a Cache that uses a ThreadLocal and fails to clean it up properly during shutdown. The issue hasn't been fixed. A cusom retrofitted fix ",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "for 1.3 (the version used) along with some more tweaking of the ThreadLocal used for caching showed the successful removal of all Axis related classes.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Derby",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Derby also seems to have some classloader leaks. After fixing Xerces and Axis related problems only classes from Derby appeard in the root set preventing the classloader from being collected. The Derby issues are significantly harder to trace down, but appear to be linked to Derby's ConcurrentCache.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Solution:",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "It appears that in order to fix all classloader leaks Xerces has to be removed, Axis patched or upgraded to 2.x and Derby probably has to be patched as well. ",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "After fixing the Xerces and Axis related problems and substituting Derby with PostgreSQL the OOM does no longer occur. Heap dumps don't reveal any more classes that are not supposed to be loaded and JConsole shows the successful collection of PermGen after some time.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Method used:",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "In order to reproduce the issue the following steps were taken:",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "1. deploy fedora",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "2. check permgen",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "3. undeploy fedora",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "4. check permgen",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "5. trigger heap dump",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "6. analyze heap dump with Yourkit Profiler or Eclipse Memory Analyzer, search for classes that are not supposed to be loaded, identify the respective leaking classloader and find the shortest paths from gc root ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Environment: Java 1.6.0_13, OSX, Fedora 3.2.1 default installation, Tomcat 5.5.26",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "[1] ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://tomcat.apache.org/tomcat-5.5-doc/class-loader-howto.html"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://tomcat.apache.org/tomcat-5.5-doc/class-loader-howto.html",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "[2] ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://ampedandwired.com/2008/05/09/causes-of-java-permgen-memory-leaks"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://ampedandwired.com/2008/05/09/causes-of-java-permgen-memory-leaks",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "[3] ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://issues.apache.org/jira/browse/AXIS-2674"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://issues.apache.org/jira/browse/AXIS-2674",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2009-07-13T11:45:50.351-0300",
+     "id": "10970",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10970",
+     "updateAuthor": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2009-07-13T11:45:50.351-0300"
+    },
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Found this re:Derby: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://issues.apache.org/jira/browse/DERBY-3745"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://issues.apache.org/jira/browse/DERBY-3745",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2009-07-14T12:31:08.588-0300",
+     "id": "10972",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10972",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2009-07-14T12:31:08.588-0300"
+    },
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Discussed on Jul 14th call, for xerces, will test more to see if we can drop it.  For Derby, will punt (and point to the outstanding issue) since it's not a recommended db for running Fedora in production in anyway.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2009-07-14T12:35:50.108-0300",
+     "id": "10973",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10973",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2009-07-14T12:35:50.108-0300"
+    },
+    {
+     "author": {
+      "accountId": "5d83b5f927bbf40c2c32ceeb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png"
+      },
+      "displayName": "Bill Branan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5d83b5f927bbf40c2c32ceeb",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Discussed in July 21 committer call. Migration away from Axis 1.3 is a large effort that will likely not happen soon. Plan for this issue is to patch Axis 1.3 as necessary to allow garbage collection of the Fedora classloader, then look into ",
+          "type": "text"
+         },
+         {
+          "attrs": {
+           "url": "https://fedora-repository.atlassian.net/browse/FCREPO-452#icft=FCREPO-452"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": " at a later date.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2009-07-21T13:43:40.644-0300",
+     "id": "10979",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10979",
+     "updateAuthor": {
+      "accountId": "5d83b5f927bbf40c2c32ceeb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png"
+      },
+      "displayName": "Bill Branan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5d83b5f927bbf40c2c32ceeb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2009-07-21T13:43:40.644-0300"
+    },
+    {
+     "author": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Patched Axis and found another leak. After undeploy there are two remaining Instances of org.apache.commons.logging.impl.Log4jLogger being held on by Tomcat. It seems that this kind of issue has been known for some time, see [1]. After having unsuccessfully tried a number of options (upgrading commons logging, searching for possible leak scenarios in the code base, removing commons logging and replacing tomcat/bin/commons-logging-api.jar), only removing both log4j and commons logging from the webapp and placing them in tomcat/common/lib fixed this remaining classloader leak. ",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Given the many problems that the dynamic binding approach of commons logging brings along, it should be considered abandoning commons logging in favor of slf4j. The slf4j approach avoids classloader issues altogether by using a static binding approach, see [1] and [2].",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "There is one other thing that influences memory during undeploy: the finalizer. As there are some classes in the Fedora codebase that override the finalize() method, memory usage can build up when the webapp is deployed/undeployed in rapid succession. It takes at least two GCs until a finalizable object can be collected, and the finalizer queue may not keep up with finalizing its objects because the finalizer is a low priority thread and therefore eventually cause an OOM. For \"normal\" deploy/undeploy cycles this should however not be an issue.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "[1] ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://www.qos.ch/logging/classloader.jsp"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://www.qos.ch/logging/classloader.jsp",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "[2] ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://www.slf4j.org/"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://www.slf4j.org",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2009-07-31T12:27:06.599-0300",
+     "id": "10988",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10988",
+     "updateAuthor": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2009-07-31T12:27:06.599-0300"
+    },
+    {
+     "author": {
+      "accountId": "6089a4cb543264006867626e",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "24x24": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "32x32": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "48x48": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png"
+      },
+      "displayName": "Stephen Bayliss",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4cb543264006867626e",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "There's a post on the OrbeonForms mailing list with some useful comments on tuning the JVM for PermGen problems:-",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "http://mail.ow2.org/wws/arc/ops-users/2009-09/msg00129.html"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "http://mail.ow2.org/wws/arc/ops-users/2009-09/msg00129.html",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2009-09-16T07:04:02.361-0300",
+     "id": "11009",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/11009",
+     "updateAuthor": {
+      "accountId": "6089a4cb543264006867626e",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "24x24": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "32x32": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "48x48": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png"
+      },
+      "displayName": "Stephen Bayliss",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4cb543264006867626e",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2009-09-16T07:04:02.361-0300"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "No further releases planned for 3.x",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-01-16T17:02:35.370-0400",
+     "id": "13131",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/13131",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-01-16T17:02:35.370-0400"
+    }
+   ],
+   "maxResults": 7,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment",
+   "startAt": 0,
+   "total": 7
+  },
+  "components": [
+   {
+    "description": "Core Repository Service",
+    "id": "10000",
+    "name": "legacy - Fedora",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/component/10000"
+   }
+  ],
+  "created": "2009-06-02T08:48:49.486-0300",
+  "creator": {
+   "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+    "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+    "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+    "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+   },
+   "displayName": "Chris Wilper",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|10059s:",
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "2009-07-13T11:45:50.351-0300",
+  "customfield_10025": "1_*:*_1_*:*_3559789254_*|*_3_*:*_1_*:*_173938902175_*|*_6_*:*_1_*:*_0_*|*_10003_*:*_1_*:*_134472",
+  "customfield_10026": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "Reported by Graham Triggs:",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "When repeatedly deploying/undeploying the Fedora webapp (without restarting Tomcat), the JVM permgen size continues to grow.  This can lead to an eventual out-of-memory condition.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "This is caused by a failure of classes to be unloaded.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "Graham has seen this before, and has dealt with it by using a \"cleanup context listener\" that gets invoked at shutdown time.  Part of this is due to JDBC drivers not being automatically unregistered when the webapp is stopped (this is what the attached java file deals with).  Part also appears to be caused by a JAXP DocumentBuilderImpl reference that is being held by a ThreadLocal.  This reference hasn't been tracked down fully yet.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "While investigating this issue, Graham came across a flaw in the shutdown code that can prevent clean shutdown if ManagementModule doesn't shut down properly:",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "\"...during the shutdown code, the ManagementModule hadn't been fully initialised, so it was then throwing an exception during shutdown (not an MSE), so all the remaining modules never had their shutdown code called (and so the Thread wasn't stopped, and Tomcat couldn't stop).",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "The local fix is to add a null check to ManagementModule's shutdown procedure:",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "public void shutdownModule() throws ModuleShutdownException {",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "if (invocationHandlers != null) {",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "for (AbstractInvocationHandler h : invocationHandlers) {",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "h.close();",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "}",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "}",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": "}",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "Thus preventing an NPE that can occur. Although the shutdown method in Server should probably be more defensive and catch Throwables (not just MSEs) to ensure that all remaining modules are at least attempted to be cleaned up.\"",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "Tomcat",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "fixVersions": [],
+  "issuelinks": [
+   {
+    "id": "10469",
+    "outwardIssue": {
+     "fields": {
+      "issuetype": {
+       "avatarId": 10315,
+       "description": "Functionality or a feature expressed as a user goal.",
+       "hierarchyLevel": 0,
+       "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+       "id": "10001",
+       "name": "Story",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10001",
+       "subtask": false
+      },
+      "priority": {
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/minor.svg",
+       "id": "10004",
+       "name": "Minor",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10004"
+      },
+      "status": {
+       "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+       "id": "6",
+       "name": "Closed",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+       "statusCategory": {
+        "colorName": "green",
+        "id": 3,
+        "key": "done",
+        "name": "Done",
+        "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+       }
+      },
+      "summary": "Move away from Axis 1.3"
+     },
+     "id": "10440",
+     "key": "FCREPO-452",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10440"
+    },
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLink/10469",
+    "type": {
+     "id": "10007",
+     "inward": "required by",
+     "name": "Dependency",
+     "outward": "depends on",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLinkType/10007"
+    }
+   },
+   {
+    "id": "10487",
+    "inwardIssue": {
+     "fields": {
+      "issuetype": {
+       "avatarId": 10315,
+       "description": "Functionality or a feature expressed as a user goal.",
+       "hierarchyLevel": 0,
+       "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+       "id": "10001",
+       "name": "Story",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10001",
+       "subtask": false
+      },
+      "priority": {
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/minor.svg",
+       "id": "10004",
+       "name": "Minor",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10004"
+      },
+      "status": {
+       "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+       "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+       "id": "6",
+       "name": "Closed",
+       "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+       "statusCategory": {
+        "colorName": "green",
+        "id": 3,
+        "key": "done",
+        "name": "Done",
+        "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+       }
+      },
+      "summary": "Switch to SLF4J with Logback as primary logging framework"
+     },
+     "id": "10573",
+     "key": "FCREPO-630",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10573"
+    },
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLink/10487",
+    "type": {
+     "id": "10006",
+     "inward": "addressed by",
+     "name": "Addresses",
+     "outward": "addresses",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issueLinkType/10006"
+    }
+   }
+  ],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10303,
+   "description": "A problem or error.",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+   "id": "10004",
+   "name": "Bug",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10004",
+   "subtask": false
+  },
+  "labels": [],
+  "lastViewed": null,
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/minor.svg",
+   "id": "10004",
+   "name": "Minor",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10004"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+    "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+    "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+    "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+   },
+   "displayName": "Chris Wilper",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "The problem described is an issue which will never be fixed.",
+   "id": "10007",
+   "name": "Won't Fix",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10007"
+  },
+  "resolutiondate": "2015-01-16T17:02:35.358-0400",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": null,
+  "subtasks": [],
+  "summary": "Permgen grows when Fedora deployed/undeployed w/o restarting Tomcat",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2015-01-16T17:02:35.386-0400",
+  "versions": [
+   {
+    "archived": false,
+    "description": "",
+    "id": "10008",
+    "name": "Fedora 2.2.4",
+    "releaseDate": "2008-10-24",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10008"
+   },
+   {
+    "archived": false,
+    "description": "",
+    "id": "10022",
+    "name": "Fedora 3.2",
+    "releaseDate": "2009-05-08",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10022"
+   }
+  ],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-496/votes",
+   "votes": 0
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-496/watchers",
+   "watchCount": 1
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "10439",
+ "key": "FCREPO-496",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [
+   {
+    "author": {
+     "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+     "accountType": "atlassian",
+     "active": true,
+     "avatarUrls": {
+      "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+      "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+      "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+      "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+     },
+     "displayName": "Chris Wilper",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+     "timeZone": "America/Halifax"
+    },
+    "content": "https://fedora-repository.atlassian.net/rest/api/3/attachment/content/10055",
+    "created": "02/Jun/09 8:48 AM",
+    "filename": "CleanupContextListener.java",
+    "id": "10055",
+    "mimeType": "text/x-java",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/attachment/10055",
+    "size": "2 kB"
+   }
+  ],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>After writing a ServletContextListener dedicated to cleaning up all the usual suspects (using the suggested fix above, jdbc driver deregistration, explicit shutdown of Log4j and commons logging) there are still classes left that prevent Fedora from being fully garbage collected while undeploying the application. The responsible libraries can be narrowed down to Xerces, Axis and Derby:</p>\n\n<p>Xerces-J<br/>\nTomcat uses a sax parser for parsing the configuration files. As Xerces is included in Fedora's WEB-INF/lib directory, Tomcat apparently <br/>\nuses parts of Xerces from Fedora rather than the one bundled with the JRE. This in turn creates a dependence of Tomcat on the Fedora classloader which can't be collected any more. The Tomcat documentation on class loading suggests otherwise<span class=\"error\">&#91;1&#93;</span> but following the tip at <span class=\"error\">&#91;2&#93;</span> and removing xerces.jar from Fedora solves the problem. A heap dump taken after the removal of Xerces from Fedora shows no signs of uncollected DocumentBuilderImpl instances or classes. </p>\n\n<p>Axis<br/>\nMost remaining shortest paths to the gc rootset appeared to be linked to Axis.<br/>\nAll Axis framework versions 1.3 and 1.4 suffer from a known class loader leak<span class=\"error\">&#91;3&#93;</span>. This leak<br/>\nstems from a Cache that uses a ThreadLocal and fails to clean it up properly during shutdown. The issue hasn't been fixed. A cusom retrofitted fix <br/>\nfor 1.3 (the version used) along with some more tweaking of the ThreadLocal used for caching showed the successful removal of all Axis related classes.</p>\n\n<p>Derby<br/>\nDerby also seems to have some classloader leaks. After fixing Xerces and Axis related problems only classes from Derby appeard in the root set preventing the classloader from being collected. The Derby issues are significantly harder to trace down, but appear to be linked to Derby's ConcurrentCache.</p>\n\n<p>Solution:<br/>\nIt appears that in order to fix all classloader leaks Xerces has to be removed, Axis patched or upgraded to 2.x and Derby probably has to be patched as well. <br/>\nAfter fixing the Xerces and Axis related problems and substituting Derby with PostgreSQL the OOM does no longer occur. Heap dumps don't reveal any more classes that are not supposed to be loaded and JConsole shows the successful collection of PermGen after some time.</p>\n\n<p>Method used:<br/>\nIn order to reproduce the issue the following steps were taken:<br/>\n1. deploy fedora<br/>\n2. check permgen<br/>\n3. undeploy fedora<br/>\n4. check permgen<br/>\n5. trigger heap dump<br/>\n6. analyze heap dump with Yourkit Profiler or Eclipse Memory Analyzer, search for classes that are not supposed to be loaded, identify the respective leaking classloader and find the shortest paths from gc root </p>\n\n<p>Environment: Java 1.6.0_13, OSX, Fedora 3.2.1 default installation, Tomcat 5.5.26</p>\n\n<p><span class=\"error\">&#91;1&#93;</span> <a href=\"http://tomcat.apache.org/tomcat-5.5-doc/class-loader-howto.html\" class=\"external-link\" rel=\"nofollow noreferrer\">http://tomcat.apache.org/tomcat-5.5-doc/class-loader-howto.html</a><br/>\n<span class=\"error\">&#91;2&#93;</span> <a href=\"http://ampedandwired.com/2008/05/09/causes-of-java-permgen-memory-leaks\" class=\"external-link\" rel=\"nofollow noreferrer\">http://ampedandwired.com/2008/05/09/causes-of-java-permgen-memory-leaks</a><br/>\n<span class=\"error\">&#91;3&#93;</span> <a href=\"https://issues.apache.org/jira/browse/AXIS-2674\" class=\"external-link\" rel=\"nofollow noreferrer\">https://issues.apache.org/jira/browse/AXIS-2674</a></p>",
+     "created": "13/Jul/09 11:45 AM",
+     "id": "10970",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10970",
+     "updateAuthor": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "13/Jul/09 11:45 AM"
+    },
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Found this re:Derby: <a href=\"https://issues.apache.org/jira/browse/DERBY-3745\" class=\"external-link\" rel=\"nofollow noreferrer\">https://issues.apache.org/jira/browse/DERBY-3745</a></p>",
+     "created": "14/Jul/09 12:31 PM",
+     "id": "10972",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10972",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "14/Jul/09 12:31 PM"
+    },
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Discussed on Jul 14th call, for xerces, will test more to see if we can drop it.  For Derby, will punt (and point to the outstanding issue) since it's not a recommended db for running Fedora in production in anyway.</p>",
+     "created": "14/Jul/09 12:35 PM",
+     "id": "10973",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10973",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "14/Jul/09 12:35 PM"
+    },
+    {
+     "author": {
+      "accountId": "5d83b5f927bbf40c2c32ceeb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png"
+      },
+      "displayName": "Bill Branan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5d83b5f927bbf40c2c32ceeb",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Discussed in July 21 committer call. Migration away from Axis 1.3 is a large effort that will likely not happen soon. Plan for this issue is to patch Axis 1.3 as necessary to allow garbage collection of the Fedora classloader, then look into \n    <span class=\"jira-issue-macro resolved\" data-jira-key=\"FCREPO-452\" >\n                <a href=\"https://fedora-repository.atlassian.net/browse/FCREPO-452\" class=\"jira-issue-macro-key issue-link\"  title=\"Move away from Axis 1.3\" >\n            <img class=\"icon\" src=\"https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium\" />\n            FCREPO-452\n        </a>\n                                                    <span class=\"aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf\">Closed</span>\n            </span>\n at a later date.</p>",
+     "created": "21/Jul/09 1:43 PM",
+     "id": "10979",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10979",
+     "updateAuthor": {
+      "accountId": "5d83b5f927bbf40c2c32ceeb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/8285187b23d5d8ea87a1ecc2e6d456d6?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBB-1.png"
+      },
+      "displayName": "Bill Branan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5d83b5f927bbf40c2c32ceeb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "21/Jul/09 1:43 PM"
+    },
+    {
+     "author": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Patched Axis and found another leak. After undeploy there are two remaining Instances of org.apache.commons.logging.impl.Log4jLogger being held on by Tomcat. It seems that this kind of issue has been known for some time, see <span class=\"error\">&#91;1&#93;</span>. After having unsuccessfully tried a number of options (upgrading commons logging, searching for possible leak scenarios in the code base, removing commons logging and replacing tomcat/bin/commons-logging-api.jar), only removing both log4j and commons logging from the webapp and placing them in tomcat/common/lib fixed this remaining classloader leak. <br/>\nGiven the many problems that the dynamic binding approach of commons logging brings along, it should be considered abandoning commons logging in favor of slf4j. The slf4j approach avoids classloader issues altogether by using a static binding approach, see <span class=\"error\">&#91;1&#93;</span> and <span class=\"error\">&#91;2&#93;</span>.</p>\n\n<p>There is one other thing that influences memory during undeploy: the finalizer. As there are some classes in the Fedora codebase that override the finalize() method, memory usage can build up when the webapp is deployed/undeployed in rapid succession. It takes at least two GCs until a finalizable object can be collected, and the finalizer queue may not keep up with finalizing its objects because the finalizer is a low priority thread and therefore eventually cause an OOM. For \"normal\" deploy/undeploy cycles this should however not be an issue.</p>\n\n\n<p><span class=\"error\">&#91;1&#93;</span> <a href=\"http://www.qos.ch/logging/classloader.jsp\" class=\"external-link\" rel=\"nofollow noreferrer\">http://www.qos.ch/logging/classloader.jsp</a><br/>\n<span class=\"error\">&#91;2&#93;</span> <a href=\"http://www.slf4j.org\" class=\"external-link\" rel=\"nofollow noreferrer\">http://www.slf4j.org</a></p>",
+     "created": "31/Jul/09 12:27 PM",
+     "id": "10988",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/10988",
+     "updateAuthor": {
+      "accountId": "6089a13283b8c6006bf8c461",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a13283b8c6006bf8c461",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "31/Jul/09 12:27 PM"
+    },
+    {
+     "author": {
+      "accountId": "6089a4cb543264006867626e",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "24x24": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "32x32": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "48x48": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png"
+      },
+      "displayName": "Stephen Bayliss",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4cb543264006867626e",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>There's a post on the OrbeonForms mailing list with some useful comments on tuning the JVM for PermGen problems:-</p>\n\n<p><a href=\"http://mail.ow2.org/wws/arc/ops-users/2009-09/msg00129.html\" class=\"external-link\" rel=\"nofollow noreferrer\">http://mail.ow2.org/wws/arc/ops-users/2009-09/msg00129.html</a></p>",
+     "created": "16/Sep/09 7:04 AM",
+     "id": "11009",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/11009",
+     "updateAuthor": {
+      "accountId": "6089a4cb543264006867626e",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "24x24": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "32x32": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png",
+       "48x48": "https://secure.gravatar.com/avatar/ddfaabcc9635974ebed182e89941a947?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FSB-2.png"
+      },
+      "displayName": "Stephen Bayliss",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4cb543264006867626e",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "16/Sep/09 7:04 AM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>No further releases planned for 3.x</p>",
+     "created": "16/Jan/15 5:02 PM",
+     "id": "13131",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment/13131",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "16/Jan/15 5:02 PM"
+    }
+   ],
+   "maxResults": 7,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439/comment",
+   "startAt": 0,
+   "total": 7
+  },
+  "components": null,
+  "created": "02/Jun/09 8:48 AM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "13/Jul/09 11:45 AM",
+  "customfield_10025": null,
+  "customfield_10026": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p>Reported by Graham Triggs:</p>\n\n<p>When repeatedly deploying/undeploying the Fedora webapp (without restarting Tomcat), the JVM permgen size continues to grow.  This can lead to an eventual out-of-memory condition.</p>\n\n<p>This is caused by a failure of classes to be unloaded.</p>\n\n<p>Graham has seen this before, and has dealt with it by using a \"cleanup context listener\" that gets invoked at shutdown time.  Part of this is due to JDBC drivers not being automatically unregistered when the webapp is stopped (this is what the attached java file deals with).  Part also appears to be caused by a JAXP DocumentBuilderImpl reference that is being held by a ThreadLocal.  This reference hasn't been tracked down fully yet.</p>\n\n<p>While investigating this issue, Graham came across a flaw in the shutdown code that can prevent clean shutdown if ManagementModule doesn't shut down properly:</p>\n\n<p>\"...during the shutdown code, the ManagementModule hadn't been fully initialised, so it was then throwing an exception during shutdown (not an MSE), so all the remaining modules never had their shutdown code called (and so the Thread wasn't stopped, and Tomcat couldn't stop).</p>\n\n<p>The local fix is to add a null check to ManagementModule's shutdown procedure:</p>\n\n<p>    public void shutdownModule() throws ModuleShutdownException {<br/>\n        if (invocationHandlers != null) {<br/>\n            for (AbstractInvocationHandler h : invocationHandlers) </p>\n{\n                h.close();\n            }\n<p>        }<br/>\n    }</p>\n\n<p>Thus preventing an NPE that can occur. Although the shutdown method in Server should probably be more defensive and catch Throwables (not just MSEs) to ensure that all remaining modules are at least attempted to be cleaned up.\"</p>",
+  "duedate": null,
+  "environment": "Tomcat",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "16/Jan/15 5:02 PM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": null,
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "16/Jan/15 5:02 PM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10439"
+}

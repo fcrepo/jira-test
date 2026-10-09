@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-701 REST API purgeDatastream - invalid date format for start time purges all versions of a datastream</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-701</span> REST API purgeDatastream - invalid date format for start time purges all versions of a datastream</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Rebecca Sutton Koeser</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2010-05-19 21:58 UTC</td></tr><tr><th>Updated</th><td>2010-07-02 12:00 UTC</td></tr><tr><th>Resolved</th><td>2010-07-02 12:00 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 3, Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>Calling purgeDatastream with a start date-time parameter in a format that Fedora doesn't recognize results in Fedora using a start date-time of null and purging <b>all</b> versions of the datastream.</p>
+
+<p>For example, I have a datastream with versions created at:<br/>
+2010-05-19T20:41:42.903Z, 2010-05-19T20:41:42.540Z, and 2010-05-19T20:41:42.140Z</p>
+
+<p>If I call purgeDatastream with a startDT parameter of 2010-05-19T20:41:42.000540Z (which should remove the 2 newer versions, but format is not quite right), <b>all</b> versions of the datastream are purged.  I get the same behavior if I use a date in another format, e.g. 2010-05-19 20:57:34.739000+00:00 (even for a time that is newer than all the datastream versions).</p>
+
+<p>Here is the output for the purgeDatastream call from the fedora log:</p>
+
+<p>Completed purgeDatastream(pid: eulcoretest:11565, datastreamID: TEXT, startDT: null, endDT: null, logMessage: Purged datastream (ID=TEXT), versions ranging from the beginning of time to the end of time.  This resulted in the permanent removal of 3 datastream version(s) (2010-05-19T16:41:42.140Z, 2010-05-19T16:41:42.540Z, 2010-05-19T16:41:42.903Z) and all associated audit records.)</p>
+
+<p>As a side note, it might be helpful to indicate in the documentations that Fedora <b>will</b> accept a date-time that includes 3 digits of microseconds (same format as what it returns in datastream history)</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11392"><div class="by">eddie, 2010-05-24 22:26 UTC</div><div class="text"><p>This is pretty bad. Without actually looking at the code, I can guess what's happening: the DateUtility method for parsing a datetime string returns null if it can't parse the date. If the caller isn't checking for that and simply passing the returned value the situation described could result.</p>
+
+<p>So, either, check for null return, or, consider actually making the DateUtility method throw an exception (unchecked, maybe illegalargumentexception) but I'm not sure what else that would affect.</p>
+
+<p>For 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-689" >
+                <a href="FCREPO-689.html" class="jira-issue-macro-key issue-link"  title="Enable optimistic locking for modify operations" >
+            
+            FCREPO-689
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, I already started some work on parsing datetime strings as rest params and returning 400 errors if there's a date parse error. I only needed it to handle lastModifiedDate, but I can apply it to all the REST params that take datetimes.</p></div></div>
+<div class="comment" id="comment-11394"><div class="by">eddie, 2010-05-25 07:42 UTC</div><div class="text"><p>This needs to be verified w/ the SOAP API as well. Glancing at the code, it looks like it suffers from the same problem (see FedoraAPIMBindingSOAPHTTPImpl). </p>
+
+<p>Increasingly thinking that DateUtility should throw at least an unchecked exception if there's a parseexception. However, should a null argument just return null? We have a lot of code that can validly take a null Date (or date string), so either we check for that before calling DateUtility or allow DateUtility to continue to return null for null arguments.</p></div></div>
+<p><a href="data/FCREPO-701.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-504 Allow Fedora to be deployed as a generic WAR</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-504</span> Allow Fedora to be deployed as a generic WAR</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Bill Branan</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2009-06-08 14:56 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2011-07-26 18:49 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is duplicated by</th><td><a href="FCREPO-501.html">FCREPO-501</a> Fedora as WAR without need to run installer</td></tr><tr><th>Required by</th><td><a href="FCREPO-534.html">FCREPO-534</a> Out of box deployable war, without a separate installer</td></tr></table>
+<h2>Description</h2>
+<p>From Asger Blekinge-Rasmussen:</p>
+
+<p>(In a discussion at OR'09) we came up with a total redesign of the fedora install procedure. Here goes, from memory:</p>
+
+<p>1. Fedora is just a .war file. There is no installer. (Distribution includes the Fedora WAR and Fedora.fcfg file.)<br/>
+2. You install said war file in a tomcat. (Renaming the WAR file as necessary to indicate the preferred context name)<br/>
+3. Upon init of the war file, fedora reads /fedora/fedora.fcfg, or another location specified in the war file's web.xml (or specified by command line or environment variable)<br/>
+4. This config file specifies, among all the things it already does, the Fedora Home dir.<br/>
+5. If this dir does not exist, it is created and populated with the nessesary stuff from the war file.</p>
+
+<p>The purpose of the current installer is primarily to set up the web.xml. That settings have to be set up in the web.xml is unfortunate, but unavoidable. (The installer also creates and moves files to fedora home, but this can be done during WAR startup.)</p>
+
+<p>The features that are set up, again from memory:<br/>
+1. SSL endpoints<br/>
+2. Other endpoints<br/>
+3. Servlet filters for Authentication</p>
+
+<p>As far as we could establish, the SSL endpoints are somewhat odd, since people would probably use the tomcat in SSL, rather that the specific web application.</p>
+
+<p>The other endpoints, we envisage, are default enabled. The fedora.fcfg specify which class should handle requests for each endpoint, and thus certain endpoints could have stub  implementations per default.</p>
+
+<p>Preferences which were used to set up the servlet filters in the installer could be added to fedora.fcfg then read by a single filter which is always available.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10937"><div class="by">Asger Askov Blekinge, 2009-06-09 11:32 UTC</div><div class="text"><p>From Bill Branan (who quoted my mail above </p>
+
+<p>I would like to push this further, at least to see what roadblocks we come upon. Andrew Woods is currently in the process of reworking the code structure as part of the move towards building with maven, so now doesn't seem like a great time to start an unrelated restructuring task. Once the transition to maven is under our belts, though, I intend to give this a shot, with the help of anyone who is interested.</p>
+
+<p>For now, I'd be happy to collect use-cases from anyone that sees this as beneficial (i.e. how you can see making use of such an install method) or a problem (i.e. how doing an install this way would make life harder for you.)</p>
+</div></div>
+<div class="comment" id="comment-10945"><div class="by">Chris Wilper, 2009-06-16 17:10 UTC</div><div class="text"><p>Description from 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-501" >
+                <a href="FCREPO-501.html" class="jira-issue-macro-key issue-link"  title="Fedora as WAR without need to run installer" >
+            
+            FCREPO-501
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ (dupe of this issue):</p>
+
+<p>Based on a discussion BillB, ChrisW, TimD, Asger, and others had at OR09:</p>
+
+<p>Move toward having a war file for Fedora that doesn' t need to be modified.</p>
+
+<p>1) Make AuthN stuff plug in via an always-configured servlet filter that delegates to what's configured<br/>
+2) Don't use Tomcat for SSL (recommend Apache for this)<br/>
+3) Make "fedora home" conventionally at /fedora (and don't include it in the war by default)</p>
+
+<p>There was also some discussion that needs to be further rationalized re: running multiple Fedoras in one Tomcat. A couple ways to go:</p>
+
+<p>a) require that people edit the war file in these cases (to point to a different fedora.fcfg)<br/>
+b) have a convention where it's stored in /fedora/config/fedora-context.fcfg</p>
+
+<p>Looking at this again, I like a) because it seems to be needed anyway if people need to install in a dir that isn't /fedora (e.g. /usr/local, or whatever convention their sysadmin uses)</p></div></div>
+<div class="comment" id="comment-11012"><div class="by">Chris Wilper, 2009-09-29 16:49 UTC</div><div class="text"><p>Discussed 9/29 as this could be used to support the OSGi build of fedora-as-bundle.  But we should consider how FESL affects this.  At least part of FESL works as a separate war.  Dan mentioned that EARs (Tomcat might support these now) could provide an easier way to deploy multiple wars.  Bill points out that FESL as a separate war is a nice separation of concerns.  Eddie says FESL may need to change how it's configured in order to support this.</p></div></div>
+<div class="comment" id="comment-11247"><div class="by">Chris Wilper, 2010-03-01 09:36 UTC</div><div class="text"><p>I was just doing a test installation of Nexus (the maven repository), and realized the pattern they've used could be followed for doing this with Fedora.  Since Nexus is a repository of sorts, it clearly needs to have local storage, but allows simple installation as a standalone WAR.</p>
+
+<p>Here is how Nexus does it, in a nutshell:</p>
+
+<p>You can install it simply by deploying it as a war in your favorite webapp container.  By default, it will store persistent data in $</p>
+{user.home}
+<p>/sonatype-work/nexus.  But if you've defined a system property <b>or</b> environment variable, it will use that instead.  Lastly, it allows you to edit a properties file in WEB-INF directory to specify it.  If the directory doesn't exist in any case, it is automatically created.</p>
+
+<p>Anytime you want to change the directory, you can stop the webapp, move the directory, change where the configuration points, then restart.</p></div></div>
+<div class="comment" id="comment-12024"><div class="by">Aaron Birkland, 2011-07-26 18:49 UTC</div><div class="text"><p>Final scope of this issue:  remove all customization/configuration from fedora war, and place in FEDORA_HOME.  This allows the use of a single generic war file for a given fedora distribution.  The installer now merely copies this war file into the webapp container of choice and builds a custom FEDORA_HOME based on installer input.  Minor bugfixes can be deployed by merely dropping in a new war file.</p></div></div>
+<p><a href="data/FCREPO-504.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

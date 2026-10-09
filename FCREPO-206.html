@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-206 log4j errors on startup and shutdown</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-206</span> log4j errors on startup and shutdown</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2008-03-21 04:16 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.0b1</td></tr></table>
+<h2>Description</h2>
+<p>On startup:</p>
+
+<p>log4j:WARN No appenders could be found for logger (org.apache.commons.digester.Digester).<br/>
+log4j:WARN Please initialize the log4j system properly.</p>
+
+<p>On shutdown:</p>
+
+<p>log4j:ERROR LogMananger.repositorySelector was null likely due to error in class reloading, using NOPLoggerRepository.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10424"><div class="by">eddie, 2008-03-21 04:21 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: YES</p>
+
+<p>For the shutdown error, see:<br/>
+<a href="https://issues.apache.org/bugzilla/show_bug.cgi?id=41939" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/bugzilla/show_bug.cgi?id=41939</a><br/>
+<a href="https://issues.apache.org/bugzilla/show_bug.cgi?id=42172" class="external-link" rel="nofollow noreferrer">https://issues.apache.org/bugzilla/show_bug.cgi?id=42172</a></p>
+
+<p>To address the startup error, we need to initialize log4j on startup, e.g.:<br/>
+ 1) log4j.properties on the classpath (e.g. fedora/WEB-INF/classes)<br/>
+ 2) log4j initialization servlet</p>
+
+<p>If #2, need to consider changes in servlet loading order (for servlet 2.4, listeners should be loaded first).</p></div></div>
+<div class="comment" id="comment-10425"><div class="by">eddie, 2008-05-16 05:53 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: YES</p>
+
+<p>Fix committed to trunk (r7172). Note that to eliminate the shutdown error message, the system property org.apache.catalina.loader.WebappClassLoader.ENABLE_CLEAR_REFERENCES must be set to false. This is not set by default, but the Tomcat upgrade now allows the system property to be set.</p></div></div>
+<div class="comment" id="comment-10426"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: pangloss<br/>
+Item #: 1921874<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1921874" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1921874</a><br/>
+Closed On: 2008-05-16 00:53:20<br/>
+Closed By: pangloss</p></div></div>
+<p><a href="data/FCREPO-206.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

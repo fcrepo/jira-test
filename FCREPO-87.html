@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-87 XACML Policies unable to use &#x27;...#anyURI&#x27; attributes.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-87</span> XACML Policies unable to use &#x27;...#anyURI&#x27; attributes.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Joe Liversedge</td></tr><tr><th>Created</th><td>2007-08-01 23:01 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2, Fedora 2.2.1, Fedora 3.0b1, Fedora 2.2.2, Fedora 3.0b2, Fedora 3.0, Fedora 2.2.3, Fedora 2.2.4, Fedora 3.1</td></tr></table>
+<h2>Description</h2>
+<p>In some (and possibly all) cases, the XACML engine cannot correctly process attributes of type 'http://www.w3.org/2001/XMLSchema#anyURI'. </p>
+
+<p>This means that the following effectively cannot be used in the context of Fedora XACML policies:</p>
+
+<p>urn:fedora:names:fedora:2.1:resource:object:formatUri<br/>
+urn:fedora:names:fedora:2.1:resource:datastream:formatUri<br/>
+urn:fedora:names:fedora:2.1:resource:datastream:newFormatUri<br/>
+urn:fedora:names:fedora:2.1:resource:datastream:location<br/>
+urn:fedora:names:fedora:2.1:resource:datastream:newLocation<br/>
+urn:fedora:names:fedora:2.1:resource:bdef:location<br/>
+urn:fedora:names:fedora:2.1:resource:bmech:location</p>
+
+<p>The AttributeFinderModule class correctly handles other types of content but the specific condition for #anyURI values is omitted. Adding this code corrects the issue. </p>
+
+<p>I have attached a code diff and a sample policy that should protect from dissemination all datastreams with a formatURI set to 'vital:protected' for a particular object. This does not occur, in our experience, without the modification.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-87/10011_sf-1765751-diff.txt">sf-1765751-diff.txt</a>, 1047 bytes, added by Chris Wilper on 2007-08-01</li>
+<li><a href="attachments/FCREPO-87/10012_sf-1765751-vital-111.xml">sf-1765751-vital-111.xml</a>, 3142 bytes, added by Chris Wilper on 2007-08-01</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-10182"><div class="by">Joe Liversedge, 2007-08-01 23:02 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: jliverse<br/>
+Logged In: YES <br/>
+user_id=1858625<br/>
+Originator: YES</p>
+
+<p>File Added: vital-111.xml</p></div></div>
+<div class="comment" id="comment-10183"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: jliverse<br/>
+Item #: 1765751<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1765751" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1765751</a></p></div></div>
+<div class="comment" id="comment-11275"><div class="by">Chris Wilper, 2010-04-06 15:18 UTC</div><div class="text"><p>Q: Does FeSL's XACML engine allow the use of conditions with #anyURI values?  If so, this can probably be closed as WontFix in the interest of focusing efforts on FeSL.</p></div></div>
+<div class="comment" id="comment-11282"><div class="by">Stephen Bayliss, 2010-04-06 15:46 UTC</div><div class="text"><p>Personally I'm not sure, but I think there is a need to cross-check that everything that Fedora's XACML implementation currently supports is supported within FeSL, and raise tickets for anything that isn't - so probably include this in that effort.</p></div></div>
+<div class="comment" id="comment-11284"><div class="by">Benjamin Armintor, 2010-04-06 15:55 UTC</div><div class="text"><p>If I remember right: <a href="https://fedora-commons.org/jira/browse/FCREPO-453?focusedCommentId=14798&amp;page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#action_14798" class="external-link" rel="nofollow noreferrer">https://fedora-commons.org/jira/browse/FCREPO-453?focusedCommentId=14798&amp;page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#action_14798</a> </p>
+
+<p>I don't think the patched xacml library Fedora has been using supports matching functions against anyURI.</p></div></div>
+<div class="comment" id="comment-13016"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-87.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

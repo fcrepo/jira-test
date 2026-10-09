@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-142 Implement search-and-bind style LDAP authn</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-142</span> Implement search-and-bind style LDAP authn</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-10-17 18:56 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Depends on</th><td><a href="FCREPO-664.html">FCREPO-664</a> Drop the old servletfilter AuthN package in favor of FeSL&#x27;s AuthN</td></tr></table>
+<h2>Description</h2>
+<p>This was requested by multiple users as a more flexible way to allow LDAP authentication.  For details, see:</p>
+
+<p><a href="http://sourceforge.net/mailarchive/message.php?msg_id=46083EEA.2040004%40georgetown.edu" class="external-link" rel="nofollow noreferrer">http://sourceforge.net/mailarchive/message.php?msg_id=46083EEA.2040004%40georgetown.edu</a></p>
+
+<p>Hello all,</p>
+
+<p>This is my first post to the list, so by way of introduction:<br/>
+At Georgetown University, we are just beginning to do a Fedora pilot<br/>
+project, so we're newbies in that arena. But we do have extensive<br/>
+experience in various aspects of AAA middleware, including LDAP. I and<br/>
+another Georgetown staff member are also on the Shibboleth core<br/>
+development team (he is in fact the Shibboleth Java project lead). Over<br/>
+the next few months we might be interested in contributing to Fedora in<br/>
+those areas (via expertise and/or code) if there is a need and a desire<br/>
+for that.</p>
+
+
+<p>I had previously sent some questions over on the users list regarding<br/>
+the new LDAP auth filter that shipped with v2.2. I understand from<br/>
+Richard Green that there was a patch to the 2.2 version, documented here:</p>
+
+<p><a href="http://www.fedora.info/wiki/index.php/Authenticating_Fedora_2.2_against_LDAP" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/wiki/index.php/Authenticating_Fedora_2.2_against_LDAP</a></p>
+
+<p>The patch however has subsequently been found to have other bugs and so<br/>
+the LDAP code is currently being rewritten. That being the case, I<br/>
+wanted to offer a comment/suggestion on how the LDAP auth is configured<br/>
+and attempted. Apologies if this has already been discussed.</p>
+
+<p>I haven't seen the patch, so I can only infer what the patch might be<br/>
+doing based on the LDAP auth wiki topic, but the main observation that I<br/>
+have is that: the original code does not support (and the patch does not<br/>
+appear to support) the standard "search-and-bind" style of doing LDAP<br/>
+auth. The style apparently supported in the patch by that new<br/>
+init-param 'bind-filter' (which I would point out isn't really a filter,<br/>
+BTW...) using a DN substitution pattern works for many people in many<br/>
+environments (it does in fact work for our current LDAP environment here<br/>
+at GU), but it makes 2 critical assumptions that don't hold for everyone:</p>
+
+<p>1) Assumes that users exist in a single OU/container in the directory -<br/>
+Many people have LDAP designs which put users in multiple<br/>
+OU's/containers. You could mitigate that by having instead a list of DN<br/>
+substitution patterns to try, but that's a little inefficient.</p>
+
+<p>2) Assumes that the "username" is part of the LDAP DN - This isn't<br/>
+always the case. Some people use a unique, opaque identifier to<br/>
+construct the DN, based on a GUID or a Person Registry ID or something<br/>
+else that's unique and persistent. Others use other attributes of the<br/>
+user to construct the last RDN component in the DN, for example Active<br/>
+Directory by default does something like 'CN="Brent Putman", CN=Users,<br/>
+DC=domain, DC=org' (or at least used to, I'm not an MS expert).</p>
+
+
+<p>So the search-and-bind style of LDAP auth is the the only technique<br/>
+(that I know of at least) that works for all environments and LDAP<br/>
+designs. This is supported in and AFAIK is in fact the primary way that<br/>
+people do LDAP auth in well-known software projects such as Apache<br/>
+httpd, Apache Tomcat (via the JNDI Realm, although that supports both<br/>
+bind styles) and most others that I've had occasion to work with. If<br/>
+that gives you the warm fuzzies. </p>
+
+<p>In short, that style of auth is:<br/>
+1) bind to the directory, either anonymously or with a privileged DN<br/>
+(depending on whether the users to be authenticated are publicly visible<br/>
+and searchable within the directory)<br/>
+2) search for the user by constructing an LDAP search filter based on<br/>
+the supplied username, e.g. "(uid=putmanb)".<br/>
+3) test user credentials by attempting to bind/rebind as the DN returned<br/>
+in step 2, using the password supplied by the user</p>
+
+<p>So since the code is being rewritten anyway, I would ask that these<br/>
+comments be taken into account - it would make Fedora's LDAP<br/>
+capabilities available to a broader array of organizations. Time<br/>
+permitting (we're trying to get Shibboleth 2.0 out the door...), I might<br/>
+be able to help in getting this implemented and/or tested , etc.</p>
+
+
+<p>Thanks,<br/>
+Brent</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10296"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1815244<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1815244" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1815244</a></p></div></div>
+<div class="comment" id="comment-11281"><div class="by">Chris Wilper, 2010-04-06 15:38 UTC</div><div class="text"><p>FeSL's authN supports this.  When FeSL AuthN is out of the "experiemental" phase, this issue can be closed.</p></div></div>
+<div class="comment" id="comment-12982"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-142.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1511 Hash references (as child nodes) are not modifiable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1511</span> Hash references (as child nodes) are not modifiable</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Cannot Reproduce</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-05-01 15:01 UTC</td></tr><tr><th>Updated</th><td>2015-05-07 20:31 UTC</td></tr><tr><th>Resolved</th><td>2015-05-07 20:31 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>There is an undocumented feature in fedora 4 allowing a user to create child nodes on a resource using a #hashvalue. For instance:</p>
+
+<p>curl -XPOST localhost:8080/rest -H"Slug: mynode"</p>
+
+<p>One can create nested metadata on that node like so:</p>
+
+<p>INSERT </p>
+{
+  &lt;&gt; dc:creator &lt;http://localhost:8080/rest/mynode#creator&gt; .
+  &lt;http://localhost:8080/rest/mynode#creator&gt; a foaf:Person ;
+          foaf:name "Haruki Murakami" .
+}
+<p> WHERE {}</p>
+
+<p>The #creator triples are stored as a child node, so when <a href="http://localhost:8080/rest/mynode" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/mynode</a> is requested, those triples will be included.</p>
+
+<p>This seems like a useful way of handling nested RDF metadata.</p>
+
+<p>However, it does not seem possible to add, remove or otherwise modify this child container.</p>
+
+<p>A subsequent SPARQL update has no effect:</p>
+
+<p>INSERT </p>
+{
+  &lt;http://localhost:8080/rest/mynode#creator&gt; 
+          foaf:homepage &lt;http://www.harukimurakami.com/&gt; .
+}
+<p> WHERE {}</p>
+
+<p>Neither does this:</p>
+
+<p>DELETE </p>
+{ &lt;http://localhost:8080/rest/mynode#creator&gt; foaf:name ?o }
+<p>WHERE </p>
+{ &lt;http://localhost:8080/rest/mynode#creator&gt; foaf:name ?o }
+
+<p>Or this:</p>
+
+<p>DELETE </p>
+{ &lt;http://localhost:8080/rest/mynode#creator&gt; foaf:name "Haruki Murakami" }
+<p>WHERE </p>
+{ &lt;http://localhost:8080/rest/mynode#creator&gt; foaf:name "Haruki Murakami" }
+
+<p>Or this:</p>
+
+<p>DELETE WHERE </p>
+{ &lt;http://localhost:8080/rest/mynode#creator&gt; ?p ?o }
+
+<p>This behavior is clearly problematic. I wonder whether "fixing it" means changing the code to support the sorts of SPARQL update requests listed above, or whether this feature should be removed entirely.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-14221"><div class="by">A. Soroka, 2015-05-06 13:45 UTC</div><div class="text"><p>There is some conversation on the mailing lists about what hash references actually mean in the Fedora model, but little agreement. My suspicion is that they will be most useful to people who insist on doing "XML-style" RDF metadata instead of true Linked Data, as replacements for blank nodes.</p></div></div>
+<div class="comment" id="comment-14235"><div class="by">Former user, 2015-05-07 19:14 UTC</div><div class="text"><p>I tried this with a current master build, and wasn't able to reproduce the problems.  I was able to run this sequence of SPARQL Update commands to successfully insert a property attached to a hash resource, insert a second property on the same resource, remove the first property, add then do a delete/insert combo.</p>
+
+<p>insert </p>
+{ &lt;http://localhost:8080/fcrepo4/rest/1234&gt; &lt;http://example.org/foo&gt; "foo" . &lt;http://localhost:8080/fcrepo4/rest/1234#test&gt; &lt;http://example.org/bar&gt; "bar" . }
+<p> where {}</p>
+
+<hr />
+
+<p>insert </p>
+{ &lt;http://localhost:8080/fcrepo4/rest/1234#test&gt; &lt;http://example.org/baz&gt; "baz" }
+<p> where {}</p>
+
+<hr />
+
+<p>delete where </p>
+{ &lt;http://localhost:8080/fcrepo4/rest/1234#test&gt; &lt;http://example.org/bar&gt; "bar" }
+
+<hr />
+
+<p>delete </p>
+{ &lt;http://localhost:8080/fcrepo4/rest/1234#test&gt; &lt;http://example.org/baz&gt; "baz" }
+<p>insert </p>
+{ &lt;http://localhost:8080/fcrepo4/rest/1234#test&gt; &lt;http://example.org/quux&gt; "quux" }
+<p>where  </p>
+{ &lt;http://localhost:8080/fcrepo4/rest/1234#test&gt; &lt;http://example.org/baz&gt; "baz" }
+
+
+<p>All of this worked as expected for me.  I've created a gist of the script I was using to test here: <a href="https://gist.github.com/escowles/6fd91a14ab319a01e5fc" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/6fd91a14ab319a01e5fc</a></p></div></div>
+<div class="comment" id="comment-14236"><div class="by">Unknown, 2015-05-07 20:30 UTC</div><div class="text"><p>Former user I had been testing these queries with the web interface, and I actually think the issue related to browser caching (probably the etag issue discussed elsewhere). If I issue the queries without a subsequent "force" refresh, the changes are not reflected in the interface. When force-refreshing, the changes show up properly. I'm marking this ticket as closed.</p></div></div>
+<div class="comment" id="comment-14237"><div class="by">Unknown, 2015-05-07 20:31 UTC</div><div class="text"><p>The issue here related to browser caching of resources.</p></div></div>
+<p><a href="data/FCREPO-1511.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

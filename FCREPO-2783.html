@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2783 Update modeshape authentication code for Shiro compatibility</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2783</span> Update modeshape authentication code for Shiro compatibility</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2018-04-30 03:36 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-05-07 21:19 UTC</td></tr><tr><th>Components</th><td>auth</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>An implementation of the modeshape's AuthenticationProvider interface is necessary to have non-anonymous access to Modeshape repository. Currently, the authenticationProvider was removed from the spring configuration as we are using Shrio for AuthZ. When I started the repo with this configuration, all the object interaction were considered as anonymous. The created by and last modified by user were marked as "&lt;anonymous&gt;" even though I has authenticated session with the container and authorized by Shiro WebACFilter. (Note: I also had to make the provider as an empty array in the <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-configs/src/main/resources/config/servlet-auth/repository.json#L26" class="external-link" rel="nofollow noreferrer">repository.json</a> to even get the anonymous mode working)</p>
+
+<p>To actually record the current user as the createdBy/lasModifiedBy user, we need to create an Modeshape session with the current user's SecurityContext. Therefore, we need to update the current ServletContainerAuthenticationProvider, FedoraUserSecurityContext classes to provide the security context to Modeshape, but not do any authorization with FAD as it is already taken care of by Shiro WebACFilter.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19965"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-04-30 15:06 UTC</div><div class="text"><p>Initial implementation completed with PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1350/files" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1350</a></p></div></div>
+<div class="comment" id="comment-19966"><div class="by">Peter Matthew Eichman, 2018-04-30 17:38 UTC</div><div class="text"><p>Mohamed Mohideen Abdul Rasheed I had also started an implementation of this as a separate ShiroAuthenticationProvider class that picks up the user information from the authenticated Shiro Subject.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">package</span> org.fcrepo.auth.webac;
+
+<span class="code-keyword">import</span> java.util.Map;
+
+<span class="code-keyword">import</span> javax.jcr.Credentials;
+
+<span class="code-keyword">import</span> org.apache.http.auth.BasicUserPrincipal;
+<span class="code-keyword">import</span> org.apache.shiro.SecurityUtils;
+<span class="code-keyword">import</span> org.apache.shiro.subject.PrincipalCollection;
+<span class="code-keyword">import</span> org.apache.shiro.subject.Subject;
+<span class="code-keyword">import</span> org.modeshape.jcr.ExecutionContext;
+<span class="code-keyword">import</span> org.modeshape.jcr.security.AuthenticationProvider;
+<span class="code-keyword">import</span> org.modeshape.jcr.security.SecurityContext;
+
+
+<span class="code-keyword">public</span> <span class="code-keyword">class </span>ShiroAuthenticationProvider <span class="code-keyword">implements</span> AuthenticationProvider {
+
+    @Override
+    <span class="code-keyword">public</span> ExecutionContext authenticate(Credentials credentials, <span class="code-object">String</span> repositoryName, <span class="code-object">String</span> workspaceName,
+            ExecutionContext repositoryContext, Map&lt;<span class="code-object">String</span>, <span class="code-object">Object</span>&gt; sessionAttributes) {
+
+        <span class="code-keyword">final</span> Subject currentUser = SecurityUtils.getSubject();
+
+        <span class="code-keyword">return</span> repositoryContext.with(<span class="code-keyword">new</span> ShiroSecurityContext(currentUser));
+    }
+
+    <span class="code-keyword">public</span> <span class="code-keyword">static</span> <span class="code-keyword">class </span>ShiroSecurityContext <span class="code-keyword">implements</span> SecurityContext {
+
+        <span class="code-keyword">private</span> Subject user;
+
+        <span class="code-keyword">private</span> <span class="code-object">String</span> userName;
+
+        <span class="code-keyword">public</span> ShiroSecurityContext(<span class="code-keyword">final</span> Subject user) {
+            <span class="code-keyword">this</span>.user = user;
+            <span class="code-keyword">final</span> PrincipalCollection principals = user.getPrincipals();
+            <span class="code-keyword">final</span> BasicUserPrincipal userPrincipal = principals.oneByType(BasicUserPrincipal.class);
+            <span class="code-keyword">if</span> (userPrincipal != <span class="code-keyword">null</span>) {
+                <span class="code-keyword">this</span>.userName = userPrincipal.getName();
+            } <span class="code-keyword">else</span> {
+                <span class="code-keyword">this</span>.userName = <span class="code-keyword">null</span>;
+            }
+        }
+
+        @Override
+        <span class="code-keyword">public</span> <span class="code-object">boolean</span> isAnonymous() {
+            <span class="code-keyword">return</span> !user.isAuthenticated();
+        }
+
+        @Override
+        <span class="code-keyword">public</span> <span class="code-object">String</span> getUserName() {
+            <span class="code-keyword">return</span> userName;
+        }
+
+        @Override
+        <span class="code-keyword">public</span> <span class="code-object">boolean</span> hasRole(<span class="code-object">String</span> roleName) {
+            <span class="code-keyword">return</span> user.hasRole(roleName);
+        }
+
+        @Override
+        <span class="code-keyword">public</span> void logout() {
+            <span class="code-comment">// <span class="code-keyword">this</span> method intentionally does nothing
+</span>        }
+
+    }
+
+}
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-19981"><div class="by">Peter Matthew Eichman, 2018-05-03 20:33 UTC</div><div class="text"><p>PR for alternative implementation: <a href="https://github.com/fcrepo4/fcrepo4/pull/1352" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1352</a></p></div></div>
+<div class="comment" id="comment-19987"><div class="by">Andrew Woods, 2018-05-04 19:54 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-19994"><div class="by">Danny Bernstein, 2018-05-07 21:17 UTC</div><div class="text"><p>Merged the PR (<tt><a href="https://github.com/fcrepo4/fcrepo4/commit/83bf0aa021d0f6b71a6616a9e81956c09be8276e" class="external-link" rel="nofollow noreferrer">83bf0aa</a>) and create a new issue to cover the need to integrate shiro authentication piece into fcrpeo-webapp: <a href="https://jira.duraspace.org/browse/FCREPO-2794" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2794</a></tt></p></div></div>
+<p><a href="data/FCREPO-2783.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

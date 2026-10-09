@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1200 Running the mysql create database command the database was created as latin1 not utf-8</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1200</span> Running the mysql create database command the database was created as latin1 not utf-8</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Glen Robson</td></tr><tr><th>Created</th><td>2013-08-30 20:32 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>Red Hat Enterprise Linux Server release 6.4 (Santiago)<br/>
+mysql-server-5.1.67-1.el6_3.x86_64
+<h2>Description</h2>
+<p>Following the instructions at:</p>
+
+<p><a href="http://fedora-commons.org/documentation/3.3/Installation%20and%20Configuration%20Guide.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/documentation/3.3/Installation%20and%20Configuration%20Guide.html</a></p>
+
+<p>it tells you to run:</p>
+
+<p>Create the database. For example, to create a database named "fedora3", enter:</p>
+
+<p>CREATE DATABASE fedora3;</p>
+
+<p>which by default created a latin1 encoded database:</p>
+
+<p>mysql&gt; status<br/>
+--------------<br/>
+mysql  Ver 14.14 Distrib 5.1.67, for redhat-linux-gnu (x86_64) using readline 5.1</p>
+
+<p>Connection id:		11140<br/>
+Current database:	fedora33<br/>
+Current user:		root@localhost<br/>
+SSL:			Not in use<br/>
+Current pager:		stdout<br/>
+Using outfile:		''<br/>
+Using delimiter:	;<br/>
+Server version:		5.1.67 Source distribution<br/>
+Protocol version:	10<br/>
+Connection:		Localhost via UNIX socket<br/>
+Server characterset:	latin1<br/>
+Db     characterset:	latin1<br/>
+Client characterset:	latin1<br/>
+Conn.  characterset:	latin1<br/>
+UNIX socket:		/var/lib/mysql/mysql.sock<br/>
+Uptime:			90 days 18 hours 33 min 5 sec</p>
+
+<p>Threads: 3  Questions: 240484138  Slow queries: 4  Opens: 48  Flush tables: 1  Open tables: 41  Queries per second avg: 30.663<br/>
+--------------</p>
+
+<p>we only discovered this when trying to ingest a Dublin Core datastream which had the ŷ character in them and we got the following error:</p>
+
+<p>Caused by: java.sql.SQLException: Incorrect string value: '\xC5\xB7... ...' for column 'dcDescription' at row 1<br/>
+	at com.mysql.jdbc.SQLError.createSQLException(SQLError.java:1055)<br/>
+	at com.mysql.jdbc.SQLError.createSQLException(SQLError.java:956)<br/>
+	at com.mysql.jdbc.MysqlIO.checkErrorPacket(MysqlIO.java:3491)<br/>
+	at com.mysql.jdbc.MysqlIO.checkErrorPacket(MysqlIO.java:3423)<br/>
+	at com.mysql.jdbc.MysqlIO.sendCommand(MysqlIO.java:1936)<br/>
+	at com.mysql.jdbc.MysqlIO.sqlQueryDirect(MysqlIO.java:2060)<br/>
+	at com.mysql.jdbc.ConnectionImpl.execSQL(ConnectionImpl.java:2542)<br/>
+	at com.mysql.jdbc.PreparedStatement.executeInternal(PreparedStatement.java:1734)<br/>
+	at com.mysql.jdbc.PreparedStatement.executeUpdate(PreparedStatement.java:2019)<br/>
+	at com.mysql.jdbc.PreparedStatement.executeUpdate(PreparedStatement.java:1937)<br/>
+	at com.mysql.jdbc.PreparedStatement.executeUpdate(PreparedStatement.java:1922)<br/>
+	at org.apache.commons.dbcp.DelegatingPreparedStatement.executeUpdate(DelegatingPreparedStatement.java:101)<br/>
+	at fedora.server.utilities.SQLUtilityImpl.i_updateRow(SQLUtilityImpl.java:205)<br/>
+	at fedora.server.utilities.SQLUtilityImpl.i_replaceInto(SQLUtilityImpl.java:143)<br/>
+	at fedora.server.utilities.SQLUtility.replaceInto(SQLUtility.java:91)<br/>
+	at fedora.server.search.FieldSearchSQLImpl.update(FieldSearchSQLImpl.java:240)</p>
+
+<p>Would it be possible to change the Documentation to get people to check what the default character set is for their database or create the database as utf-8 by deafult? </p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12884"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1200.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

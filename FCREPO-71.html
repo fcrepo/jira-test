@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-71 fedora.war deployment fails in JBoss AS with OnlyOnceError</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-71</span> fedora.war deployment fails in JBoss AS with OnlyOnceError</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Peter Murray (test/user account)</td></tr><tr><th>Created</th><td>2007-04-09 19:46 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>Fedora version 2.2 WAR file will not deploy to the JBoss Application Server without modification. The root cause is a duplicate copy of Log4J.jar that is included in the Fedora distribution (JBoss AS includes its own copy). Symptoms of the problem are errors similar to these in the JBoss AS log file:</p>
+
+<p>INFO  <span class="error">&#91;TomcatDeployer&#93;</span> deploy, ctxPath=/fedora, <br/>
+  warUrl=.../tmp/deploy/tmp42671fedora-exp.war/<br/>
+ERROR <span class="error">&#91;STDERR&#93;</span> log4j:ERROR A "org.jboss.logging.util.OnlyOnceErrorHandler" <br/>
+  object is not assignable to a "org.apache.log4j.spi.ErrorHandler" variable.<br/>
+ERROR <span class="error">&#91;STDERR&#93;</span> log4j:ERROR The class "org.apache.log4j.spi.ErrorHandler" was loaded by<br/>
+ERROR <span class="error">&#91;STDERR&#93;</span> log4j:ERROR [WebappClassLoader<br/>
+ delegate: false<br/>
+ repositories:<br/>
+   /WEB-INF/classes/<br/>
+----------&gt; Parent Classloader: java.net.FactoryURLClassLoader@148bd9e] whereas object of type<br/>
+ERROR <span class="error">&#91;STDERR&#93;</span> log4j:ERROR "org.jboss.logging.util.OnlyOnceErrorHandler" was loaded by<br/>
+   <span class="error">&#91;org.jboss.system.server.NoAnnotationURLClassLoader@c2a132&#93;</span>.</p>
+
+<p>Further details at <a href="http://www.fedora.info/wiki/index.php?title=FAQ:_Fedora_under_JBoss_AS" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/wiki/index.php?title=FAQ:_Fedora_under_JBoss_AS</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-71/10001_sf-1697137-jboss-log4j-patch.diff">sf-1697137-jboss-log4j-patch.diff</a>, 4153 bytes, added by Chris Wilper on 2007-04-16</li>
+</ul>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10123"><div class="by">Peter Murray (test/user account), 2007-04-09 19:51 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: datagazetteer<br/>
+Logged In: YES <br/>
+user_id=1572168<br/>
+Originator: YES</p>
+
+<p>The most straight forward resolution, I think, is to create a fourth installation type called 'jboss' that would create a fedora.war file without the Log4J.jar file.  Let me know if this seems reasonable and I'll submit a patch (or modify the source in subversion directly).</p></div></div>
+<div class="comment" id="comment-10124"><div class="by">Peter Murray (test/user account), 2007-04-16 20:30 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: datagazetteer<br/>
+Logged In: YES <br/>
+user_id=1572168<br/>
+Originator: YES</p>
+
+<p>Attached patch addresses the problem by prompting the user (if they entered "custom" as the install type and "other" as the servlet container) for a true/false on whether they are using JBoss AS.  If the response is 'true' the log4j is removed from the fedora.war file built by the installer.</p>
+
+<p>You can see the patch in context (although admittedly with a whole bunch of spurious changes because my IDE removed trailing whitespaces on the end of lines for any file it saved) at <a href="http://drc-dev.ohiolink.edu/changeset/759" class="external-link" rel="nofollow noreferrer">http://drc-dev.ohiolink.edu/changeset/759</a><br/>
+File Added: jboss-log4j-patch.diff</p></div></div>
+<div class="comment" id="comment-10125"><div class="by">Chris Wilper, 2007-12-11 16:13 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: NO</p>
+
+<p>Committed fix to maintenance-2.2 rev 6368...it will go in trunk when dev-144560 is merged.</p></div></div>
+<div class="comment" id="comment-10126"><div class="by">eddie, 2007-12-11 18:33 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: NO</p>
+
+<p>Fixed in maintenance-2.2 (rev 6368) and dev-144560 (rev 6367)</p></div></div>
+<div class="comment" id="comment-10127"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: datagazetteer<br/>
+Item #: 1697137<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1697137" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1697137</a><br/>
+Closed On: 2007-12-11 12:33:35<br/>
+Closed By: pangloss</p></div></div>
+<p><a href="data/FCREPO-71.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

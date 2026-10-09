@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2208 Evaluate Library of Congress BagIt Library</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2208</span> Evaluate Library of Congress BagIt Library</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-09-13 20:27 UTC</td></tr><tr><th>Updated</th><td>2016-12-16 16:01 UTC</td></tr><tr><th>Resolved</th><td>2016-12-16 16:01 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.1.0</td></tr><tr><th>Labels</th><td>bagit, import-export-phase-2</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2360.html">FCREPO-2360</a> Use newer version of LoC bagit library in import-export</td></tr></table>
+<h2>Description</h2>
+<p>Evaluate the Library of Congress BagIt Library: <a href="https://github.com/LibraryOfCongress/bagit-java" class="external-link" rel="nofollow noreferrer">https://github.com/LibraryOfCongress/bagit-java</a></p>
+
+<p>Key priorities are:</p>
+<ul>
+	<li>Avoid reading data twice when adding files to Bags</li>
+	<li>Does it support serializing Bags as e.g., Zip or Tar files?</li>
+</ul>
+
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-18030"><div class="by">Jared Whiklo, 2016-11-21 19:46 UTC</div><div class="text"><p>So quick review (and I'll need to do alot more reading), but version 5 removes a command line interface. Which is probably okay because we just want to use it from inside the existing applications.</p>
+
+<p>However version 5 also no longer supports directly serializing a bag. They do provide example code for how we could implement it ourselves. <br/>
+ie. zip <br/>
+<a href="https://github.com/LibraryOfCongress/bagit-java/blob/master/src/test/java/gov/loc/repository/bagit/examples/serialization/CreateZipBagExample.java" class="external-link" rel="nofollow noreferrer">https://github.com/LibraryOfCongress/bagit-java/blob/master/src/test/java/gov/loc/repository/bagit/examples/serialization/CreateZipBagExample.java</a><br/>
+or tar<br/>
+<a href="https://github.com/LibraryOfCongress/bagit-java/blob/master/src/test/java/gov/loc/repository/bagit/examples/serialization/CreateTarBagExample.java" class="external-link" rel="nofollow noreferrer">https://github.com/LibraryOfCongress/bagit-java/blob/master/src/test/java/gov/loc/repository/bagit/examples/serialization/CreateTarBagExample.java</a></p></div></div>
+<div class="comment" id="comment-18133"><div class="by">Esmé Cowles, 2016-12-09 21:21 UTC</div><div class="text"><p>I started poking around with the LC bagit-java library, and found it was pretty easy to build a bag on disk:</p>
+
+<p><a href="https://gist.github.com/escowles/13306ce01dc557d92aa5f9641fc7afce" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/13306ce01dc557d92aa5f9641fc7afce</a></p>
+
+<p>I think this could work well with the exporter, where we'd setup the Bag at the beginning of the export, add each file to the Bag as we wrote its description to disk (to get the SHA1), and then finalize the Bag at the end of the export.</p></div></div>
+<div class="comment" id="comment-18159"><div class="by">Jared Whiklo, 2016-12-12 16:48 UTC</div><div class="text"><p>Sounds like this is a win then</p></div></div>
+<div class="comment" id="comment-18234"><div class="by">Nick Ruest, 2016-12-15 13:32 UTC</div><div class="text"><p>Jared Whiklo, Esmé Cowles shall we keep this open given <a href="https://github.com/LibraryOfCongress/bagit-java/issues/72" class="external-link" rel="nofollow noreferrer">https://github.com/LibraryOfCongress/bagit-java/issues/72</a> and 5.0.0-RC10, and hash out requirements for walking away from that library?</p></div></div>
+<div class="comment" id="comment-18236"><div class="by">Esmé Cowles, 2016-12-15 13:59 UTC</div><div class="text"><p>Yes, I think should keep this ticket open and continue to assess whether we should go forward with LoC's bagit-java.  Between the JavaFX issue, and the general response to our tickets, I think it's an open question whether it's a good fit.</p></div></div>
+<div class="comment" id="comment-18260"><div class="by">Esmé Cowles, 2016-12-16 15:13 UTC</div><div class="text"><p>Removing bagit-java and implementing our own BagIt support makes our code simpler, and removed dependency on JavaFX: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/68" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/68</a></p></div></div>
+<div class="comment" id="comment-18269"><div class="by">Nick Ruest, 2016-12-16 16:01 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/626223a13e5c98fa2a914260528f59e6370ee5de" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/626223a13e5c98fa2a914260528f59e6370ee5de</a></p></div></div>
+<p><a href="data/FCREPO-2208.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

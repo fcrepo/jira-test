@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2323 Resource with URI property containing hash inaccessible when target is deleted </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2323</span> Resource with URI property containing hash inaccessible when target is deleted </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-12-05 06:57 UTC</td></tr><tr><th>Updated</th><td>2017-03-19 17:01 UTC</td></tr><tr><th>Resolved</th><td>2016-12-08 00:32 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.6.2, Fedora 4.7.1</td></tr><tr><th>Labels</th><td>bug</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2331.html">FCREPO-2331</a> Dead Reference Removal Utility</td></tr></table>
+<h2>Environment</h2>Linux, fcrepo 4.7.0, Tomcat 7
+<h2>Description</h2>
+<p>When a resource has a property made of a URI pointing to a resource managed by the same repository and containing a hash fragment, if the destination resource is deleted, the first resource is not accessible (404) except with HEAD, and the tombstone of the deleted resource is not deletable. </p>
+
+<p>E.g. &lt;/a&gt; ex:link &lt;/a/b#c&gt;</p>
+
+<p>Deleting /a/b causes /a to become inaccessible.  </p>
+
+<p>Attached is a shell script that reproduces this behavior. Tested behind Apache rev proxy. </p>
+
+<p>This is a critical issue since Hydra/Curation Concerns deletes resources in a way that causes this scenario.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2323/10288_test_corruption_non_parent_relationship.sh">test_corruption_non_parent_relationship.sh</a>, 1946 bytes, added by kefo on 2016-12-05</li>
+<li><a href="attachments/FCREPO-2323/10287_test_corruption.sh">test_corruption.sh</a>, 869 bytes, added by scossu on 2016-12-05</li>
+</ul>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-18058"><div class="by">scossu, 2016-12-05 16:25 UTC</div><div class="text"><p>A way to find out which resources are affected by the bug is to crawl the repository and send a HEAD request and a GET request on each of them. If HEAD returns 200 and GET 404, the resource is inaccessible. </p></div></div>
+<div class="comment" id="comment-18059"><div class="by">scossu, 2016-12-05 16:31 UTC</div><div class="text"><p>Good news about this is that the data for the missing resource are still in the external indices. The resource can be possibly recovered (we haven't tested yet) with these steps: </p>
+<ul>
+	<li>Retrieve the resource's triples from a triplestore index</li>
+	<li>Delete the resource (it responds correctly to a DELETE request)—do this only after verifying that you have retrieved all the correct triples or the resource will be gone forever!</li>
+	<li>Delete the tombstone</li>
+	<li>PUT the resource again using the previously retrieved triples</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-18066"><div class="by">kefo, 2016-12-05 17:32 UTC</div><div class="text"><p>Since 4.6.1 and 4.7.0 (the most recent releases) use different version of Modeshape, I wanted to confirm this issue also exists for 4.6.1.   (Running Postgres93 and Tomcat7.)</p>
+
+<p>Also, I've added a script - a modified version of Stefano's - that demonstrates that this problem is not a parent/child (container, container/a) issue but affects siblings too (/container/a, container/b).  Perhaps obvious, but we were curious.</p>
+</div></div>
+<div class="comment" id="comment-18068"><div class="by">kefo, 2016-12-05 17:45 UTC</div><div class="text"><p>Also - while I am thinking of it - if you replaced 'b#c' with 'b/c' in the scripts above, I believe they will not result in the resource becoming inaccessible because Fedora responds "400 Bad Request" when attempting to PATCH resource 'a' with a relationship to resource 'b/c', which does not exist.  The 'PATCH' fails.  This is, of course, in keeping with Fedora behavior of not permitting the creation or updating of resources with relationships to non-existent intra-repository resources.  Hence the focus on the hash URI here.</p>
+</div></div>
+<div class="comment" id="comment-18071"><div class="by">kefo, 2016-12-05 18:16 UTC</div><div class="text"><p>I don't know if this note is helpful to diagnosing and correcting this issue, but it may help making resources accessible again.  </p>
+
+<p>I noted that you can PUT a new resource under the inaccessible resource/container, after which the previously inaccessible resource will again respond 200 to a GET request.</p>
+
+<p>These lines could be tacked on to test_corruption.sh to demonstrate this.</p>
+
+<p>--------------------<br/>
+echo; echo; echo "Now, although inaccessible, can we PUT a resource under ${container} ?"<br/>
+curl -iXPUT "${container}/x"</p>
+
+<p>echo; echo; echo "Let's fetch our new resource."<br/>
+curl -i "${container}/x"</p>
+
+<p>echo; echo; echo "Let's fetch the container, which should now be accessible (again)."<br/>
+curl -i "${container}"<br/>
+--------------------</p></div></div>
+<div class="comment" id="comment-18075"><div class="by">Andrew Woods, 2016-12-05 21:34 UTC</div><div class="text"><p>After some investigation, the issue here is not related specifically to hash-URIs, but instead having links between resources, then deleting a parent of the target resource. The proper clean-up of references is not happening in this case.<br/>
+For example, if:<br/>
+&lt;/a&gt; ex:link &lt;/b/c&gt;<br/>
+..and we delete &lt;/b&gt;, this will result in the same 404 situation documented in this ticket.</p>
+
+<p>It should be fairly straightforward to create a patch that handles these situations. The natural approach is to recurse the children of the resource to be deleted and clean up their inbound references.</p></div></div>
+<div class="comment" id="comment-18080"><div class="by">Andrew Woods, 2016-12-06 04:48 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1147" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1147</a></p></div></div>
+<div class="comment" id="comment-18104"><div class="by">Jared Whiklo, 2016-12-08 00:32 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/add5a4d6964378cc749a3d59e1db8aad892e45d7" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/add5a4d6964378cc749a3d59e1db8aad892e45d7</a></p></div></div>
+<div class="comment" id="comment-18230"><div class="by">kefo, 2016-12-14 23:00 UTC</div><div class="text"><p>I want to report on some testing related to this bug.</p>
+
+<p>We are running fcrepo 4.6.1 in production.  We have about 30,000 of these inaccessible resources.</p>
+
+<p>We cloned the machine so we could test this fix using 4.7.1 RC1.  I backed up the entire repository (fcr:backup), installed 4.7.1 RC1, and restored the repository.  I then ran a verification script that evaluated every resource for the GET 404, HEAD 200 pattern.  By and large, 4.7.1 RC1 permitted us access to the previously inaccessible resources.   However, there were a handful of resources – 12 to be precise – that still matched the GET 404, HEAD 200 pattern.  I found that a little odd, but a GET on one of the previously inaccessible resources returned the resource’s triples minus the triple whose object was a non-existent resource.  (We can live with the 12, but I felt it important to note that, for some reason, Fedora still refused to serve up resources affected by this bug.)</p>
+
+<p>Still testing, I then figured I’d run the scripts above against 4.7.1 RC1. Although the scripts no longer produced the 404 GET, 200 HEAD pattern (everything was GET 200, HEAD 200), in one situation the scripts still produced unexpected output.   </p>
+
+<p>We use httpd (apache) to reverse proxy tomcat.   This entails adding a value for the proxyName attribute in Tomcat’s server.xml config file:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               proxyName="server.artic.edu"
+</pre>
+</div></div>
+
+<p>If I set the fedora address in the above scripts to ‘server.artic.edu/fcrepo/rest’ and run the above scripts, the outcome is good.  I get a 200 GET, 200 HEAD response and there appears to be no rogue triple.  If, however, I set the fedora address to ‘localhost:8080/fcrepo/rest’ and I run the above scripts from localhost (obviously), I get a 200 GET, 200 HEAD response (not 404 GET, 200 HEAD), but the triple whose object points to a deleted resource (a non-existent resource) is included in the output.  The URI of the triple's 'object,' which is the deleted (non-existent) resource, begins "http://localhost:8080/....".  That is, the inserted triple bears the domain of the PATCH request, and not Tomcat's proxyName setting.  I'm not sure if this is by design, but it was unexpected and seems related to this issue.</p>
+
+</div></div>
+<div class="comment" id="comment-18243"><div class="by">scossu, 2016-12-16 03:43 UTC</div><div class="text"><p>We have ~29K resources in our production repository (4.6.1) that are currently inaccessible. End users are hitting those resources and we have to fix them one by one while we are trying to create a script that fixes them in bulk. We are not ready yet to migrate to 4.7.1 in order to take advantage of this bug fix. </p>
+
+<p>Is it possible to create a hotfix for 4.6.1 so we can at least enable the users to use the system without blocks?</p></div></div>
+<div class="comment" id="comment-18278"><div class="by">Andrew Woods, 2016-12-18 22:01 UTC</div><div class="text"><p>Here is a PR for the back-port to the 4.6 branch:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/1148" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1148</a></p></div></div>
+<div class="comment" id="comment-18280"><div class="by">Unknown, 2016-12-21 13:58 UTC</div><div class="text"><p>Backported to 4.6.x via <a href="https://github.com/fcrepo4/fcrepo4/commit/5c9f8fc6c0451e965d480135b3cdd8ddef7a818c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/5c9f8fc6c0451e965d480135b3cdd8ddef7a818c</a></p></div></div>
+<p><a href="data/FCREPO-2323.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

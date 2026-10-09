@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-696 Adding datastream with managed content throws Exception when providing a checksum</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-696</span> Adding datastream with managed content throws Exception when providing a checksum</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-05-12 13:34 UTC</td></tr><tr><th>Updated</th><td>2011-12-20 22:13 UTC</td></tr><tr><th>Resolved</th><td>2010-06-11 11:44 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 3, Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-718.html">FCREPO-718</a> Refactor management of temp and uploaded files</td></tr><tr><th>Is related to</th><td><a href="FCREPO-787.html">FCREPO-787</a> Adding datastream with referenced content on file system throws Exception when providing a checksum</td></tr></table>
+<h2>Description</h2>
+<p>The following was reported on the mailing list:</p>
+
+<p>I'm using Fedora 3.3 and I'm having a little bit of trouble with using checksummed managed datastreams through the REST client directly or the Flex client, and before digging further, I'd like to find out if any one else has run into anything similar:</p>
+
+<p>Using the REST API:</p>
+
+<p>INFO 2010-05-11 19:03:41.341 <span class="error">&#91;http-8080-2&#93;</span> (DefaultManagement) Completed addDatastream(pid: <a href="file:5" class="external-link" rel="nofollow noreferrer">file:5</a>, dsID: File, altIDs: , dsLabel: fo-to-solr.xsl, versionable: true, MIMEType: application/xml, formatURI: null, dsLocation: <a href="file:/opt/scripts/fo-to-solr.xsl" class="external-link" rel="nofollow noreferrer">file:/opt/scripts/fo-to-solr.xsl</a>, controlGroup: M, dsState: A, checksumType: MD5, checksum: 2903fd799d56a1fa15cd614a346cc71a, logMessage: null)<br/>
+ERROR 2010-05-11 19:03:41.341 <span class="error">&#91;http-8080-2&#93;</span> (DatastreamResource) Unexpected error fulfilling REST API request</p>
+
+<p>fedora.server.errors.ValidationException: Checksum Mismatch: ExceptionReadingStream</p>
+
+<p>&#8212;</p>
+
+<p>Using the Fedora Admin Flex client:<br/>
+INFO 2010-05-11 19:07:00.070 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Committing modification of <a href="file:5" class="external-link" rel="nofollow noreferrer">file:5</a><br/>
+INFO 2010-05-11 19:07:00.072 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Getting managed datastream from internal uploaded location: uploaded://6<br/>
+INFO 2010-05-11 19:07:00.101 <span class="error">&#91;http-8080-1&#93;</span> (DefaultDOManager) Replaced managed datastream location with internal id: <a href="file:5+File+File.0" class="external-link" rel="nofollow noreferrer">file:5+File+File.0</a><br/>
+ERROR 2010-05-11 19:07:00.117 <span class="error">&#91;http-8080-1&#93;</span> (DefaultExternalContentManager) URI is not hierarchical<br/>
+java.lang.IllegalArgumentException: URI is not hierarchical<br/>
+<span class="error">&#91;...&#93;</span><br/>
+WARN 2010-05-11 19:07:00.129 <span class="error">&#91;http-8080-1&#93;</span> (Datastream) IOException reading datastream to generate checksum</p>
+
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11408"><div class="by">Former user, 2010-05-31 08:35 UTC</div><div class="text"><p>Here's a more detailed analysis of the issue:<br/>
+If a datastream is added to an existing object, the following chain of methods gets called:</p>
+
+<p>1) DefaultManagement.addDatastream() (call to ds.getChecksum())<br/>
+2) Datastream.getChecksum()<br/>
+3) DatastreamManagedContent.computeChecksum()<br/>
+4) Datastream.getContentStreamForChecksum()<br/>
+5) DatastreamManagedContent.getContentStream()<br/>
+6) ManagementModule.putTempStream(Context, InputStream) --&gt; From 5) to 6) an empty context is passed along which causes the pep to deny auth due to an indeterminate result<br/>
+7) DefaultManagement.putTempStream(Context, InputStream)<br/>
+8) DefaultAuthorization.enforceUpload(context)</p>
+
+<p>The error happens when DatastreamManagedContent passes an empty context to DefaultManagement.putTempStream(..). The issue is not related to the ExternalContentManager in any way. Fedora 3.2 shows the same behavior. </p></div></div>
+<div class="comment" id="comment-11420"><div class="by">Stephen Bayliss, 2010-06-09 17:06 UTC</div><div class="text"><p>Full solution for this would be to implement 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-718" >
+                <a href="FCREPO-718.html" class="jira-issue-macro-key issue-link"  title="Refactor management of temp and uploaded files" >
+            
+            FCREPO-718
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p>
+
+<p>Interim solution is to remove the dependency on API-M putTempStream (in fact this is for user-uploaded content, with timed cleanup of the temp file, which isn't so appropriate for this case) and manage the files directly as temp:// files (in the same manner as temp files are managed eg for ingest, inline binary content managed datastreams etc); then once 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-718" >
+                <a href="FCREPO-718.html" class="jira-issue-macro-key issue-link"  title="Refactor management of temp and uploaded files" >
+            
+            FCREPO-718
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is implemented revisit and handle properly.</p>
+
+<p>DOManager dCommit will clean up any temp:// file used by a managed datastream, so cleanup will happen as part of current code.</p>
+
+<p>DatastreamManagedContent then needs to handle <a href="file://" class="external-link" rel="nofollow noreferrer">file://</a> (directly reading the file), uploaded:// (again directly from the file), plus remote location and existing content location as per current code.</p></div></div>
+<div class="comment" id="comment-11422"><div class="by">Stephen Bayliss, 2010-06-11 11:44 UTC</div><div class="text"><p>Access to local temp and uploaded files directly rather than going through Management.  Pending refactoring of temp and uploaded file management 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-718" >
+                <a href="FCREPO-718.html" class="jira-issue-macro-key issue-link"  title="Refactor management of temp and uploaded files" >
+            
+            FCREPO-718
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-12167"><div class="by">Benjamin Armintor, 2011-12-20 22:13 UTC</div><div class="text"><p>Fix commit: <a href="https://github.com/fcrepo/fcrepo/commit/46ccec1b338dc49e61fc685d2c1b972bfe2a6b7e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/46ccec1b338dc49e61fc685d2c1b972bfe2a6b7e</a></p></div></div>
+<p><a href="data/FCREPO-696.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

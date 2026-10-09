@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1720 Updating mime_type on fcr:metadata via Sparql Update causes an error</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1720</span> Updating mime_type on fcr:metadata via Sparql Update causes an error</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Trey Pendragon</td></tr><tr><th>Assignee</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2015-09-02 18:49 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-09-03 11:52 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1532.html">FCREPO-1532</a> Allow updating mimeType and filename</td></tr></table>
+<h2>Description</h2>
+<p>The error I get when I update ebucore:mimeType is this:</p>
+
+<p>WARN 14:25:52.556 (RepositoryExceptionMapper) Caught repository exception: This method cannot be called on a property with multiple values</p>
+
+<p><a href="https://github.com/projecthydra/active_fedora/compare/file_mime_types?expand=1" class="external-link" rel="nofollow noreferrer">https://github.com/projecthydra/active_fedora/compare/file_mime_types?expand=1</a> is the ActiveFedora branch where this came up.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-15168"><div class="by">Andrew Woods, 2015-09-02 19:03 UTC</div><div class="text"><p>Is the mimetype update failing? or is this issue around a misleading logging message?</p></div></div>
+<div class="comment" id="comment-15169"><div class="by">Trey Pendragon, 2015-09-02 19:25 UTC</div><div class="text"><p>The update works in that if you pull down the fcr:metadata it has the new mimeType, but you get an error and the content isn't returned for the NonRDF resource.</p></div></div>
+<div class="comment" id="comment-15170"><div class="by">Andrew Woods, 2015-09-02 20:06 UTC</div><div class="text"><p>I wonder if there is an issue with the client-request flow. The following scenario works on my local install:</p>
+
+<ul>
+	<li>Find an image file, name it 'test.jpg'</li>
+	<li>Upload file with 'application/pdf' mimetype<br/>
+curl -i -XPUT -H"Content-Type: application/pdf" --data-binary @test.jpg localhost:8080/rest/image</li>
+</ul>
+
+
+<ul>
+	<li>Verify NonRdfSourceDescription for 'application/pdf' mimetype<br/>
+curl -i localhost:8080/rest/image/fcr:metadata</li>
+</ul>
+
+
+<ul>
+	<li>Verify download of image<br/>
+curl localhost:8080/rest/image -o out</li>
+</ul>
+
+
+<ul>
+	<li>Change mimetype<br/>
+curl -i -XPATCH -H"Content-Type: application/sparql-update" --data-binary @patch.su localhost:8080/rest/image/fcr:metadata</li>
+</ul>
+
+
+<p>...Where 'patch.su' is<br/>
+-----------<br/>
+PREFIX ebucore: &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#</a>&gt;</p>
+
+<p>INSERT </p>
+{
+&lt;&gt; ebucore:hasMimeType 'image/jpeg' .
+}
+<p> WHERE {}<br/>
+-----------</p>
+
+<ul>
+	<li>Verify NonRdfSourceDescription for 'image/jpeg' mimetype<br/>
+curl -i localhost:8080/rest/image/fcr:metadata|less</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15171"><div class="by">Trey Pendragon, 2015-09-02 21:23 UTC</div><div class="text"><p>This is the patch that AF generates, which breaks things:</p>
+
+<p>---------------<br/>
+ DELETE </p>
+{
+&lt;http://localhost:8983/fedora/rest/image&gt;
+&lt;http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType&gt; ?change . }
+<p>  WHERE </p>
+{
+&lt;http://localhost:8983/fedora/rest/image&gt;
+&lt;http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType&gt; ?change . }
+<p>;<br/>
+INSERT </p>
+{
+&lt;http://localhost:8983/fedora/rest/image&gt;
+&lt;http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType&gt;
+"text/awesome" .
+}
+<p> WHERE { }<br/>
+---------------</p></div></div>
+<div class="comment" id="comment-15172"><div class="by">Andrew Woods, 2015-09-02 22:54 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/900" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/900</a></p></div></div>
+<div class="comment" id="comment-15174"><div class="by">Former user, 2015-09-03 11:53 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/96140ed88d9732bebaa3004f840fe92b10aa0f01" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/96140ed88d9732bebaa3004f840fe92b10aa0f01</a></p></div></div>
+<p><a href="data/FCREPO-1720.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

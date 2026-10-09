@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3910 Ingests against Fedora 6 hang indefinitely</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3910</span> Ingests against Fedora 6 hang indefinitely</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Answered</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Thomas Bernhart</td></tr><tr><th>Assignee</th><td>Thomas Bernhart</td></tr><tr><th>Created</th><td>2023-10-26 14:58 UTC</td></tr><tr><th>Updated</th><td>2025-03-06 16:16 UTC</td></tr><tr><th>Resolved</th><td>2025-03-06 16:16 UTC</td></tr><tr><th>Relates to</th><td><a href="FCREPO-3970.html">FCREPO-3970</a> database connection timeout when committing a long running Fedora transaction</td></tr></table>
+<h2>Environment</h2>Custom Ingest Action written in Typescript running on separate host<br/>
+<br/>
+Fedora: Version 6.4.0 (Running in Docker)<br/>
+Database: PostgreSQL 12.14 (Running in Docker)<br/>
+<br/>
+Catalina options for Fedora:<br/>
+-Dfcrepo.home=/fcrepo_home<br/>
+-Dfcrepo.db.url=jdbc:<a href="postgresql://db/fcrepo">postgresql://db/fcrepo</a><br/>
+-Dfcrepo.db.user=postgres<br/>
+-Dfcrepo.db.password=PASSWORD<br/>
+-Dfcrepo.db.max.pool.size=20<br/>
+-Dfcrepo.jms.enabled=true<br/>
+-Dfcrepo.jms.baseUrl=<a href="https://446repositoryhashed-lime-cosmos.docuteam.cloud">https://446repositoryhashed-lime-cosmos.docuteam.cloud</a><br/>
+-Dfcrepo.jms.destination.type=queue<br/>
+-Dfcrepo.metrics.enable=true<br/>
+-Dfcrepo.log=INFO<br/>
+-Dfcrepo.activemq.configuration=<a href="file:///opt/fedora/config/activemq.xml">file:///opt/fedora/config/activemq.xml</a>
+<h2>Description</h2>
+<p>The issue has been discussed a while back in <a href="https://wiki.lyrasis.org/display/FF/2023-09-21+-+Fedora+Tech+Meeting" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/FF/2023-09-21+-+Fedora+Tech+Meeting</a>.</p>
+
+
+
+<p>Here is our initial description of the issue (copied from <a href="https://docuteam.atlassian.net/browse/COSCLOUD-312" title="smart-link" class="external-link" rel="nofollow noreferrer">https://docuteam.atlassian.net/browse/COSCLOUD-312</a>):</p>
+
+
+
+<p>Encountered a couple of times now with the larger migrations. This issue looks closer at the effects we see right now on 446ingesthashed-lime-cosmos, but the situations have looked the same on other systems.</p>
+
+<p>Generally, the executions are marked as still running feeder, but do not continue.</p>
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3910/10377_Screenshot_2023-09-08_at_14.06.29-20230908-120634.png" height="307" width="1490" style="border: 0px solid black" /></span></p>
+
+<p>The package size of the oldest execution is large, in this case 128 GB. All executions are stuck at the step <tt>committing transactions</tt>. The oldest execution is stuck there since <tt>2023-09-08 04:24:48.20</tt> .</p>
+
+<p>In Netdata, a high number of locks is reported that barely changes over two hours.</p>
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3910/10375_image-20230908-120958.png" height="270" width="1619" style="border: 0px solid black" /></span></p>
+
+<p>After these two hours, the connections eventually reach 0.</p>
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3910/10376_Screenshot_2023-09-08_at_14.10.17-20230908-121022.png" height="313" width="1619" style="border: 0px solid black" /></span></p>
+
+<p>There is some CPU activity by Fedora during this time, although this could be because the other executions are still writing data. <tt>05:21</tt> is the time when the migration for <tt>CH-001402-9:157323</tt> starts committing its data.</p>
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3910/10378_Screenshot_2023-09-08_at_14.10.59-20230908-121104.png" height="313" width="1619" style="border: 0px solid black" /></span></p>
+
+<p>In this case, we do not really have an error in the Fedora logs. The last message is <tt>DEBUG 03:21:25.043 <span class="error">&#91;http-apr-8080-exec-2&#93;</span> (TransactionImpl) Committing transaction 8dc2f06f-a2bf-49c8-a294-98a722e8f7e1</tt> (note that the containers run in UTC).</p>
+
+
+
+<p>We currently assume that the issue is somehow related to multiple transactions running at the same time in Fedora 6.</p>
+
+
+
+<p>Here is what we have tried so far:</p>
+
+<ol>
+	<li>Increase the locks per transaction for PostreSQL.
+	<ol>
+		<li>Our developer was able to replicate the issue: I setup Netdata in the local box development stack. What I noted there was that once Fedora starts committing the large DIP, the locks go up to 127, which is an odd number.</li>
+		<li>Looking again at Netdata, I noted that the error occured for both 006 and 446 when 64 <tt>AccessShareLocks</tt> were requested. My hunch right now is that it’s the <a href="https://postgresqlco.nf/doc/en/param/max_locks_per_transaction/12/" class="external-link" rel="nofollow noreferrer">64 locks per transaction limit</a> of Postgres that we are hitting and Fedora / Hikari does not handle this correctly, thus all the connections die after two hours.</li>
+		<li>I pushed a commit to <a href="https://bitbucket.org/docuteam/box/pull-requests/296" title="smart-link" class="external-link" rel="nofollow noreferrer">https://bitbucket.org/docuteam/box/pull-requests/296</a> , increasing the lock limit to a 1024 and deployed it to all instances.</li>
+		<li><b>Issue occurred again on the test instance despite the increased amounts of locks.</b></li>
+	</ol>
+	</li>
+	<li>Pushed and deployed a commit for now which should log when the deadlock detection by Postgres gets active.<br/>
+Findings:
+	<ol>
+		<li>on one of the test incances (642), a couple of those <tt>log_locks_wait</tt> started to appear:
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>2023-09-27 14:28:25.923 UTC [12483] LOG:  process 12483 still waiting for ShareLock on transaction 755599 after 1000.173 ms
+2023-09-27 14:28:25.923 UTC [12483] DETAIL:  Process holding the lock: 12477. Wait queue: 12483.
+2023-09-27 14:28:25.923 UTC [12483] CONTEXT:  while updating tuple (4113,44) in relation "containment"
+2023-09-27 14:28:25.923 UTC [12483] STATEMENT:  UPDATE containment SET updated = $1 WHERE fedora_id = $2</pre>
+</div></div>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>2023-09-27 14:28:55.000 UTC [12461] LOG:  process 12461 still waiting for ExclusiveLock on tuple (4113,44) of relation 16462 of database 16384 after 1000.309 ms
+2023-09-27 14:28:55.000 UTC [12461] DETAIL:  Process holding the lock: 12483. Wait queue: 12461.
+2023-09-27 14:28:55.000 UTC [12461] STATEMENT:  UPDATE containment SET updated = $1 WHERE fedora_id = $2</pre>
+</div></div>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>2023-09-27 14:32:02.871 UTC [12480] LOG:  process 12480 still waiting for ExclusiveLock on tuple (4113,44) of relation 16462 of database 16384 after 1000.134 ms
+2023-09-27 14:32:02.871 UTC [12480] DETAIL:  Process holding the lock: 12483. Wait queue: 12461, 12480.
+2023-09-27 14:32:02.871 UTC [12480] STATEMENT:  UPDATE containment SET updated = $1 WHERE fedora_id = $2</pre>
+</div></div>
+<p>and a couple of those queries are still running.</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>SELECT
+  pid,
+  now() - pg_stat_activity.query_start AS duration,
+  query,
+  state
+FROM pg_stat_activity
+WHERE (now() - pg_stat_activity.query_start) &gt; interval '5 minutes';</pre>
+</div></div>
+<p>result:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>   pid  |    duration     |                              query                               |        state        
+-------+-----------------+------------------------------------------------------------------+---------------------
+ 12477 | 00:51:32.011932 | DELETE FROM ocfl_id_map_session_operations WHERE session_id = $1 | idle in transaction
+ 12480 | 00:46:32.457583 | UPDATE containment SET updated = $1 WHERE fedora_id = $2         | active
+ 12483 | 00:50:09.406411 | UPDATE containment SET updated = $1 WHERE fedora_id = $2         | active
+ 12461 | 00:49:40.329056 | UPDATE containment SET updated = $1 WHERE fedora_id = $2         | active
+ 15957 | 00:36:56.64656  | UPDATE containment SET updated = $1 WHERE fedora_id = $2         | active
+ 16827 | 00:22:46.375321 | DELETE FROM ocfl_id_map_session_operations WHERE session_id = $1 | active</pre>
+</div></div></li>
+		<li>I assume <tt>12477</tt> is doing a rollback and blocks everything else. I pushed a commit to add a timeout for <tt>idle in transaction</tt> and deployed it to all systems.<br/>
+<a href="https://bitbucket.org/docuteam/box/commits/db398b8969b92340abbbeb8671bd0d5d7fac18fb" class="external-link" rel="nofollow noreferrer">box: db398b89 Set `idle_in_transaction_timeout` to 30 minutes</a> (This aligns it with the max lifetime for a connection in the Hikari pool.)</li>
+	</ol>
+	</li>
+	<li>Current observations:
+	<ol>
+		<li>Once actions.js (that’s our custom ingest action) confirms to commit a transaction, Fedora locks the <tt>containment</tt> table with a <tt>RowExclusiveLock</tt> and starts committing the storage session.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>INFO 16:03:57.403 [http-apr-8080-exec-2] (Transactions) Committing transaction 'b0620cd9-3e0f-4ff8-b544-18381f5cb804'
+DEBUG 16:03:57.404 [http-apr-8080-exec-2] (TransactionImpl) Waiting for operations in transaction b0620cd9-3e0f-4ff8-b544-18381f5cb804 to complete before committing
+DEBUG 16:03:57.404 [http-apr-8080-exec-2] (TransactionImpl) Committing transaction b0620cd9-3e0f-4ff8-b544-18381f5cb804
+DEBUG 16:04:05.831 [http-apr-8080-exec-2] (ContainmentIndexImpl) Commit of tx b0620cd9-3e0f-4ff8-b544-18381f5cb804 complete with 2335 adds, 0 deletes and 0 purges
+DEBUG 16:04:26.262 [http-apr-8080-exec-2] (DbSearchIndexImpl) Transaction data has been removed from the search transaction tables for txId=b0620cd9-3e0f-4ff8-b544-18381f5cb804 
+DEBUG 16:04:26.262 [http-apr-8080-exec-2] (DbSearchIndexImpl) Commit of tx b0620cd9-3e0f-4ff8-b544-18381f5cb804 complete with 2335 resource adds, 24526 resource associations adds, 0 rdf types adds0,  resource deletes, 0 resource/rdf type associations deletes
+DEBUG 16:04:26.262 [http-apr-8080-exec-2] (OcflPersistentStorageSession) Starting storage session b0620cd9-3e0f-4ff8-b544-18381f5cb804 prepare for commit
+DEBUG 16:04:26.262 [http-apr-8080-exec-2] (DbFedoraToOcflObjectIndex) Committing FedoraToOcfl index changes from transaction b0620cd9-3e0f-4ff8-b544-18381f5cb804
+DEBUG 16:04:27.511 [http-apr-8080-exec-2] (OcflPersistentStorageSession) Starting storage session b0620cd9-3e0f-4ff8-b544-18381f5cb804 commit</pre>
+</div></div></li>
+		<li>As soon as others want to commit their transaction, they are waiting until the previous transaction removes its <tt>RowExclusiveLock</tt>.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>2023-09-27 16:04:35.367 UTC [11322] LOG:  process 11322 still waiting for ShareLock on transaction 761641 after 1000.085 ms
+2023-09-27 16:04:35.367 UTC [11322] DETAIL:  Process holding the lock: 11415. Wait queue: 11322.
+2023-09-27 16:04:35.367 UTC [11322] CONTEXT:  while updating tuple (4113,45) in relation "containment"
+2023-09-27 16:04:35.367 UTC [11322] STATEMENT:  UPDATE containment SET updated = $1 WHERE fedora_id = $2</pre>
+</div></div></li>
+		<li>11415 in this case is again a delete query against the <tt>ocfl_id_map_session_operations</tt> table.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>  pid  |    duration     |                              query                               |        state        
+-------+-----------------+------------------------------------------------------------------+---------------------
+ 11309 | 00:08:06.839094 | UPDATE containment SET updated = $1 WHERE fedora_id = $2         | active
+ 11322 | 00:08:10.274599 | UPDATE containment SET updated = $1 WHERE fedora_id = $2         | active
+ 11415 | 00:08:17.135955 | DELETE FROM ocfl_id_map_session_operations WHERE session_id = $1 | idle in transaction
+(3 rows)</pre>
+</div></div></li>
+		<li>Seems to be a known problem at Lyrasis, at least for a different product.<br/>
+<a href="https://wiki.lyrasis.org/display/DSPACE/Idle+In+Transaction+Problem" title="smart-link" class="external-link" rel="nofollow noreferrer">https://wiki.lyrasis.org/display/DSPACE/Idle+In+Transaction+Problem</a> </li>
+		<li>so, I waited half an hour to see what my newly introduced <tt>idle_in_transaction_timeout</tt> does.</li>
+		<li>First, Postgres notes that it killed the session:
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>2023-09-27 16:34:27.511 UTC [11415] FATAL:  terminating connection due to idle-in-transaction timeou</pre>
+</div></div></li>
+		<li>Then Fedora triggers a rollback.
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ERROR 16:31:55.667 [http-apr-8080-exec-2] (TransactionImpl) Failed to commit transaction: b0620cd9-3e0f-4ff8-b544-18381f5cb804
+INFO 16:31:55.668 [http-apr-8080-exec-2] (TransactionImpl) Rolling back transaction b0620cd9-3e0f-4ff8-b544-18381f5cb804
+DEBUG 16:31:55.668 [http-apr-8080-exec-2] (TransactionImpl) Waiting for operations in transaction b0620cd9-3e0f-4ff8-b544-18381f5cb804 to complete before rolling back
+DEBUG 16:31:55.668 [http-apr-8080-exec-2] (OcflPersistentStorageSession) Rolling back storage session b0620cd9-3e0f-4ff8-b544-18381f5cb804
+DEBUG 16:34:33.140 [http-apr-8080-exec-2] (DbSearchIndexImpl) Transaction data has been removed from the search transaction tables for txId=b0620cd9-3e0f-4ff8-b544-18381f5cb804</pre>
+</div></div>
+<p>On Netdata, we can also see that the locks were released.</p></li>
+	</ol>
+	</li>
+</ol>
+
+
+<p><span class="image-wrap" style=""><img src="attachments/FCREPO-3910/10379_image-20230927-164000.png" height="242" width="1007" style="border: 0px solid black" /></span></p>
+<ol>
+	<li>
+	<ol>
+		<li>Generally, it’s a bit unfortunate that committing one transaction blocks the ingest of all other resources.<br/>
+Anyhow, what I suspect is that this hanging transactions waits on other queries to finish, but we sometimes end up in scenarios where no connection from the DB pool is available. I increased the DB pool to thrice the size of the threads and see how this goes.<br/>
+<a href="https://bitbucket.org/docuteam/box/commits/a39b5b6c952f3d79e5185f82384d4d5e871a592c" title="smart-link" class="external-link" rel="nofollow noreferrer">https://bitbucket.org/docuteam/box/commits/a39b5b6c952f3d79e5185f82384d4d5e871a592c</a> (Setting it to 20)</li>
+	</ol>
+	</li>
+	<li>As large ingests on 642 (one of the test instances) once again failed, I tried again to reproduce the issue locally, but in my development environment, the ingest works. I can also not retry the affected ingest, as Fedora is unable to properly rollback the transaction after Postgres killed it off with <tt>idle_in_transaction_timeout</tt>.<br/>
+Not sure how to continue here, as I cannot provide an example to reproduce the issue. is it still worth a try of the Fedora developers have a hunch why certain ingests of ours could get stuck with the query <tt>DELETE FROM ocfl_id_map_session_operations WHERE session_id = $1</tt> in the state <tt>idle in transaction</tt>?</li>
+</ol>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3910/10375_image-20230908-120958.png">image-20230908-120958.png</a>, 147045 bytes, added by Thomas Bernhart on 2023-10-26</li>
+<li><a href="attachments/FCREPO-3910/10379_image-20230927-164000.png">image-20230927-164000.png</a>, 151704 bytes, added by Thomas Bernhart on 2023-10-26</li>
+<li><a href="attachments/FCREPO-3910/10377_Screenshot_2023-09-08_at_14.06.29-20230908-120634.png">Screenshot 2023-09-08 at 14.06.29-20230908-120634.png</a>, 178813 bytes, added by Thomas Bernhart on 2023-10-26</li>
+<li><a href="attachments/FCREPO-3910/10376_Screenshot_2023-09-08_at_14.10.17-20230908-121022.png">Screenshot 2023-09-08 at 14.10.17-20230908-121022.png</a>, 138528 bytes, added by Thomas Bernhart on 2023-10-26</li>
+<li><a href="attachments/FCREPO-3910/10378_Screenshot_2023-09-08_at_14.10.59-20230908-121104.png">Screenshot 2023-09-08 at 14.10.59-20230908-121104.png</a>, 321097 bytes, added by Thomas Bernhart on 2023-10-26</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-22896"><div class="by">Thomas Bernhart, 2023-10-26 22:09 UTC</div><div class="text"><p>Just added point number 4 in the listing which is the result of the last analysis.</p></div></div>
+<div class="comment" id="comment-22906"><div class="by">Thomas Bernhart, 2023-11-16 16:28 UTC</div><div class="text"><p>Suggestion from Tech Call: Setup New Relic Monitoring for Fedora 6.</p></div></div>
+<div class="comment" id="comment-25364"><div class="by">Thomas Bernhart, 2025-03-06 16:16 UTC</div><div class="text"><p>With our recent changes to the fedora configuration, it looks like we’ve worked around this problem.</p>
+
+<p>Possibly related issues:</p>
+
+<ol>
+	<li><a href="FCREPO-3970.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3970</a></li>
+	<li><a href="FCREPO-3971.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3971</a></li>
+</ol>
+</div></div>
+<p><a href="data/FCREPO-3910.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

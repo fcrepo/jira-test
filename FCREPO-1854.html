@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1854 exception when trying to delete containers with a large number of children</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1854</span> exception when trying to delete containers with a large number of children</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>scossu</td></tr><tr><th>Created</th><td>2015-12-06 22:51 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Environment</h2>Physical server, 8Gb RAM, 16 processors<br/>
+RHEL6, OpenJDK 1.8.0.45, Tomcat 7.0.54 <br/>
+4Gb max JVM heap space<br/>
+Fedora 4.4.0 and 4.4.1-snapshot
+<h2>Description</h2>
+<p> When sending an HTTP DELETE request on a container with a large number of children, the application throws an exception. </p>
+
+<p>The number of children of the container where this happens cannot be easily calculated at the moment; it goes between tens of thousands to over 100k. </p>
+
+<p>Command line to reproduce the error: </p>
+
+<p>$ time curl -X DELETE <a href="http://localhost:8080/fcrepo/rest/prod" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/prod</a><br/>
+javax.jcr.RepositoryException: org.modeshape.common.SystemFailureException: java.lang.IllegalStateException: Transaction TransactionImple &lt; ac, BasicAction: 0:ffffc6281b91:b590:5663c3ad:12 status: ActionStatus.ABORTED &gt; is not in a valid state to be invoking cache operations on.<br/>
+    at org.modeshape.jcr.JcrSession.save(JcrSession.java:1190)<br/>
+    at org.fcrepo.http.api.FedoraLdp.deleteObject(FedoraLdp.java:217)<br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+    at java.lang.reflect.Method.invoke(Method.java:497)<br/>
+    at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)<br/>
+    at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:151)<br/>
+    at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:171)<br/>
+    at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:152)<br/>
+    at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:104)<br/>
+    at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:384)<br/>
+    at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:342)<br/>
+    at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:101)<br/>
+    at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:271)<br/>
+    at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+    at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+    at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+    at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+    at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+    at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:297)<br/>
+    at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:254)<br/>
+    at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1030)<br/>
+    at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:373)<br/>
+    at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:381)<br/>
+    at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:344)<br/>
+    at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:221)<br/>
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:303)<br/>
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)<br/>
+    at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:203)<br/>
+    at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:122)<br/>
+    at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:501)<br/>
+    at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:171)<br/>
+    at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)<br/>
+    at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:950)<br/>
+    at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:116)<br/>
+    at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:408)<br/>
+    at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1040)<br/>
+    at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:607)<br/>
+    at org.apache.tomcat.util.net.JIoEndpoint$SocketProcessor.run(JIoEndpoint.java:314)<br/>
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)<br/>
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)<br/>
+    at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)<br/>
+    at java.lang.Thread.run(Thread.java:745)<br/>
+Caused by: org.modeshape.common.SystemFailureException: java.lang.IllegalStateException: Transaction TransactionImple &lt; ac, BasicAction: 0:ffffc6281b91:b590:5663c3ad:12 status: ActionStatus.ABORTED &gt; is not in a valid state to be invoking cache operations on.<br/>
+    at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:664)<br/>
+    at org.modeshape.jcr.JcrSession.save(JcrSession.java:1171)<br/>
+    ... 43 more<br/>
+Caused by: java.lang.IllegalStateException: Transaction TransactionImple &lt; ac, BasicAction: 0:ffffc6281b91:b590:5663c3ad:12 status: ActionStatus.ABORTED &gt; is not in a valid state to be invoking cache operations on.<br/>
+    at org.infinispan.interceptors.TxInterceptor.enlist(TxInterceptor.java:389)<br/>
+    at org.infinispan.interceptors.TxInterceptor.enlistIfNeeded(TxInterceptor.java:351)<br/>
+    at org.infinispan.interceptors.TxInterceptor.enlistReadAndInvokeNext(TxInterceptor.java:345)<br/>
+    at org.infinispan.interceptors.TxInterceptor.visitGetKeyValueCommand(TxInterceptor.java:318)<br/>
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40)<br/>
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97)<br/>
+    at org.infinispan.interceptors.CacheMgmtInterceptor.visitDataReadCommand(CacheMgmtInterceptor.java:103)<br/>
+    at org.infinispan.interceptors.CacheMgmtInterceptor.visitGetKeyValueCommand(CacheMgmtInterceptor.java:91)<br/>
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40)<br/>
+    at org.infinispan.interceptors.base.CommandInterceptor.invokeNextInterceptor(CommandInterceptor.java:97)<br/>
+    at org.infinispan.interceptors.InvocationContextInterceptor.handleAll(InvocationContextInterceptor.java:102)<br/>
+    at org.infinispan.interceptors.InvocationContextInterceptor.handleDefault(InvocationContextInterceptor.java:71)<br/>
+    at org.infinispan.commands.AbstractVisitor.visitGetKeyValueCommand(AbstractVisitor.java:86)<br/>
+    at org.infinispan.commands.read.GetKeyValueCommand.acceptVisitor(GetKeyValueCommand.java:40)<br/>
+    at org.infinispan.interceptors.InterceptorChain.invoke(InterceptorChain.java:336)<br/>
+    at org.infinispan.cache.impl.CacheImpl.get(CacheImpl.java:430)<br/>
+    at org.infinispan.cache.impl.CacheImpl.get(CacheImpl.java:422)<br/>
+    at org.infinispan.schematic.internal.CacheSchematicDb.get(CacheSchematicDb.java:77)<br/>
+    at org.modeshape.jcr.cache.document.LocalDocumentStore.get(LocalDocumentStore.java:71)<br/>
+    at org.modeshape.jcr.cache.document.WorkspaceCache.documentFor(WorkspaceCache.java:188)<br/>
+    at org.modeshape.jcr.cache.document.WorkspaceCache.documentFor(WorkspaceCache.java:207)<br/>
+    at org.modeshape.jcr.cache.document.WorkspaceCache.persistedCache(WorkspaceCache.java:414)<br/>
+    at org.modeshape.jcr.cache.document.WritableSessionCache.lockNodes(WritableSessionCache.java:1503)<br/>
+    at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:626)<br/>
+    ... 44 more</p>
+
+<p>real    2m51.756s<br/>
+user    0m0.022s<br/>
+sys    0m0.013s</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-16939"><div class="by">kefo, 2016-06-30 19:31 UTC</div><div class="text"><p>I ran into this error today using 4.5.1, fyi.  Probably not surprising; figured I'd add the note.  All environment info above still applies.</p>
+
+<p>Also, connecting related listserv thread: <a href="https://groups.google.com/forum/#!topic/fedora-tech/r8ZmSNSQ7Yg" class="external-link" rel="nofollow noreferrer">https://groups.google.com/forum/#!topic/fedora-tech/r8ZmSNSQ7Yg</a></p>
+</div></div>
+<div class="comment" id="comment-22388"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-1854.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

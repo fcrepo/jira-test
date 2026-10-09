@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2485 Verification tool stops processing on FileNotFoundError </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2485</span> Verification tool stops processing on FileNotFoundError </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Situ, Longshou</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2017-05-24 23:29 UTC</td></tr><tr><th>Updated</th><td>2017-05-26 20:32 UTC</td></tr><tr><th>Resolved</th><td>2017-05-26 19:48 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Labels</th><td>verification</td></tr></table>
+<h2>Description</h2>
+<p>It seems like that the import-export-verify process stop on error "FileNotFoundError: <span class="error">&#91;Errno 2&#93;</span> No such file or directory". Should it continue?</p>
+
+<p>Traceback (most recent call last):<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/bin/fcrepo-verify", line 11, in &lt;module&gt;<br/>
+    load_entry_point('fcrepo-verify===0.2.0-SNAPSHOT', 'console_scripts', 'fcrepo-verify')()<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 722, in _<em>call</em>_<br/>
+    return self.main(*args, **kwargs)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 697, in main<br/>
+    rv = self.invoke(ctx)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 895, in invoke<br/>
+    return ctx.invoke(self.callback, **ctx.params)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 535, in invoke<br/>
+    return callback(*args, **kwargs)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/cli.py", line 58, in main<br/>
+    verifier.execute()<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/verifier.py", line 106, in execute<br/>
+    loggers.file_only)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/resources.py", line 115, in _<em>init</em>_<br/>
+    location=self.origpath, format=config.lang<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/rdflib/graph.py", line 1033, in parse<br/>
+    data=data, format=format)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/rdflib/parser.py", line 169, in create_input_source<br/>
+    file = open(filename, "rb")<br/>
+FileNotFoundError: <span class="error">&#91;Errno 2&#93;</span> No such file or directory: '/Users/lsitu/Documents/Fedora_Import_Export/data_1_/fcrepo/rest/audit/24/9d/d4/62/249dd462-ff64-41ed-ab00-192cd28b234d.ttl'</p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-18932"><div class="by">Danny Bernstein, 2017-05-25 07:17 UTC</div><div class="text"><p>Situ, Longshou:  can you tell me the steps to reproduce?  Please include the command you used to invoke the fcrepo-import-export.  Also please attach the importexport.yml file you passed to fcrepo-verifier plus the full fcrepo-verifier command you used.  Thanks!</p></div></div>
+<div class="comment" id="comment-18946"><div class="by">Situ, Longshou, 2017-05-25 16:35 UTC</div><div class="text"><p>Danny Bernstein I think you can replicate it in the following steps with the plan patent dataset (<a href="https://github.com/fcrepo4-labs/fcrepo-sample-dataset/blob/master/plantpatents/plants.tar.gz):" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-sample-dataset/blob/master/plantpatents/plants.tar.gz):</a></p>
+<ul class="alternate" type="square">
+	<li>Restore the datatset to fedora:<br/>
+$ curl -i -X POST --data-binary "1473315261896-0" "http://localhost:8080/fcrepo/rest/fcr:restore"</li>
+	<li>Export the dataset with binary excluded:<br/>
+$ java -Dfcrepo.log.importexport=DEBUG -jar bin/fcrepo-import-export-0.1.1-SNAPSHOT.jar -a -d data_1 -m export -r <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a></li>
+	<li>Verify the exported resources with the verification tool:<br/>
+fcrepo-verify -l 1-export-log.txt -g DEBUG -v ./importexport.yml</li>
+</ul>
+
+
+<p>./importexport.yml:<br/>
+mode: export<br/>
+predicates: <a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a><br/>
+resource: <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a><br/>
+source: <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a><br/>
+dir: /Users/lsitu/Documents/Fedora_Import_Export/data_1<br/>
+binaries: false<br/>
+rdfLang: text/turtle</p></div></div>
+<div class="comment" id="comment-18959"><div class="by">Joshua Allan Westgard, 2017-05-25 19:01 UTC</div><div class="text"><p>I suspect the import-export tool is excluding the audit container, and the verification tool isn't respecting that when it creates the tree of resources to check.</p></div></div>
+<div class="comment" id="comment-18964"><div class="by">Danny Bernstein, 2017-05-25 19:48 UTC</div><div class="text"><p>Situ, Longshou and Joshua Allan Westgard:   I just ran through the steps  and the fcrepo-verify ran to completion ie: </p>
+
+<p>Verified 608 resources: successes = 508, failures = 100 </p>
+
+<p>No python errors.</p>
+
+<p>I was using fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar,  fcrepo-import-export 0.1.1-SNAPSHOT (5b94e13 - ie as of 1207pm), and fcrepo-import-export-verify (r. 839cb8b1)</p></div></div>
+<div class="comment" id="comment-18970"><div class="by">Situ, Longshou, 2017-05-25 21:07 UTC</div><div class="text"><p>Danny Bernstein It looks like there are some gaps there. I tested it again with <a href="https://s3.amazonaws.com/f4-artifacts/fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar" class="external-link" rel="nofollow noreferrer">fcrepo-webapp-4.8.0-SNAPSHOT-jetty-console-a07a1a46.jar</a> and  fcrepo-import-export-0.1.1-SNAPSHOT-d4780ca2.jar(<a href="https://s3.amazonaws.com/f4-artifacts/fcrepo-import-export-0.1.1-SNAPSHOT-d4780ca2.jar" class="external-link" rel="nofollow noreferrer">https://s3.amazonaws.com/f4-artifacts/fcrepo-import-export-0.1.1-SNAPSHOT-d4780ca2.jar</a>) and I am still seeing the FileNotFoundError error. I think the verification tool is looking for the container references and the existence of the corresponding files.</p>
+
+<p>Could you check whether file "/fcrepo/rest/audit/24/9d/d4/62/249dd462-ff64-41ed-ab00-192cd28b234d.ttl" is there or not? And check whether the exported audit.ttl.ttl file (/fcrepo/rest/audit.ttl) contains the reference to &lt;<a href="http://localhost:8080/fcrepo/rest/audit/24/9d/d4/62/249dd462-ff64-41ed-ab00-192cd28b234d" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/audit/24/9d/d4/62/249dd462-ff64-41ed-ab00-192cd28b234d</a>&gt;?</p>
+
+<p>Here is the log messages:<br/>
+$ fcrepo-verify -l 1N_-import_4.8-log.txt -g DEBUG -v ./importexport.yml<br/>
+2017-05-25 13:54:32,483 INFO     Loading configuration options from ./importexport.yml<br/>
+2017-05-25 13:54:32,484 INFO     key (mode) and (export)<br/>
+2017-05-25 13:54:32,484 INFO     key (predicates) and (<a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a>)<br/>
+2017-05-25 13:54:32,484 INFO     key (resource) and (<a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>)<br/>
+2017-05-25 13:54:32,484 INFO     key (source) and (<a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>)<br/>
+2017-05-25 13:54:32,484 INFO     key (dir) and (/Users/lsitu/Documents/Fedora_Import_Export/data_1N_v48)<br/>
+2017-05-25 13:54:32,484 INFO     key (binaries) and (False)<br/>
+2017-05-25 13:54:32,484 INFO     key (rdfLang) and (text/turtle)<br/>
+2017-05-25 13:54:32,484 INFO     Testing connection to <a href="http://localhost:8080" class="external-link" rel="nofollow noreferrer">http://localhost:8080</a>...<br/>
+2017-05-25 13:54:32,497 INFO     Connection successful.<br/>
+2017-05-25 13:54:32,498 INFO     Starting verification...<br/>
+2017-05-25 13:54:32,498 INFO     Running verification on Fedora 4 export<br/>
+2017-05-25 13:54:32,498 INFO     Commencing resource verification...<br/>
+2017-05-25 13:54:42,498 INFO     Verified 126 resources: successes = 53, failures = 73<br/>
+Traceback (most recent call last):<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/bin/fcrepo-verify", line 11, in &lt;module&gt;<br/>
+    load_entry_point('fcrepo-verify===0.2.0-SNAPSHOT', 'console_scripts', 'fcrepo-verify')()<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 722, in _<em>call</em>_<br/>
+    return self.main(*args, **kwargs)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 697, in main<br/>
+    rv = self.invoke(ctx)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 895, in invoke<br/>
+    return ctx.invoke(self.callback, **ctx.params)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/click/core.py", line 535, in invoke<br/>
+    return callback(*args, **kwargs)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/cli.py", line 61, in main<br/>
+    verifier.execute()<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/verifier.py", line 126, in execute<br/>
+    loggers.file_only)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/fcrepo_verify-0.2.0_SNAPSHOT-py3.6.egg/fcrepo_verify/resources.py", line 117, in _<em>init</em>_<br/>
+    location=self.origpath, format=config.lang<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/rdflib/graph.py", line 1033, in parse<br/>
+    data=data, format=format)<br/>
+  File "/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/rdflib/parser.py", line 169, in create_input_source<br/>
+    file = open(filename, "rb")<br/>
+FileNotFoundError: <span class="error">&#91;Errno 2&#93;</span> No such file or directory: '/Users/lsitu/Documents/Fedora_Import_Export/data_1N_v48/fcrepo/rest/audit/c0/c8/af/98/c0c8af98-72a3-4ce0-96f0-aaf9ac2aa161.ttl'</p></div></div>
+<div class="comment" id="comment-18972"><div class="by">Danny Bernstein, 2017-05-25 21:21 UTC</div><div class="text"><p>I verified that both /fcrepo/rest/audit/24/9d/d4/62/249dd462-ff64-41ed-ab00-192cd28b234d.ttl exists and is referenced from fcrepo/rest/audit.ttl.  Looks like we are using different versions the fcrepo-import-export.  The one I used is fresher.  You might want to try it with the lastest on master.</p></div></div>
+<div class="comment" id="comment-18973"><div class="by">Joshua Allan Westgard, 2017-05-25 21:24 UTC</div><div class="text"><p>It would be nice if the verifier caught this error and handled it appropriately rather than failing out.  I hope similar errors on the Fedora tree will be caught now, but I don't think there's anything to catch errors relating to missing resources on disk yet.</p></div></div>
+<div class="comment" id="comment-18975"><div class="by">Situ, Longshou, 2017-05-25 22:18 UTC</div><div class="text"><p>Joshua Allan Westgard Yes, we can guaranty that all the files can be exported successfully due to some server issues or the issue like referencing non-existing resources as I ran see. In this case I think it could be nice if the verification process can be completed with a full report. </p>
+
+<p>Danny Bernstein I think if you delete the file /fcrepo/rest/audit/24/9d/d4/62/249dd462-ff64-41ed-ab00-192cd28b234d.ttl and try to run the verification tool again, you'll see the error. Thank you so much for sticking with it.</p></div></div>
+<div class="comment" id="comment-19013"><div class="by">Danny Bernstein, 2017-05-26 19:47 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/39" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/39</a></p></div></div>
+<div class="comment" id="comment-19020"><div class="by">Joshua Allan Westgard, 2017-05-26 20:31 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/69c81c05a740b99d0fa5ad9a1d3236f4cced4913" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/69c81c05a740b99d0fa5ad9a1d3236f4cced4913</a></p></div></div>
+<div class="comment" id="comment-19021"><div class="by">Joshua Allan Westgard, 2017-05-26 20:32 UTC</div><div class="text"><p>Verification tool now handles these errors gracefully.</p></div></div>
+<p><a href="data/FCREPO-2485.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

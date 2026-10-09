@@ -1,0 +1,264 @@
+26a27
+> import org.fcrepo.server.security.xacml.pdp.data.FedoraPolicyStore;
+115,142c116,146
+<                     case STATE: // object state change
+<                         // get the "before" object and determine if it was indexed in the cache
+<                         policyBefore = new PolicyObject(m_DOManager,
+<                                                         managementMethod.parameters.context,
+<                                                         managementMethod.parameters.pid,
+<                                                         null,
+<                                                         null,
+<                                                         null);
+<                         boolean indexedBefore = policyBefore.isPolicyActive();
+< 
+<                         returnValue = invokeTarget(target, method, args);
+< 
+<                         // get the object after the state change and determine if it should be indexed
+<                         policyAfter = new PolicyObject(m_DOManager,
+<                                                        managementMethod.parameters.context,
+<                                                        managementMethod.parameters.pid,
+<                                                        managementMethod.parameters.objectState,
+<                                                        null,
+<                                                        null);
+< 
+<                         // if the indexing status has changed, make appropriate changes to the policy cache/index
+<                         if (indexedBefore != policyAfter.isPolicyActive()) {
+<                             if (policyAfter.isPolicyActive() ) {
+<                                 addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+<                             } else {
+<                                 deletePolicy(managementMethod.parameters.pid);
+<                             }
+<                         }
+---
+>                     case STATE: // object state change\
+> 			//if objectState is null, then the state was not changed.  Leave the policy index/cache alone.
+>                         if (managementMethod.parameters.objectState != null && managementMethod.parameters.objectState.length() > 0) {
+> 			  // get the "before" object and determine if it was indexed in the cache
+> 			  policyBefore = new PolicyObject(m_DOManager,
+> 							  managementMethod.parameters.context,
+> 							  managementMethod.parameters.pid,
+> 							  null,
+> 							  null,
+> 							  null);
+> 			  boolean indexedBefore = policyBefore.isPolicyActive();
+> 
+> 			  returnValue = invokeTarget(target, method, args);
+> 
+> 			  // get the object after the state change and determine if it should be indexed
+> 			  policyAfter = new PolicyObject(m_DOManager,
+> 							managementMethod.parameters.context,
+> 							managementMethod.parameters.pid,
+> 							managementMethod.parameters.objectState,
+> 							null,
+> 							null);
+> 
+> 			  // if the indexing status has changed, make appropriate changes to the policy cache/index
+> 			  if (indexedBefore != policyAfter.isPolicyActive()) {
+> 			      if (policyAfter.isPolicyActive() ) {
+> 				  addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+> 			      } else {
+> 				  deletePolicy(managementMethod.parameters.pid);
+> 			      }
+> 			  }
+> 			}
+193,261c197,296
+<                 switch (managementMethod.component) {
+<                     case STATE: // datastream state change
+< 
+<                         // get the object prior to the API call and see if it was indexed/cached
+<                         policyBefore = new PolicyObject(m_DOManager,
+<                                                         managementMethod.parameters.context,
+<                                                         managementMethod.parameters.pid,
+<                                                         null,
+<                                                         managementMethod.parameters.dsID,
+<                                                         null);
+<                         boolean wasIndexed = policyBefore.isPolicyActive();
+< 
+<                         // do the API call
+<                         returnValue = invokeTarget(target, method, args);
+< 
+<                         // the object after the call
+<                         policyAfter = new PolicyObject(m_DOManager,
+<                                                        managementMethod.parameters.context,
+<                                                        managementMethod.parameters.pid,
+<                                                        null,
+<                                                        managementMethod.parameters.dsID,
+<                                                        managementMethod.parameters.dsState);
+< 
+<                         // if indexing status has changed, update the cache/index
+<                         if (wasIndexed != policyAfter.isPolicyActive()) {
+<                             if (policyAfter.isPolicyActive()) {
+<                                 addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+<                             } else {
+<                                 deletePolicy(managementMethod.parameters.pid);
+<                             }
+<                         }
+<                         break;
+< 
+<                     case CONTENT: // datastream add, modify, purge
+< 
+<                         switch (managementMethod.action){
+<                             case CREATE:
+<                                 // do the API call
+<                                 returnValue = invokeTarget(target, method, args);
+< 
+<                                 // get the policy object after the method call
+<                                 policyAfter = new PolicyObject(m_DOManager,
+<                                                                managementMethod.parameters.context,
+<                                                                managementMethod.parameters.pid,
+<                                                                null,
+<                                                                managementMethod.parameters.dsID,
+<                                                                managementMethod.parameters.dsState);
+<                                 if (policyAfter.isPolicyActive())
+<                                     addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+< 
+<                                 break;
+<                             case DELETE:
+<                                 // get the policy object before the call and see if it was indexed
+<                                 policyBefore = new PolicyObject(m_DOManager,
+<                                                                 managementMethod.parameters.context,
+<                                                                 managementMethod.parameters.pid,
+<                                                                 null,
+<                                                                 managementMethod.parameters.dsID,
+<                                                                 managementMethod.parameters.dsState);
+<                                 wasIndexed = policyBefore.isPolicyActive();
+< 
+<                                 // invoke the method
+<                                 returnValue = invokeTarget(target, method, args);
+< 
+<                                 // remove from the cache/index if it was present
+<                                 if (wasIndexed)
+<                                     deletePolicy(managementMethod.parameters.pid);
+< 
+<                                 break;
+---
+> 		if (managementMethod.parameters.dsID.equals(FedoraPolicyStore.POLICY_DATASTREAM)) {
+> 		  switch (managementMethod.component) {
+> 		      case STATE: // datastream state change
+> 			  // get the object prior to the API call and see if it was indexed/cached
+> 			  policyBefore = new PolicyObject(m_DOManager,
+> 							  managementMethod.parameters.context,
+> 							  managementMethod.parameters.pid,
+> 							  null,
+> 							  managementMethod.parameters.dsID,
+> 							  null);
+> 			  boolean wasIndexed = policyBefore.isPolicyActive();
+> 
+> 			  // do the API call
+> 			  returnValue = invokeTarget(target, method, args);
+> 
+> 			  // the object after the call
+> 			  policyAfter = new PolicyObject(m_DOManager,
+> 							managementMethod.parameters.context,
+> 							managementMethod.parameters.pid,
+> 							null,
+> 							managementMethod.parameters.dsID,
+> 							managementMethod.parameters.dsState);
+> 
+> 			  // if indexing status has changed, update the cache/index
+> 			  if (wasIndexed != policyAfter.isPolicyActive()) {
+> 			      if (policyAfter.isPolicyActive()) {
+> 				  addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+> 			      } else {
+> 				  deletePolicy(managementMethod.parameters.pid);
+> 			      }
+> 			  }
+> 			  break;
+> 
+> 		      case CONTENT: // datastream add, modify, purge
+> 			  switch (managementMethod.action){
+> 			      case CREATE:
+> 				  // do the API call
+> 				  returnValue = invokeTarget(target, method, args);
+> 
+> 				  // get the policy object after the method call
+> 				  policyAfter = new PolicyObject(m_DOManager,
+> 								managementMethod.parameters.context,
+> 								managementMethod.parameters.pid,
+> 								null,
+> 								managementMethod.parameters.dsID,
+> 								managementMethod.parameters.dsState);
+> 				  if (policyAfter.isPolicyActive())
+> 				      addPolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+> 
+> 				  break;
+> 			      case DELETE:
+> 				  // get the policy object before the call and see if it was indexed
+> 				  policyBefore = new PolicyObject(m_DOManager,
+> 								  managementMethod.parameters.context,
+> 								  managementMethod.parameters.pid,
+> 								  null,
+> 								  managementMethod.parameters.dsID,
+> 								  managementMethod.parameters.dsState);
+> 				  wasIndexed = policyBefore.isPolicyActive();
+> 
+> 				  // invoke the method
+> 				  returnValue = invokeTarget(target, method, args);
+> 
+> 				  policyAfter = new PolicyObject(m_DOManager,
+> 								managementMethod.parameters.context,
+> 								managementMethod.parameters.pid,
+> 								null,
+> 								managementMethod.parameters.dsID,
+> 								null);
+> 				  
+> 				  if (wasIndexed) {
+> 				      //if policy is still active after, only a version was purged and the policy has changed.  Update
+> 				      if (policyAfter.isPolicyActive()) {
+> 					updatePolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+> 				      
+> 				      //policy is not active after, then it was deleted and needs to be removed from index.
+> 				      } else {
+> 					deletePolicy(managementMethod.parameters.pid);
+> 				      }
+> 				  }
+> 
+> 
+> 				  break;
+> 
+> 			      case UPDATE:
+> 				  // do the API call, get the policy object after the call
+> 				  returnValue = invokeTarget(target, method, args);
+> 				  policyAfter = new PolicyObject(m_DOManager,
+> 								managementMethod.parameters.context,
+> 								managementMethod.parameters.pid,
+> 								null,
+> 								managementMethod.parameters.dsID,
+> 								null);
+> 				  if (policyAfter.isPolicyActive())
+> 				      updatePolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+> 
+> 				  break;
+> 
+> 			      default:
+> 			  }
+263,273c298
+<                             case UPDATE:
+<                                 // do the API call, get the policy object after the call
+<                                 returnValue = invokeTarget(target, method, args);
+<                                 policyAfter = new PolicyObject(m_DOManager,
+<                                                                managementMethod.parameters.context,
+<                                                                managementMethod.parameters.pid,
+<                                                                null,
+<                                                                managementMethod.parameters.dsID,
+<                                                                null);
+<                                 if (policyAfter.isPolicyActive())
+<                                     updatePolicy(managementMethod.parameters.pid, policyAfter.getDsContent());
+---
+> 			  break;
+275,284c300
+<                                 break;
+< 
+<                             default:
+<                         }
+< 
+<                         break;
+< 
+<                     default:
+< 
+<                 }
+---
+> 		      default:
+285a302,303
+> 		  }
+> 		}

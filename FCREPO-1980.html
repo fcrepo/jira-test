@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1980 reindexing broken</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1980</span> reindexing broken</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-04-07 02:42 UTC</td></tr><tr><th>Updated</th><td>2016-04-22 01:32 UTC</td></tr><tr><th>Resolved</th><td>2016-04-22 01:32 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>fcrepo-camel-toolbox 4.5.0</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox 4.5.1</td></tr></table>
+<h2>Description</h2>
+<p>I just installed the fcrepo-camel 4.4.1 and toolbox-features 4.5.0 (thank you Aaron Coburn et al.!) into Karaf. I am getting an odd error when I try to POST to the fcrepo-reindexing route's REST endpoint:<br/>
+$ curl -XPOST <a href="http://fcrepodev.lib.umd.edu:9080/reindexing" class="external-link" rel="nofollow noreferrer">http://fcrepodev.lib.umd.edu:9080/reindexing</a> -H'Content-Type: application/json' -d '<span class="error">&#91;&quot;activemq:queue:solr.reindex&quot;&#93;</span>'<br/>
+java.net.MalformedURLException: no protocol: /reindexing<br/>
+	at java.net.URL.&lt;init&gt;(URL.java:586)<br/>
+	at java.net.URL.&lt;init&gt;(URL.java:483)<br/>
+	at java.net.URL.&lt;init&gt;(URL.java:432)<br/>
+	at org.fcrepo.camel.reindexing.RestProcessor.process(RestProcessor.java:59)<br/>
+<span class="error">&#91;snipped rest of stack trace&#93;</span><br/>
+If I try appending a specific path after the "/reindexing", I just get a 404:<br/>
+$ curl -XPOST <a href="http://fcrepodev.lib.umd.edu:9080/reindexing/tmp" class="external-link" rel="nofollow noreferrer">http://fcrepodev.lib.umd.edu:9080/reindexing/tmp</a> -H'Content-Type: application/json' -d '<span class="error">&#91;&quot;activemq:queue:solr.reindex&quot;&#93;</span>'<br/>
+&lt;html&gt;<br/>
+&lt;head&gt;<br/>
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/&gt;<br/>
+&lt;title&gt;Error 404 Not Found&lt;/title&gt;<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;&lt;h2&gt;HTTP ERROR 404&lt;/h2&gt;<br/>
+&lt;p&gt;Problem accessing /reindexing/tmp. Reason:<br/>
+&lt;pre&gt;    Not Found&lt;/pre&gt;&lt;/p&gt;&lt;hr&gt;&lt;i&gt;&lt;small&gt;Powered by Jetty://&lt;/small&gt;&lt;/i&gt;&lt;hr/&gt;</p>
+
+<p>&lt;/body&gt;<br/>
+&lt;/html&gt;<br/>
+I also noticed that this version of the reindexer is binding to the host's external IP address rather than to localhost as I remember it doing before. I don't know if that is connected to the MalformedURLException.</p>
+
+<p>See: <a href="https://groups.google.com/d/msg/fedora-tech/UVgpuCaIy4w/6Y06c8rXAwAJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/UVgpuCaIy4w/6Y06c8rXAwAJ</a></p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-16477"><div class="by">Unknown, 2016-04-07 16:19 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/77" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/pull/77</a></p></div></div>
+<div class="comment" id="comment-16478"><div class="by">Andrew Woods, 2016-04-07 18:33 UTC</div><div class="text"><p>Reindexing works... and indexing-triplestore and serialization and audit appear to we working.<br/>
+Pending response to integration test question in GitHub comments.</p></div></div>
+<div class="comment" id="comment-16480"><div class="by">Unknown, 2016-04-07 19:12 UTC</div><div class="text"><p>Integration tests added</p></div></div>
+<div class="comment" id="comment-16481"><div class="by">Andrew Woods, 2016-04-07 21:32 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/a1a92c87e33696e5a532c2506b9d78bff0592df0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/commit/a1a92c87e33696e5a532c2506b9d78bff0592df0</a></p></div></div>
+<div class="comment" id="comment-16482"><div class="by">Unknown, 2016-04-07 21:45 UTC</div><div class="text"><p>Peter Matthew Eichman I will plan to issue a patch release on Monday</p></div></div>
+<div class="comment" id="comment-16581"><div class="by">Andrew Woods, 2016-04-21 22:28 UTC</div><div class="text"><p>Related PR: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/42" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/pull/42</a></p></div></div>
+<div class="comment" id="comment-16582"><div class="by">Nick Ruest, 2016-04-21 23:15 UTC</div><div class="text"><p>Merged: <a href="https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/2336939fe193f7b9b41192599ac145e8176ea591" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-vagrant/commit/2336939fe193f7b9b41192599ac145e8176ea591</a></p></div></div>
+<p><a href="data/FCREPO-1980.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

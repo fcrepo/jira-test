@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-212 Adding a datastream fails with RC=503</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-212</span> Adding a datastream fails with RC=503</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Assignee</th><td>Bill Branan</td></tr><tr><th>Created</th><td>2008-04-09 11:25 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:36 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.1</td></tr></table>
+<h2>Description</h2>
+<p>When I adds a big datastream (3.1 Gb) of type 'M' using the administrator utility shows the following error after some minutes:<br/>
+  (503) Service Temporarily Unavailable</p>
+
+<p>Seems a problem due to a timeout. I tried to changed and recompiled the timeout values located in files APIxStubFactory.java and FedoraAPIxServiceLocator but this don't work.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10441"><div class="by">eddie, 2008-04-23 11:38 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: pangloss<br/>
+Logged In: YES <br/>
+user_id=487398<br/>
+Originator: NO</p>
+
+<p>Could confirm if you get the same error against 2.2.2?</p></div></div>
+<div class="comment" id="comment-10442"><div class="by">Chris Wilper, 2008-04-25 17:25 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: torrentg<br/>
+Logged In: YES <br/>
+user_id=1105118<br/>
+Originator: YES</p>
+
+<p>Confirmed. The same error appears using 2.2.2<br/>
+The error trace is:</p>
+
+<p>log4j:WARN No appenders could be found for logger (fedora.client.LoginDialog).<br/>
+log4j:WARN Please initialize the log4j system properly.<br/>
+AxisFault<br/>
+ faultCode: </p>
+{http://xml.apache.org/axis/}
+<p>HTTP<br/>
+ faultSubcode:<br/>
+ faultString: (503)Service Temporarily Unavailable<br/>
+ faultActor:<br/>
+ faultNode:<br/>
+ faultDetail:<br/>
+        {}:return code:  503<br/>
+&lt;!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"&gt;<br/>
+&lt;html&gt;&lt;head&gt;<br/>
+&lt;title&gt;503 Service Temporarily Unavailable&lt;/title&gt;<br/>
+&lt;/head&gt;&lt;body&gt;<br/>
+&lt;h1&gt;Service Temporarily Unavailable&lt;/h1&gt;<br/>
+&lt;p&gt;The server is temporarily unable to service your<br/>
+request due to maintenance downtime or capacity<br/>
+problems. Please try again later.&lt;/p&gt;<br/>
+&lt;hr&gt;<br/>
+&lt;address&gt;Apache/2.2.8 (Fedora) Server at localhost Port 8015&lt;/address&gt;<br/>
+&lt;/body&gt;&lt;/html&gt;</p>
+
+<p>        </p>
+{http://xml.apache.org/axis/}
+<p>HttpErrorCode:503</p>
+
+<p>(503)Service Temporarily Unavailable<br/>
+        at org.apache.axis.transport.http.HTTPSender.readFromSocket(HTTPSender.java:744)<br/>
+        at org.apache.axis.transport.http.HTTPSender.invoke(HTTPSender.java:144)<br/>
+        at org.apache.axis.strategies.InvocationStrategy.visit(InvocationStrategy.java:32)<br/>
+        at org.apache.axis.SimpleChain.doVisiting(SimpleChain.java:118)<br/>
+        at org.apache.axis.SimpleChain.invoke(SimpleChain.java:83)<br/>
+        at org.apache.axis.client.AxisClient.invoke(AxisClient.java:165)<br/>
+        at org.apache.axis.client.Call.invokeEngine(Call.java:2784)<br/>
+        at org.apache.axis.client.Call.invoke(Call.java:2767)<br/>
+        at org.apache.axis.client.Call.invoke(Call.java:2443)<br/>
+        at org.apache.axis.client.Call.invoke(Call.java:2366)<br/>
+        at org.apache.axis.client.Call.invoke(Call.java:1812)<br/>
+        at fedora.server.management.FedoraAPIMBindingSOAPHTTPStub.addDatastream(FedoraAPIMBindingSOAPHTTPStub.java:953)<br/>
+        at fedora.client.APIMStubWrapper$9.construct(APIMStubWrapper.java:764)<br/>
+        at fedora.client.SwingWorker$2.run(SwingWorker.java:117)<br/>
+        at java.lang.Thread.run(Thread.java:619)</p></div></div>
+<div class="comment" id="comment-10443"><div class="by">Bill Branan, 2008-07-11 18:13 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: bbranan<br/>
+Logged In: YES <br/>
+user_id=1987639<br/>
+Originator: NO</p>
+
+<p>Investigated in task 149640, determined to be an error due to socket timeout. The socket timeout in FedoraClient has been updated to 30 minutes and a test adding a 5GB datastream was added to verify a successful completion. These changes were added to trunk, they still need to be migrated to the maintenance branch.</p></div></div>
+<div class="comment" id="comment-10444"><div class="by">Bill Branan, 2008-07-17 16:26 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: bbranan<br/>
+Logged In: YES <br/>
+user_id=1987639<br/>
+Originator: NO</p>
+
+<p>Timeout updated and test added to maintenance branch in task 149933.</p></div></div>
+<div class="comment" id="comment-10445"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: torrentg<br/>
+Item #: 1938493<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1938493" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1938493</a><br/>
+Closed On: 2008-07-17 11:26:18<br/>
+Closed By: bbranan</p></div></div>
+<p><a href="data/FCREPO-212.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

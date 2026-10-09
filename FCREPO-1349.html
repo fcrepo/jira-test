@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1349 fcrepo-camel should include explicit support for transactions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1349</span> fcrepo-camel should include explicit support for transactions</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-02-04 03:29 UTC</td></tr><tr><th>Updated</th><td>2015-04-07 13:48 UTC</td></tr><tr><th>Resolved</th><td>2015-03-08 20:39 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0, Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>Fcrepo-camel does not provide explicit support for transactions, but it should. Furthermore, it should do so in such a way that it does not get in the way of a user &#8211; this would probably involve using appropriate header values inside a transaction (which are then cleared after committing the transaction). This way, a user program would not need to do any extra (unnecessary) url processing.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-13327"><div class="by">Unknown, 2015-02-04 12:18 UTC</div><div class="text"><p>What would you think of this sort of interface:</p>
+
+<p>First, there would be a new header: CamelFcrepoTransaction (or FcrepoHeaders.FCREPO_TRANSACTION in java)</p>
+
+<p>onException(Exception.class)<br/>
+   .to("fcrepo://localhost:8080/rest?transaction=rollback")<br/>
+   .log("error ...")<br/>
+   .handled(true);</p>
+
+<p>from("direct:foo")<br/>
+  .to("fcrepo://localhost:8080/rest?transaction=start")<br/>
+  ...<br/>
+  .to("fcrepo://localhost:8080/rest?transaction=commit");</p>
+
+<p>Under the covers, what would happen is this: if the transaction=commit or transaction=rollback option is given, the appropriate POST is sent to fedora (no need to explicitly set the HTTP_METHOD). For any other non-empty transaction value (you can use start or create or refresh or whatever), one of two things will happen &#8211; if there is an existing value in the CamelFcrepoTransaction header, then that transaction is "refreshed"; if there is an empty or null value in that header, a new transaction is created, the value of which is stored in the CamelFcrepoTransaction header. A commit or rollback operation will clear that header.</p>
+
+<p>When the CamelFcrepoTransaction header is present, <b>all</b> calls to the fcrepo endpoint will be run in the context of that transaction, meaning the path will have the "/tx:&lt;transaction value&gt;/" string inserted between /rest and the node identifier.</p>
+
+<p>This also means that you wouldn't need to do any special processing of the Location header that the initial /fcr:tx POST operation returns (though it would be good for the Location header to be returned to the client in any case).</p>
+
+<p>At least this interface makes sense to me. Any thoughts?</p></div></div>
+<div class="comment" id="comment-13330"><div class="by">Former user, 2015-02-04 14:36 UTC</div><div class="text"><p>The use case is pretty much as described in the ticket: try/catch or onException with transaction rollback in the handler.  </p>
+
+<p>That sort of interface far exceeds my expectations.  I was planning on simply caching the transaction id in the exchange for the duration of my route and inserting it in my uri's.  I'd agree that although not necessary with that sort of design, explicitly returning the transaction id would be great.  I can't think offhand of a situation where you'd absolutely need it if the component were to behave in this fashion, just uneasy with hiding that sort of thing.</p>
+
+<p>Not having to explictly set the POST on urls where there is no other http method is a nice touch, too.</p></div></div>
+<div class="comment" id="comment-13331"><div class="by">Unknown, 2015-02-04 14:48 UTC</div><div class="text"><p>Great &#8211; it will actually be necessary to keep the transaction ID in the headers, which, I think will be a good combination of hiding that detail from the user while also making it available if necessary. I'll point to a draft implementation once it is ready.</p></div></div>
+<div class="comment" id="comment-13336"><div class="by">Unknown, 2015-02-05 05:43 UTC</div><div class="text"><p>I have a sample implementation in the support-transactions branch: <a href="https://github.com/acoburn/fcrepo-camel/tree/support-transactions" class="external-link" rel="nofollow noreferrer">https://github.com/acoburn/fcrepo-camel/tree/support-transactions</a></p>
+
+<p>This will not be part of the 4.1 release; but I will issue a pull request for this shortly after that release is cut.</p></div></div>
+<div class="comment" id="comment-13373"><div class="by">Unknown, 2015-02-10 18:56 UTC</div><div class="text"><p>See: <a href="https://github.com/fcrepo4/fcrepo-camel/pull/52" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/pull/52</a></p>
+
+<p>This implements the interface described in the comments above.</p></div></div>
+<div class="comment" id="comment-13441"><div class="by">Unknown, 2015-02-17 15:37 UTC</div><div class="text"><p>There is a suggestion to use the camel transaction manager to handle transactions &#8211; this would involve a different implementation, and I am currently looking into this. So for now, do not merge the PR mentioned in this ticket.</p>
+
+<p>The difference from the perspective of a camel user is that the route would look more like this:</p>
+
+<p>from("direct:foo")<br/>
+  .transacted()<br/>
+  .to("fcrepo:localhost:8080/rest")<br/>
+  .process(...)<br/>
+  .to("fcrepo:localhost:8080/rest")<br/>
+  .process(...)<br/>
+  .to("fcrepo:localhost:8080/rest");</p>
+
+<p>Here, all of the fcrepo-based endpoints would run in the context of a single transaction. This implementation looks promising, but it involves a certain degree of complexity (and lack of documentation).</p></div></div>
+<div class="comment" id="comment-13593"><div class="by">Unknown, 2015-03-02 21:34 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo-camel/pull/59" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/pull/59</a></p></div></div>
+<div class="comment" id="comment-13649"><div class="by">Andrew Woods, 2015-03-08 20:39 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo-camel/commit/818329398301ed92fa338a6a66f2dae8f3a3e6e9" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-camel/commit/818329398301ed92fa338a6a66f2dae8f3a3e6e9</a></p></div></div>
+<p><a href="data/FCREPO-1349.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

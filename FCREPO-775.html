@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-775 Failing to close input stream when reading datastream content leaves file locked - can&#x27;t purge</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-775</span> Failing to close input stream when reading datastream content leaves file locked - can&#x27;t purge</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-08-19 11:44 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr><tr><th>Addresses</th><td><a href="FCREPO-766.html">FCREPO-766</a> System test failure on Windows with Akubra: TestCommandLineFormats.testExportATOM_ZIP</td></tr></table>
+<h2>Environment</h2>Windows
+<h2>Description</h2>
+<p>Failing to close an input stream used for reading a resource, eg using the REST API getDatastreamDissemination (client) can leave the file locked on the server.</p>
+
+<p>Purges of the object then throw IOException (in org.akubraproject.fs.FSBlob.delete).</p>
+
+<p>This did not seem to happen with the legacy LLStore implementation.</p>
+
+<p>This can happen client-side, ie read a managed content datastream, don't close the InputStream, purge datastream/object can fail with an underlying IOException.</p>
+
+<p>Mostly this has only occured during testing (when we add and then purge an object in quick succession).</p>
+
+<p>Is this just a case of reviewing the code for non-closed streams, or is there something else that should be done to tackle this issue?  This only seems to occur on windows (so there is potential to determine the platform and do a File.deleteOnExit(), but is this the right way to tackle this?)</p>
+
+<p>This occurred in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-766" >
+                <a href="FCREPO-766.html" class="jira-issue-macro-key issue-link"  title="System test failure on Windows with Akubra: TestCommandLineFormats.testExportATOM_ZIP" >
+            
+            FCREPO-766
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ where IOUtils.copy() was used (which does not close streams).</p>
+
+<p>Another instance ConfigC - TestPolicies failure:<br/>
+org.fcrepo.test.fesl.util.HttpUtils.process() line 241-246 <br/>
+(This time a loop copying bytes from the InputStream, but not closing it -fix about to be committed closing the InputStream, previously this was not present).</p>
+
+<p>And in org.fcrepo.server.security.xacml.pdp.decorator.PolicyIndexInvocationHandler - after adding/updating policy, it is indexed in DBXML.  Again stream was not being closed, so policy could not then be deleted.</p>
+
+<p>In the existing LLStore, the delete is via a File.delete() (with no check for "true" returned) - would be useful to see what Akubra does for this.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-11541"><div class="by">Stephen Bayliss, 2010-08-19 14:11 UTC</div><div class="text"><p>Would seem to only affect REST - SOAP gets a byte array and closes the stream.</p></div></div>
+<div class="comment" id="comment-11542"><div class="by">Stephen Bayliss, 2010-08-19 15:28 UTC</div><div class="text"><p>Looking in deeper, we use ResponseBuilder.entity() to directly point to the underlying FileInputStream.</p>
+
+<p>I wonder if some wrapping in javax.ws.rs.core.StreamingOutput or MessageBodyWriter could somehow ensure that server resources are not left locked.</p>
+
+<p>Something like </p>
+
+<p><a href="http://www.jarvana.com/jarvana/view/org/apache/wink/apache-wink/1.0-incubating/apache-wink-1.0-incubating-src.tar.gz!/apache-wink-1.0-incubating-src/wink-common/src/main/java/org/apache/wink/common/internal/providers/entity/FileProvider.java?format=ok" class="external-link" rel="nofollow noreferrer">http://www.jarvana.com/jarvana/view/org/apache/wink/apache-wink/1.0-incubating/apache-wink-1.0-incubating-src.tar.gz!/apache-wink-1.0-incubating-src/wink-common/src/main/java/org/apache/wink/common/internal/providers/entity/FileProvider.java?format=ok</a></p>
+
+<p>or</p>
+
+<p><a href="http://www.docjar.com/html/api/org/apache/cxf/jaxrs/provider/BinaryDataProvider.java.html" class="external-link" rel="nofollow noreferrer">http://www.docjar.com/html/api/org/apache/cxf/jaxrs/provider/BinaryDataProvider.java.html</a></p>
+
+<p>?</p></div></div>
+<div class="comment" id="comment-11549"><div class="by">Stephen Bayliss, 2010-08-19 16:57 UTC</div><div class="text"><p>A simpler solution: <a href="http://commons.apache.org/io/api-1.4/org/apache/commons/io/input/AutoCloseInputStream.html" class="external-link" rel="nofollow noreferrer">http://commons.apache.org/io/api-1.4/org/apache/commons/io/input/AutoCloseInputStream.html</a></p>
+
+<p>Wrap the rest response in that, and that will cater for the majority of cases I think (FileInputStream would get closed as soon as it has been read).</p>
+
+<p>Would this cause an issue for streaming clients?  (ie they want to seek back and forth, do we even support that?)</p>
+
+<p>AutoCloseInputStream does not support read and reset.  However probably not too difficult to come up with our own version that does.  That way we maintain the same contract as we have now.</p></div></div>
+<div class="comment" id="comment-11587"><div class="by">Chris Wilper, 2010-08-31 20:14 UTC</div><div class="text"><p>Scope should also include cases where client aborts connection when stream is partially read.</p></div></div>
+<div class="comment" id="comment-11598"><div class="by">Stephen Bayliss, 2010-09-03 17:58 UTC</div><div class="text"><p>I have an implementation of AutoClosingInputStream implemented in branches/fcrepo-775, however I am struggling to reproduce the issue client-side (server-side is less of an issue as a code review for streams that are not closed should pick up issues here).  Suggest this issue is left on hold pending re-occurrence, however dealing with dropped connections is something we should address.</p></div></div>
+<div class="comment" id="comment-11808"><div class="by">Chris Wilper, 2011-02-15 22:29 UTC</div><div class="text"><p>Current status is unreproducible but we're keeping the branch around if it's useful later...</p></div></div>
+<div class="comment" id="comment-13054"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-775.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

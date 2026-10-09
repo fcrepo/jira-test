@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1424 Investigate disabling deleting event triples from external triplestore</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1424</span> Investigate disabling deleting event triples from external triplestore</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Answered</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-03-30 12:36 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-06 20:49 UTC</td></tr><tr><th>Components</th><td>f4-audit, f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr><tr><th>Required by</th><td><a href="FCREPO-1425.html">FCREPO-1425</a> Verify that all Audit specification requirements are satisfied by phase 1</td></tr></table>
+<h2>Description</h2>
+<p>In some audit scenarios, it is important to prevent deletion of audit records.  To support this, investigate options for access control and/or disabling deletes in an external triplestore.</p>
+
+<p>Fuseki does not appear to have builtin access control functionality (see <a href="http://jena.apache.org/documentation/serving_data/#security-and-access-control" class="external-link" rel="nofollow noreferrer">http://jena.apache.org/documentation/serving_data/#security-and-access-control</a>), but Sesame uses a standard Java servlet container and so should support access control (see <a href="http://www.rivuli-development.com/further-reading/sesame-cookbook/basic-security-with-http-authentication/" class="external-link" rel="nofollow noreferrer">http://www.rivuli-development.com/further-reading/sesame-cookbook/basic-security-with-http-authentication/</a>).</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-13871"><div class="by">Former user, 2015-04-06 13:03 UTC</div><div class="text"><p>I don't think this is going to be as simple as configuring the servlet container to disallow deletes.  SPARQL Update is used for creating, updating and deleting triples over HTTP POST.  So Camel or any other processor would need to be able to POST in order to create audit events.</p>
+
+<p>So, I think there are three options we can consider for implementing this requirement, in order of increasing difficulty:</p>
+
+<p>1. Defer this requirement to phase 2, and assume that users who want to prevent deletion will also want to have in-repository event storage for maximum confidence that all audit records are preserved.<br/>
+2. Document how to enable access control for Sesame (to give users the ability to query the triplestore without being able to modify it) and that the Camel workflow won't delete triples.<br/>
+3. Create a SailConnectionWrapper implementation that would actually let you have a Sesame triplestore configured to allow adding statements but not deleting them (see 3. <a href="http://rdf4j.org/sesame/2.7/apidocs/org/openrdf/sail/helpers/SailConnectionWrapper.html" class="external-link" rel="nofollow noreferrer">http://rdf4j.org/sesame/2.7/apidocs/org/openrdf/sail/helpers/SailConnectionWrapper.html</a>).  I don't know if this would work, or if the system would be usable in this state or not.</p>
+</div></div>
+<div class="comment" id="comment-13872"><div class="by">Former user, 2015-04-06 17:44 UTC</div><div class="text"><p>I've updated the Triplestore Setup wiki page with instructions on how to setup container access control in Sesame:</p>
+
+<p><a href="https://wiki.duraspace.org/display/FEDORA4x/Triplestore+Setup#TriplestoreSetup-AccessControl" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Triplestore+Setup#TriplestoreSetup-AccessControl</a></p></div></div>
+<p><a href="data/FCREPO-1424.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

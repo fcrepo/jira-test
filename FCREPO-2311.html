@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2311 Ldp::HttpError: STATUS: 500 org.modeshape.jcr.value.binary.BinaryStoreException: java.net.SocketTimeoutException: Read timed out</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2311</span> Ldp::HttpError: STATUS: 500 org.modeshape.jcr.value.binary.BinaryStoreException: java.net.SocketTimeoutException: Read timed out</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Anna Headley</td></tr><tr><th>Created</th><td>2016-11-16 15:34 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>Bulk importing objects into Sufia 7.2-based application. Erroring between 100 and 300 objects. See gist for stack trace: <a href="https://gist.github.com/hackmastera/a4432aded8790482c2e7e544228c4232" class="external-link" rel="nofollow noreferrer">https://gist.github.com/hackmastera/a4432aded8790482c2e7e544228c4232</a></p>
+<h2>Comments (19)</h2>
+<div class="comment" id="comment-18001"><div class="by">Andrew Woods, 2016-11-16 16:02 UTC</div><div class="text"><p>Based on your gist, it appears that you are using the "FileSystemBinaryStore", likely from a configuration such as:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>-Dfcrepo.modeshape.configuration=classpath:config/minimal-default/repository.json
+</pre>
+</div></div>
+
+<p>The first thing I would suggest it to instead use a MySQL or PostgreSQL backend object store.<br/>
+See 4.6: <a href="https://wiki.duraspace.org/display/FEDORA46/Configuring+JDBC+Object+Store" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA46/Configuring+JDBC+Object+Store</a><br/>
+or 4.7: <a href="https://wiki.duraspace.org/display/FEDORA47/Configuring+JDBC+Object+Store" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA47/Configuring+JDBC+Object+Store</a></p>
+
+<p>Secondly, if this is a new repository, I would highly suggest you start with Fedora 4.7.0.</p>
+
+<p>Additionally, can you describe the nature of the "bulk import"? Do you have control over the number of concurrent import clients?</p>
+
+</div></div>
+<div class="comment" id="comment-18002"><div class="by">Anna Headley, 2016-11-16 16:14 UTC</div><div class="text"><p>Andrew, thank you for the quick response.</p>
+
+<p>The bulk import is for sufia 6.x to 7.x migration; currently in progress at <a href="https://github.com/projecthydra/sufia/tree/7.2-migration" class="external-link" rel="nofollow noreferrer">https://github.com/projecthydra/sufia/tree/7.2-migration</a>. It's a single client / straightforward script creating each object and pulling its content from one fedora to another.</p></div></div>
+<div class="comment" id="comment-18004"><div class="by">Esmé Cowles, 2016-11-16 16:18 UTC</div><div class="text"><p>Andrew Woods, I have just checked my logs and I'm seeing the same error using 4.7.0 with metadata in PostgreSQL and binaries on a CIFS-mounted network share.  My config is at: <a href="https://gist.github.com/escowles/5b9f19548c32148f5a908293636499a3" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/5b9f19548c32148f5a908293636499a3</a></p></div></div>
+<div class="comment" id="comment-18005"><div class="by">Benjamin Armintor, 2016-11-16 16:23 UTC</div><div class="text"><p>I just did a quick check of the MODE BOM and tagged source for 5.1.0.Final and 5.2.0.Final, I don't see anything that makes sense for a SocketTimeoutException. On older versions of MODE there is some temp file activity around that line number, but they shouldn't be in play.</p></div></div>
+<div class="comment" id="comment-18008"><div class="by">Andrew Woods, 2016-11-16 16:57 UTC</div><div class="text"><p>I agree, Benjamin Armintor. It appears that the ModeShape/FileSystemBinaryStore code that could potentially throw that error is in ModeShape release 4.5.0.Final:<br/>
+<a href="https://github.com/ModeShape/modeshape/blob/modeshape-4.5.0.Final/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/FileSystemBinaryStore.java#L129" class="external-link" rel="nofollow noreferrer">https://github.com/ModeShape/modeshape/blob/modeshape-4.5.0.Final/modeshape-jcr/src/main/java/org/modeshape/jcr/value/binary/FileSystemBinaryStore.java#L129</a></p>
+
+<p>...which was last included in Fedora 4.6.0.<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/fcrepo-4.6.0/pom.xml#L47" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/fcrepo-4.6.0/pom.xml#L47</a></p>
+
+<p>That leaves me to wonder how the error can be coming from a Fedora 4.7.0??</p></div></div>
+<div class="comment" id="comment-18012"><div class="by">Anna Headley, 2016-11-17 18:53 UTC</div><div class="text"><p>Doing this import in 100-object chunks seems to help. I'm now nearing 500 objects and haven't had this error.</p></div></div>
+<div class="comment" id="comment-18013"><div class="by">Andrew Woods, 2016-11-17 20:18 UTC</div><div class="text"><p>That is good to hear, Anna Headley. I am still curious as to what is going on since you are supposedly ingesting into a Fedora 4.7.0... but the version of the FileSystemBinaryStore class does not correspond to the version of ModeShape that is released with Fedora 4.7.0.</p></div></div>
+<div class="comment" id="comment-18014"><div class="by">Anna Headley, 2016-11-17 20:21 UTC</div><div class="text"><p>I'm still importing into the 4.6.0; we're working on getting 4.7/postgres set up to try it there. Will update! Esme has said he experienced the same error on 4.7.</p></div></div>
+<div class="comment" id="comment-18036"><div class="by">Andrew Woods, 2016-11-23 14:59 UTC</div><div class="text"><p>Do you have any updates, Anna Headley? I believe all investigation of this issue are waiting on that.</p></div></div>
+<div class="comment" id="comment-18037"><div class="by">Anna Headley, 2016-11-23 14:59 UTC</div><div class="text"><p>We haven't been able to replicate on 4.7. I'd be fine closing this except that Esme said he's seen the same error on 4.7 so I'll defer to him!</p></div></div>
+<div class="comment" id="comment-18038"><div class="by">Esmé Cowles, 2016-11-23 15:05 UTC</div><div class="text"><p>I saw the error with 4.7.0 — the stacktrace I saw was very slightly different from the one in <a href="https://gist.github.com/hackmastera/a4432aded8790482c2e7e544228c4232" class="external-link" rel="nofollow noreferrer">https://gist.github.com/hackmastera/a4432aded8790482c2e7e544228c4232</a> (a couple of the line numbers are different):</p>
+
+<p>org.modeshape.jcr.value.binary.BinaryStoreException: java.net.SocketTimeoutException<br/>
+at org.modeshape.jcr.value.binary.FileSystemBinaryStore.storeValue(FileSystemBinaryStore.java:128)<br/>
+at org.modeshape.jcr.value.binary.AbstractBinaryStore.storeValue(AbstractBinaryStore.java:251)<br/>
+at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:257)<br/>
+at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:49)<br/>
+at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:149)<br/>
+at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:41)<br/>
+at org.fcrepo.kernel.modeshape.FedoraBinaryImpl.setContent(FedoraBinaryImpl.java:180)<br/>
+at org.fcrepo.http.api.ContentExposingResource.replaceResourceBinaryWithStream(ContentExposingResource.java:608)<br/>
+at org.fcrepo.http.api.FedoraLdp.createOrReplaceObjectRdf(FedoraLdp.java:358)<br/>
+at sun.reflect.GeneratedMethodAccessor53.invoke(Unknown Source)</p>
+
+<p>I was doing a long-running ingest operation using Plum/CurationConcerns/Hydra and the Fedora 4.7.0 release, and my repository configuration is here: <a href="https://gist.github.com/escowles/5b9f19548c32148f5a908293636499a3" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/5b9f19548c32148f5a908293636499a3</a> — the disk in question is a CIFS-mounted Isilon storage cluster.</p></div></div>
+<div class="comment" id="comment-18039"><div class="by">Anna Headley, 2016-11-23 15:10 UTC</div><div class="text"><p>I may have preemptively bumped down the priority; if it needs to go back up of course please do so Andrew Woods, Esmé Cowles</p></div></div>
+<div class="comment" id="comment-18040"><div class="by">Andrew Woods, 2016-11-23 16:14 UTC</div><div class="text"><p>Thanks Esmé Cowles, would you please update your comment above to add your scenario details:</p>
+<ul class="alternate" type="square">
+	<li>What are you actually doing</li>
+	<li>What versions of Fedora are in play</li>
+	<li>What configuration of Fedora is in use</li>
+	<li>Since this is a "binary store" error, what is the architecture of you binary storage file system?</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-18041"><div class="by">Esmé Cowles, 2016-11-23 17:12 UTC</div><div class="text"><p>Andrew Woods, I've updated my comment with more info about my setup.  I plan to spend some time next week looking at Fedora performance during ingest.  In addition to this error, I've also seen performance gradually slow down over time.  Restarting Fedora periodically seems to fix this, but I'm hoping that profiling Fedora will help discover why it's happening.</p></div></div>
+<div class="comment" id="comment-18860"><div class="by">aliciac, 2017-05-23 16:39 UTC</div><div class="text"><p>We are seeing a similar error on Fcrepo 4.7.1 when uploading a single large file (~2GB) - see [<a href="https://gist.github.com/acozine/4e57aabee5ab8939b374f7a61fa9dabc" class="external-link" rel="nofollow noreferrer">stacktrace</a>].</p></div></div>
+<div class="comment" id="comment-18861"><div class="by">Andrew Woods, 2017-05-23 17:00 UTC</div><div class="text"><p>I would think this issue could be resolved by configuring the HTTP connection timeout.</p>
+
+<p>It may make sense to adjust your servlet container's socket_timeout: <a href="https://tomcat.apache.org/connectors-doc/common_howto/timeouts.html" class="external-link" rel="nofollow noreferrer">https://tomcat.apache.org/connectors-doc/common_howto/timeouts.html</a></p></div></div>
+<div class="comment" id="comment-20020"><div class="by">pketienne, 2018-06-06 14:16 UTC</div><div class="text"><p>Greetings all, this ticket is a year old, but I've recently encountered behavior that seems to be related to this bug within versions 4.7.2 and 4.7.5.</p>
+
+<p>I've had this error crop up infrequently and intermittently on three separate environments. The files being processed when encountering the error are &lt; 10MB. Two of the environments have application services spread across four machines. One environment has all services on the same machine, except for the mariadb service supporting the modeshape database which is on a different machine.</p>
+
+<p>Here's a [<a href="https://gist.github.com/informaticianme/7c2c999dc79d6e868a5495bdb12aa728" class="external-link" rel="nofollow noreferrer">stacktrace</a>] and [<a href="https://gist.github.com/informaticianme/b40c41c8e9789d9895d5d0da16a4abc9" class="external-link" rel="nofollow noreferrer">repository.json</a>] for reference.</p>
+
+<p>Andrew Woods, I saw your link for configuring the httpd connection timeout, but it looks like the documentation is specifically for using AJP/mod_jk (which we are not). If you (or anyone else) happens to have any other tips, hints, or suggestions for alleviating this issue, it'd be greatly appreciated!</p></div></div>
+<div class="comment" id="comment-20664"><div class="by">Tom Wrobel, 2019-04-26 14:12 UTC</div><div class="text"><p>pketienne did you find any solution to this issue? We're running into it at Oxford and, like you, we're not using mod_jk</p>
+
+<p>Andrew Woods is there any other way to resolve the HTTP connection timeout?</p></div></div>
+<div class="comment" id="comment-22338"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-2311.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-162 Object-specific POLICY datastream ignored when using Oracle</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-162</span> Object-specific POLICY datastream ignored when using Oracle</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2007-11-20 22:54 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-09-12 01:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>When running Fedora backed by Oracle, with XACML enforcement enabled, the POLICY datastream is ignored.  This behavior was discovered in Fedora 2.2.1, but exists in prior versions of Fedora as well.</p>
+
+<p>CAUSE:<br/>
+The reason this occurs is twofold:</p>
+
+<p>1) A query executed by FastDOReader.GetDatastream fails in Oracle because it includes a DISTINCT clause, but at least one of the column types (dsBind.dsLocation) is a CLOB.  And in Oracle, it is an error to issue a SELECT DISTINCT query involving a CLOB.</p>
+
+<p>2) Although the above throws an exception, it is caught and ignored by PolicyFinderModule.getObjectPolicyFromObject.  This causes the remainder of the code to assume the POLICY datastream simply doesn't exist.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-162/10018_sf-1835449-PolicyFinderModule.class">sf-1835449-PolicyFinderModule.class</a>, 14448 bytes, added by Chris Wilper on 2007-11-21</li>
+</ul>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-10331"><div class="by">Chris Wilper, 2007-11-20 23:24 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>The fix for this bug MUST:</p>
+<ul class="alternate" type="square">
+	<li>Ensure unexpected errors thrown within<br/>
+  PolicyFinderModule.getObjectPolicyFromObject <br/>
+  are not ignored (let them bubble up or wrap<br/>
+  them)</li>
+	<li>Avoid the use of FastDOReader.  In this case,<br/>
+  PolicyFinderModule should never be getting<br/>
+  a FastDOReader because we know it requires the<br/>
+  actual datastream content, which is NEVER stored<br/>
+  in the database.  This can be accomplished by<br/>
+  passing false as the first parameter to <br/>
+  DOReader.getReader(..)</li>
+	<li>Find and address other code paths that lead to<br/>
+  FastDOReader.GetDatastream.  NOTE: Due to CMDA<br/>
+  changes, in the trunk, FastDOReader no longer exists,<br/>
+  so this only needs to be done for maintenance-2.2.</li>
+	<li>Ensure we have a regression test for maintenance-2.2<br/>
+  and trunk, which FAILS if the POLICY datastream<br/>
+  is ignored.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-10332"><div class="by">Chris Wilper, 2007-11-21 17:32 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>This is being addressed in Software Engineering task 144198.</p></div></div>
+<div class="comment" id="comment-10333"><div class="by">Chris Wilper, 2007-11-21 21:15 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>Bug fixed and regression test added to maintenance-2.2 branch.  Keeping this bug open until other uses of FastDOReader are audited and the regression test is done in trunk.</p>
+
+<p>Attached class file can be applied over a Fedora-2.2.1 installation to get a quick fix.<br/>
+File Added: PolicyFinderModule.class</p></div></div>
+<div class="comment" id="comment-10334"><div class="by">Chris Wilper, 2007-11-26 21:17 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: cwilper<br/>
+Logged In: YES <br/>
+user_id=189298<br/>
+Originator: YES</p>
+
+<p>Audited server code to avoid use of FastDOReader, fixed exception handling and added regression test to trunk.  Fix has been committed to maintenance-2.2 rev 6299 and trunk rev 6301.</p></div></div>
+<div class="comment" id="comment-10335"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 1835449<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1835449" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1835449</a><br/>
+Closed On: 2007-11-26 15:17:25<br/>
+Closed By: cwilper</p></div></div>
+<p><a href="data/FCREPO-162.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

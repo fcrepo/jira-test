@@ -1,0 +1,436 @@
+No XAMCL Policy (permit-all-requests)...
+  Creating a test object via the REST API:  test:NoXACMLTestObjectREST (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPOST "http://localhost:9091/fedora/objects/test:NoXACMLTestObjectREST?label=NoXACMLTestObjectREST" --data "" -u fedoraAdmin:xxxxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0    26    0    26    0     0     32      0 --:--:-- --:--:-- --:--:--    32  0    26    0    26    0     0     32      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test%3ANoXACMLTestObjectREST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:53:37 GMT
+
+test:NoXACMLTestObjectREST
+
+    REST API:  Adding a Managed datastream with a file URI:  TEST_M (SHOULD PASS)
+    => curl -i -H -XPOST "http://localhost:9091/fedora/objects/test:NoXACMLTestObjectREST/datastreams/TEST_M?mimeType=image/jpeg&controlGroup=M&dsLabel=MTestManaged&dsLocation=file:///path/to/my/images/img.jpg" --data "" -u fedoraAdmin:xxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   907    0   907    0     0   6305      0 --:--:-- --:--:-- --:--:--  6305100   907    0   907    0     0   6294      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:NoXACMLTestObjectREST/datastreams/TEST_M
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:53:37 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:NoXACMLTestObjectREST" dsID="TEST_M" ><dsLabel>MTestManaged</dsLabel><dsVersionID>TEST_M.0</dsVersionID><dsCreateDate>2010-08-19T15:53:37.327Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>M</dsControlGroup><dsSize>2336</dsSize><dsVersionable>true</dsVersionable><dsInfoType></dsInfoType><dsLocation>test:NoXACMLTestObjectREST+TEST_M+TEST_M.0</dsLocation><dsLocationType>INTERNAL_ID</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+    REST API:  Adding an Externally Managed datastream with a file URI:  TEST_E (SHOULD PASS)
+    => curl -i -H -XPOST "http://localhost:9091/fedora/objects/test:NoXACMLTestObjectREST/datastreams/TEST_E?mimeType=image/jpeg&controlGroup=E&dsLabel=ETestExtrnallyManaged&dsLocation=file:///path/to/my/images/img.jpg" --data "" -u fedoraAdmin:xxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   921    0   921    0     0  19564      0 --:--:-- --:--:-- --:--:-- 19564100   921    0   921    0     0  19465      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:NoXACMLTestObjectREST/datastreams/TEST_E
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:53:37 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:NoXACMLTestObjectREST" dsID="TEST_E" ><dsLabel>ETestExternallyManaged</dsLabel><dsVersionID>TEST_E.0</dsVersionID><dsCreateDate>2010-08-19T15:53:37.473Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>E</dsControlGroup><dsSize>0</dsSize><dsVersionable>true</dsVersionable><dsInfoType></dsInfoType><dsLocation>file:///home/sprater/personal/images/greatsilence-100.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Creating a test object by FOXML ingest:  test:NoXACMLTestObjectINGEST (SHOULD PASS)
+    => cd $FEDORA_HOME/client/bin && ./fedora-ingest.sh f fcrepo453-noxacml.xml info:fedora/fedora-system:FOXML-1.1 localhost:9091 fedoraAdmin xxxxxx http ""
+Ingested pid: test:NoXACMLTestObjectINGEST
+
+
+  Verifying datastreams are ingested...
+   => curl -s -i http://localhost:9091/fedora/objects/test:NoXACMLTestObjectREST/datastreams/TEST_M/content | head
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+content-disposition: inline; filename="MTestManaged.jpg"
+Content-Type: image/jpeg
+Content-Length: 2336
+Date: Thu, 19 Aug 2010 15:53:38 GMT
+
+
+   => curl -s -i http://localhost:9091/fedora/objects/test:NoXACMLTestObjectREST/datastreams/TEST_E/content | head
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+content-disposition: inline; filename="ETestExternallyManaged.jpg"
+Content-Type: image/jpeg
+Content-Length: 2336
+Date: Thu, 19 Aug 2010 15:53:38 GMT
+
+
+   => curl -s -i http://localhost:9091/fedora/objects/test:NoXACMLTestObjectINGEST/datastreams/TEST_M/content | head
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+content-disposition: inline; filename="MTestManaged.jpg"
+Content-Type: image/jpeg
+Content-Length: 2336
+Date: Thu, 19 Aug 2010 15:53:38 GMT
+
+
+   => curl -s -i http://localhost:9091/fedora/objects/test:NoXACMLTestObjectINGEST/datastreams/TEST_E/content | head
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+content-disposition: inline; filename="ETestExternallyManaged.jpg"
+Content-Type: image/jpeg
+Content-Length: 2336
+Date: Thu, 19 Aug 2010 15:53:38 GMT
+
+
+
+Default XAMCL Policy (enforce-policies)...
+  Creating a test object via the REST API:  test:DenyXACMLTestObjectREST (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPOST "http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectREST?label=DenyXACMLTestObjectREST" --data "" -u fedoraAdmin:xxxxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0    28    0    28    0     0    246      0 --:--:-- --:--:-- --:--:--   246  0    28    0    28    0     0    245      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test%3ADenyXACMLTestObjectREST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:58:48 GMT
+
+test:DenyXACMLTestObjectREST
+
+    REST API:  Attempt to add a Managed datastream with a file URI:  TEST_M (SHOULD FAIL)
+    => curl -i -H -XPOST "http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectREST/datastreams/TEST_M?mimeType=image/jpeg&controlGroup=M&dsLabel=MTestManaged&dsLocation=file:///path/to/my/images/img.jpg" --data "" -u fedoraAdmin:xxxxx
+HTTP/1.1 500 Internal Server Error
+Server: Apache-Coyote/1.1
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:58:48 GMT
+Connection: close
+
+javax.ws.rs.WebApplicationException: org.fcrepo.server.errors.HttpServiceNotFoundException: [DefaultExternalContentManager] returned an error.  The underlying error was a org.fcrepo.server.errors.HttpServiceNotFoundException  The message was  "Policy blocked datastream resolution"  .  
+	at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:168)
+	at org.fcrepo.server.rest.DatastreamResource.addOrUpdateDatastream(DatastreamResource.java:583)
+	at org.fcrepo.server.rest.DatastreamResource.addDatastream(DatastreamResource.java:358)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at com.sun.jersey.server.impl.model.method.dispatch.AbstractResourceMethodDispatchProvider$ResponseOutInvoker._dispatch(AbstractResourceMethodDispatchProvider.java:175)
+	at com.sun.jersey.server.impl.model.method.dispatch.ResourceJavaMethodDispatcher.dispatch(ResourceJavaMethodDispatcher.java:67)
+	at com.sun.jersey.server.impl.uri.rules.HttpMethodRule.accept(HttpMethodRule.java:163)
+	at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)
+	at com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:71)
+	at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)
+	at com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:63)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:689)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:647)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:638)
+	at com.sun.jersey.spi.container.servlet.WebComponent.service(WebComponent.java:309)
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:425)
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:590)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:717)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterRestApiFlash.doFilter(FilterRestApiFlash.java:79)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.apach  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  6911    0  6911    0     0   259k      0 --:--:-- --:--:-- --:--:--  259k100  6911    0  6911    0     0   256k      0 --:--:-- --:--:-- --:--:--     0
+e.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)
+	at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:568)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:286)
+	at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:845)
+	at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:583)
+	at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:447)
+	at java.lang.Thread.run(Thread.java:619)
+Caused by: org.fcrepo.server.errors.HttpServiceNotFoundException: [DefaultExternalContentManager] returned an error.  The underlying error was a org.fcrepo.server.errors.HttpServiceNotFoundException  The message was  "Policy blocked datastream resolution"  .  
+	at org.fcrepo.server.storage.DefaultExternalContentManager.getExternalContent(DefaultExternalContentManager.java:155)
+	at org.fcrepo.server.storage.DefaultDOManager.doCommit(DefaultDOManager.java:1207)
+	at org.fcrepo.server.storage.SimpleDOWriter.commit(SimpleDOWriter.java:508)
+	at org.fcrepo.server.management.DefaultManagement.addDatastream(DefaultManagement.java:572)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.fcrepo.server.messaging.NotificationInvocationHandler.invoke(NotificationInvocationHandler.java:68)
+	at $Proxy0.addDatastream(Unknown Source)
+	at org.fcrepo.server.management.ManagementModule.addDatastream(ManagementModule.java:227)
+	at org.fcrepo.server.rest.DatastreamResource.addOrUpdateDatastream(DatastreamResource.java:467)
+	... 48 more
+Caused by: org.fcrepo.server.errors.HttpServiceNotFoundException: Policy blocked datastream resolution
+	at org.fcrepo.server.storage.DefaultExternalContentManager.getFromFilesystem(DefaultExternalContentManager.java:254)
+	at org.fcrepo.server.storage.DefaultExternalContentManager.getExternalContent(DefaultExternalContentManager.java:146)
+	... 59 more
+Caused by: org.fcrepo.server.errors.authorization.AuthzDeniedException: 
+	at org.fcrepo.server.security.PolicyEnforcementPoint.enforce(PolicyEnforcementPoint.java:422)
+	at org.fcrepo.server.security.DefaultAuthorization.enforceRetrieveFile(DefaultAuthorization.java:1660)
+	at org.fcrepo.server.storage.DefaultExternalContentManager.getFromFilesystem(DefaultExternalContentManager.java:242)
+	... 60 more
+
+
+    REST API:  Add an Externally Managed datastream with a file URI:  TEST_E (SHOULD PASS)
+    => curl -i -H -XPOST "http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectREST/datastreams/TEST_E?mimeType=image/jpeg&controlGroup=E&dsLabel=ETestExtrnallyManaged&dsLocation=file:///path/to/my/images/img.jpg" --data "" -u fedoraAdmin:xxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   923    0   923    0     0  31300      0 --:--:-- --:--:-- --:--:-- 31300100   923    0   923    0     0  30996      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectREST/datastreams/TEST_E
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:58:48 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DenyXACMLTestObjectREST" dsID="TEST_E" ><dsLabel>ETestExternallyManaged</dsLabel><dsVersionID>TEST_E.0</dsVersionID><dsCreateDate>2010-08-19T15:58:48.631Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>E</dsControlGroup><dsSize>0</dsSize><dsVersionable>true</dsVersionable><dsInfoType></dsInfoType><dsLocation>file:///home/sprater/personal/images/greatsilence-100.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Creating a test object by FOXML ingest:  test:DenyXACMLTestObjectINGEST (SHOULD FAIL)
+    => cd $FEDORA_HOME/client/bin && ./fedora-ingest.sh f fcrepo453-denyxacml.xml info:fedora/fedora-system:FOXML-1.1 localhost:9091 fedoraAdmin xxxxxx http ""
+Error  : org.fcrepo.server.errors.HttpServiceNotFoundException: [DefaultExternalContentManager] returned an error.  The underlying error was a org.fcrepo.server.errors.HttpServiceNotFoundException  The message was  "Policy blocked datastream resolution"  .  
+(Last attempted file was /home/sprater/projects/fedora/tests-3.4/fcrepo-453/fcrepo453-denyxacml.xml)
+
+
+  Verifying datastreams do not exist...
+   => curl -s -i http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectREST/datastreams/TEST_M/content | head
+HTTP/1.1 404 Not Found
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:58:48 GMT
+
+[DefaulAccess] No datastream could be returned. Either there is no datastream for the digital object "test:DenyXACMLTestObjectREST" with datastream ID of "TEST_M "  OR  there are no datastreams that match the specified date/time value of "null "  .
+   => curl -s -i http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectREST/datastreams/TEST_E/content | head
+HTTP/1.1 500 Internal Server Error
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:58:48 GMT
+Connection: close
+
+
+   => curl -s -i http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectINGEST/datastreams/TEST_M/content | head
+HTTP/1.1 404 Not Found
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:58:48 GMT
+
+no path in db registry for [test:DenyXACMLTestObjectINGEST]
+   => curl -s -i http://localhost:9091/fedora/objects/test:DenyXACMLTestObjectINGEST/datastreams/TEST_E/content | head
+HTTP/1.1 404 Not Found
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 15:58:48 GMT
+
+no path in db registry for [test:DenyXACMLTestObjectINGEST]
+
+Default XAMCL Policy (enforce-policies), with test-allowed-file-resolution policy...
+  Validating, copying into place and reloading test-allowed-file-resolution policy...
+    => cd $FEDORA_HOME/server/bin && ./validate-policy.sh test-allowed-file-resolution.xml
+Validation successful
+    => cp test-allowed-file-resolution.xml $FEDORA_HOME/data/fedora-xacml-policies/repository-policies
+    => cd $FEDORA_HOME/server/bin && ./fedora-reload-policies.sh reloadpolicies http fedoraAdmin xxxxxxx
+SUCCESS: Policies have been reloaded
+  Creating a test object via the REST API:  test:AllowXACMLTestObjectREST (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPOST "http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectREST?label=AllowXACMLTestObjectREST" --data "" -u fedoraAdmin:xxxxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0    29    0    29    0     0     49      0 --:--:-- --:--:-- --:--:--    49  0    29    0    29    0     0     49      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test%3AAllowXACMLTestObjectREST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 14:28:10 GMT
+
+test:AllowXACMLTestObjectREST
+
+    REST API:  Attempt to add a Managed datastream with a file URI:  TEST_M (SHOULD PASS)
+    => curl -i -H -XPOST "http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectREST/datastreams/TEST_M?mimeType=image/jpeg&controlGroup=M&dsLabel=MTestManaged&dsLocation=file:///path/to/my/images/img.jpg" --data "" -u fedoraAdmin:xxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   913    0   913    0     0   8049      0 --:--:-- --:--:-- --:--:--  8049100   913    0   913    0     0   8032      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectREST/datastreams/TEST_M
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 14:28:10 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:AllowXACMLTestObjectREST" dsID="TEST_M" ><dsLabel>MTestManaged</dsLabel><dsVersionID>TEST_M.0</dsVersionID><dsCreateDate>2010-08-19T14:28:11.075Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>M</dsControlGroup><dsSize>2336</dsSize><dsVersionable>true</dsVersionable><dsInfoType></dsInfoType><dsLocation>test:AllowXACMLTestObjectREST+TEST_M+TEST_M.0</dsLocation><dsLocationType>INTERNAL_ID</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+    REST API:  Add an Externally Managed datastream with a file URI:  TEST_E (SHOULD PASS)
+    => curl -i -H -XPOST "http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectREST/datastreams/TEST_E?mimeType=image/jpeg&controlGroup=E&dsLabel=ETestExtrnallyManaged&dsLocation=file:///path/to/my/images/img.jpg" --data "" -u fedoraAdmin:xxxxx
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   924    0   924    0     0  12123      0 --:--:-- --:--:-- --:--:-- 12123100   924    0   924    0     0  12062      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectREST/datastreams/TEST_E
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 14:28:10 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:AllowXACMLTestObjectREST" dsID="TEST_E" ><dsLabel>ETestExternallyManaged</dsLabel><dsVersionID>TEST_E.0</dsVersionID><dsCreateDate>2010-08-19T14:28:11.194Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>E</dsControlGroup><dsSize>0</dsSize><dsVersionable>true</dsVersionable><dsInfoType></dsInfoType><dsLocation>file:///home/sprater/personal/images/greatsilence-100.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Creating a test object by FOXML ingest:  test:AllowXACMLTestObjectINGEST (SHOULD PASS)
+    => cd $FEDORA_HOME/client/bin && ./fedora-ingest.sh f fcrepo453-allowxacml.xml info:fedora/fedora-system:FOXML-1.1 localhost:9091 fedoraAdmin xxxxxx http ""
+Ingested pid: test:AllowXACMLTestObjectINGEST
+
+
+  Verifying datastreams are created and accessible...
+   => curl -s -i http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectREST/datastreams/TEST_M/content | head
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+content-disposition: inline; filename="MTestManaged.jpg"
+Content-Type: image/jpeg
+Content-Length: 2336
+Date: Thu, 19 Aug 2010 14:28:11 GMT
+
+
+   => curl -s -i http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectREST/datastreams/TEST_E/content | head
+HTTP/1.1 500 Internal Server Error
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 14:28:11 GMT
+Connection: close
+
+
+   => curl -s -i http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectINGEST/datastreams/TEST_M/content | head
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+content-disposition: inline; filename="MTestManaged.jpg"
+Content-Type: image/jpeg
+Content-Length: 2336
+Date: Thu, 19 Aug 2010 14:28:11 GMT
+
+
+   => curl -s -i http://localhost:9091/fedora/objects/test:AllowXACMLTestObjectINGEST/datastreams/TEST_E/content | head
+HTTP/1.1 500 Internal Server Error
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 14:28:11 GMT
+Connection: close
+
+Stack trace:
+
+vax.ws.rs.WebApplicationException: org.fcrepo.server.errors.HttpServiceNotFoundException: [DefaultExternalContentManager] returned an error.  The underlying error was a org.fcrepo.server.errors.HttpServiceNotFoundException  The message was  "Policy blocked datastream resolution"  .
+        at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:168)
+        at org.fcrepo.server.rest.DatastreamResource.getDatastream(DatastreamResource.java:250)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+        at java.lang.reflect.Method.invoke(Method.java:597)
+        at com.sun.jersey.server.impl.model.method.dispatch.AbstractResourceMethodDispatchProvider$ResponseOutInvoker._dispatch(AbstractResourceMethodDispatchProvider.java:175)
+        at com.sun.jersey.server.impl.model.method.dispatch.ResourceJavaMethodDispatcher.dispatch(ResourceJavaMethodDispatcher.java:67)
+        at com.sun.jersey.server.impl.uri.rules.HttpMethodRule.accept(HttpMethodRule.java:163)
+        at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)
+        at com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:71)
+        at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)
+        at com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:63)
+        at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:689)
+        at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:647)
+        at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:638)
+        at com.sun.jersey.spi.container.servlet.WebComponent.service(WebComponent.java:309)
+        at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:425)
+        at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:590)
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:717)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+        at org.fcrepo.server.security.servletfilters.FilterRestApiFlash.doFilter(FilterRestApiFlash.java:79)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128)
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)
+        at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:568)
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:286)
+        at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:845)
+        at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:583)
+        at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:447)
+        at java.lang.Thread.run(Thread.java:619)
+Caused by: org.fcrepo.server.errors.HttpServiceNotFoundException: [DefaultExternalContentManager] returned an error.  The underlying error was a org.fcrepo.server.errors.HttpServiceNotFoundException  The message was  "Policy blocked datastream resolution"  .
+        at org.fcrepo.server.storage.DefaultExternalContentManager.getExternalContent(DefaultExternalContentManager.java:155)
+        at org.fcrepo.server.access.DefaultAccess.getDatastreamDissemination(DefaultAccess.java:1160)
+        at org.fcrepo.server.rest.DatastreamResource.getDatastream(DatastreamResource.java:232)
+        ... 47 more
+Caused by: org.fcrepo.server.errors.HttpServiceNotFoundException: Policy blocked datastream resolution
+        at org.fcrepo.server.storage.DefaultExternalContentManager.getFromFilesystem(DefaultExternalContentManager.java:254)
+        at org.fcrepo.server.storage.DefaultExternalContentManager.getExternalContent(DefaultExternalContentManager.java:146)
+        ... 49 more
+Caused by: org.fcrepo.server.errors.authorization.AuthzDeniedException:
+        at org.fcrepo.server.security.PolicyEnforcementPoint.enforce(PolicyEnforcementPoint.java:422)
+        at org.fcrepo.server.security.DefaultAuthorization.enforceRetrieveFile(DefaultAuthorization.java:1660)
+        at org.fcrepo.server.storage.DefaultExternalContentManager.getFromFilesystem(DefaultExternalContentManager.java:242)
+        ... 50 more

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3958 Version of binary description sometimes not created</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3958</span> Version of binary description sometimes not created</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Received</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2024-10-24 15:59 UTC</td></tr><tr><th>Updated</th><td>2024-10-24 18:48 UTC</td></tr></table>
+<h2>Description</h2>
+<p>When debugging the <a href="FCREPO-3944.html" class="external-link" rel="nofollow noreferrer">flapping tests in windows for fcrepo-storage-ocfl</a> I found that one of the tests indicated that if a binary was created and updated at the same timestamp, then the description would not get a second version created. The reverse is also true, where updating the desc will not create a new version of the binary if it was created at the same time it was updated.</p>
+
+<p>The following potential tests in <tt>DefaultOcflObjectSessionTest</tt> replicate the bug, which matches the behavior we saw in the windows tests:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>    @Test
+    public void touchBinaryDescWhenBinaryUpdatedAtSameTime() {
+        try (MockedStatic&lt;Instant&gt; mockInstant = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            mockInstant.when(Instant::now).thenReturn(ORIGINAL_TIMESTAMP);
+            final var resourceId = "info:fedora/foo";
+            final var content = ResourceUtils.atomicBinary(resourceId, ROOT, "foo");
+
+            final var descId = "info:fedora/foo/fcr:metadata";
+            final var descContent = ResourceUtils.atomicDesc(descId, resourceId, "desc");
+
+            final var session = sessionFactory.newSession(resourceId);
+
+            write(session, content);
+            write(session, descContent);
+            session.commit();
+
+            assertVersions(session.listVersions(resourceId), "v1");
+            assertVersions(session.listVersions(descId), "v1");
+
+            final var session2 = sessionFactory.newSession(resourceId);
+            final var content2 = ResourceUtils.atomicBinary(resourceId, ROOT, "bar");
+
+            write(session2, content2);
+            session2.commit();
+
+            assertVersions(session.listVersions(resourceId), "v1", "v2");
+            assertVersions(session.listVersions(descId), "v1", "v2");
+        }
+    }
+
+    @Test
+    public void touchBinaryWhenBinaryDescMementoCreatedAtSameTime() {
+        final var resourceId = "info:fedora/foo";
+        final var descId = "info:fedora/foo/fcr:metadata";
+
+        try (MockedStatic&lt;Instant&gt; mockInstant = Mockito.mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
+            mockInstant.when(Instant::now).thenReturn(ORIGINAL_TIMESTAMP);
+
+            final var content = ResourceUtils.atomicBinary(resourceId, ROOT, "foo");
+            final var descContent = ResourceUtils.atomicDesc(descId, resourceId, "desc");
+
+            final var session = sessionFactory.newSession(resourceId);
+
+            write(session, content);
+            write(session, descContent);
+            session.commit();
+
+            assertVersions(session.listVersions(resourceId), "v1");
+            assertVersions(session.listVersions(descId), "v1");
+
+            final var session2 = sessionFactory.newSession(resourceId);
+
+            session2.writeHeaders(ResourceHeaders.builder(session2.readHeaders(descId))
+                    .withMementoCreatedDate(Instant.now())
+                    .build());
+            session2.commit();
+
+            assertVersions(session2.listVersions(resourceId), "v1", "v2");
+            assertVersions(session2.listVersions(descId), "v1", "v2");
+        }
+    }</pre>
+</div></div>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-23780"><div class="by">Ben Pennell, 2024-10-24 18:48 UTC</div><div class="text"><p>This bug may also apply to archival groups, based on which tests were flapping, so we should probably look into those too. </p>
+
+<p>For a full sense of which tests could fail based on this timing issue, see the changes to the test here:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo-storage-ocfl/pull/61/files#diff-9e3ddfd0c69463747c08f1deebd73ec033cd68ff6c3bf7e8162f8b421c010009L856" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/pull/61/files#diff-9e3ddfd0c69463747c08f1deebd73ec033cd68ff6c3bf7e8162f8b421c010009L856</a> </p></div></div>
+<p><a href="data/FCREPO-3958.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1258 Many blank nodes under /.well-known/genid/</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1258</span> Many blank nodes under /.well-known/genid/</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Peter Matthew Eichman</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2014-12-15 06:37 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:22 UTC</td></tr><tr><th>Resolved</th><td>2015-01-30 16:27 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1257.html">FCREPO-1257</a> Write integration test for massive blank node loading</td></tr></table>
+<h2>Description</h2>
+<p>Currently, blank nodes are created under:<br/>
+/.well-known/genid/</p>
+{uuid}
+
+<p>Since performance of the repository suffers when a single container has more than a few thousand children, the current approach of storing all blank nodes directly under the above parent is problematic.<br/>
+This issue is to ensure that blank nodes do not introduce a performance penalty by instead creating an auto-generated hierarchy under the above path, or by some other means.</p>
+
+<p>See: <a href="https://groups.google.com/d/msg/fedora-tech/uDhbM3CkDQc/8aRR76G76wgJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/uDhbM3CkDQc/8aRR76G76wgJ</a></p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-12702"><div class="by">Andrew Woods, 2014-12-17 02:55 UTC</div><div class="text"><p>See: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/JcrRdfTools.java#L417" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/JcrRdfTools.java#L417</a></p></div></div>
+<div class="comment" id="comment-12801"><div class="by">Andrew Woods, 2015-01-16 16:08 UTC</div><div class="text"><p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1257" >
+                <a href="FCREPO-1257.html" class="jira-issue-macro-key issue-link"  title="Write integration test for massive blank node loading" >
+            
+            FCREPO-1257
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ demonstrates the issue described in this ticket.</p></div></div>
+<div class="comment" id="comment-13172"><div class="by">Osman Din, 2015-01-22 16:12 UTC</div><div class="text"><p>Submitted PR and it seems to improve things a bit (the performance of the IT test written by Peter doesn't really degrade towards the end and is more uniform). The average time to complete the job is about the same though even with a different hierarchy scheme. So, I'm not sure if the issue is due to the hierarchy issue or if  we just needed to pass different, less processing-consuming params to UUIDPathMinter. Is there a ModeShape document or JIRA issue or discussion thread warning about performance issues when creating children under the same hierarchy? </p></div></div>
+<div class="comment" id="comment-13191"><div class="by">Andrew Woods, 2015-01-22 23:35 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/692" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/692</a></p></div></div>
+<div class="comment" id="comment-13195"><div class="by">Andrew Woods, 2015-01-23 18:37 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-13235"><div class="by">Andrew Woods, 2015-01-27 19:39 UTC</div><div class="text"><p>Pending response to code review comments. - take 2</p></div></div>
+<div class="comment" id="comment-13242"><div class="by">Osman Din, 2015-01-28 16:31 UTC</div><div class="text"><p>Made changes for take 2 to address some of the review comments. </p></div></div>
+<div class="comment" id="comment-13243"><div class="by">Andrew Woods, 2015-01-28 16:45 UTC</div><div class="text"><p>Tests are still required.</p></div></div>
+<div class="comment" id="comment-13248"><div class="by">Osman Din, 2015-01-28 21:36 UTC</div><div class="text"><p>Added a test based on the two tests you suggested. </p></div></div>
+<div class="comment" id="comment-13263"><div class="by">Andrew Woods, 2015-01-30 16:27 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/b6435477522c6752cc72feec7fc07ed58f10e07e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/b6435477522c6752cc72feec7fc07ed58f10e07e</a></p></div></div>
+<p><a href="data/FCREPO-1258.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

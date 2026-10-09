@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1614 POST constraints to use URLs, not data-URIs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1614</span> POST constraints to use URLs, not data-URIs</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-07-03 14:02 UTC</td></tr><tr><th>Updated</th><td>2015-10-15 21:16 UTC</td></tr><tr><th>Resolved</th><td>2015-08-06 17:17 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr></table>
+<h2>Description</h2>
+<p>As a follow-on to:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1418" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1418</a></p>
+
+<p>This ticket reveals another example of where a bad RDF document results in a 400 response but is not caught by a "ConstraintExceptionMapper". The following request should result in a &lt;Link; constrainedBy&gt; header that is a URL to a static RDF error description.</p>
+
+<p>curl -i -XPOST -H"Content-Type: application/rdf+xml" --data-binary @cuban_postcards.xml localhost:8080/rest/</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1614/10228_cuban_postcards.xml">cuban_postcards.xml</a>, 940 bytes, added by Andrew Woods on 2015-07-03</li>
+</ul>
+<h2>Comments (17)</h2>
+<div class="comment" id="comment-14659"><div class="by">A. Soroka, 2015-07-08 15:08 UTC</div><div class="text"><p>Andrew Woods can you make a little more precise what is the constraint being violated here?</p></div></div>
+<div class="comment" id="comment-14662"><div class="by">Jared Whiklo, 2015-07-08 16:40 UTC</div><div class="text"><p>A. Soroka, I'm thinking that because the subject referenced in the RDF does not exist in the repository. This could be covered by an OutOfDomainSubjectException. </p></div></div>
+<div class="comment" id="comment-14663"><div class="by">A. Soroka, 2015-07-08 16:42 UTC</div><div class="text"><p>If that's the problem, then I agree with Andrew Woods that this is deserving of a new exception. It's not an <tt>OutOfDomainSubjectException</tt> because the subject is indeed in-domain, it just doesn't exist. Perhaps something more like <tt>NonexistentSubjectException</tt> or <tt>UncreatedSubjectException</tt>.</p></div></div>
+<div class="comment" id="comment-14664"><div class="by">Jared Whiklo, 2015-07-08 17:05 UTC</div><div class="text"><p>Sorry, I forgot the IRC conversation the 3 of us had. Looking at my work I was indeed implementing a <tt>NoSuchSubjectException</tt>. </p></div></div>
+<div class="comment" id="comment-14665"><div class="by">Andrew Woods, 2015-07-08 21:44 UTC</div><div class="text"><p>+1 Jared Whiklo for <tt>NoSuchSubjectException</tt>.</p></div></div>
+<div class="comment" id="comment-14712"><div class="by">Jared Whiklo, 2015-07-13 21:59 UTC</div><div class="text"><p>How do you want to handle Hash URIs? One of the tests now failing with my change is <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java#L2296-L2323" class="external-link" rel="nofollow noreferrer">this one in FedoraLdpIT</a>.</p>
+
+<p>I'm assuming we won't test for existence of Hash URIs, but is there a way to test if something is a Hash URI. Other than looking for a hash in it?</p></div></div>
+<div class="comment" id="comment-14713"><div class="by">Andrew Woods, 2015-07-13 22:20 UTC</div><div class="text"><p>I would not have expected this test to break from this ticket. <br/>
+You may find this hash-resource logic of interest for example's sake:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/766f392e38e1f1b1a7c4b20026b48e3a682bb8a9" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/766f392e38e1f1b1a7c4b20026b48e3a682bb8a9</a></p></div></div>
+<div class="comment" id="comment-14717"><div class="by">A. Soroka, 2015-07-14 14:27 UTC</div><div class="text"><p>Andrew Woods what could be happening here is that a previously-unused hash URI is being used. That's legitimate, but the resource backing that hash URI wouldn't exist yet, so it could appear momentarily as an <tt>NoSuchSubjectException</tt> kind of thing. </p></div></div>
+<div class="comment" id="comment-14718"><div class="by">Jared Whiklo, 2015-07-14 14:55 UTC</div><div class="text"><p>The error stems from trying to use HttpResourceConverter.asString() on a hash URI resource. It returns null. </p>
+
+<p>Not really sure if I can check for existence of a hash URI, but assuming I can would that be the correct way to do it?</p>
+
+<p>So instead I checked for the existence of the "parent" resource.</p>
+
+<p>What I am doing right now in the PersistingRdfConsumer is:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">final</span> Resource subject = m.asStatement(t).getSubject();
+
+<span class="code-keyword">final</span> <span class="code-object">int</span> hashIndex = subject.toString().lastIndexOf(<span class="code-quote">"#"</span>);
+
+<span class="code-keyword">final</span> <span class="code-object">String</span> base_subject = hashIndex &gt; 0 ?
+    idTranslator.asString(ResourceFactory.createResource(
+    subject.toString().substring(0, hashIndex)))
+    : idTranslator.asString(subject);
+
+<span class="code-keyword">final</span> <span class="code-object">boolean</span> in_domain =
+   idTranslator.inDomain(subject) || t.getSubject().isBlank();
+
+<span class="code-keyword">final</span> <span class="code-object">boolean</span> subject_exists = (t.getSubject().isBlank() || 
+   session.nodeExists(base_subject));
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-14719"><div class="by">A. Soroka, 2015-07-14 14:59 UTC</div><div class="text"><p>Is this a bug in <tt>HttpResourceConverter</tt>? I think it should be able to handle hash URIs, no?</p></div></div>
+<div class="comment" id="comment-14726"><div class="by">Jared Whiklo, 2015-07-14 17:41 UTC</div><div class="text"><p>My mistake, I think your previous statement might be true. A. Soroka.</p>
+
+<p>The FedoraLdpIT test was an error on my part. I fixed that. The real problem is in the RDF integration tests.</p>
+
+<p>When I use:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+<span class="code-keyword">final</span> Resource subject = m.asStatement(t).getSubject();
+
+<span class="code-keyword">final</span> <span class="code-object">boolean</span> in_domain =
+   idTranslator.inDomain(subject) || t.getSubject().isBlank();
+
+<span class="code-keyword">final</span> <span class="code-object">boolean</span> subject_exists = (t.getSubject().isBlank() || 
+   session.nodeExists(subject));
+</pre>
+</div></div>
+
+<p>I get a variety of errors because things are not seen as existing.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Failed tests: 
+  BibOntologyIT.testExampleRecord:28-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;400&gt;
+  GeonameIT.testRoundtripGeonamesRdf:65-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;400&gt;
+  ModsRdfIT.testRoundtripModsRDF:165-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;400&gt;
+  MusicOntologyIT.testExampleRecord:28-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;400&gt;
+  VivoIT.testExampleRecord:28-&gt;AbstractIntegrationRdfIT.createLDPRSAndCheckResponse:63-&gt;AbstractIntegrationRdfIT.checkResponse:152 Didn't get a CREATED response! expected:&lt;201&gt; but was:&lt;400&gt;
+</pre>
+</div></div>
+
+<p>I checked the BibOntologyIT test and this subject <br/>
+<tt><a href="http://localhost:8080/07574fc3-9a8e-4569-9351-5c5536c00fc0#proceedings.pdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/07574fc3-9a8e-4569-9351-5c5536c00fc0#proceedings.pdf</a></tt> <br/>
+fails the nodeExists test.</p>
+
+<p>The session sees the parent resource <br/>
+<tt><a href="http://localhost:8080/07574fc3-9a8e-4569-9351-5c5536c00fc0" class="external-link" rel="nofollow noreferrer">http://localhost:8080/07574fc3-9a8e-4569-9351-5c5536c00fc0</a></tt><br/>
+as existing, but not the hash URI.</p></div></div>
+<div class="comment" id="comment-14727"><div class="by">A. Soroka, 2015-07-14 19:04 UTC</div><div class="text"><p>Hash URIs, like I said, don't exist until they are used, and it's the act of using them that brings them into existence. I'm not sure where that happens, but I think it's somewhere near where you are working now, Jared Whiklo.</p></div></div>
+<div class="comment" id="comment-14736"><div class="by">A. Soroka, 2015-07-15 19:59 UTC</div><div class="text"><p>I think the check for the "parent" is the right thing to do. The question is just, where to do it. I think it should actually be happening in <tt>HttpResourceConverter</tt>, which would simplify life for clients thereof.</p></div></div>
+<div class="comment" id="comment-14929"><div class="by">Jared Whiklo, 2015-08-06 16:00 UTC</div><div class="text"><p>Following on A. Soroka's work on 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1411" >
+                <a href="FCREPO-1411.html" class="jira-issue-macro-key issue-link"  title="PUT/PATCH of resources that are not the target of the request" >
+            
+            FCREPO-1411
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, this now throws the following.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>HTTP/1.1 403 Forbidden
+Date: Thu, 06 Aug 2015 15:53:22 GMT
+Link: &lt;http://localhost:8080/static/constraints/IncorrectTripleSubjectException.rdf&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"
+Content-Type: text/plain
+Content-Length: 177
+Server: Jetty(9.3.1.v20150714)
+
+http://localhost:8080/rest/cdm/ref/collection/chc0015/id/57 is not in the topic of this RDF, which is http://localhost:8080/rest/51/eb/e2/1c/51ebe21c-62aa-452a-8880-cfef670b576f
+</pre>
+</div></div>
+
+<p>I just want to confirm that this would not be a correct error to throw for this case?</p></div></div>
+<div class="comment" id="comment-14930"><div class="by">Andrew Woods, 2015-08-06 16:12 UTC</div><div class="text"><p>Actually, the "cuban_postcards.xml" document does indeed suffer from an "incorrect triple subject". <br/>
+Therefore, maybe this ticket should be closed as resolved by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1411" >
+                <a href="FCREPO-1411.html" class="jira-issue-macro-key issue-link"  title="PUT/PATCH of resources that are not the target of the request" >
+            
+            FCREPO-1411
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.<br/>
+Thoughts, Jared Whiklo?</p></div></div>
+<div class="comment" id="comment-14931"><div class="by">Jared Whiklo, 2015-08-06 16:46 UTC</div><div class="text"><p>Based on the description of the issue in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1411" >
+                <a href="FCREPO-1411.html" class="jira-issue-macro-key issue-link"  title="PUT/PATCH of resources that are not the target of the request" >
+            
+            FCREPO-1411
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, I think this is exactly the same issue and should be considered closed as resolved by it.</p></div></div>
+<div class="comment" id="comment-14932"><div class="by">Andrew Woods, 2015-08-06 17:17 UTC</div><div class="text"><p>Resolved by: <a href="https://jira.duraspace.org/browse/FCREPO-1411" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1411</a></p></div></div>
+<p><a href="data/FCREPO-1614.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

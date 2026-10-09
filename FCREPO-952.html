@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-952 Exception when modifying an object 32767 times</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-952</span> Exception when modifying an object 32767 times</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Thomas Pii</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2011-06-03 17:30 UTC</td></tr><tr><th>Updated</th><td>2011-07-01 03:11 UTC</td></tr><tr><th>Resolved</th><td>2011-07-01 03:11 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr></table>
+<h2>Environment</h2>Ubuntu 11.04
+<h2>Description</h2>
+<p>The database internally uses a SMALLINT for the systemVersion in the doRegistry table. This value is incremented every time you modify an object, and overflows when you reach 32767 modifications.<br/>
+This was reproduced using a small piece of code that added and removed a relation from and object repeatedly.</p>
+
+<p>The stacktrace is:<br/>
+org.fcrepo.server.errors.StorageDeviceException: Error creating replication job: The resulting value is outside the range for the data type SMALLINT.<br/>
+        at org.fcrepo.server.storage.DefaultDOManager.doCommit(DefaultDOManager.java:1376) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.SimpleDOWriter.commit(SimpleDOWriter.java:508) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.management.DefaultManagement.purgeRelationship(DefaultManagement.java:1755) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at sun.reflect.GeneratedMethodAccessor51.invoke(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) <span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+        at org.fcrepo.server.messaging.NotificationInvocationHandler.invoke(NotificationInvocationHandler.java:68) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at $Proxy0.purgeRelationship(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at org.fcrepo.server.management.ManagementModule.purgeRelationship(ManagementModule.java:476) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.management.FedoraAPIMBindingSOAPHTTPImpl.purgeRelationship(FedoraAPIMBindingSOAPHTTPImpl.java:551) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.fcrepo.server.management.FedoraAPIMBindingSOAPHTTPSkeleton.purgeRelationship(FedoraAPIMBindingSOAPHTTPSkeleton.java:463) <span class="error">&#91;fcrepo-common-3.4.2.jar:na&#93;</span><br/>
+        at sun.reflect.GeneratedMethodAccessor50.invoke(Unknown Source) <span class="error">&#91;na:na&#93;</span><br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) <span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+        at java.lang.reflect.Method.invoke(Method.java:597) <span class="error">&#91;na:1.6.0_24&#93;</span><br/>
+        at org.apache.axis.providers.java.RPCProvider.invokeMethod(RPCProvider.java:397) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.providers.java.RPCProvider.processMessage(RPCProvider.java:186) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.providers.java.JavaProvider.invoke(JavaProvider.java:323) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.strategies.InvocationStrategy.visit(InvocationStrategy.java:32) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.SimpleChain.doVisiting(SimpleChain.java:118) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.SimpleChain.invoke(SimpleChain.java:83) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.handlers.soap.SOAPService.invoke(SOAPService.java:453) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.server.AxisServer.invoke(AxisServer.java:281) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at org.apache.axis.transport.http.AxisServlet.doPost(AxisServlet.java:699) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:637) <span class="error">&#91;servlet-api.jar:na&#93;</span><br/>
+        at org.apache.axis.transport.http.AxisServletBase.service(AxisServletBase.java:327) <span class="error">&#91;axis-1.3-PATCHED.jar:na&#93;</span><br/>
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:717) <span class="error">&#91;servlet-api.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235) <span class="error">&#91;fcrepo-server-3.4.2.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:293) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+        at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:849) <span class="error">&#91;tomcat-coyote.jar:na&#93;</span><br/>
+        at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:583) <span class="error">&#91;tomcat-coyote.jar:na&#93;</span><br/>
+        at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:454) <span class="error">&#91;tomcat-coyote.jar:na&#93;</span><br/>
+        at java.lang.Thread.run(Thread.java:662) <span class="error">&#91;na:1.6.0_24&#93;</span></p>
+
+<p>I have attached a patch that modifies the type to INT. There is also a modification of the DefaultDOManager that passes the original SQLException as cause to the StorageDeviceException that is thrown, so the stack trace is preserved</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-952/10129_systemVersion.patch">systemVersion.patch</a>, 3484 bytes, added by Thomas Pii on 2011-06-03</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11974"><div class="by">eddie, 2011-06-03 19:06 UTC</div><div class="text"><p>Thomas, thanks for the comprehensive bug report and patch!</p>
+
+<p>For the rest of the committers: the fix is straightforward enough. The issue would be forcing a rebuild for upgraders.</p></div></div>
+<div class="comment" id="comment-11975"><div class="by">eddie, 2011-06-03 19:12 UTC</div><div class="text"><p>One question when we get to implementing this fix is if there's any issue with using the full INT range, i.e. starting at -2,147,483,648 rather than 0. We can test with the current SMALLINT impl to see.</p></div></div>
+<div class="comment" id="comment-11976"><div class="by">Stephen Bayliss, 2011-06-06 19:01 UTC</div><div class="text"><p>And maybe consider what the "graceful" behaviour would be if we do it a limit (eg over a very long time period); ie would it be acceptable for the version to cycle back to the starting point?</p></div></div>
+<div class="comment" id="comment-12001"><div class="by">eddie, 2011-07-01 03:11 UTC</div><div class="text"><p>This is fixed in bebcf148a98c75d86054f8d5856b5042d77e615b. I did take a quick look at making use of the full range of INT. There are bits of code that assume 0 as the default or initial value. So better off marking the systemVersion column as unsigned. However, it doesn't look like our dbspecs support passing unsigned as an option.</p></div></div>
+<p><a href="data/FCREPO-952.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

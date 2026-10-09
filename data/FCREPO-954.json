@@ -1,0 +1,779 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": {
+   "accountId": "557058:3509077e-fbee-4f58-b02e-4a04944c55d4",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "24x24": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "32x32": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "48x48": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png"
+   },
+   "displayName": "jerry y pan",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3A3509077e-fbee-4f58-b02e-4a04944c55d4",
+   "timeZone": "America/Halifax"
+  },
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Thanks for joining us in today's call, Jerry. ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "We brainstormed how it could be done, and talked about a pluggable \"hint provider\" interface, implementations of which would provide the necessary hints (content type, parent id, etc) to be passed down to Akubra at storage time. This interface might look something like:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "public interface FedoraAkubraHintProvider { ",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Map<String, String> getHintsForAboutToBeStoredObject(FedoraObject obj); ",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "Map<String, String> getHintsForAboutToBeStoredDatastream(FedoraObject obj, String datastreamId);",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "}",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "One can imagine that implementations of this interface could be injected via Spring.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "If implemented for Fedora 3.6, the class that uses this interface would be DefaultDOManager...wherever it makes a call to m_permanentStore.addDatastream, .replaceDatastream, .addObject, and .replaceObject. The hint (map) retrieved would be passed down to the LowlevelStorage implementation, keeping the original method signature, but adding one that specifies a hint in addition to the id and inputstream.  Then for the Akubra-based implementation of LowlevelStorage, the hint would actually be passed down to the underlying akubra implementation.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "If implemented in Fedora 4.0, the class that uses this interface would be a concrete implementation of HighLevelStorage (specificially, a high level storage implementation that uses akubra for blob storage).",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "I have opened this issue, signifying that the committers agree that a pluggable \"hint provider\" for Akubra should be added to Fedora. I have also put it in the 4.0 bucket, signifying that we'd like to see it happen for Fedora 4.0. However, as we discussed in the meeting, this may be possible to add to Fedora 3.6 if a) it is done in time, and b) the implementation, including integration tests, is done by someone other than the committers; we are focused primarily on performance testing and fixes for the 3.6 release.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Jerry, you mentioned on the call that you may have resources put into the implementation of this. That's great. Do you think it may be possible in the next 2 or 3 months? It's a bit early to have a date for Fedora 3.6, but I'd guess that 3 months after 3.5 is the quickest it would happen.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2011-06-21T20:26:49.557-0300",
+     "id": "11986",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment/11986",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2011-06-21T20:29:38.917-0300"
+    },
+    {
+     "author": {
+      "accountId": "557058:3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "24x24": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "32x32": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "48x48": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png"
+      },
+      "displayName": "jerry y pan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3A3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Thanks for the discussion on this issue and the resolution. Yes we should be able to work on this within next 2 months and we will contact contact you and the team to review the implementation. I would like to push it for 3.6. -Jerry",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2011-06-23T13:32:57.522-0300",
+     "id": "11987",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment/11987",
+     "updateAuthor": {
+      "accountId": "557058:3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "24x24": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "32x32": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "48x48": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png"
+      },
+      "displayName": "jerry y pan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3A3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2011-06-23T13:32:57.522-0300"
+    },
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Discussed Jerry's work thus far:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/JerryPan/fcrepo/tree/fcrepo-954"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/JerryPan/fcrepo/tree/fcrepo-954",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "...at today's committer meeting:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://wiki.duraspace.org/display/FCREPO/2011-09-27+-+Committer+Meeting"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://wiki.duraspace.org/display/FCREPO/2011-09-27+-+Committer+Meeting",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "(see notes on above page) There was agreement that we should recommend new configurations/dependencies for modules come in through spring config files instead of the old way, fedora.fcfg. Also, we discussed that a utility to do the conversion on a per-module basis (FCFG to spring config file) would be good. So ",
+          "type": "text"
+         },
+         {
+          "attrs": {
+           "url": "https://fedora-repository.atlassian.net/browse/FCREPO-1001#icft=FCREPO-1001"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": " was created.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Scoping this for 3.6 since it now seems likely that the work & tests will be ready in time for the release.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2011-09-27T20:34:49.335-0300",
+     "id": "12064",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment/12064",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2011-09-27T20:34:49.335-0300"
+    }
+   ],
+   "maxResults": 3,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment",
+   "startAt": 0,
+   "total": 3
+  },
+  "components": [
+   {
+    "description": "Core Repository Service",
+    "id": "10000",
+    "name": "legacy - Fedora",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/component/10000"
+   }
+  ],
+  "created": "2011-06-11T04:53:15.092-0300",
+  "creator": {
+   "accountId": "557058:3509077e-fbee-4f58-b02e-4a04944c55d4",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "24x24": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "32x32": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "48x48": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png"
+   },
+   "displayName": "jerry y pan",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3A3509077e-fbee-4f58-b02e-4a04944c55d4",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|1004gw:",
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "2011-06-21T20:26:49.557-0300",
+  "customfield_10025": "1_*:*_1_*:*_32660782256_*|*_6_*:*_1_*:*_0_*|*_10003_*:*_1_*:*_911283499",
+  "customfield_10026": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": [
+   "Akubra"
+  ],
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "We have a use case to expose Fedora datastream/objects to science data tools that are dependent on a meaningful file system and MIME indicators by file extension. For example, Earth and Atmospheric Science community has a tool to read a special format called NetCDF that represents multiple-dimensional arrays and there are data tools serve them via HTTP, but needs to scan the file system for that type of files, rather than read a HTTP stream.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "I would therefore like to have the the hints argument in the Akubra API  to be populated with the mime type and the parent PID, in order to implement a special storage on the file system for this kind of tool. The Parent PID is to be used to form a correct collection hierarchy, and the MIME type is to be used to write the file extension.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "text": "We have had an implementation (using the Fedora 3.4.2 legacy storage system) that used the internal low-level storage API, which needs to be move into Akubra as a true sustainable solution.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": null,
+  "fixVersions": [
+   {
+    "archived": false,
+    "description": "Release manager: Eddie Shin",
+    "id": "10060",
+    "name": "Fedora 3.6",
+    "releaseDate": "2012-08-07",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10060"
+   }
+  ],
+  "issuelinks": [],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10315,
+   "description": "Functionality or a feature expressed as a user goal.",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+   "id": "10001",
+   "name": "Story",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10001",
+   "subtask": false
+  },
+  "labels": [],
+  "lastViewed": null,
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/major.svg",
+   "id": "10003",
+   "name": "Major",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10003"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "557058:3509077e-fbee-4f58-b02e-4a04944c55d4",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "24x24": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "32x32": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+    "48x48": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png"
+   },
+   "displayName": "jerry y pan",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3A3509077e-fbee-4f58-b02e-4a04944c55d4",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "A fix for this issue is checked into the tree and tested.",
+   "id": "10004",
+   "name": "Fixed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10004"
+  },
+  "resolutiondate": "2012-07-03T18:27:40.793-0300",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": null,
+  "subtasks": [],
+  "summary": "Populate metadata to Akubra API",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2012-07-03T18:27:40.846-0300",
+  "versions": [],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-954/votes",
+   "votes": 0
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-954/watchers",
+   "watchCount": 0
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "10959",
+ "key": "FCREPO-954",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Thanks for joining us in today's call, Jerry. </p>\n\n<p>We brainstormed how it could be done, and talked about a pluggable \"hint provider\" interface, implementations of which would provide the necessary hints (content type, parent id, etc) to be passed down to Akubra at storage time. This interface might look something like:</p>\n\n<p>public interface FedoraAkubraHintProvider { <br/>\n    Map&lt;String, String&gt; getHintsForAboutToBeStoredObject(FedoraObject obj); <br/>\n    Map&lt;String, String&gt; getHintsForAboutToBeStoredDatastream(FedoraObject obj, String datastreamId);<br/>\n}</p>\n\n<p>One can imagine that implementations of this interface could be injected via Spring.</p>\n\n<p>If implemented for Fedora 3.6, the class that uses this interface would be DefaultDOManager...wherever it makes a call to m_permanentStore.addDatastream, .replaceDatastream, .addObject, and .replaceObject. The hint (map) retrieved would be passed down to the LowlevelStorage implementation, keeping the original method signature, but adding one that specifies a hint in addition to the id and inputstream.  Then for the Akubra-based implementation of LowlevelStorage, the hint would actually be passed down to the underlying akubra implementation.</p>\n\n<p>If implemented in Fedora 4.0, the class that uses this interface would be a concrete implementation of HighLevelStorage (specificially, a high level storage implementation that uses akubra for blob storage).</p>\n\n<p>I have opened this issue, signifying that the committers agree that a pluggable \"hint provider\" for Akubra should be added to Fedora. I have also put it in the 4.0 bucket, signifying that we'd like to see it happen for Fedora 4.0. However, as we discussed in the meeting, this may be possible to add to Fedora 3.6 if a) it is done in time, and b) the implementation, including integration tests, is done by someone other than the committers; we are focused primarily on performance testing and fixes for the 3.6 release.</p>\n\n<p>Jerry, you mentioned on the call that you may have resources put into the implementation of this. That's great. Do you think it may be possible in the next 2 or 3 months? It's a bit early to have a date for Fedora 3.6, but I'd guess that 3 months after 3.5 is the quickest it would happen.</p>",
+     "created": "21/Jun/11 8:26 PM",
+     "id": "11986",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment/11986",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "21/Jun/11 8:29 PM"
+    },
+    {
+     "author": {
+      "accountId": "557058:3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "24x24": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "32x32": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "48x48": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png"
+      },
+      "displayName": "jerry y pan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3A3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Thanks for the discussion on this issue and the resolution. Yes we should be able to work on this within next 2 months and we will contact contact you and the team to review the implementation. I would like to push it for 3.6. -Jerry</p>",
+     "created": "23/Jun/11 1:32 PM",
+     "id": "11987",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment/11987",
+     "updateAuthor": {
+      "accountId": "557058:3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "24x24": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "32x32": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png",
+       "48x48": "https://secure.gravatar.com/avatar/22cc1999de06a8246849da431dd908e5?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJP-6.png"
+      },
+      "displayName": "jerry y pan",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3A3509077e-fbee-4f58-b02e-4a04944c55d4",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "23/Jun/11 1:32 PM"
+    },
+    {
+     "author": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Discussed Jerry's work thus far:</p>\n\n<p><a href=\"https://github.com/JerryPan/fcrepo/tree/fcrepo-954\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/JerryPan/fcrepo/tree/fcrepo-954</a></p>\n\n<p>...at today's committer meeting:</p>\n\n<p><a href=\"https://wiki.duraspace.org/display/FCREPO/2011-09-27+-+Committer+Meeting\" class=\"external-link\" rel=\"nofollow noreferrer\">https://wiki.duraspace.org/display/FCREPO/2011-09-27+-+Committer+Meeting</a></p>\n\n<p>(see notes on above page) There was agreement that we should recommend new configurations/dependencies for modules come in through spring config files instead of the old way, fedora.fcfg. Also, we discussed that a utility to do the conversion on a per-module basis (FCFG to spring config file) would be good. So \n    <span class=\"jira-issue-macro resolved\" data-jira-key=\"FCREPO-1001\" >\n                <a href=\"https://fedora-repository.atlassian.net/browse/FCREPO-1001\" class=\"jira-issue-macro-key issue-link\"  title=\"FCFG to Spring conversion utility\" >\n            <img class=\"icon\" src=\"https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium\" />\n            FCREPO-1001\n        </a>\n                                                    <span class=\"aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf\">Closed</span>\n            </span>\n was created.</p>\n\n<p>Scoping this for 3.6 since it now seems likely that the work &amp; tests will be ready in time for the release.</p>\n",
+     "created": "27/Sep/11 8:34 PM",
+     "id": "12064",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment/12064",
+     "updateAuthor": {
+      "accountId": "557058:e25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "24x24": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "32x32": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png",
+       "48x48": "https://secure.gravatar.com/avatar/f53ee0691ccb59ede3ec232c18af4e16?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FCW-5.png"
+      },
+      "displayName": "Chris Wilper",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=557058%3Ae25d94d0-bd50-4c2c-906c-14cdf85801fb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "27/Sep/11 8:34 PM"
+    }
+   ],
+   "maxResults": 3,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959/comment",
+   "startAt": 0,
+   "total": 3
+  },
+  "components": null,
+  "created": "11/Jun/11 4:53 AM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "21/Jun/11 8:26 PM",
+  "customfield_10025": null,
+  "customfield_10026": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p>We have a use case to expose Fedora datastream/objects to science data tools that are dependent on a meaningful file system and MIME indicators by file extension. For example, Earth and Atmospheric Science community has a tool to read a special format called NetCDF that represents multiple-dimensional arrays and there are data tools serve them via HTTP, but needs to scan the file system for that type of files, rather than read a HTTP stream.</p>\n\n<p>I would therefore like to have the the hints argument in the Akubra API  to be populated with the mime type and the parent PID, in order to implement a special storage on the file system for this kind of tool. The Parent PID is to be used to form a correct collection hierarchy, and the MIME type is to be used to write the file extension.</p>\n\n<p>We have had an implementation (using the Fedora 3.4.2 legacy storage system) that used the internal low-level storage API, which needs to be move into Akubra as a true sustainable solution.</p>",
+  "duedate": null,
+  "environment": "",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "03/Jul/12 6:27 PM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": null,
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "03/Jul/12 6:27 PM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/10959"
+}

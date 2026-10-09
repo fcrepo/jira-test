@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1795 Allow Solr to enforce the WebAC authorization rules defined in the repository</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1795</span> Allow Solr to enforce the WebAC authorization rules defined in the repository</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2015-10-26 16:12 UTC</td></tr><tr><th>Updated</th><td>2016-01-30 01:41 UTC</td></tr><tr><th>Resolved</th><td>2015-11-05 23:02 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>webac</td></tr></table>
+<h2>Description</h2>
+<p>Add ACL uris to response headers as "Link: &lt;acl-uri&gt;; rel=acl" such that an indexer can read the ACL and add the correct permissions to the external index so it can be used to filter those results.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-15587"><div class="by">Jared Whiklo, 2015-10-28 03:58 UTC</div><div class="text"><p>Work so far is <a href="https://github.com/whikloj/fcrepo-module-auth-webac/tree/fcrepo-1795" class="external-link" rel="nofollow noreferrer">in this branch</a></p>
+
+<p>The Provider is picked up by JAX-RS, but it is not used. Rather the RdfStreamProvider is used. This makes me think you can only use one provider for each "type". But perhaps I am missing something.</p></div></div>
+<div class="comment" id="comment-15614"><div class="by">Jared Whiklo, 2015-10-29 20:29 UTC</div><div class="text"><p>I was wrong, I can now see that the MessageBodyWriter is stacking. So working from the RdfStream and getting to the Acl possibly using the stream.topic() and filtering to find the Acl. </p>
+
+<p>However currently if you aren't an admin the Acl will be "inaccessibleResource", so that will have to be revised before this will be of any use.</p></div></div>
+<div class="comment" id="comment-15715"><div class="by">Jared Whiklo, 2015-11-03 17:45 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/939" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/939</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/48" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/48</a></p></div></div>
+<div class="comment" id="comment-15752"><div class="by">Andrew Woods, 2015-11-04 22:45 UTC</div><div class="text"><p>Well done on this one, Jared Whiklo. Please update based on code review comments.</p></div></div>
+<div class="comment" id="comment-15768"><div class="by">Jared Whiklo, 2015-11-05 15:31 UTC</div><div class="text"><p>Updated and rebased changes for both PRs.</p></div></div>
+<div class="comment" id="comment-15776"><div class="by">Andrew Woods, 2015-11-05 23:02 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/097714241c927bdc4ce9613bd6bec17dbb4d5b67" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/097714241c927bdc4ce9613bd6bec17dbb4d5b67</a> and<br/>
+<a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/6d7f196f1146378a171d81a44a8cb0454e068be8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/6d7f196f1146378a171d81a44a8cb0454e068be8</a></p></div></div>
+<div class="comment" id="comment-16044"><div class="by">Andrew Woods, 2016-01-29 18:45 UTC</div><div class="text"><p>Jared Whiklo, could you please document this "Link" feature as a note on this page:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/Quick+Start+with+WebAC" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Quick+Start+with+WebAC</a></p></div></div>
+<div class="comment" id="comment-16045"><div class="by">Jared Whiklo, 2016-01-29 22:32 UTC</div><div class="text"><p>I have added a note to the above page Andrew Woods. If you could take a look at it, I would appreciate it. </p></div></div>
+<div class="comment" id="comment-16046"><div class="by">Andrew Woods, 2016-01-29 22:41 UTC</div><div class="text"><p>Jared Whiklo, I believe the <tt>LinkHeaderProvider</tt> needs to be configured in a spring.xml file for this functionality to work... maybe a snippet of how to do that configuration would be helpful in the wiki documentation.</p></div></div>
+<div class="comment" id="comment-16047"><div class="by">Jared Whiklo, 2016-01-29 22:51 UTC</div><div class="text"><p>I don't think it does require any configuration. Looking back at the commits that added it I don't see anything I added. </p>
+
+<p>I think you might be thinking of the <tt>HttpHeaderPrincipalProvider</tt> that Peter Matthew Eichman created in <a href="https://jira.duraspace.org/browse/FCREPO-1790" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1790</a>. That requires you to configure the delegate header in spring.</p></div></div>
+<div class="comment" id="comment-16048"><div class="by">Andrew Woods, 2016-01-29 22:55 UTC</div><div class="text"><p>Hmm, when I spin up the 4.5.1-SNAPSHOT vagrant with audit and webac enabled, create a resource, then GET it... I am not seeing the "acl" Link header. Do you see it?</p></div></div>
+<div class="comment" id="comment-16049"><div class="by">Jared Whiklo, 2016-01-30 01:41 UTC</div><div class="text"><p>No, but that would be because unless you have added an ACL to that resource or a parent resource you won't get the Link Header.</p>
+
+<p>In fact looking at what I did there, I am wondering if it would present the header if the ACL was on the parent resource. I'll have to try it but there could be a ticket to re-use the <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/blob/master/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L390" class="external-link" rel="nofollow noreferrer">getEffectiveAcl</a> code.</p></div></div>
+<p><a href="data/FCREPO-1795.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

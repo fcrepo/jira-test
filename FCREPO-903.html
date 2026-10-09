@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-903 Improve efficiency of FeSL policy finder (XPath)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-903</span> Improve efficiency of FeSL policy finder (XPath)</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-04-10 12:31 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>Current XPath does not take account of and/or conditions in the policy.</p>
+
+<p>Instead it treats all attributes specified in the policy as "or" conditions.</p>
+
+<p>Case 1:<br/>
+Policy specifies<br/>
+Resources<br/>
+  Resource<br/>
+    ResourceMatch<br/>
+      AttID1 = "xyz"<br/>
+  Resource<br/>
+    ResourceMatch<br/>
+      Att2D1 = "pqr"</p>
+
+<p>This is an "or" condition, so any request containing "xyx" OR "pqr" should match.  This case is currently satisfied</p>
+
+<p>Case 2:<br/>
+Policy specifies<br/>
+Resources<br/>
+  Resource<br/>
+    ResourceMatch<br/>
+      AttID1 = "xyz"<br/>
+    ResourceMatch<br/>
+      Att2D1 = "pqr"</p>
+
+<p>This is an "and" condition, so a request containing "xyx" AND "pqr" should match; but a request matching on only one of the attributes should not.  This case is currently not satisfied - the finder will return too many policies as it will match on a request with either of the attributes specified.</p>
+
+<p>Additionally, the current "match" logic is not constrained to a single ResourceMatch (or SubjectMatch, etc) - so for the policy:<br/>
+Resources<br/>
+  Resource<br/>
+    ResourceMatch<br/>
+      AttID1 = "xyz"<br/>
+  Resource<br/>
+    ResourceMatch<br/>
+      AttID2 = "pqr"</p>
+
+<p>The policy will match the request if the request has AttID1="pqr" - incorrectly.  Though this is unlikely to be a major problem in practice as the identifier spaces used for different attributes in general do not have common values.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12867"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-903.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

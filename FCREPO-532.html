@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-532 Get rid of &quot;.xml&quot; shortcut on REST API</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-532</span> Get rid of &quot;.xml&quot; shortcut on REST API</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2009-09-18 21:41 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2009-11-19 11:25 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr><tr><th>Addresses</th><td><a href="FCREPO-522.html">FCREPO-522</a> DSIDs can now no longer terminate in .xml and behave properly</td></tr><tr><th>Required by</th><td><a href="FCREPO-543.html">FCREPO-543</a> Stabilize REST API (non-beta)</td></tr></table>
+<h2>Description</h2>
+<p>Ben O'Steen noted in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-522" >
+                <a href="FCREPO-522.html" class="jira-issue-macro-key issue-link"  title="DSIDs can now no longer terminate in .xml and behave properly" >
+            
+            FCREPO-522
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ that the .xml shortcut is problematic for the REST API's /objects/pid/datastreams/</p>
+{dsid}
+<p> (apim:getDatastream, which gets datastream metadata) endpoint.  It's problematic when the datastream id ends with .xml.</p>
+
+<p>We discussed this on the Sept15th call and decided to get rid of the .xml shortcut as a solution.</p>
+
+<p>This issue is to extend that, for consistency, across the REST API.  There are places where it's NOT problematic from a functional perspective, but the lack of consistency would be troubling from a design perspective.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11031"><div class="by">Bill Branan, 2009-10-20 16:19 UTC</div><div class="text"><p>The web admin will likely need to be updated with this item, wherever the URLs make use of the .xml shortcut.</p></div></div>
+<div class="comment" id="comment-11034"><div class="by">Bill Branan, 2009-10-20 17:57 UTC</div><div class="text"><p>For discussion purposes, these are the methods currently in the REST API which provide a .xml shortcut</p>
+
+<p>getObjectHistory (no problem possible)<br/>
+Example: /objects/demo:29/versions.xml</p>
+
+<p>getObjectProfile (possible problem if PID ends in .xml)<br/>
+Example: /objects/demo:29.xml</p>
+
+<p>listDatastreams (no problem possible)<br/>
+Example: /objects/demo:35/datastreams.xml</p>
+
+<p>listMethods (no problem possible)<br/>
+Example: /objects/demo:29/methods.xml</p>
+
+<p>getDatastream (known problem if DSID ends in .xml)<br/>
+Example: /objects/demo:29/datastreams/myDatastream.xml</p>
+
+<p>getNextPID (no problem possible)<br/>
+Example: /objects/nextPID.xml</p></div></div>
+<div class="comment" id="comment-11080"><div class="by">Chris Wilper, 2009-11-19 04:54 UTC</div><div class="text"><p>Steve, I decided to take on 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-556" >
+                <a href="FCREPO-556.html" class="jira-issue-macro-key issue-link"  title="Implement REST method/service invocation (was: getDissemination)" >
+            
+            FCREPO-556
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.  Looking at the rest package now, I see exactly what needs to address this one too.  If you haven't started this yet I'd be happy to take it off your hands...</p></div></div>
+<div class="comment" id="comment-11081"><div class="by">Stephen Bayliss, 2009-11-19 08:49 UTC</div><div class="text"><p>Chris - no, I haven't yet started work on this, makes sense for you to pick that up if you've spotted what needs to be done.  I've also assigned 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-522" >
+                <a href="FCREPO-522.html" class="jira-issue-macro-key issue-link"  title="DSIDs can now no longer terminate in .xml and behave properly" >
+            
+            FCREPO-522
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ to you (was also me) as it's effectively the same.</p></div></div>
+<p><a href="data/FCREPO-532.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

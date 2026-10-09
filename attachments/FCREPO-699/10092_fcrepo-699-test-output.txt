@@ -1,0 +1,162 @@
+TEST:  PUT (modifyDatastream) leaves versionable flag unchanged...
+  Creating a test object via the REST API:  test:DatastreamVersionableChangeTestREST (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPOST "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST?label=DatastreamVersionableChangeTestREST" --data "" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test%3ADatastreamVersionableChangeTestREST
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+test:DatastreamVersionableChangeTestREST
+
+    Add a Managed datastream with the versionable flag set to false:  TEST_M (SHOULD PASS)
+    => curl -i -XPOST "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_M?mimeType=image/jpeg&controlGroup=M&dsLabel=MTestManaged&versionable=false&dsLocation=http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg" --data "" -u fedoraAdmin:xxxxx
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_M
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_M" ><dsLabel>MTestManaged</dsLabel><dsVersionID>TEST_M.0</dsVersionID><dsCreateDate>2010-08-19T20:06:39.251Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>M</dsControlGroup><dsSize>56198</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>test:DatastreamVersionableChangeTestREST+TEST_M+TEST_M.0</dsLocation><dsLocationType>INTERNAL_ID</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Verify that the versionable flag of the created TEST_M datastream is false (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_M?format=xml" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_M" ><dsLabel>MTestManaged</dsLabel><dsVersionID>TEST_M.0</dsVersionID><dsCreateDate>2010-08-19T20:06:39.251Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>M</dsControlGroup><dsSize>56198</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>test:DatastreamVersionableChangeTestREST+TEST_M+TEST_M.0</dsLocation><dsLocationType>INTERNAL_ID</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Modify the TEST_M datastream:  change the dsLabel (SHOULD PASS)
+    => curl -i -XPUT "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_M?dsLabel=MTestManagedChanged" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_M" ><dsLabel>MTestManagedChanged</dsLabel><dsVersionID>TEST_M.1</dsVersionID><dsCreateDate>2010-08-19T20:06:39.593Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>M</dsControlGroup><dsSize>56198</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>test:DatastreamVersionableChangeTestREST+TEST_M+TEST_M.1</dsLocation><dsLocationType>INTERNAL_ID</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Verify that the versionable flag of the modified TEST_M datastream is set to false, and that the dsLabel has changed (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_M?format=xml" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_M" ><dsLabel>MTestManagedChanged</dsLabel><dsVersionID>TEST_M.1</dsVersionID><dsCreateDate>2010-08-19T20:06:39.593Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>M</dsControlGroup><dsSize>56198</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>test:DatastreamVersionableChangeTestREST+TEST_M+TEST_M.1</dsLocation><dsLocationType>INTERNAL_ID</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+    Add a Redirect datastream with the versionable flag set to false:  TEST_R (SHOULD PASS)
+    => curl -i -XPOST "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_R?mimeType=image/jpeg&controlGroup=R&dsLabel=RTestRedirect&versionable=false&dsLocation=http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg" --data "" -u fedoraAdmin:xxxxx
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_R
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_R" ><dsLabel>RTestRedirect</dsLabel><dsVersionID>TEST_R.0</dsVersionID><dsCreateDate>2010-08-19T20:06:39.656Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>R</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Verify that the versionable flag of the created TEST_R datastream is false (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_R?format=xml" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_R" ><dsLabel>RTestRedirect</dsLabel><dsVersionID>TEST_R.0</dsVersionID><dsCreateDate>2010-08-19T20:06:39.656Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>R</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Modify the TEST_R datastream:  change the dsLabel (SHOULD PASS)
+    => curl -i -XPUT "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_R?dsLabel=RTestRedirectChanged" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_R" ><dsLabel>RTestRedirectChanged</dsLabel><dsVersionID>TEST_R.1</dsVersionID><dsCreateDate>2010-08-19T20:06:39.697Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>R</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Verify that the versionable flag of the modified TEST_R datastream is set to false, and that the dsLabel has changed (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_R?format=xml" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_R" ><dsLabel>RTestRedirectChanged</dsLabel><dsVersionID>TEST_R.1</dsVersionID><dsCreateDate>2010-08-19T20:06:39.697Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>R</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+    Add an Externally-managed datastream with the versionable flag set to false:  TEST_E (SHOULD PASS)
+    => curl -i -XPOST "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_E?mimeType=image/jpeg&controlGroup=E&dsLabel=ETestExternal&versionable=false&dsLocation=http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg" --data "" -u fedoraAdmin:xxxxx
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_E
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_E" ><dsLabel>ETestExternal</dsLabel><dsVersionID>TEST_E.0</dsVersionID><dsCreateDate>2010-08-19T20:06:39.743Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>E</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Verify that the versionable flag of the created TEST_E datastream is false (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_E?format=xml" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_E" ><dsLabel>ETestExternal</dsLabel><dsVersionID>TEST_E.0</dsVersionID><dsCreateDate>2010-08-19T20:06:39.743Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>E</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Modify the TEST_E datastream:  change the dsLabel (SHOULD PASS)
+    => curl -i -XPUT "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_E?dsLabel=ETestExternalChanged" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_E" ><dsLabel>ETestExternalChanged</dsLabel><dsVersionID>TEST_E.1</dsVersionID><dsCreateDate>2010-08-19T20:06:39.794Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>E</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+
+  Verify that the versionable flag of the modified TEST_E datastream is set to false, and that the dsLabel has changed (SHOULD PASS)
+    => curl -i "http://localhost:9091/fedora/objects/test:DatastreamVersionableChangeTestREST/datastreams/TEST_E?format=xml" -u fedoraAdmin:xxxxxxx
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Pragma: No-cache
+Cache-Control: no-cache
+Expires: Wed, 31 Dec 1969 18:00:00 CST
+Content-Type: text/xml
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 20:06:39 GMT
+
+<?xml version="1.0" encoding="UTF-8"?><datastreamProfile  xmlns="http://www.fedora.info/definitions/1/0/management/"  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ http://www.fedora.info/definitions/1/0/datastreamProfile.xsd" pid="test:DatastreamVersionableChangeTestREST" dsID="TEST_E" ><dsLabel>ETestExternalChanged</dsLabel><dsVersionID>TEST_E.1</dsVersionID><dsCreateDate>2010-08-19T20:06:39.794Z</dsCreateDate><dsState>A</dsState><dsMIME>image/jpeg</dsMIME><dsFormatURI></dsFormatURI><dsControlGroup>E</dsControlGroup><dsSize>0</dsSize><dsVersionable>false</dsVersionable><dsInfoType></dsInfoType><dsLocation>http://www.cooltattoofinder.com/wp-content/uploads/2008/01/cartoon-unicorn-tattoo.jpg</dsLocation><dsLocationType>URL</dsLocationType><dsChecksumType>DISABLED</dsChecksumType><dsChecksum>none</dsChecksum></datastreamProfile>
+

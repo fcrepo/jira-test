@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2170 Log exported resources to file</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2170</span> Log exported resources to file</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2016-09-02 19:03 UTC</td></tr><tr><th>Updated</th><td>2016-12-09 18:23 UTC</td></tr><tr><th>Resolved</th><td>2016-12-09 18:23 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.1.0</td></tr><tr><th>Labels</th><td>import-export-phase-1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2153.html">FCREPO-2153</a> Log resources exported</td></tr></table>
+<h2>Description</h2>
+<p>This task is to ensure that exported resources are logged to a file that would be a suitable artifact to act as an audit of the export operation.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-17459"><div class="by">Bethany Seeger, 2016-09-09 14:49 UTC</div><div class="text"><p>As far as what gets included in the log, I would find it valuable to know the total number of objects exported.  A list of overall objects exported would be nice as well, but when the numbers are large, having the total number of exported objects will be a nice, quick sanity check.</p>
+
+<p>Also, any data on resources that failed to export and why.  </p>
+
+<p>Having a full list of resources could be handy to compare to the log that gets generated on import.  That would imply keeping the format somewhat similar for the export/import logs.  (I realize order is unpredictable, perhaps, so it would need to be sorted by the user before comparison)</p></div></div>
+<div class="comment" id="comment-17909"><div class="by">Nick Ruest, 2016-10-28 18:41 UTC</div><div class="text"><p>See @awoods' comment <a href="https://jira.duraspace.org/browse/FCREPO-2237?focusedCommentId=52014&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-520140" class="external-link" rel="nofollow noreferrer">here</a> for a proposed format of the log.</p></div></div>
+<div class="comment" id="comment-18069"><div class="by">Jared Whiklo, 2016-12-05 17:54 UTC</div><div class="text"><p>So just digging into this now and I have a couple questions/confirmations (these also relate/apply to 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2169" >
+                <a href="FCREPO-2169.html" class="jira-issue-macro-key issue-link"  title="Log resources imported" >
+            
+            FCREPO-2169
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).</p>
+<ol>
+	<li>I am assuming this would be a separate log from the application logging.</li>
+	<li>That this would be some plain text file saved to the filesystem.
+	<ol>
+		<li>Is this file name configurable (as a config option) or is a date/time stamped filename acceptable (ie importexport_20161205T114400.log).</li>
+		<li>Is the location configurable, or should it be saved to the temporary directory like the configuration file is saved to.</li>
+	</ol>
+	</li>
+	<li>That this would output a line for every item exported (or imported in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2169" >
+                <a href="FCREPO-2169.html" class="jira-issue-macro-key issue-link"  title="Log resources imported" >
+            
+            FCREPO-2169
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) as well as a summary at the end of total resources export/imported and total failures.</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-18070"><div class="by">Jared Whiklo, 2016-12-05 18:06 UTC</div><div class="text"><p>Or would it be acceptable to create use the existing log files and add a DEBUG level notice for each item imported/exported as well as an INFO level summary at the end?</p></div></div>
+<div class="comment" id="comment-18081"><div class="by">Andrew Woods, 2016-12-06 05:00 UTC</div><div class="text"><p>Jared Whiklo, <br/>
+1. Yes, a separate log file probably makes the most sense.<br/>
+2(1). Date/time file name sounds good.<br/>
+2(2). A configurable location, defaulting to either the temp-dir or the current-working-dir, would be good.<br/>
+3. Yes, a line for each item. Summary of total resources may not be necessary since the output file lines can be counted, but if it is simple to include a count, that is fine. As for failures, maybe indicating on a given item line that it failed, with a reason if possible, may do the trick.</p></div></div>
+<div class="comment" id="comment-18129"><div class="by">Nick Ruest, 2016-12-09 18:23 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/22502cd54cc38a27305f997daa54725dac912083" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/22502cd54cc38a27305f997daa54725dac912083</a> </p></div></div>
+<p><a href="data/FCREPO-2170.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

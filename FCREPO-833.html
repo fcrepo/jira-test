@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-833 Startup fails with Tomcat 5.5 when ResourceIndex is enabled</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-833</span> Startup fails with Tomcat 5.5 when ResourceIndex is enabled</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Created</th><td>2010-11-30 20:20 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.1</td></tr></table>
+<h2>Description</h2>
+<p>As reported on the fedora-users mailing list by Lasse Aagren (<a href="http://article.gmane.org/gmane.comp.cms.fedora-commons.user/6049" class="external-link" rel="nofollow noreferrer">http://article.gmane.org/gmane.comp.cms.fedora-commons.user/6049</a>). I've confirmed this behavior on OS X using Tomcat 5.5.27 and 5.5.31 and the startup failure only occurs when the RI is enabled.</p>
+
+<p>It's probably to do with a change in the Tomcat-provided jars in 5.5 vs 6.0. Stacktrace from original report:</p>
+
+<p>10:51:45.534 <span class="error">&#91;main&#93;</span> ERROR org.fcrepo.server.Server - Module<br/>
+(org.fcrepo.server.resourceIndex.ResourceIndex) failed to initialize<br/>
+org.fcrepo.server.errors.ModuleInitializationException: Error initializing RI<br/>
+       at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexModule.postInitModule(ResourceIndexModule.java:112) <span class="error">&#91;fcrepo-server-3.4.1.jar:na&#93;</span><br/>
+       at org.fcrepo.server.Server.&lt;init&gt;(Server.java:636) <span class="error">&#91;fcrepo-server-3.4.1.jar:na&#93;</span><br/>
+       at org.fcrepo.server.BasicServer.&lt;init&gt;(BasicServer.java:41) <span class="error">&#91;fcrepo-server-3.4.1.jar:na&#93;</span><br/>
+       at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at<br/>
+sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:57) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at<br/>
+sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at java.lang.reflect.Constructor.newInstance(Constructor.java:532) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at org.fcrepo.server.Server.getInstance(Server.java:1004) <span class="error">&#91;fcrepo-server-3.4.1.jar:na&#93;</span><br/>
+       at org.fcrepo.server.ServerController.init(ServerController.java:402) <span class="error">&#91;fcrepo-server-3.4.1.jar:na&#93;</span><br/>
+       at javax.servlet.GenericServlet.init(GenericServlet.java:211) <span class="error">&#91;servlet-api-2.4.jar:2.4.public_draft&#93;</span><br/>
+       at org.apache.catalina.core.StandardWrapper.loadServlet(StandardWrapper.java:1139) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardWrapper.load(StandardWrapper.java:966) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardContext.loadOnStartup(StandardContext.java:3956) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardContext.start(StandardContext.java:4230) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.ContainerBase.addChildInternal(ContainerBase.java:760) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.ContainerBase.addChild(ContainerBase.java:740) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardHost.addChild(StandardHost.java:544) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.startup.HostConfig.deployWAR(HostConfig.java:831) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.startup.HostConfig.deployWARs(HostConfig.java:720) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.startup.HostConfig.deployApps(HostConfig.java:490) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.startup.HostConfig.start(HostConfig.java:1149) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.startup.HostConfig.lifecycleEvent(HostConfig.java:311) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.util.LifecycleSupport.fireLifecycleEvent(LifecycleSupport.java:120) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1022) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardHost.start(StandardHost.java:736) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.ContainerBase.start(ContainerBase.java:1014) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardEngine.start(StandardEngine.java:443) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardService.start(StandardService.java:448) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.core.StandardServer.start(StandardServer.java:700) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at org.apache.catalina.startup.Catalina.start(Catalina.java:552) <span class="error">&#91;catalina.jar:na&#93;</span><br/>
+       at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at java.lang.reflect.Method.invoke(Method.java:616) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:295) <span class="error">&#91;bootstrap.jar:na&#93;</span><br/>
+       at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at java.lang.reflect.Method.invoke(Method.java:616) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at org.apache.commons.daemon.support.DaemonLoader.start(DaemonLoader.java:177) <span class="error">&#91;commons-daemon-1.0.2.jar:1.0.1&#93;</span><br/>
+Caused by: org.trippi.TrippiException: Couldn't create local database<br/>
+       at<br/>
+org.trippi.impl.mulgara.MulgaraSessionFactory.createModels(MulgaraSessionFactory.java:212) <span class="error">&#91;trippi-mulgara-1.4.3.jar:na&#93;</span><br/>
+       at org.trippi.impl.mulgara.MulgaraSessionFactory.&lt;init&gt;(MulgaraSessionFactory.java:80) <span class="error">&#91;trippi-mulgara-1.4.3.jar:na&#93;</span><br/>
+       at org.trippi.impl.mulgara.MulgaraConnector.init(MulgaraConnector.java:138) <span class="error">&#91;trippi-mulgara-1.4.3.jar:na&#93;</span><br/>
+       at org.trippi.TriplestoreConnector.init(TriplestoreConnector.java:24) <span class="error">&#91;trippi-core-1.4.3.jar:na&#93;</span><br/>
+       at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexModule.getConnector(ResourceIndexModule.java:138) <span class="error">&#91;fcrepo-server-3.4.1.jar:na&#93;</span><br/>
+       at<br/>
+org.fcrepo.server.resourceIndex.ResourceIndexModule.postInitModule(ResourceIndexModule.java:100) <span class="error">&#91;fcrepo-server-3.4.1.jar:na&#93;</span><br/>
+       ... 39 common frames omitted<br/>
+Caused by: org.mulgara.query.QueryException: Couldn't create local database<br/>
+       at org.mulgara.server.local.LocalSessionFactory.newSession(LocalSessionFactory.java:199) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at<br/>
+org.trippi.impl.mulgara.MulgaraSessionFactory.createModels(MulgaraSessionFactory.java:197) <span class="error">&#91;trippi-mulgara-1.4.3.jar:na&#93;</span><br/>
+       ... 44 common frames omitted<br/>
+Caused by: org.mulgara.server.SessionFactoryException: Could not instantiate<br/>
+TripleStoreImplementation from configuration.<br/>
+       at<br/>
+org.mulgara.server.SessionFactoryFactory.getTripleStoreImplementation(SessionFactoryFactory.java:184) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at<br/>
+org.mulgara.server.SessionFactoryFactory.newSessionFactory(SessionFactoryFactory.java:231) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.server.local.LocalSessionFactory.newSession(LocalSessionFactory.java:195) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       ... 45 common frames omitted<br/>
+Caused by: java.lang.reflect.InvocationTargetException: null<br/>
+       at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at<br/>
+sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:57) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at<br/>
+sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at java.lang.reflect.Constructor.newInstance(Constructor.java:532) <span class="error">&#91;na:1.6.0_0&#93;</span><br/>
+       at<br/>
+org.mulgara.server.SessionFactoryFactory.getTripleStoreImplementation(SessionFactoryFactory.java:177) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+Caused by: java.lang.NullPointerException: null<br/>
+       at org.mulgara.store.xa.FreeList$Phase.use(FreeList.java:1129) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.store.xa.ManagedBlockFile$Phase$Token.&lt;init&gt;(ManagedBlockFile.java:528) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.store.xa.ManagedBlockFile$Phase.use(ManagedBlockFile.java:288) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.store.xa.AVLFile$Phase$Token.&lt;init&gt;(AVLFile.java:457) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.store.xa.AVLFile$Phase.use(AVLFile.java:393) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at<br/>
+org.mulgara.store.stringpool.xa11.XA11StringPoolImpl$TreePhase$Token.&lt;init&gt;(XA11StringPoolImpl.java:1639) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at<br/>
+org.mulgara.store.stringpool.xa11.XA11StringPoolImpl.selectPhase(XA11StringPoolImpl.java:618) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at<br/>
+org.mulgara.resolver.StringPoolSessionFactory.selectPhase(StringPoolSessionFactory.java:332) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.resolver.Database.selectCommonPhase(Database.java:1424) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.resolver.Database.recoverDatabase(Database.java:1367) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.resolver.Database.&lt;init&gt;(Database.java:942) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.resolver.Database.&lt;init&gt;(Database.java:536) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span><br/>
+       at org.mulgara.resolver.Database.&lt;init&gt;(Database.java:321) <span class="error">&#91;mulgara-core-2.1.4.jar:na&#93;</span></p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-11711"><div class="by">Benjamin Armintor, 2010-11-30 21:38 UTC</div><div class="text"><p>I'm looking at the Mulgara classes throwing the NPE, and it looks like they refer to a member that has never been initialized to anything but null when the org.mulgara.store.xa.FreeList log4j logger is debug-enabled.  If changing this fixes the problem, we should report to Mulgara and add a configuration note pending a bugfix.</p></div></div>
+<div class="comment" id="comment-11712"><div class="by">Benjamin Armintor, 2010-11-30 22:06 UTC</div><div class="text"><p>Just following up a bit: This looks like a Mulgara bug introduced in the 2.1.3 to 2.1.4 transition.  We should verify with Lasse what version of Fedora he's upgrading from, but this looks like a Mulgara issue.</p></div></div>
+<div class="comment" id="comment-11719"><div class="by">eddie, 2010-12-01 23:25 UTC</div><div class="text"><p>fyi I just tried swapping in a copy of Mulgara 2.1.9 (literally just replaced 2.1.4 jar in WEB-INF/lib) and still got the same error</p></div></div>
+<div class="comment" id="comment-11721"><div class="by">Stephen Bayliss, 2010-12-01 23:41 UTC</div><div class="text"><p>Ben suggested a workaround of changing the Mulgara logging level (DEBUG could potentially cause this problem) - won't Mulgara be going through log4j-over-slf4j, and logback.xml has root level="WARN" - so presumably will use that?  Or do we need to test explicitly setting the logging level for Mulgara in logback.xml (or elsewhere?).</p></div></div>
+<div class="comment" id="comment-11729"><div class="by">Benjamin Armintor, 2010-12-07 22:58 UTC</div><div class="text"><p>Further logging leads: Tomcat 5 differs from Tomcat 6 in the inclusion of commons-logging in the shared classloader.</p></div></div>
+<div class="comment" id="comment-11734"><div class="by">Chris Wilper, 2010-12-09 04:29 UTC</div><div class="text"><p>See this report...it seems related:<br/>
+<a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-Logging-weirdness-after-3-4-1-upgrade-td5816798.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-Logging-weirdness-after-3-4-1-upgrade-td5816798.html</a></p>
+
+<p>Although it's not a case of Mulgara giving a NPE at startup, it similarly points to log configuration weirdness when running Tomcat 5.5.  I recall from Tuesday's call that we hadn't yet determined why the log level seemed to have been set at DEBUG.  But maybe that's SLF4J's default behavior when it finds multiple concrete bindings? Hmm...</p></div></div>
+<div class="comment" id="comment-13120"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-833.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-808 REST getNextPid response does not include default namespace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-808</span> REST getNextPid response does not include default namespace</h1>
+<table class="meta"><tr><th>Type</th><td>Technical task</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Rebecca Sutton Koeser</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-10-07 02:24 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2011-03-29 21:00 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - java-client</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Parent</th><td><a href="FCREPO-713.html">FCREPO-713</a> Responses to various API requests are not schema-valid</td></tr></table>
+<h2>Description</h2>
+<p>I was updating my REST API code for the default namespaces in Fedora 3.4 and discovered that the result from getNextPid does not have the default namespace that I expected it would.  It looks like this is being generated incorrectly. </p>
+
+<p>Here's a sample result:</p>
+
+<p>&lt;pidList  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fedora.info/definitions/1/0/management/ <a href="http://myfedora.server.edu:8080/getNextPIDInfo.xsd" class="external-link" rel="nofollow noreferrer">http://myfedora.server.edu:8080/getNextPIDInfo.xsd</a>"&gt;<br/>
+  &lt;pid&gt;changeme:226&lt;/pid&gt;<br/>
+&lt;/pidList&gt;</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-11667"><div class="by">eddie, 2010-11-10 05:56 UTC</div><div class="text"><p>if I'm not mistaken, this isn't new to 3.4. We did add/correct a number of the default namespaces in the responses for 3.4 but it looks like this one slipped through. Pretty straightforward to fix, but I want to bring it up w/ at least the other committers if not the dev list to get a sense of the impact since folks will have to update client code if it's namespace/schema-aware.</p></div></div>
+<div class="comment" id="comment-11668"><div class="by">eddie, 2010-11-10 05:57 UTC</div><div class="text"><p>adding java-client component since fedora-client will need to be updated as well</p></div></div>
+<div class="comment" id="comment-11843"><div class="by">eddie, 2011-03-12 23:55 UTC</div><div class="text"><p>This is now fixed in master but the updated getNextPIDInfo.xsd needs to replace the current copy on the website.</p></div></div>
+<div class="comment" id="comment-11844"><div class="by">Stephen Bayliss, 2011-03-13 00:28 UTC</div><div class="text"><p>Need to highlight this in the release notes for 3.5 as it is both a schema change and a change in the response (rather than just for instance correcting the response to bring it in line with the schema).</p></div></div>
+<div class="comment" id="comment-11852"><div class="by">Stephen Bayliss, 2011-03-13 07:12 UTC</div><div class="text"><p>TestAPIMLite appears to be failing on this</p></div></div>
+<div class="comment" id="comment-11853"><div class="by">Stephen Bayliss, 2011-03-13 14:12 UTC</div><div class="text"><p>fcrepo-server/src/main/java/org/fcrepo/server/management/GetNextPIDServlet.java produces invalid XML - missing a quote at the end of xsi:schemaLocation.  Causing TestAPIMLite and TestAuthentication failures.</p>
+
+<p>Fix committed, plus fixes for tests (needed namespaces adding to xpath stuff)</p></div></div>
+<div class="comment" id="comment-11892"><div class="by">Chris Wilper, 2011-03-29 19:50 UTC</div><div class="text"><p>I replaced the copy on the website with the one in master. Anything left on this, besides documenting it in the release notes?</p></div></div>
+<p><a href="data/FCREPO-808.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

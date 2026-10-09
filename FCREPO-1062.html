@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1062 invalid XML datastream checksums after migration from inline (X) to managed (M) via migration script</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1062</span> invalid XML datastream checksums after migration from inline (X) to managed (M) via migration script</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Rebecca Sutton Koeser</td></tr><tr><th>Created</th><td>2012-02-04 02:37 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Is related to</th><td><a href="FCREPO-190.html">FCREPO-190</a> Inline XML Canonicalization (c14n) for SIZE and CHECKSUM</td></tr></table>
+<h2>Description</h2>
+<p>Migrating XML datastreams from inline (X) to managed (M) using the modify-control-group migration tool results in invalid checksums depending on the options specified when the modify-control-group script is run.  </p>
+
+<p>Steps to reproduce this behavior:</p>
+<ul class="alternate" type="square">
+	<li>create a new test object via the admin interface -  inline DC datastream with a checksum (in my testing, I'm using MD5)</li>
+	<li>run the fedora-modify-control-group script on the DC datastream for the test object with default options</li>
+	<li>call compare datastream checksum API on the test object's DC datastream - Fedora reports this as false.</li>
+</ul>
+
+
+<p>I tested the migration script with a few different options, and it seems that setting the addXMLHeader option to true instead of the default false is sufficient for the checksum to remain valid after the migration (setting both addXMLHeader and reformat options to true also resulted in a valid checksum after the migration).</p>
+
+<p>As a result of this apparent bug, I have large numbers of production XML datastreams that were migrated (quite a while ago) with this script using the default options, and the XML checksums are invalid (something I only discovered more recently while doing full-repository checksum auditing).  We NEED a way to correct those invalid checksums.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-12237"><div class="by">Chris Wilper, 2012-02-09 21:31 UTC</div><div class="text"><p>Talked about on Feb 9th call. Clearly there's a need to fix the bug that caused this. Also, a utility to get people out of this situation is needed. Would a separate "freshen your checksums" utility or option in the rebuilder to correct checksums (with a big warning about "this is changing your low-level-stored xml") be good?</p></div></div>
+<div class="comment" id="comment-12238"><div class="by">Rebecca Sutton Koeser, 2012-02-10 22:43 UTC</div><div class="text"><p>A utility to update all checksums makes me a bit nervous; it seems that any utility like that would need a way to be very selective (lists of pids, datastreams, etc.).</p>
+
+<p>Would it be possible to add a "re-migrate" sort of option to the inline-to-managed migration script? That is, I would like to be able to run it on XML content that has already been migrated, but with the corrected options-- so that the stored xml will be formatted correctly (whatever that means) for the existing checksum to be accurate again.  I think that would make it possible to clean up the invalid checksums caused by the migration in a very targeted fashion, and would make me a lot more confident in repository content validity than just calculating new checksums wholesale.</p>
+
+<p>I see you have this targeted for Fedora 3.6; is it possible that the clean-up solution (whatever it is) could be back-ported to maintenance releases of other versions of Fedora?  In particular, it would be really great to be able to clean up all the invalid xml checksums and do a full checksum audit before upgrading to a new version of Fedora, for comparison after.</p></div></div>
+<div class="comment" id="comment-12253"><div class="by">Rebecca Sutton Koeser, 2012-02-25 01:20 UTC</div><div class="text"><p>I've been thinking about this problem some more, and wondered if it would make more sense to create a stand-alone script (something that could be made available independent of a full-blown release of Fedora) that could selectively clean up or canonicalize the xml to make it match existing checksums.  Obviously, something like this would need a lot of testing and checks, since it will have to bypass the Fedora APIs (entirely? partially?).  </p>
+
+<p>Since fixing this is a current need for our production repository, it's possible I or someone on my team could write a python script to do this repository clean-up, if we knew what exactly should be done (whether and how to reformat/re-canonicalize the xml, or update the checksums), along with any other recommendations from the Fedora developers (approach, safeguards, etc).</p></div></div>
+<div class="comment" id="comment-12271"><div class="by">Chris Wilper, 2012-03-20 02:47 UTC</div><div class="text"><p>Link to utility (which still needs testing) that I think can get out of this problem and do future such X-to-M migrations correctly:</p>
+
+<p><a href="https://wiki.duraspace.org/display/~cwilper/A+New+Fedora+Storage+Utility" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/~cwilper/A+New+Fedora+Storage+Utility</a></p></div></div>
+<div class="comment" id="comment-13094"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1062.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

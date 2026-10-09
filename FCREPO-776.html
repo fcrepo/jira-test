@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-776 Allow externally-managed content referring to a file URI to be readable by unauthenticated users</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-776</span> Allow externally-managed content referring to a file URI to be readable by unauthenticated users</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2010-08-19 20:30 UTC</td></tr><tr><th>Updated</th><td>2012-05-31 18:03 UTC</td></tr><tr><th>Resolved</th><td>2012-05-31 18:03 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3, Fedora 3.4, Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr><tr><th>Addresses</th><td><a href="FCREPO-453.html">FCREPO-453</a> Allow the retrieval of content via the file URI scheme</td></tr><tr><th>Is related to</th><td><a href="FCREPO-822.html">FCREPO-822</a> Ingesting with &quot;M&quot; datastream contentLocation set to a file fails with Akubra</td></tr><tr><th>Is related to</th><td><a href="FCREPO-787.html">FCREPO-787</a> Adding datastream with referenced content on file system throws Exception when providing a checksum</td></tr></table>
+<h2>Description</h2>
+<p>When policy enforcement is turned on, and there is a policy in place to allow file uploads from specified paths, only an authenticated user is allowed to see the created externally-managed datastream.  Attached is a transcript of what takes place, but in summary, I'm allowed, as fedoraAdmin, to create objects with M and E datastreams whose content is uploaded via the file URI;  however, when I attempt to view the Externally Managed datastreams (E) as an unauthenticated anonymous user, I get a "Policy blocked datastream resolution" exception in the logs, caused by a "AuthzDeniedException":</p>
+
+<p>Caused by: org.fcrepo.server.errors.authorization.AuthzDeniedException:<br/>
+        at org.fcrepo.server.security.PolicyEnforcementPoint.enforce(PolicyEnforcementPoint.java:422) <span class="error">&#91;fcrepo-server-3.4-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.security.DefaultAuthorization.enforceRetrieveFile(DefaultAuthorization.java:1660) <span class="error">&#91;fcrepo-server-3.4-SNAPSHOT.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.DefaultExternalContentManager.getFromFilesystem(DefaultExternalContentManager.java:242) <span class="error">&#91;fcrepo-server-3.4-SNAPSHOT.jar:na&#93;</span></p>
+
+
+<p>If I retrieve the E datastream authenticated as the fedoraAdmin, then I can see it.  Datastreams of other types within the same object are visible to the world, as expected.</p>
+
+<p>Creation of externally-managed datatstreams that use a file URI should be controlled by the file-resolution policies, but once the datastreams are created, they should be visible to the world according to the same rules that apply to M, R, and X datastreams in an object.</p>
+
+<p>See attachments for a transcript of a test showing this behavior, and a sample policy file that replaces deny-unallowed-file-resolution.xml.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-776/10099_fcrepo-776.patch">fcrepo-776.patch</a>, 13110 bytes, added by Benjamin Armintor on 2010-08-28</li>
+<li><a href="attachments/FCREPO-776/10086_test-allowed-file-resolution.xml">test-allowed-file-resolution.xml</a>, 1971 bytes, added by Scott Prater on 2010-08-19</li>
+<li><a href="attachments/FCREPO-776/10087_test-output.txt">test-output.txt</a>, 13434 bytes, added by Scott Prater on 2010-08-19</li>
+</ul>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-11576"><div class="by">Benjamin Armintor, 2010-08-26 04:51 UTC</div><div class="text"><p>Can you try this with a policy that doesn't specify a subject?</p>
+
+<p>I think there is a related bug that has to do with generating checksums, but I'd like to check in on the original problem description here first.</p></div></div>
+<div class="comment" id="comment-11580"><div class="by">Benjamin Armintor, 2010-08-28 01:30 UTC</div><div class="text"><p>Thanks for helping me debug, Scott.  I'm attaching a patch that should address this problem (and another involving checksums on referenced file content).  I think it's ready to go, but it seems like a bad idea to commit to trunk at 4:30 on a Friday.  If you want to try this out, I'm all ears.</p></div></div>
+<div class="comment" id="comment-11581"><div class="by">Benjamin Armintor, 2010-08-28 01:33 UTC</div><div class="text"><p>the diagnosis, for what it's worth: The original patch that allowed file uri's passed the dsLocation into the authorization module as a PID, which was a hack because I didn't want to add a new method to the Authorization interface.  Unfortunately, the assignment stayed there after the auth was done properly, doing nothing in 3.3, but suddenly causing problems in 3.4 with the object policies being fetched by Akubra.  I'll fill in more details on the Tuesday call next week.</p></div></div>
+<div class="comment" id="comment-11582"><div class="by">Scott Prater, 2010-08-29 21:42 UTC</div><div class="text"><p>I downloaded and installed the patch, then ran my tests again.  This time they succeeded:  I was able to create and view both managed and externally-managed datastreams with a <a href="file://" class="external-link" rel="nofollow noreferrer">file://</a> URL.</p>
+
+<p>I then modified the test policy to specify a bogus allowed file path, and ran the tests again.  All of them failed, as expected, except for one:  I was able to create an externally-managed datastream with a <a href="file://" class="external-link" rel="nofollow noreferrer">file://</a> URL that did not match the allowed pattern in the policy (I was not able to subsequently view it, however).  So it appears the policy isn't getting applied when creating externally-managed datastreams?</p></div></div>
+<div class="comment" id="comment-11583"><div class="by">Benjamin Armintor, 2010-08-30 18:54 UTC</div><div class="text"><p>External and redirected datastreams aren't checked against policies until they're accessed (either as a dissemination or to generate a checksum).  I'll look into how feasible it is to check them against the policies on creation instead.</p></div></div>
+<div class="comment" id="comment-11622"><div class="by">Louis Engelbrecht, 2010-10-05 16:21 UTC</div><div class="text"><p>Hi.</p>
+
+<p>I had the same problems on the Fedora 3.4 source release and tried to apply the patch.</p>
+
+
+<p>As an example my code around line 495 of DefaultManagement.java is<br/>
+  } else if (controlGroup.equals("M")) {^M<br/>
+                ds = new DatastreamManagedContent();^M<br/>
+                ds.DSInfoType = "DATA";^M<br/>
+                 ((DatastreamManagedContent)ds).Context = context;</p>
+
+<p>When I compile the code with mvn clean install, I get the following compilation errors:<br/>
+/home/lengelbrecht/Fedora3.4_src/fcrepo-src-3.4/fcrepo-server/src/main/java/org/fcrepo/server/management/DefaultManagement.java:<span class="error">&#91;495,47&#93;</span> cannot find symbol<br/>
+symbol  : variable Context<br/>
+location: class org.fcrepo.server.storage.types.DatastreamManagedContent</p>
+
+<p>/home/lengelbrecht/Fedora3.4_src/fcrepo-src-3.4/fcrepo-server/src/main/java/org/fcrepo/server/management/DefaultManagement.java:<span class="error">&#91;500,49&#93;</span> cannot find symbol<br/>
+symbol  : variable Context<br/>
+location: class org.fcrepo.server.storage.types.DatastreamReferencedContent</p>
+
+<p>/home/lengelbrecht/Fedora3.4_src/fcrepo-src-3.4/fcrepo-server/src/main/java/org/fcrepo/server/management/DefaultManagement.java:<span class="error">&#91;728,49&#93;</span> cannot find symbol<br/>
+symbol  : variable Context<br/>
+location: class org.fcrepo.server.storage.types.DatastreamManagedContent</p>
+
+<p>/home/lengelbrecht/Fedora3.4_src/fcrepo-src-3.4/fcrepo-server/src/main/java/org/fcrepo/server/management/DefaultManagement.java:<span class="error">&#91;732,52&#93;</span> cannot find symbol<br/>
+symbol  : variable Context<br/>
+location: class org.fcrepo.server.storage.types.DatastreamReferencedContent</p>
+
+
+<p>Am I missing something? I installed using the Fedora 3.4 source release.</p>
+
+
+
+<p>Louis Engelbrecht</p>
+</div></div>
+<div class="comment" id="comment-11623"><div class="by">Scott Prater, 2010-10-05 18:33 UTC</div><div class="text"><p>Louis,<br/>
+Did you run "mvn clean install -P fedora-installer" from the top level of your fedora source directory (/home/lengelbrecht/Fedora3.4_src/fcrepo-src-3.4)?</p></div></div>
+<div class="comment" id="comment-11810"><div class="by">Chris Wilper, 2011-02-15 22:46 UTC</div><div class="text"><p>Current status: We think this was fixed by 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-822" >
+                <a href="FCREPO-822.html" class="jira-issue-macro-key issue-link"  title="Ingesting with &quot;M&quot; datastream contentLocation set to a file fails with Akubra" >
+            
+            FCREPO-822
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, would like to verify....so will add a test case for this.</p></div></div>
+<div class="comment" id="comment-11967"><div class="by">Benjamin Armintor, 2011-05-24 21:14 UTC</div><div class="text"><p>Writing this test is tricky- the test needs a supporting XACML policy that refers to the canonical path of the test resource. The fix is in 3.5, but the test is in the 3.6 bucket.</p></div></div>
+<div class="comment" id="comment-12309"><div class="by">Benjamin Armintor, 2012-05-31 18:03 UTC</div><div class="text"><p>This should be verifiable in the tests in TestExternalDatastreams now</p></div></div>
+<p><a href="data/FCREPO-776.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

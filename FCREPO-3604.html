@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3604 migration-utils migrates some F3 datastreams digests that are incorrect</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3604</span> migration-utils migrates some F3 datastreams digests that are incorrect</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2021-01-14 13:40 UTC</td></tr><tr><th>Updated</th><td>2021-02-09 14:38 UTC</td></tr><tr><th>Resolved</th><td>2021-02-09 14:38 UTC</td></tr><tr><th>Components</th><td>migration-utils</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Is caused by</th><td><a href="FCREPO-3145.html">FCREPO-3145</a> Fix migration-utils inline XML migration to not transform XML en route</td></tr></table>
+<h2>Description</h2>
+<p>Some F3 datastream digests are incorrect, inline XML, and are being migrated to F6. When the new validation logic is in place, F6 will validate these digests and will fail to start. Here's an example from the UW-Madison dataset:</p>
+
+<p> </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Exception in thread "ReindexWorker" org.fcrepo.storage.ocfl.exception.ValidationException: OCFL object info:fedora/1711.dl:CModelAudioStream is not a valid Fedora 6 object. The following problems were identified:
+  1. Version v1 file DS-COMPOSITE-MODEL failed fixity check: MD5 fixity check failed. Expected: 670dd22c94e047cb2ec850e4248c0814; Actual: 84184d2d8ee6eae9dbcc5f02eaff681c
+  2. Version v1 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 914288eb2b804544251ba27cc1f0e2d1; Actual: c30c3df0877b8f113f8f4f844bdfe3e6
+  3. Version v1 file DC failed fixity check: MD5 fixity check failed. Expected: 4e2a6140aa1369de6dd9736dfa8ab946; Actual: e06334fe131dadeac80bcd8081013254
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.validationException(ObjectValidator.java:165)
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.throwProblems(ObjectValidator.java:160)
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.validate(ObjectValidator.java:135)
+	at org.fcrepo.storage.ocfl.ObjectValidator.validate(ObjectValidator.java:102)
+	at org.fcrepo.persistence.ocfl.impl.ReindexService.indexOcflObject(ReindexService.java:102)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:86)
+	at java.base/java.lang.Thread.run(Thread.java:834)
+Exception in thread "ReindexWorker" org.fcrepo.storage.ocfl.exception.ValidationException: OCFL object info:fedora/1711.dl:HS2MEUQTB3RHI8G is not a valid Fedora 6 object. The following problems were identified:
+  1. Version v1 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+  2. Version v2 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 40e8d6a4727e988498e81934048ccf2a; Actual: ad32e0f2a4e15fdbf3bb91642dcb29e9
+  3. Version v2 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+  4. Version v3 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 40e8d6a4727e988498e81934048ccf2a; Actual: ad32e0f2a4e15fdbf3bb91642dcb29e9
+  5. Version v3 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+  6. Version v4 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 40e8d6a4727e988498e81934048ccf2a; Actual: ad32e0f2a4e15fdbf3bb91642dcb29e9
+  7. Version v4 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+  8. Version v5 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 40e8d6a4727e988498e81934048ccf2a; Actual: ad32e0f2a4e15fdbf3bb91642dcb29e9
+  9. Version v5 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+  10. Version v6 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 40e8d6a4727e988498e81934048ccf2a; Actual: ad32e0f2a4e15fdbf3bb91642dcb29e9
+  11. Version v6 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+  12. Version v7 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 40e8d6a4727e988498e81934048ccf2a; Actual: ad32e0f2a4e15fdbf3bb91642dcb29e9
+  13. Version v7 file RELS-INT failed fixity check: MD5 fixity check failed. Expected: 638cf7ce9b3c96245fd46e6e0331f82b; Actual: 42391379e9344d8c6c7f9fa1c1177482
+  14. Version v7 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+  15. Version v8 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 40e8d6a4727e988498e81934048ccf2a; Actual: ad32e0f2a4e15fdbf3bb91642dcb29e9
+  16. Version v8 file RELS-INT failed fixity check: MD5 fixity check failed. Expected: 638cf7ce9b3c96245fd46e6e0331f82b; Actual: 42391379e9344d8c6c7f9fa1c1177482
+  17. Version v8 file DC failed fixity check: MD5 fixity check failed. Expected: ebd4cd8f04f2e5fb00a20baee6169cb2; Actual: 5b06ce4d3b0e77cfcf09d1ee605a5acc
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.validationException(ObjectValidator.java:165)
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.throwProblems(ObjectValidator.java:160)
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.validate(ObjectValidator.java:135)
+	at org.fcrepo.storage.ocfl.ObjectValidator.validate(ObjectValidator.java:102)
+	at org.fcrepo.persistence.ocfl.impl.ReindexService.indexOcflObject(ReindexService.java:102)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:86)
+	at java.base/java.lang.Thread.run(Thread.java:834)
+Exception in thread "ReindexWorker" org.fcrepo.storage.ocfl.exception.ValidationException: OCFL object info:fedora/1711.dl:OLJYDSZAWI26F8D is not a valid Fedora 6 object. The following problems were identified:
+  1. Version v1 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  2. Version v2 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 27993ab6e558d1cbc91c07bef010994e; Actual: c7c94d143e92a30e35792b7e78de6f22
+  3. Version v2 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  4. Version v3 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 27993ab6e558d1cbc91c07bef010994e; Actual: c7c94d143e92a30e35792b7e78de6f22
+  5. Version v3 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  6. Version v4 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 27993ab6e558d1cbc91c07bef010994e; Actual: c7c94d143e92a30e35792b7e78de6f22
+  7. Version v4 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  8. Version v5 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 27993ab6e558d1cbc91c07bef010994e; Actual: c7c94d143e92a30e35792b7e78de6f22
+  9. Version v5 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  10. Version v6 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 27993ab6e558d1cbc91c07bef010994e; Actual: c7c94d143e92a30e35792b7e78de6f22
+  11. Version v6 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  12. Version v7 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 27993ab6e558d1cbc91c07bef010994e; Actual: c7c94d143e92a30e35792b7e78de6f22
+  13. Version v7 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  14. Version v7 file RELS-INT failed fixity check: MD5 fixity check failed. Expected: ceb9d9fd089af7f5a14c3ec696644f44; Actual: 7497342fa5c38f08720bbf958cd8119b
+  15. Version v8 file RELS-EXT failed fixity check: MD5 fixity check failed. Expected: 27993ab6e558d1cbc91c07bef010994e; Actual: c7c94d143e92a30e35792b7e78de6f22
+  16. Version v8 file DC failed fixity check: MD5 fixity check failed. Expected: d0ba3af261cd671cc3e027f6c79c22b6; Actual: f1aab1fa2704c957c78c2b21478b9287
+  17. Version v8 file RELS-INT failed fixity check: MD5 fixity check failed. Expected: ceb9d9fd089af7f5a14c3ec696644f44; Actual: 7497342fa5c38f08720bbf958cd8119b
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.validationException(ObjectValidator.java:165)
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.throwProblems(ObjectValidator.java:160)
+	at org.fcrepo.storage.ocfl.ObjectValidator$ObjectValidatorInner.validate(ObjectValidator.java:135)
+	at org.fcrepo.storage.ocfl.ObjectValidator.validate(ObjectValidator.java:102)
+	at org.fcrepo.persistence.ocfl.impl.ReindexService.indexOcflObject(ReindexService.java:102)
+	at org.fcrepo.persistence.ocfl.impl.ReindexWorker.run(ReindexWorker.java:86)
+	at java.base/java.lang.Thread.run(Thread.java:834)</pre>
+</div></div>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-21911"><div class="by">Andrew Woods, 2021-01-14 14:16 UTC</div><div class="text"><p>My understanding of the source of these fixity mismatch errors is captured in: <a href="https://jira.lyrasis.org/browse/FCREPO-3145" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3145</a></p>
+
+<p>The migration code reads in the inline XML, then reserializes it to disk. The issue is that the order of XML attributes changes in this process. The data is identical, but the bytes are not.</p>
+
+<p>The ideal solution would be to resolve 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3145" >
+                <a href="FCREPO-3145.html" class="jira-issue-macro-key issue-link"  title="Fix migration-utils inline XML migration to not transform XML en route" >
+            
+            FCREPO-3145
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ (which I unsuccessful tried for too long). In the absence of that solution, we are left with options that involve ignoring and/or calculating and persisting new digests.</p></div></div>
+<div class="comment" id="comment-21971"><div class="by">Peter Winckles, 2021-01-28 15:55 UTC</div><div class="text"><p><a href="https://github.com/fcrepo-exts/migration-utils/pull/141" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/pull/141</a></p></div></div>
+<div class="comment" id="comment-22012"><div class="by">Jared Whiklo, 2021-02-09 14:38 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo-exts/migration-utils/commit/9955b0adf331f028aa16a8dcc84b36ad97a88642" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/9955b0adf331f028aa16a8dcc84b36ad97a88642</a></p></div></div>
+<p><a href="data/FCREPO-3604.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

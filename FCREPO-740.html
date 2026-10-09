@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-740 Allow policies from multiple parents (multiple collection membership)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-740</span> Allow policies from multiple parents (multiple collection membership)</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-07-13 16:12 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Is related to</th><td><a href="FCREPO-636.html">FCREPO-636</a> Enable policy enforcement by declaration in RELS-EXT and RELS-INT</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-762.html">FCREPO-762</a> Implement more tightly-defined (ie semantically precise) specification/identification of resources in policies</td></tr></table>
+<h2>Description</h2>
+<p>Currently the request context resources are built from (a) the PID (and dsID) of the object and (b) the same with all parents.</p>
+
+<p>According to the XACML 2.0 spec, multiple parent lineages should be included, ie if a resource test:res is a member of test:col1 and test:col2, then we should be generating</p>
+<ul class="alternate" type="square">
+	<li>test:res</li>
+	<li>test:col1/test:res</li>
+	<li>test:col2/test:res</li>
+</ul>
+
+
+<p>Currently only a single parent lineage is calculated (using the first parent relationship discovered in the relationships).</p>
+
+<p>This would allow resources to be members of multiple collections, and to use policies from all parent collections.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11476"><div class="by">Stephen Bayliss, 2010-07-13 16:15 UTC</div><div class="text"><p>See:<br/>
+melcoe.xacml.util.ContextUtil.setupResources<br/>
+melcoe.xacml.util.RelationshipResolverImpl.buildRESTParentHierarchy</p></div></div>
+<div class="comment" id="comment-11478"><div class="by">Stephen Bayliss, 2010-07-13 21:16 UTC</div><div class="text"><p>NB: Check what the XACML 1.0 spec says on this (we are not actually using XACML 2 engine, we don't want to do something that's somehow incompatible with the current implementation).</p></div></div>
+<div class="comment" id="comment-11725"><div class="by">Stephen Bayliss, 2010-12-03 23:43 UTC</div><div class="text"><p>Correction: FeSL is using XACML 2 (schema at least, but an "interim" build of the Sun engine post 1.0).</p>
+
+<p>The issues are likely to be how the policy combining algorithms work.</p>
+
+<p>FeSL currently uses the hierarchical resource profile specified in XACML 2.0, and has hierarchical policy combining algorithms, but it's not known how (if) these will work with multiple hierarchies.</p>
+
+<p>The other "standard" combining algorithms should be fine.  However the hierarchical ones are probably the most useful (if we can figure out how they should work in this scenario, and then make them work).</p>
+
+<p>Currently we have (eg for hierarchical-deny-overrides<br/>
+/coll1/coll2/res1:</p>
+
+<p>Policy at coll1 level is overriden by policy at coll2 level etc, with multiple policies on the same level treated as "deny overrides".</p>
+
+<p>What should happen if we have<br/>
+/coll1/coll2/res1:<br/>
+/collA/res1:</p>
+
+<p>with policies applied for all collections.  Does the "level" at which the policy applies even make any sense over two hierarchies?  It would seem that if we could combine policies independently down the two hierarchies, and then apply a simple "deny overrides" (eg) to combine the two resulting policies that would make sense?</p></div></div>
+<div class="comment" id="comment-13028"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-740.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

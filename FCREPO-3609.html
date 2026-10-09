@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3609 Conditional PUT without Server Managed Triples Using &#x27;If-Match&#x27; Always Fails</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3609</span> Conditional PUT without Server Managed Triples Using &#x27;If-Match&#x27; Always Fails</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Daniel Lamb</td></tr><tr><th>Created</th><td>2021-01-22 18:34 UTC</td></tr><tr><th>Updated</th><td>2023-04-27 15:24 UTC</td></tr><tr><th>Affects versions</th><td>fcrepo-6.0.0-alpha-2</td></tr><tr><th>Labels</th><td>fcrepo-6.1.0</td></tr></table>
+<h2>Environment</h2>ISLE (Alpine docker container, running Tomcat 9 and Java 11)
+<h2>Description</h2>
+<p>When attempting to perform a conditional update without server managed triples using an ETag and If-Match, Fedora 6 always returns 412 - Precondition Failed.</p>
+
+<p> </p>
+
+<p>To recreate:</p>
+<ul>
+	<li>Get the Etag for a representation without server managed triples:
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -sSI -H <span class="code-quote">"Accept: application/ld+json"</span> -H 'Prefer: <span class="code-keyword">return</span>=representation; omit="http:<span class="code-comment">//fedora.info/definitions</span>
+</pre>
+</div></div>
+<p><tt>/v4/repository#ServerManaged"' <a href="http://example.org/fcrepo/rest/path/to/resource" class="external-link" rel="nofollow noreferrer">http://example.org/fcrepo/rest/path/to/resource</a> | grep Etag | cut -d '/' -f 2</tt></p></li>
+</ul>
+
+
+<p><tt>"6EE1808846332B561426844981C370A0"</tt></p>
+<ul>
+	<li>Get the same representation and write it to a file:
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -H <span class="code-quote">"Accept: application/ld+json"</span> -H <span class="code-quote">'Prefer: <span class="code-keyword">return</span>=representation; omit=<span class="code-quote">"http:<span class="code-comment">//fedora.info/definitions/v4/repository#ServerManaged"</span>'</span> http://example.org/fcrepo/<span class="code-keyword">rest</span>/path/to/resource &gt; test.json</span></pre>
+</div></div></li>
+</ul>
+
+
+<ul>
+	<li>Edit the file and change some RDF.</li>
+	<li>Try and PUT it back using `If-Match`:
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ curl -X PUT -H <span class="code-quote">'Authorization: XXX'</span> -H <span class="code-quote">'Content-Type: application/ld+json'</span> -H <span class="code-quote">'Prefer: handling=lenient'</span> -H <span class="code-quote">'If-Match: <span class="code-quote">"6EE1808846332B561426844981C370A0"</span>'</span> --data-binary @test.json http:<span class="code-comment">//example.org/fcrepo/<span class="code-keyword">rest</span>/path/to/resource
+</span>
+Request failed due to unspecified failed precondition</pre>
+</div></div></li>
+</ul>
+
+
+<p>It is unclear if this is a bug in how the ETags are generated or if I'm just not providing the correct Prefer header with the PUT request.</p>
+<p><a href="data/FCREPO-3609.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

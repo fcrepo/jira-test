@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1840 Incorrect Accept header should return an appropriate 4xx status code</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1840</span> Incorrect Accept header should return an appropriate 4xx status code</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Bethany Seeger</td></tr><tr><th>Created</th><td>2015-11-16 20:55 UTC</td></tr><tr><th>Updated</th><td>2016-02-22 16:33 UTC</td></tr><tr><th>Resolved</th><td>2016-02-18 19:21 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.1</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>When making a GET request with an incorrect mimeType, e.g. "Accept: application/turtle", fedora responds with a 500 status code. It should, instead, respond with a 400 code.</p>
+<h2>Comments (21)</h2>
+<div class="comment" id="comment-15957"><div class="by">Bethany Seeger, 2015-12-21 22:22 UTC</div><div class="text"><p>Hi, <br/>
+If I tweak the RdfStreamProvider in fcrepo-http-commons and add the </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> "*/*" </pre>
+</div></div>
+<p>  to the @Produces path, I'll get a 406 returned, which I think is the behavior we want. It seems counter intuitive, but functions.  Is that an acceptable fix for this error? (I think a second part of this fix is to update the REST API docs to include 406 under the GET Status section). </p>
+
+<p>A. Soroka - since you originally wrote this code, what do you think?</p>
+
+<p>output with changed code:<br/>
+-------<br/>
+$bseeger&gt;curl -H "Accept:application/turtle" -v -XGET <a href="http://localhost:8080/fcrepo/rest/peanut" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/peanut</a></p>
+<ul>
+	<li>Hostname was NOT found in DNS cache</li>
+	<li>Trying ::1...</li>
+	<li>Connected to localhost (::1) port 8080 (#0)<br/>
+&gt; GET /fcrepo/rest/peanut HTTP/1.1<br/>
+&gt; User-Agent: curl/7.37.1<br/>
+&gt; Host: localhost:8080<br/>
+&gt; Accept:application/turtle<br/>
+&gt;<br/>
+&lt; HTTP/1.1 406 Not Acceptable<br/>
+&gt;  ....</li>
+</ul>
+
+
+<p>-Bethany</p></div></div>
+<div class="comment" id="comment-15959"><div class="by">A. Soroka, 2015-12-22 14:11 UTC</div><div class="text"><p>406 is the correct code, but I have no idea why that works, and frankly, I don't like relying on what may be an implementation quirk.</p>
+
+<p>Can you find out why that works?</p></div></div>
+<div class="comment" id="comment-15960"><div class="by">Bethany Seeger, 2015-12-22 14:13 UTC</div><div class="text"><p>Yeah, I feel the same way. </p>
+
+<p>I'll dig deeper and see what's going on. </p>
+</div></div>
+<div class="comment" id="comment-15961"><div class="by">Unknown, 2015-12-22 14:30 UTC</div><div class="text"><p>That is <em>not</em> the way to resolve this ticket, IMO.</p>
+
+<p>The reason this works is due to the fact that 406 errors are generated upon trying to look up a suitable RDF writer from the supplied Accept header. If none exists, the 406 is thrown, which basically overrides what JAX-RS is already designed to handle by implementing this ourselves (a bad design, IMO): <a href="http://git.io/vEZuu" class="external-link" rel="nofollow noreferrer">http://git.io/vEZuu</a></p>
+
+<p>The same thing can be achieved by <em>removing</em> the <tt>&#42;/&#42;</tt> attribute to the FedoraLDP class: <a href="http://git.io/vEZBF" class="external-link" rel="nofollow noreferrer">http://git.io/vEZBF</a></p>
+
+<p>That behavior makes much more sense in my opinion. It <em>does</em> have the drawback that you can't send an Accept header for Binary resources (I'm not sure what an <tt>Accept</tt> header would mean for <tt>Binary</tt> resources, though).</p></div></div>
+<div class="comment" id="comment-15962"><div class="by">A. Soroka, 2015-12-22 14:32 UTC</div><div class="text"><p>Fine with me.</p></div></div>
+<div class="comment" id="comment-15963"><div class="by">Bethany Seeger, 2015-12-22 14:48 UTC</div><div class="text"><p>Okay.  Thanks.  I remember talking about this with you Aaron and I have experimented with that some. </p>
+
+<p>I wasn't sure that it was okay to make it so you can't have an Accept header for Binary resources.   Sounds like it's probably fine though. </p></div></div>
+<div class="comment" id="comment-15964"><div class="by">Bethany Seeger, 2015-12-22 15:05 UTC</div><div class="text"><p>Would it make sense to add some common binary file types to that @Produces list for images?  jpeg, tiff, png?  I know we can't list them all, but it might be nice for basic requests like this to still succeed: </p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">curl -H <span class="code-quote">"Accept:image/jpeg"</span> -XGET http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/peanut/butter/goat
+</span>HTTP 406 Not Acceptable</pre>
+</div></div>
+
+<p>I know the user could simply remove the Accept and it will function.  Maybe most don't use the Accept header and it's a moot point. </p>
+</div></div>
+<div class="comment" id="comment-15965"><div class="by">A. Soroka, 2015-12-22 15:12 UTC</div><div class="text"><p>If we're looking at the <tt>describe</tt> method, why would binary resources be coming through that method? That's for RDF.</p></div></div>
+<div class="comment" id="comment-15966"><div class="by">Bethany Seeger, 2015-12-22 15:14 UTC</div><div class="text"><p>Good point.  That's me being new to Fedora and learning the system as I go.  </p></div></div>
+<div class="comment" id="comment-15967"><div class="by">A. Soroka, 2015-12-22 15:15 UTC</div><div class="text"><p>Don't worry. By the time you learn it you'll be responsible for changing it.</p></div></div>
+<div class="comment" id="comment-15968"><div class="by">Unknown, 2015-12-22 15:28 UTC</div><div class="text"><p>Incidentally, what does this produce with your code (assuming that is a path to some sort of image)?</p>
+
+<p>curl -H "Accept: application/n-triples" -XGET <a href="http://localhost:8080/fcrepo/rest/peanut/butter/goat" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/peanut/butter/goat</a></p>
+
+<p>I suspect you'll retrieve the full resource with a 200 status code.</p></div></div>
+<div class="comment" id="comment-15969"><div class="by">Bethany Seeger, 2015-12-22 15:37 UTC</div><div class="text"><p>Yes, I do get the full resource with a 200 status code.  Not quite sure what to make of that... </p></div></div>
+<div class="comment" id="comment-15970"><div class="by">Bethany Seeger, 2015-12-22 15:45 UTC</div><div class="text"><p>Based on output it looks like all requests are going through that FedoraLdp describe() function.   So, I <em>can</em> retrieve a binary resource that way, for better or for worse.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Dec 22, 2015 10:44:47 AM org.glassfish.jersey.filter.LoggingFilter log
+INFO: 85 * Server has received a request on thread http-bio-8080-exec-7
+85 &gt; GET http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/peanut/butter/goat
+</span>85 &gt; accept: application/n-triples
+85 &gt; host: localhost:8080
+85 &gt; user-agent: curl/7.37.1
+
+DEBUG 10:44:47.500 (SessionFactory) Returning an authenticated session in the <span class="code-keyword">default</span> workspace
+DEBUG 10:44:47.501 (FedoraBaseResource) setting baseURL = http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/
+</span>INFO 10:44:47.505 (FedoraLdp) GET resource <span class="code-quote">'peanut/butter/goat'</span>
+Dec 22, 2015 10:44:47 AM org.glassfish.jersey.filter.LoggingFilter log
+INFO: 86 * Server responded with a response on thread http-bio-8080-exec-7
+86 &lt; 200
+86 &lt; Cache-Control: no-transform, must-revalidate, max-age=0
+86 &lt; Content-Type: image/jpeg
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-15976"><div class="by">Bethany Seeger, 2015-12-22 20:31 UTC</div><div class="text"><p>Just created a pull request for this: </p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/966" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/966</a></p></div></div>
+<div class="comment" id="comment-15980"><div class="by">Bethany Seeger, 2015-12-22 21:22 UTC</div><div class="text"><p>Here's the PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/966" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/966</a></p></div></div>
+<div class="comment" id="comment-15995"><div class="by">Andrew Woods, 2015-12-27 18:12 UTC</div><div class="text"><p>Would it make the following scenario:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -H "Accept: application/n-triples" -XGET http://localhost:8080/fcrepo/rest/peanut/butter/goat
+</pre>
+</div></div>
+<p>..more consistent if we additionally compared the <tt>Accept</tt> header with the stored <tt>mimeType</tt> somewhere after:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java#L170" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/ContentExposingResource.java#L170</a></p>
+
+<p>The headers are available with the injected value of <tt>headers</tt>:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/AbstractResource.java#L58
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-16004"><div class="by">Bethany Seeger, 2016-01-05 19:22 UTC</div><div class="text"><p>Not sure. Could definitely do that, but it seems like it might defeat the purpose of using the JAX-RS stuff in the first place, to have another check after the @Producers() check.  I think it could get confusing and make the code much too strict if we do this.  Would there be much content negotiation on a binary, anyways? (Should there even be?) </p>
+
+<p>I do wonder what peoples' use cases for this might be, if there are any. </p>
+</div></div>
+<div class="comment" id="comment-16043"><div class="by">Bethany Seeger, 2016-01-29 15:23 UTC</div><div class="text"><p>Updated my pull request.  It does more mime-type checking and if it can't return the requested format (for binary or triples), the user will get a 406.  </p></div></div>
+<div class="comment" id="comment-16063"><div class="by">Andrew Woods, 2016-02-03 15:11 UTC</div><div class="text"><p>The solution to this issue should likely be rethought with an eye towards leveraging native jaxrs machinery.</p></div></div>
+<div class="comment" id="comment-16140"><div class="by">Andrew Woods, 2016-02-14 21:22 UTC</div><div class="text"><p>Pending response to:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/966#issuecomment-183979826" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/966#issuecomment-183979826</a></p></div></div>
+<div class="comment" id="comment-16177"><div class="by">Andrew Woods, 2016-02-22 16:33 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/825d26fb10396b4f3a5aad5f6a680ad6b6ef49ea" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/825d26fb10396b4f3a5aad5f6a680ad6b6ef49ea</a></p></div></div>
+<p><a href="data/FCREPO-1840.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

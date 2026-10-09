@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1063 FeSL does not support granular policies at the level of individual API methods</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1063</span> FeSL does not support granular policies at the level of individual API methods</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2012-02-07 19:47 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Required by</th><td><a href="FCREPO-1064.html">FCREPO-1064</a> Include attributes for relationships API methods in FeSL - allow policies based on the relationship being manipulated</td></tr></table>
+<h2>Description</h2>
+<p>$FEDORA_HOME/sever/config/config-melcoe-pep-mapping.xml specifies a mapping between the full set of API methods/action identifiers used for Fedora API operations and simplified versions of create, read, update, delete, admin</p>
+
+<p>Whilst this is useful for simplified authoring of policies; it has two deficiences:</p>
+
+<ul>
+	<li>The simplified values are presented using the same Action attribute ID as the standard Fedora Action attribute ID - which is misleading/confusing (these simplified values should be a separate attribute ID?)</li>
+	<li>The original Fedora action IDs are not retained, making it difficult to write granular policies.  For example it's not easy to distinguish between purging an object and purging a datastream, as the same action ID is supplied (in fact the only way currently is to look at the full resource ID and see if there's a datastream on the end, which is not very useful).</li>
+</ul>
+
+
+<p>So suggeste action would be:<br/>
+1) The simplified action IDs should be presented using a different a different action attribute ID<br/>
+2) The original Fedora action IDs should be retained, for more granular-level policies</p>
+
+<p>But:<br/>
+1) is a breaking change; any existing policies based on these simplified action IDs would break.</p>
+
+<p>So a compromise would be to present both the fedora-original and FeSL-simplified action IDs using the same attribute ID; as the simplified values don't collide with the existing values.</p>
+
+
+<p>Example:<br/>
+Attribute ID:<br/>
+urn:fedora:names:fedora:2.1:action:id<br/>
+Value:<br/>
+urn:fedora:names:fedora:2.1:action:id-purgeObject</p>
+
+<p>Is translated by FeSL, and presented to the PDP as:<br/>
+Attribute ID:<br/>
+urn:fedora:names:fedora:2.1:action:id<br/>
+Value:<br/>
+delete</p>
+
+<p>(note that the original, granular method-level value is not retained).</p>
+
+
+<p>There is a kind of work-around currently which is to amend the mappings back to their original values; but this means you loose the simplified attributes, so is only a work-around for specific situations.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12230"><div class="by">Stephen Bayliss, 2012-02-07 20:00 UTC</div><div class="text"><p>Actually, including both the existing granular action attributes and the fesl simplified ones using the same attribute ID may not be entirely correct; as this attribute may be single-valued (and this would instead make it a bag; might break existing policies in other ways).</p>
+
+<p>Although... everything is treated as a bag.  But we do have the scenario where a resource attribute that had one-and-only-one value would now have two - could this have an impact?</p></div></div>
+<div class="comment" id="comment-12246"><div class="by">Chris Wilper, 2012-02-16 20:26 UTC</div><div class="text"><p>Discussed on Feb 16th call. Seems like a bug to Adam and Chris.</p></div></div>
+<div class="comment" id="comment-12260"><div class="by">Stephen Bayliss, 2012-03-06 14:10 UTC</div><div class="text"><p>If we add back in the original attributes I don't think, on reflection, this should be too much of a problem.</p>
+
+<p>Existing FeSL policies would be using the simplified read, delete, etc values and would be testing explicitly for the presence of these in the main target section of the policy.</p>
+
+<p>However I believe there are some differences wrt bag comparison in the rules part of the policy.</p>
+
+<p>So we should first include a test based on policies that use rules to look at the action ID; and verify there is no impact on these polices when the existing granular attribute IDs are added back in.</p></div></div>
+<div class="comment" id="comment-13014"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1063.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3699 Error creating binary with filename containing special characters</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3699</span> Error creating binary with filename containing special characters</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2021-04-15 19:54 UTC</td></tr><tr><th>Updated</th><td>2021-10-28 04:55 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0, Fedora 5.1.1</td></tr></table>
+<h2>Description</h2>
+<p>In the administrative interface, if I try to add a binary with a filename like "fileõnameõ.md" I get an error in my console and the resource is not created:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Uncaught TypeError: XMLHttpRequest.setRequestHeader: Cannot convert argument 2 to ByteString because the character at index 27 has value 55357 which is greater than 255.
+    http http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:24
+</span>    http http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:24
+</span>    fn http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:55
+</span>    onload http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:80
+</span>    addChild http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:79
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:499
+</span>    listen http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:39
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:490
+</span>    ready http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:32
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:483
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:520
+</span>common.js:24:41
+    http http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:24
+</span>    forEach self-hosted:206
+    http http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:24
+</span>    fn http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:55
+</span>    onload http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:80
+</span>    (Async: EventHandlerNonNull)
+    addChild http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:79
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:499
+</span>    (Async: EventListener.handleEvent)
+    listen http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:39
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:490
+</span>    (Async: EventListener.handleEvent)
+    ready http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:32
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:483
+</span>    &lt;anonymous&gt; http:<span class="code-comment">//localhost:8080/<span class="code-keyword">static</span>/js/common.js:520</span>
+</pre>
+</div></div>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-22516"><div class="by">Ralf Claussnitzer, 2021-10-06 06:14 UTC</div><div class="text"><p>It seems that this is entirely about the JavaScript interface. Does it affect the HTTP API as well? Or even OCFL?</p>
+
+<p>From my experience Unicode characters in filenames will most certainly appear when running a repository. European and especially Eastern countries will run into this issue very quickly. While I’m not a fan of storing files under their submitted names it became clear in the past that the originally submitted name must at least be preserved.</p></div></div>
+<p><a href="data/FCREPO-3699.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

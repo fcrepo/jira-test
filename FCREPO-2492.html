@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2492 verification tool should filter triples that reference binaries when verifying RDF-only exports</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2492</span> verification tool should filter triples that reference binaries when verifying RDF-only exports</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Joshua Allan Westgard</td></tr><tr><th>Created</th><td>2017-05-25 18:49 UTC</td></tr><tr><th>Updated</th><td>2017-12-07 16:50 UTC</td></tr><tr><th>Resolved</th><td>2017-06-12 22:27 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-verify-0.2.0</td></tr><tr><th>Labels</th><td>verification</td></tr></table>
+<h2>Description</h2>
+<p>When importing/exporting RDF only, the verification tool needs to filter triples that refer to the binaries from the original graph, in order to avoid false mismatches.</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-18958"><div class="by">Joshua Allan Westgard, 2017-05-25 18:57 UTC</div><div class="text"><p>Related to this error: <a href="https://jira.duraspace.org/browse/FCREPO-2486" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2486</a></p></div></div>
+<div class="comment" id="comment-19059"><div class="by">Joshua Allan Westgard, 2017-05-31 20:39 UTC</div><div class="text"><p>Algorithm for this: </p>
+<ul>
+	<li>for each rdf resource get the graph</li>
+	<li>find all the triples whose objects begin with the repository base</li>
+	<li>do a head on each one of those resources and if it is a binary resource, filter the triple in question from the graph</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19078"><div class="by">Joshua Allan Westgard, 2017-06-04 16:46 UTC</div><div class="text"><p>An initial attempt: <a href="https://github.com/jwestgard/fcrepo-import-export-verify/commit/16c46a8c8480738081aa503c5f313e8ad514bf2c" class="external-link" rel="nofollow noreferrer">https://github.com/jwestgard/fcrepo-import-export-verify/commit/16c46a8c8480738081aa503c5f313e8ad514bf2c</a></p>
+
+<p>The graph comparison is still failing when binaries are not included in the export, even though the original and destination graphs show the same number of triples.  So the correct triples seem to be getting filtered, but nevertheless there are difference showing up in the resulting graphs.</p></div></div>
+<div class="comment" id="comment-19083"><div class="by">Joshua Allan Westgard, 2017-06-05 22:37 UTC</div><div class="text"><p>Waiting on this issue to determine next steps: <a href="https://jira.duraspace.org/browse/FCREPO-2515" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2515</a></p></div></div>
+<div class="comment" id="comment-19087"><div class="by">Joshua Allan Westgard, 2017-06-06 18:52 UTC</div><div class="text"><p>For Python's rdflib, the relevant issues are described here: <a href="https://github.com/RDFLib/rdflib/wiki/Literal-reworking" class="external-link" rel="nofollow noreferrer">https://github.com/RDFLib/rdflib/wiki/Literal-reworking</a>.</p>
+
+<p>It appears that the triples should be compared using the node.eq method rather than == to have the comparison based on the abstract RDF syntax rather than a lexical comparison of the representation in turtle.</p></div></div>
+<div class="comment" id="comment-19102"><div class="by">Joshua Allan Westgard, 2017-06-11 21:57 UTC</div><div class="text"><p>Creating a PR that works with the changes to the import/export tool in 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2515" >
+                <a href="FCREPO-2515.html" class="jira-issue-macro-key issue-link"  title="import/export tool should produce consistent Turtle (1.0 or 1.1 conforming)" >
+            
+            FCREPO-2515
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.  It also includes a method for doing a more relaxed comparison of untyped literals when differences in graphs are noticed.</p></div></div>
+<div class="comment" id="comment-19106"><div class="by">Joshua Allan Westgard, 2017-06-12 22:27 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/48" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/48</a></p></div></div>
+<div class="comment" id="comment-19563"><div class="by">Andrew Woods, 2017-11-25 23:16 UTC</div><div class="text"><p>Danny Bernstein: when you have a chance, can you review this?</p></div></div>
+<div class="comment" id="comment-19576"><div class="by">Danny Bernstein, 2017-12-06 18:10 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/32bd8de046a4c7566037ce3d08e6eba091c1efb0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/32bd8de046a4c7566037ce3d08e6eba091c1efb0</a></p></div></div>
+<p><a href="data/FCREPO-2492.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

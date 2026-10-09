@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3607 NPE on last modified date when migrating from F5.1.1 to F6</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3607</span> NPE on last modified date when migrating from F5.1.1 to F6</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2021-01-21 19:23 UTC</td></tr><tr><th>Updated</th><td>2021-02-17 18:49 UTC</td></tr><tr><th>Resolved</th><td>2021-01-21 19:36 UTC</td></tr><tr><th>Components</th><td>fcrepo-upgrade-utils</td></tr></table>
+<h2>Description</h2>
+<p>I cannot migrate from 5.1.1 to Fedora 6:<br/>
+  <br/>
+ When I  do<br/>
+  <br/>
+ java <del>jar fcrepo-upgrade-utils</del>&lt;latest-version&gt;.jar \<br/>
+   -i my-5.1.1-export \<br/>
+   -o my-fcrepo-6-home \<br/>
+   -s 5+ \<br/>
+   -t 6+ \<br/>
+   -u <a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a><br/>
+  <br/>
+ I get a NullPointerException:<br/>
+  <br/>
+ java.lang.NullPointerException: null<br/>
+         at org.fcrepo.upgrade.utils.f6.ResourceMigrator.calculateStateToken(ResourceMigrator.java:516)<br/>
+         at org.fcrepo.upgrade.utils.f6.ResourceMigrator.createCommonHeaders(ResourceMigrator.java:458)<br/>
+         at org.fcrepo.upgrade.utils.f6.ResourceMigrator.createContainerHeaders(ResourceMigrator.java:470)<br/>
+         at org.fcrepo.upgrade.utils.f6.ResourceMigrator.migrateContainerVersion(ResourceMigrator.java:179)<br/>
+         at org.fcrepo.upgrade.utils.f6.ResourceMigrator.migrateContainer(ResourceMigrator.java:167)<br/>
+         at org.fcrepo.upgrade.utils.f6.ResourceMigrator.migrate(ResourceMigrator.java:126)<br/>
+         at org.fcrepo.upgrade.utils.f6.MigrateResourceTask.run(MigrateResourceTask.java:59)<br/>
+         at org.fcrepo.upgrade.utils.f6.MigrationTaskManager.lambda$submit$0(MigrationTaskManager.java:66)<br/>
+         at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)<br/>
+         at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)<br/>
+         at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)<br/>
+         at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)<br/>
+         at java.base/java.lang.Thread.run(Thread.java:835)<br/>
+  <br/>
+ This structured is created in the target directory<br/>
+  <br/>
+ .<br/>
+ └── data<br/>
+     ├── ocfl-root<br/>
+     │   ├── 0003-hashed-n-tuple-trees.json<br/>
+     │   ├── 0=ocfl_1.0<br/>
+     │   ├── ocfl_1.0.txt<br/>
+     │   └── ocfl_layout.json<br/>
+     ├── ocfl-temp<br/>
+     └── staging</p>
+
+<p>but nothing more. I am using Java 12 and 6.0.0-alpha-2. of the fcrepo-upgrade-utils, no Fedora running. More ideas?</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3607/10353_fcrepo-upgrade-utils-6.0.0-SNAPSHOT.jar">fcrepo-upgrade-utils-6.0.0-SNAPSHOT.jar</a>, 20548065 bytes, added by Danny Bernstein on 2021-01-25</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21946"><div class="by">Danny Bernstein, 2021-01-21 19:36 UTC</div><div class="text"><p><a href="https://github.com/fcrepo-exts/fcrepo-upgrade-utils/pull/33" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-upgrade-utils/pull/33</a></p></div></div>
+<div class="comment" id="comment-22061"><div class="by">Peter Winckles, 2021-02-17 18:49 UTC</div><div class="text"><p>resolved with <a href="https://github.com/fcrepo-exts/fcrepo-upgrade-utils/commit/bc4beb8fdc1e1818895028957eae6a14387d8f43" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-upgrade-utils/commit/bc4beb8fdc1e1818895028957eae6a14387d8f43</a></p></div></div>
+<p><a href="data/FCREPO-3607.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

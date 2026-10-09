@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2740 Float value not updated when current value rounds to the new one</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2740</span> Float value not updated when current value rounds to the new one</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Answered</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Assignee</th><td>Yinlin Chen</td></tr><tr><th>Created</th><td>2018-03-27 21:58 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 18:07 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 18:07 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.1, Fedora 4.7.5</td></tr></table>
+<h2>Environment</h2>4.7.1 - Tomcat/Postgres and Jetty standalone<br/>
+4.7.5 - Jetty standalone<br/>
+
+<h2>Description</h2>
+<p>When replacing/updating a resource's triples whose datatype is 'float' (such as latitude and longitude coordinates), the triples whose datatype is 'float' will not be updated if the new (float) value rounds to the existing (float) value.  </p>
+
+<p>For example:</p>
+
+<p>Given this float value:   9.123456<br/>
+A PUT with this new value:  9.123456123456</p>
+
+<p>Will result in the float value being unchanged.  It will remain 9.123456.  Other triples, such as a title or text, are updated correctly.</p>
+
+<p>If, however, the new (float) value is 9.12345678910, the value will be updated (presumably because the rounded value is different, but that's speculation).</p>
+
+<p>This gist shows the issue:</p>
+
+<p><a href="https://gist.github.com/kefo/94430d0e10e283d0ca91d32155f66d5a" class="external-link" rel="nofollow noreferrer">https://gist.github.com/kefo/94430d0e10e283d0ca91d32155f66d5a</a></p>
+
+<p>NB: The replacement PUT invokes the 'lenient' header, but I have seen this issue when not using the lenient header.   I do not know what happens when PATCH is used.  Will test and report back.</p>
+
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-19808"><div class="by">kefo, 2018-03-27 22:15 UTC</div><div class="text"><p>PATCH appears to work as expected.  </p></div></div>
+<div class="comment" id="comment-19836"><div class="by">Yinlin Chen, 2018-04-12 12:38 UTC</div><div class="text"><p>kefo    A floating point number is stored as binary. Please use decimal instead of float.</p>
+
+<p>e.g. </p>
+
+<p>@prefix geo: &lt;<a href="http://www.w3.org/2003/01/geo/wgs84_pos#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2003/01/geo/wgs84_pos#</a>&gt; .</p>
+
+<p>@prefix rdfs: &lt;<a href="http://www.w3.org/2000/01/rdf-schema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/01/rdf-schema#</a>&gt; .</p>
+
+<p>@prefix xsd: &lt;<a href="http://www.w3.org/2001/XMLSchema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#</a>&gt; .</p>
+
+<p> </p>
+
+<p>&lt;&gt;  geo:lat "9.123456123456"^^xsd:decimal ;</p>
+
+<p>    geo:long "-9.123456123456"^^xsd:decimal ;</p>
+
+<p>    rdfs:label "Updated? No."^^xsd:string .</p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19909"><div class="by">Andrew Woods, 2018-04-23 16:12 UTC</div><div class="text"><p>Yinlin Chen: Why are floats stored as binary? Can that be fixed?</p></div></div>
+<div class="comment" id="comment-20004"><div class="by">Yinlin Chen, 2018-05-09 17:36 UTC</div><div class="text"><p>Andrew Woods The <tt>float</tt> and <tt>double</tt> primitive types in Java are <a href="http://en.wikipedia.org/wiki/Floating_point" class="external-link" rel="nofollow noreferrer">floating point</a> numbers, where the number is stored as a binary representation of a fraction and an exponent. There is no need to fix in the code and use the suggestion above. </p></div></div>
+<div class="comment" id="comment-20006"><div class="by">Andrew Woods, 2018-05-11 22:09 UTC</div><div class="text"><p>kefo: Do you any comments on Yinlin Chen's suggestion?</p></div></div>
+<div class="comment" id="comment-20013"><div class="by">kefo, 2018-05-30 17:37 UTC</div><div class="text"><p>I have two thoughts about this issue, the second being perhaps more relevant to Fedora 4 (and 5?).  </p>
+
+<p>1) I don't understand why two distinct float values should be treated as the same, which is what appears to happen, because the more precise one naturally rounds to the other, existing float value.  I understand that the standard for float values (IEEE 754) defines a float as a binary, and so I understand why Java would treat the value as a binary, but I don't understand how it concludes that "9.123456" equals "9.123456123456", if that is what is happening under the hood.  It is worth noting that I discovered, when trying to correct our issue, that Blazegraph also does this.  I wondered if Fedora and Blazegraph shared some (RDF) library that might be the root cause.  Perhaps I simply do not understand what it means to have these values be binaries (it could simply be ignorance), but it feels like something is wrong somewhere.  I do recognize that it may not be something under Fedora's control that is causing this (assuming it is actually not right).</p>
+
+<p>2) In the end, I am issuing a PUT against Fedora.  It is my understanding that, except for server-managed triples (the 'leniency'), all the other triples of the targeted resource should be discarded and replaced with the request body.  That's not happening for geo:lat and geo:long, neither of which is a server-managed triple to my knowledge.</p></div></div>
+<div class="comment" id="comment-22481"><div class="by">Danny Bernstein, 2021-09-17 18:07 UTC</div><div class="text"><p>This one appears to be answered. Closing...</p></div></div>
+<p><a href="data/FCREPO-2740.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

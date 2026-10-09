@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3284 POSTing to a Tombstone results in a new resource being created</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3284</span> POSTing to a Tombstone results in a new resource being created</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2020-04-24 20:32 UTC</td></tr><tr><th>Updated</th><td>2020-11-26 15:43 UTC</td></tr><tr><th>Resolved</th><td>2020-11-26 15:43 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>create a resource</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -u fedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/ -X POST -H <span class="code-quote">"Slug: test"</span> -u fedoraAdmin:fedoraAdmin -H <span class="code-quote">"text/turtle"</span></span></pre>
+</div></div>
+<p>delete it</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -u fedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test -X DELETE</span></pre>
+</div></div>
+<p>POST to tombstone:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -u fedoraAdmin:fedoraAdmin http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test/fcr:tombstone -X POST</span>
+</pre>
+</div></div>
+<p>Result: </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+HTTP/1.1 201 Created
+ Date: Fri, 24 Apr 2020 20:31:34 GMT
+ ETag: W/<span class="code-quote">"E63810817B26F165483238395AF32776"</span>
+ X-State-Token: E63810817B26F165483238395AF32776
+ Last-Modified: Fri, 24 Apr 2020 20:31:34 GMT
+ Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test/fcr:tombstone/852e5a30-932b-4014-9785-56094bdfbb81&gt;; rel=<span class="code-quote">"timegate"</span>
+</span> Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test/fcr:tombstone/852e5a30-932b-4014-9785-56094bdfbb81&gt;; rel=<span class="code-quote">"original"</span>
+</span> Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test/fcr:tombstone/852e5a30-932b-4014-9785-56094bdfbb81/fcr:versions&gt;; rel=<span class="code-quote">"timemap"</span>
+</span> Link: &lt;http:<span class="code-comment">//mementoweb.org/ns#OriginalResource&gt;; rel=<span class="code-quote">"type"</span>
+</span> Link: &lt;http:<span class="code-comment">//mementoweb.org/ns#TimeGate&gt;; rel=<span class="code-quote">"type"</span>
+</span> Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test/fcr:tombstone/852e5a30-932b-4014-9785-56094bdfbb81/fcr:acl&gt;; rel=<span class="code-quote">"acl"</span>
+</span> Location: http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test/fcr:tombstone/852e5a30-932b-4014-9785-56094bdfbb81
+</span> Content-Type: text/plain
+ Content-Length: 82
+ Server: Jetty(9.4.24.v20191120)
+http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test/fcr:tombstone/852e5a30-932b-4014-9785-56094bdfbb81</span>
+</pre>
+</div></div>
+<p> </p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-21708"><div class="by">Andrew Woods, 2020-11-18 15:33 UTC</div><div class="text"><p>Let's fix the bugs for Beta. Changing to "medium".</p></div></div>
+<div class="comment" id="comment-21755"><div class="by">Jared Whiklo, 2020-11-26 15:42 UTC</div><div class="text"><p>&gt; curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a> -X POST -H "Slug: test" -u fedoraAdmin:fedoraAdmin -H "text/turtle"<br/>
+<a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a></p>
+
+
+<p>&gt; curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a> -X DELETE -i<br/>
+HTTP/1.1 204 No Content<br/>
+Date: Thu, 26 Nov 2020 15:40:26 GMT<br/>
+Set-Cookie: JSESSIONID=node01580lzesu5gge11tl6bc4a1apn2.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 25-Nov-2020 15:40:26 GMT; SameSite=lax<br/>
+Server: Jetty(9.4.34.v20201102)</p>
+
+<p> </p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a> <br/>
+HTTP/1.1 410 Gone<br/>
+Date: Thu, 26 Nov 2020 15:41:04 GMT<br/>
+Set-Cookie: JSESSIONID=node01jgnj6i0zuq2wq1kibka1ueku4.node0; Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 25-Nov-2020 15:41:04 GMT; SameSite=lax<br/>
+Link: &lt;<a href="http://localhost:8080/rest/test/fcr:tombstone" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test/fcr:tombstone</a>&gt;; rel="hasTombstone"<br/>
+Content-Type: text/plain<br/>
+Content-Length: 80<br/>
+Server: Jetty(9.4.34.v20201102)</p>
+
+<p>Discovered tombstone resource at /test, departed at: 2020-11-26T15:40:26.463466Z</p>
+
+
+<p>&gt; curl -u fedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test/fcr:tombstone" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test/fcr:tombstone</a> -X POST -i<br/>
+HTTP/1.1 405 Method Not Allowed<br/>
+Set-Cookie: JSESSIONID=node01jv19f5y7t8po10fw0ec5m14zk3.node0; Path=/<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Wed, 25-Nov-2020 15:40:35 GMT; SameSite=lax<br/>
+Allow: DELETE<br/>
+Cache-Control: must-revalidate,no-cache,no-store<br/>
+Content-Type: text/html;charset=iso-8859-1<br/>
+Content-Length: 501<br/>
+Server: Jetty(9.4.34.v20201102)</p>
+
+<p>&lt;html&gt;<br/>
+&lt;head&gt;<br/>
+&lt;meta http-equiv="Content-Type" content="text/html;charset=utf-8"/&gt;<br/>
+&lt;title&gt;Error 405 Method Not Allowed&lt;/title&gt;<br/>
+&lt;/head&gt;<br/>
+&lt;body&gt;&lt;h2&gt;HTTP ERROR 405 Method Not Allowed&lt;/h2&gt;<br/>
+&lt;table&gt;<br/>
+&lt;tr&gt;&lt;th&gt;URI:&lt;/th&gt;&lt;td&gt;/rest/test/fcr:tombstone&lt;/td&gt;&lt;/tr&gt;<br/>
+&lt;tr&gt;&lt;th&gt;STATUS:&lt;/th&gt;&lt;td&gt;405&lt;/td&gt;&lt;/tr&gt;<br/>
+&lt;tr&gt;&lt;th&gt;MESSAGE:&lt;/th&gt;&lt;td&gt;Method Not Allowed&lt;/td&gt;&lt;/tr&gt;<br/>
+&lt;tr&gt;&lt;th&gt;SERVLET:&lt;/th&gt;&lt;td&gt;jersey-servlet&lt;/td&gt;&lt;/tr&gt;<br/>
+&lt;/table&gt;<br/>
+&lt;hr&gt;&lt;a href="https://eclipse.org/jetty"&gt;Powered by Jetty:// 9.4.34.v20201102&lt;/a&gt;&lt;hr/&gt;</p>
+
+<p>&lt;/body&gt;<br/>
+&lt;/html&gt;</p></div></div>
+<div class="comment" id="comment-21756"><div class="by">Jared Whiklo, 2020-11-26 15:43 UTC</div><div class="text"><p>Resolved as of <a href="https://github.com/fcrepo/fcrepo/commit/fc4690e49cfbbf62ff1fdb3c8e434b9cb2cff909" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/fc4690e49cfbbf62ff1fdb3c8e434b9cb2cff909</a></p></div></div>
+<p><a href="data/FCREPO-3284.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

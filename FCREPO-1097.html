@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1097 NPE when rebuilding the ResourceIndex</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1097</span> NPE when rebuilding the ResourceIndex</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>frank asseg</td></tr><tr><th>Created</th><td>2012-06-14 18:24 UTC</td></tr><tr><th>Updated</th><td>2012-07-03 21:40 UTC</td></tr><tr><th>Resolved</th><td>2012-06-19 01:23 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>After installing the current version from trunk and switching the datastore in fedora.fcfg to "localPostrgesqlMPTStore" running server/bin/fedora-rebuild.sh throws the following NPE.<br/>
+It seems org.fcrepo.Server.m_context which is declared as GeneralApplicationContext is null.</p>
+
+
+<p>Server directory is /home/ruckus/dev/fedora-3.6/server</p>
+
+<p>---------------------------------------------------------------------</p>
+
+<p>Error: java.lang.NullPointerException</p>
+
+<p>java.lang.NullPointerException<br/>
+	at org.fcrepo.server.Server.getBeanNamesForType(Server.java:1659)<br/>
+	at org.fcrepo.server.utilities.rebuild.Rebuild.getRebuilder(Rebuild.java:277)<br/>
+	at org.fcrepo.server.utilities.rebuild.Rebuild.main(Rebuild.java:459)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:597)<br/>
+	at org.fcrepo.server.utilities.rebuild.cli.CLILoader.main(CLILoader.java:77)</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-12319"><div class="by">eddie, 2012-06-16 20:27 UTC</div><div class="text"><p>This is actually a more general error: I can reproduce just by running fedora-rebuild.sh with included Derby database.</p>
+
+<p>It also looks like this problem has been around for some time now. I can reproduce it as far back as 95cec2340fd7c026d95016eb3b24987de63ef803 (24 April). Still haven't narrowed down when it appeared.</p></div></div>
+<div class="comment" id="comment-12320"><div class="by">eddie, 2012-06-16 20:29 UTC</div><div class="text"><p>So far, it does work as recently as fe760b0e8204bf5307e3716cda1e1c5b63335516 (20 Apr)</p></div></div>
+<div class="comment" id="comment-12321"><div class="by">eddie, 2012-06-17 10:52 UTC</div><div class="text"><p>Hopefully this compare view is a useful starting point for debugging:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/compare/fe760b0e8204bf5307e3716cda1e1c5b63335516...95cec2340fd7c026d95016eb3b24987de63ef803" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/compare/fe760b0e8204bf5307e3716cda1e1c5b63335516...95cec2340fd7c026d95016eb3b24987de63ef803</a></p></div></div>
+<div class="comment" id="comment-12322"><div class="by">Chris Wilper, 2012-06-19 01:23 UTC</div><div class="text"><p>Resolving this issue as it appears to be fixed in master. See related thread:</p>
+
+<p><a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-dev-FCREPO-1097-rebuilder-NPE-status-td7578045.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-dev-FCREPO-1097-rebuilder-NPE-status-td7578045.html</a></p></div></div>
+<p><a href="data/FCREPO-1097.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

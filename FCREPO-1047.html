@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1047 Auto checksums don&#x27;t work on ingest</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1047</span> Auto checksums don&#x27;t work on ingest</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Rebecca Sutton Koeser</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2012-01-09 23:31 UTC</td></tr><tr><th>Updated</th><td>2013-08-06 04:27 UTC</td></tr><tr><th>Resolved</th><td>2013-08-06 04:27 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2, Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Environment</h2>Linux
+<h2>Description</h2>
+<p>Auto-checksumming is configured (autoChecksum = true, checksumAlgorithm = MD5) but when I ingest object via xml with datastream content but no contentDigest included in the foxml, I get a "DISABLED" / "none" checksum instead of the automatic, default checksum that I should be getting. </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1047/10149_fcrepo-1047__1_.patch">fcrepo-1047 (1).patch</a>, 1067 bytes, added by frank asseg on 2012-01-25</li>
+<li><a href="attachments/FCREPO-1047/10150_FOXMLDeserializerTest.java">FOXMLDeserializerTest.java</a>, 1964 bytes, added by frank asseg on 2012-01-26</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-12206"><div class="by">Chris Wilper, 2012-01-18 04:09 UTC</div><div class="text"><p>Bug verified. I've noticed that auto-checksumming <b>does</b> work when addDatastream is called, but not when ingest is called.</p></div></div>
+<div class="comment" id="comment-12215"><div class="by">frank asseg, 2012-01-24 21:17 UTC</div><div class="text"><p>the problem seems to stem from FOXMLDODeserializer which sets checksumtype to "DISABLED" when instantantiating new datastreams in FOXMLDODeserializer.startElement():408</p>
+
+<p>408:        m_dsChecksumType = Datastream.CHECKSUMTYPE_DISABLED;<br/>
+409:        m_dsChecksum = Datastream.CHECKSUM_NONE;<br/>
+410:    } else if (localName.equals("contentDigest")) {<br/>
+411:        m_dsChecksumType = grab(a, FOXML.uri, "TYPE");<br/>
+412:        m_dsChecksum = grab(a, FOXML.uri, "DIGEST");</p>
+
+<p>It seems to me the right approach to fix this is to change FOXMLDODeserializer to use Datastream.getDefaultChecksum() rather than Datastream.Datastream.CHECKSUMTYPE_DISABLED;  The problem seems to be gone for me with this one line fix.</p>
+
+<p>We need to make sure though that this problem does not exist in the different serializers for e.g. METS, which i haven't checked yet...</p>
+
+
+</div></div>
+<div class="comment" id="comment-12216"><div class="by">frank asseg, 2012-01-24 22:23 UTC</div><div class="text"><p>Unit testcase to test checksumming feature of FOXMLDODeserializer</p></div></div>
+<div class="comment" id="comment-12217"><div class="by">frank asseg, 2012-01-24 22:34 UTC</div><div class="text"><p>Just occured to me that testing if Datastreams.autoChecksum=true would be a good idea so i updated the patch.</p></div></div>
+<div class="comment" id="comment-12302"><div class="by">Benjamin Armintor, 2012-05-29 22:07 UTC</div><div class="text"><p>Was this work ever merged into master?</p></div></div>
+<div class="comment" id="comment-12555"><div class="by">Benjamin Armintor, 2013-08-06 04:27 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/9c23ca0cfa8432fea85ce49b0c5e6fe96078e84e" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/9c23ca0cfa8432fea85ce49b0c5e6fe96078e84e</a></p></div></div>
+<p><a href="data/FCREPO-1047.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

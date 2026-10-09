@@ -1,0 +1,1356 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": {
+   "accountId": "6089a48d248ef60073948d92",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+    "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+    "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+    "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+   },
+   "displayName": "Unknown",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+   "timeZone": "America/Halifax"
+  },
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "What would you think of this sort of interface:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "First, there would be a new header: CamelFcrepoTransaction (or FcrepoHeaders.FCREPO_TRANSACTION in java)",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "onException(Exception.class)",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".to(\"fcrepo://localhost:8080/rest?transaction=rollback\")",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".log(\"error ...\")",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".handled(true);",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "from(\"direct:foo\")",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".to(\"fcrepo://localhost:8080/rest?transaction=start\")",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": "...",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".to(\"fcrepo://localhost:8080/rest?transaction=commit\");",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Under the covers, what would happen is this: if the transaction=commit or transaction=rollback option is given, the appropriate POST is sent to fedora (no need to explicitly set the HTTP_METHOD). For any other non-empty transaction value (you can use start or create or refresh or whatever), one of two things will happen – if there is an existing value in the CamelFcrepoTransaction header, then that transaction is \"refreshed\"; if there is an empty or null value in that header, a new transaction is created, the value of which is stored in the CamelFcrepoTransaction header. A commit or rollback operation will clear that header.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "When the CamelFcrepoTransaction header is present, ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "type": "strong"
+           }
+          ],
+          "text": "all",
+          "type": "text"
+         },
+         {
+          "text": " calls to the fcrepo endpoint will be run in the context of that transaction, meaning the path will have the \"/tx:<transaction value>/\" string inserted between /rest and the node identifier.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "This also means that you wouldn't need to do any special processing of the Location header that the initial /fcr:tx POST operation returns (though it would be good for the Location header to be returned to the client in any case).",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "At least this interface makes sense to me. Any thoughts?",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-02-04T08:18:58.815-0400",
+     "id": "13327",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13327",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-02-04T08:23:30.563-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a135248ef6007394556d",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a135248ef6007394556d",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "The use case is pretty much as described in the ticket: try/catch or onException with transaction rollback in the handler.  ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "That sort of interface far exceeds my expectations.  I was planning on simply caching the transaction id in the exchange for the duration of my route and inserting it in my uri's.  I'd agree that although not necessary with that sort of design, explicitly returning the transaction id would be great.  I can't think offhand of a situation where you'd absolutely need it if the component were to behave in this fashion, just uneasy with hiding that sort of thing.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Not having to explictly set the POST on urls where there is no other http method is a nice touch, too.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-02-04T10:36:57.969-0400",
+     "id": "13330",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13330",
+     "updateAuthor": {
+      "accountId": "6089a135248ef6007394556d",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a135248ef6007394556d",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-02-04T10:36:57.969-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Great – it will actually be necessary to keep the transaction ID in the headers, which, I think will be a good combination of hiding that detail from the user while also making it available if necessary. I'll point to a draft implementation once it is ready.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-02-04T10:48:43.507-0400",
+     "id": "13331",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13331",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-02-04T10:48:43.507-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "I have a sample implementation in the support-transactions branch: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/acoburn/fcrepo-camel/tree/support-transactions"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/acoburn/fcrepo-camel/tree/support-transactions",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "This will not be part of the 4.1 release; but I will issue a pull request for this shortly after that release is cut.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-02-05T01:43:26.527-0400",
+     "id": "13336",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13336",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-02-05T01:43:26.527-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "See: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo4/fcrepo-camel/pull/52"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo4/fcrepo-camel/pull/52",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "This implements the interface described in the comments above.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-02-10T14:56:06.333-0400",
+     "id": "13373",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13373",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-02-10T14:56:06.333-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "There is a suggestion to use the camel transaction manager to handle transactions – this would involve a different implementation, and I am currently looking into this. So for now, do not merge the PR mentioned in this ticket.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "The difference from the perspective of a camel user is that the route would look more like this:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "from(\"direct:foo\")",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".transacted()",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".to(\"fcrepo:localhost:8080/rest\")",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".process(...)",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".to(\"fcrepo:localhost:8080/rest\")",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".process(...)",
+          "type": "text"
+         },
+         {
+          "type": "hardBreak"
+         },
+         {
+          "text": ".to(\"fcrepo:localhost:8080/rest\");",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Here, all of the fcrepo-based endpoints would run in the context of a single transaction. This implementation looks promising, but it involves a certain degree of complexity (and lack of documentation).",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-02-17T11:37:51.528-0400",
+     "id": "13441",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13441",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-02-17T11:37:51.528-0400"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo4/fcrepo-camel/pull/59"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo4/fcrepo-camel/pull/59",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-03-02T17:34:22.915-0400",
+     "id": "13593",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13593",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-03-02T17:34:22.915-0400"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Resolved with: ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo4/fcrepo-camel/commit/818329398301ed92fa338a6a66f2dae8f3a3e6e9"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo4/fcrepo-camel/commit/818329398301ed92fa338a6a66f2dae8f3a3e6e9",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2015-03-08T17:39:51.223-0300",
+     "id": "13649",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13649",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2015-03-08T17:39:51.223-0300"
+    }
+   ],
+   "maxResults": 8,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment",
+   "startAt": 0,
+   "total": 8
+  },
+  "components": [
+   {
+    "description": "Fedora 4 Camel",
+    "id": "10015",
+    "name": "f4-camel",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/component/10015"
+   }
+  ],
+  "created": "2015-02-03T23:29:39.063-0400",
+  "creator": {
+   "accountId": "6089a48d248ef60073948d92",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+    "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+    "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+    "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+   },
+   "displayName": "Unknown",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|04hzz3:zfr",
+  "customfield_10020": [
+   {
+    "completeDate": "2015-02-24T17:49:41.234Z",
+    "endDate": "2015-02-20T22:47:00.000Z",
+    "id": 14,
+    "name": "Sprint 2015 - 2",
+    "startDate": "2015-02-05T22:47:00.989Z",
+    "state": "closed"
+   },
+   {
+    "completeDate": "2015-03-20T22:47:36.615Z",
+    "endDate": "2015-03-10T16:54:00.000Z",
+    "id": 15,
+    "name": "Sprint 2015 - 3",
+    "startDate": "2015-02-24T17:54:05.025Z",
+    "state": "closed"
+   }
+  ],
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "2015-02-04T08:18:58.815-0400",
+  "customfield_10025": "1_*:*_1_*:*_4176_*|*_3_*:*_2_*:*_1624219563_*|*_4_*:*_1_*:*_8243_*|*_6_*:*_1_*:*_0_*|*_10002_*:*_2_*:*_1108033482_*|*_10003_*:*_1_*:*_94346715",
+  "customfield_10026": null,
+  "customfield_10029": {
+   "accountId": "60785ded115da6006f540529",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+    "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+   },
+   "displayName": "Andrew Woods",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10030": [
+   {
+    "id": "10036",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/customFieldOption/10036",
+    "value": "Interface: Messaging"
+   }
+  ],
+  "customfield_10037": null,
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "Fcrepo-camel does not provide explicit support for transactions, but it should. Furthermore, it should do so in such a way that it does not get in the way of a user – this would probably involve using appropriate header values inside a transaction (which are then cleared after committing the transaction). This way, a user program would not need to do any extra (unnecessary) url processing.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": null,
+  "fixVersions": [
+   {
+    "archived": false,
+    "description": "Release manager: Mike Durbin",
+    "id": "10076",
+    "name": "Fedora 4.1.1",
+    "releaseDate": "2015-03-27",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10076"
+   }
+  ],
+  "issuelinks": [],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10315,
+   "description": "Functionality or a feature expressed as a user goal.",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+   "id": "10001",
+   "name": "Story",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10001",
+   "subtask": false
+  },
+  "labels": [],
+  "lastViewed": null,
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/major.svg",
+   "id": "10003",
+   "name": "Major",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10003"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "6089a135248ef6007394556d",
+   "accountType": "atlassian",
+   "active": false,
+   "avatarUrls": {
+    "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+    "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+    "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+    "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+   },
+   "displayName": "Former user",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a135248ef6007394556d",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "A fix for this issue is checked into the tree and tested.",
+   "id": "10004",
+   "name": "Fixed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10004"
+  },
+  "resolutiondate": "2015-03-08T17:39:51.193-0300",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": null,
+  "subtasks": [],
+  "summary": "fcrepo-camel should include explicit support for transactions",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2015-04-07T10:48:52.796-0300",
+  "versions": [
+   {
+    "archived": false,
+    "description": "Release manager: Andrew Woods",
+    "id": "10049",
+    "name": "Fedora 4.0.0",
+    "releaseDate": "2014-11-27",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10049"
+   },
+   {
+    "archived": false,
+    "description": "Release manager: Andrew Woods",
+    "id": "10074",
+    "name": "Fedora 4.1.0",
+    "releaseDate": "2015-02-04",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10074"
+   }
+  ],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-1349/votes",
+   "votes": 1
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-1349/watchers",
+   "watchCount": 2
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "11315",
+ "key": "FCREPO-1349",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>What would you think of this sort of interface:</p>\n\n<p>First, there would be a new header: CamelFcrepoTransaction (or FcrepoHeaders.FCREPO_TRANSACTION in java)</p>\n\n<p>onException(Exception.class)<br/>\n   .to(\"fcrepo://localhost:8080/rest?transaction=rollback\")<br/>\n   .log(\"error ...\")<br/>\n   .handled(true);</p>\n\n<p>from(\"direct:foo\")<br/>\n  .to(\"fcrepo://localhost:8080/rest?transaction=start\")<br/>\n  ...<br/>\n  .to(\"fcrepo://localhost:8080/rest?transaction=commit\");</p>\n\n<p>Under the covers, what would happen is this: if the transaction=commit or transaction=rollback option is given, the appropriate POST is sent to fedora (no need to explicitly set the HTTP_METHOD). For any other non-empty transaction value (you can use start or create or refresh or whatever), one of two things will happen &#8211; if there is an existing value in the CamelFcrepoTransaction header, then that transaction is \"refreshed\"; if there is an empty or null value in that header, a new transaction is created, the value of which is stored in the CamelFcrepoTransaction header. A commit or rollback operation will clear that header.</p>\n\n<p>When the CamelFcrepoTransaction header is present, <b>all</b> calls to the fcrepo endpoint will be run in the context of that transaction, meaning the path will have the \"/tx:&lt;transaction value&gt;/\" string inserted between /rest and the node identifier.</p>\n\n<p>This also means that you wouldn't need to do any special processing of the Location header that the initial /fcr:tx POST operation returns (though it would be good for the Location header to be returned to the client in any case).</p>\n\n<p>At least this interface makes sense to me. Any thoughts?</p>",
+     "created": "04/Feb/15 8:18 AM",
+     "id": "13327",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13327",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "04/Feb/15 8:23 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a135248ef6007394556d",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a135248ef6007394556d",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>The use case is pretty much as described in the ticket: try/catch or onException with transaction rollback in the handler.  </p>\n\n<p>That sort of interface far exceeds my expectations.  I was planning on simply caching the transaction id in the exchange for the duration of my route and inserting it in my uri's.  I'd agree that although not necessary with that sort of design, explicitly returning the transaction id would be great.  I can't think offhand of a situation where you'd absolutely need it if the component were to behave in this fashion, just uneasy with hiding that sort of thing.</p>\n\n<p>Not having to explictly set the POST on urls where there is no other http method is a nice touch, too.</p>",
+     "created": "04/Feb/15 10:36 AM",
+     "id": "13330",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13330",
+     "updateAuthor": {
+      "accountId": "6089a135248ef6007394556d",
+      "accountType": "atlassian",
+      "active": false,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/default/default-avatar.png"
+      },
+      "displayName": "Former user",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a135248ef6007394556d",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "04/Feb/15 10:36 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Great &#8211; it will actually be necessary to keep the transaction ID in the headers, which, I think will be a good combination of hiding that detail from the user while also making it available if necessary. I'll point to a draft implementation once it is ready.</p>",
+     "created": "04/Feb/15 10:48 AM",
+     "id": "13331",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13331",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "04/Feb/15 10:48 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>I have a sample implementation in the support-transactions branch: <a href=\"https://github.com/acoburn/fcrepo-camel/tree/support-transactions\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/acoburn/fcrepo-camel/tree/support-transactions</a></p>\n\n<p>This will not be part of the 4.1 release; but I will issue a pull request for this shortly after that release is cut.</p>",
+     "created": "05/Feb/15 1:43 AM",
+     "id": "13336",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13336",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "05/Feb/15 1:43 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>See: <a href=\"https://github.com/fcrepo4/fcrepo-camel/pull/52\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo4/fcrepo-camel/pull/52</a></p>\n\n<p>This implements the interface described in the comments above.</p>",
+     "created": "10/Feb/15 2:56 PM",
+     "id": "13373",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13373",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "10/Feb/15 2:56 PM"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>There is a suggestion to use the camel transaction manager to handle transactions &#8211; this would involve a different implementation, and I am currently looking into this. So for now, do not merge the PR mentioned in this ticket.</p>\n\n<p>The difference from the perspective of a camel user is that the route would look more like this:</p>\n\n<p>from(\"direct:foo\")<br/>\n  .transacted()<br/>\n  .to(\"fcrepo:localhost:8080/rest\")<br/>\n  .process(...)<br/>\n  .to(\"fcrepo:localhost:8080/rest\")<br/>\n  .process(...)<br/>\n  .to(\"fcrepo:localhost:8080/rest\");</p>\n\n<p>Here, all of the fcrepo-based endpoints would run in the context of a single transaction. This implementation looks promising, but it involves a certain degree of complexity (and lack of documentation).</p>",
+     "created": "17/Feb/15 11:37 AM",
+     "id": "13441",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13441",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "17/Feb/15 11:37 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p><a href=\"https://github.com/fcrepo4/fcrepo-camel/pull/59\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo4/fcrepo-camel/pull/59</a></p>",
+     "created": "02/Mar/15 5:34 PM",
+     "id": "13593",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13593",
+     "updateAuthor": {
+      "accountId": "6089a48d248ef60073948d92",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "24x24": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "32x32": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png",
+       "48x48": "https://secure.gravatar.com/avatar/34cd24b6a5178b45e45b73c3c9f71e6f?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-0.png"
+      },
+      "displayName": "Unknown",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a48d248ef60073948d92",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "02/Mar/15 5:34 PM"
+    },
+    {
+     "author": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Resolved with: <a href=\"https://github.com/fcrepo4/fcrepo-camel/commit/818329398301ed92fa338a6a66f2dae8f3a3e6e9\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo4/fcrepo-camel/commit/818329398301ed92fa338a6a66f2dae8f3a3e6e9</a></p>",
+     "created": "08/Mar/15 5:39 PM",
+     "id": "13649",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment/13649",
+     "updateAuthor": {
+      "accountId": "60785ded115da6006f540529",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "24x24": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "32x32": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png",
+       "48x48": "https://secure.gravatar.com/avatar/6d51465aa828084aeddbf6d03c81fdc4?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAW-3.png"
+      },
+      "displayName": "Andrew Woods",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=60785ded115da6006f540529",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "08/Mar/15 5:39 PM"
+    }
+   ],
+   "maxResults": 8,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315/comment",
+   "startAt": 0,
+   "total": 8
+  },
+  "components": null,
+  "created": "03/Feb/15 11:29 PM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "04/Feb/15 8:18 AM",
+  "customfield_10025": null,
+  "customfield_10026": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p>Fcrepo-camel does not provide explicit support for transactions, but it should. Furthermore, it should do so in such a way that it does not get in the way of a user &#8211; this would probably involve using appropriate header values inside a transaction (which are then cleared after committing the transaction). This way, a user program would not need to do any extra (unnecessary) url processing.</p>",
+  "duedate": null,
+  "environment": "",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "08/Mar/15 5:39 PM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": null,
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "07/Apr/15 10:48 AM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/11315"
+}

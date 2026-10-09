@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-711 The responsedate from The OAI Identify response is wrong.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-711</span> The responsedate from The OAI Identify response is wrong.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Søren Højlund Mollerup</td></tr><tr><th>Assignee</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-05-31 12:31 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2, Fedora 3.2.1, Fedora 3.3, Fedora 3.4, Fedora 3.3.1, Fedora 3.4.1, Fedora 3.4.2, Fedora 3.5, Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Environment</h2>linux<br/>
+java version &quot;1.6.0_20&quot;<br/>
+
+<h2>Description</h2>
+<p>The responsedate in The internal OAI providers Identify answer is wrong.<br/>
+It seems that the calculated timezone and daylight savings offsets are added to the localdate, instead of subtracted.</p>
+
+<p>Example:<br/>
+ Local time here 13:22<br/>
+ Ingested two objects into fedora. lastModified date 11:23 (which is UTC)</p>
+
+<p> query OAI Provider with:  <a href="http://localhost:9080/fedora/oai?verb=Identify" class="external-link" rel="nofollow noreferrer">http://localhost:9080/fedora/oai?verb=Identify</a><br/>
+  and the answer is:<br/>
+  &lt;responseDate&gt;2010-05-31T15:13:46Z&lt;/responseDate&gt;</p>
+
+<p>The offending code is located in:</p>
+
+<p>  /src/java/fedora/oai/OAIResponder.java, line 631<br/>
+  where<br/>
+        UTCDate.setTime(localDate.getTime() + tzOffset);<br/>
+  should be replaced with<br/>
+        UTCDate.setTime(localDate.getTime() - tzOffset);</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-11412"><div class="by">Chris Wilper, 2010-06-01 16:41 UTC</div><div class="text"><p>Thanks for the patch!</p></div></div>
+<div class="comment" id="comment-11568"><div class="by">Stephen Bayliss, 2010-08-24 18:14 UTC</div><div class="text"><p>Moved directly to 3.5 as a patch is supplied, should be trivial to fix.</p></div></div>
+<div class="comment" id="comment-11951"><div class="by">Chris Wilper, 2011-05-11 01:40 UTC</div><div class="text"><p>I just tested the patch and it doesn't fix the issue. It does make the responseDate correct, but it then shifts the record dates so they're wrong.</p>
+
+<p>The date parsing in OAIResponder is hopelessly broken. A proper fix should probably employ the DateUtility class to do all the date parsing/UTC-ifying, as is done with the rest of the server code.</p></div></div>
+<div class="comment" id="comment-12380"><div class="by">eddie, 2012-08-16 07:58 UTC</div><div class="text"><p>flagging this against 3.6 for further review</p></div></div>
+<div class="comment" id="comment-12981"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-711.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

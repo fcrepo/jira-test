@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2668 Default Root ACL: Read-only</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2668</span> Default Root ACL: Read-only</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jon Roby</td></tr><tr><th>Created</th><td>2018-01-26 16:21 UTC</td></tr><tr><th>Updated</th><td>2018-10-11 14:47 UTC</td></tr><tr><th>Resolved</th><td>2018-10-11 14:47 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>auth</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>This task is to bring the default Root WebACL into alignment with the non-normative example in the Fedora API Specification, namely:</p>
+<ul class="alternate" type="square">
+	<li>Change from default of no access, to default of read-only</li>
+</ul>
+
+
+<p>See: <br/>
+Change: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/root-authorization.ttl" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/root-authorization.ttl</a><br/>
+..to include:<br/>
+```<br/>
+acl:mode acl:Read .<br/>
+```</p>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-20310"><div class="by">Jon Roby, 2018-10-01 19:22 UTC</div><div class="text"><p>This is changing the default values in the code, is it not? I'm not sure as that link (that 404's) is to a configuration file?</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20311"><div class="by">Andrew Woods, 2018-10-01 19:33 UTC</div><div class="text"><p>Link in description updated to new location: <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/root-authorization.ttl" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/root-authorization.ttl</a></p></div></div>
+<div class="comment" id="comment-20316"><div class="by">Jon Roby, 2018-10-02 12:50 UTC</div><div class="text"><p>Created the file, added it in using the -Dfcrepo.auth.webac.authorization parameter pointing to the file, trying to verify its using the file.</p></div></div>
+<div class="comment" id="comment-20322"><div class="by">Andrew Woods, 2018-10-02 23:14 UTC</div><div class="text"><p>If you update the linked `root-authorization.ttl`, it should be used automatically when Fedora is deployed (mvn jetty:run -pl fcrepo-webapp) if there is no other Authorization in the hierarchy of resources you are requesting. There should be no need to point to the `root-authorization.ttl` with `-Dfcrepo.auth.webac.authorization`.</p></div></div>
+<div class="comment" id="comment-20324"><div class="by">Jon Roby, 2018-10-03 18:53 UTC</div><div class="text"><p>Hi</p>
+
+<p> </p>
+
+<p>I got jetty to run correctly after modifying root-authorization.ttl in the fcrepo-http-api/src/main/resources directory and rebuilding.</p>
+
+<p>I'm attempting to test it...If i'm Curl-ing updated data into the root or trying to add items below root and nothing is happening in both of those scenarios, is that what its supposed to do?</p></div></div>
+<div class="comment" id="comment-20325"><div class="by">Jon Roby, 2018-10-03 19:23 UTC</div><div class="text"><p>Sorry, to expand on that: if i try a GET on / I get a 404 not found. If I try a XPUT on / I get a 405, POST isn't permitted</p></div></div>
+<div class="comment" id="comment-20326"><div class="by">Jon Roby, 2018-10-03 19:25 UTC</div><div class="text"><p>Sorry, 405 PUT is not supported on this URL</p></div></div>
+<div class="comment" id="comment-20328"><div class="by">Jon Roby, 2018-10-03 19:54 UTC</div><div class="text"><p>I've progressed past those error codes, just working out the possible problems with the curl calls.</p></div></div>
+<div class="comment" id="comment-20395"><div class="by">Andrew Woods, 2018-10-10 18:57 UTC</div><div class="text"><p>Pull-request: <a href="https://github.com/fcrepo4/fcrepo4/pull/1440" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1440</a></p></div></div>
+<div class="comment" id="comment-20396"><div class="by">Andrew Woods, 2018-10-10 19:06 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-20398"><div class="by">Jon Roby, 2018-10-10 20:12 UTC</div><div class="text"><p>Items have been fixed (hopefully) and Peter Eichman's modification to root-authorization.ttl added  also</p></div></div>
+<div class="comment" id="comment-20400"><div class="by">Andrew Woods, 2018-10-10 22:22 UTC</div><div class="text"><p>PR still contains unnecessary updates.</p></div></div>
+<div class="comment" id="comment-20404"><div class="by">Jon Roby, 2018-10-11 14:13 UTC</div><div class="text"><p>Made the modifications listed in the PR</p></div></div>
+<div class="comment" id="comment-20409"><div class="by">Andrew Woods, 2018-10-11 14:47 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/0286d2117c9d6eea07ec577f6f26b57bbb6cf82a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/0286d2117c9d6eea07ec577f6f26b57bbb6cf82a</a></p></div></div>
+<p><a href="data/FCREPO-2668.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

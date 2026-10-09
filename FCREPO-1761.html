@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1761 fcrepo-camel should do preemptive authentication when authN is enabled</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1761</span> fcrepo-camel should do preemptive authentication when authN is enabled</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-10-06 18:49 UTC</td></tr><tr><th>Updated</th><td>2016-03-23 16:10 UTC</td></tr><tr><th>Resolved</th><td>2016-03-23 16:10 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>fcrepo-java-client 0.1.1</td></tr><tr><th>Fix versions</th><td>fcrepo-java-client 0.1.2</td></tr></table>
+<h2>Description</h2>
+<p>the httpclient (and therefore fcrepo-camel) does not do preemptive authentication by default. That is, (when authN is enabled) it first tries to execute a request without authN; if it fails, it reissues the request.</p>
+
+<p>The problem with PUT/PATCH/POST requests in the context of fcrepo-camel is that they typically operate on streams. The first (unauthenticated) request will then consume the stream while the second (authenticated) request will no longer be able to access that data. This can be fixed by using preemptive authN, as is currently done in the camel-http4 component.</p>
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-15426"><div class="by">Unknown, 2015-10-06 19:34 UTC</div><div class="text"><p>The camel-http4 code for preemptive authentication is defined here: <a href="http://git.io/vcNI2" class="external-link" rel="nofollow noreferrer">http://git.io/vcNI2</a></p></div></div>
+<div class="comment" id="comment-15430"><div class="by">Former user, 2015-10-07 03:26 UTC</div><div class="text"><p>Looks like we can just use that interceptor directly.  See <a href="https://github.com/daniel-dgi/fcrepo-camel/commit/f1ae38291ff985d0649e50bc181c04bf8412c726" class="external-link" rel="nofollow noreferrer">https://github.com/daniel-dgi/fcrepo-camel/commit/f1ae38291ff985d0649e50bc181c04bf8412c726</a></p>
+
+<p>Right now the interceptor gets added whenever the user supplies credentials.  Is there a scenario where you would want to supply creds but not have pre-emptive auth?</p>
+
+<p>I tested on a brand new fcrepo-vagrant using <a href="https://gist.github.com/daniel-dgi/85d270cd3a664787b444" class="external-link" rel="nofollow noreferrer">https://gist.github.com/daniel-dgi/85d270cd3a664787b444</a> and all seems well.  Also threw the configuration from that file into <a href="https://github.com/daniel-dgi/fcrepo-camel-workshop/blob/master/06-ThumbnailGenerator.xml" class="external-link" rel="nofollow noreferrer">https://github.com/daniel-dgi/fcrepo-camel-workshop/blob/master/06-ThumbnailGenerator.xml</a> and all worked well.</p></div></div>
+<div class="comment" id="comment-15431"><div class="by">Unknown, 2015-10-07 03:40 UTC</div><div class="text"><p>Yes, that looks correct. We'll wait for the next development cycle to merge. Could you also add an integration test for this? In principle, it would be a matter of adding some additional config/spring/web.xml files in ./src/test/resources. Most of these files could be taken from the <a href="https://github.com/fcrepo4-exts/fcrepo-webapp-plus/tree/master/src/webac/webapp/WEB-INF" class="external-link" rel="nofollow noreferrer">fcrepo-webapp-plus</a> project. </p>
+
+<p>I think the existing integration tests should stay as they are, but adding another one or two with a <tt>ContextConfiguration</tt> set to, e.g., <tt>spring-test/test-auth-container.xml</tt> would be great. E.g. FcrepoPutAuthIT.java &#8211; basically the same as the existing FcrepoPutIT.java but using a webac-based container.</p></div></div>
+<div class="comment" id="comment-15432"><div class="by">Unknown, 2015-10-07 03:42 UTC</div><div class="text"><p>Also, can you click the "Start Work" button in jira?</p></div></div>
+<div class="comment" id="comment-15434"><div class="by">Former user, 2015-10-07 12:50 UTC</div><div class="text"><p>Still have no 'Start Work' button.  Been a weird recurring issue with Jira.  At one point Andrew Woods sorted it out, but now the button's gone again </p>
+
+<p>Good to know that's I'm on the right path.  I'll ping you if I've got questions about the tests.</p></div></div>
+<div class="comment" id="comment-15435"><div class="by">Former user, 2015-10-07 12:52 UTC</div><div class="text"><p>Ok, strike that about the start work button.  It's magically back again after making that last comment?  Or I'm taking crazy pills.</p>
+
+<p>It's probably crazy pills.</p></div></div>
+<div class="comment" id="comment-15436"><div class="by">Unknown, 2015-10-07 13:14 UTC</div><div class="text"><p>Have you considered the possibility that Jira takes crazy pills?</p></div></div>
+<div class="comment" id="comment-15744"><div class="by">Andrew Woods, 2015-11-04 21:25 UTC</div><div class="text"><p>Former user, is this ticket actually "in-progress"?</p></div></div>
+<div class="comment" id="comment-15915"><div class="by">Nick Ruest, 2015-12-10 16:52 UTC</div><div class="text"><p>December 10 Tech Call: Former user are you still working on this? There was mention of tests too.</p></div></div>
+<div class="comment" id="comment-15988"><div class="by">Mohamed Mohideen Abdul Rasheed, 2015-12-24 21:20 UTC</div><div class="text"><p>We needed this feature at umd and have a working version. Here is our impl: <a href="https://github.com/mohideen/fcrepo-java-client/commit/a9a6c78f1dba4810fcfee69ed0d38b74b743afe9" class="external-link" rel="nofollow noreferrer">https://github.com/mohideen/fcrepo-java-client/commit/a9a6c78f1dba4810fcfee69ed0d38b74b743afe9</a></p>
+
+<p>Former user, If you haven't had a chance to work on this issue yet, this can save some time for you. Please take a look.</p></div></div>
+<div class="comment" id="comment-15990"><div class="by">Unknown, 2015-12-24 21:38 UTC</div><div class="text"><p>Mohamed Mohideen Abdul Rasheed This looks great, can you add an appropriate PR to fcrepo-java-client along with an integration test?</p></div></div>
+<div class="comment" id="comment-16034"><div class="by">Mohamed Mohideen Abdul Rasheed, 2016-01-26 20:10 UTC</div><div class="text"><p>Created PR with integration test.<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/8" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/8</a></p></div></div>
+<div class="comment" id="comment-16040"><div class="by">Unknown, 2016-01-28 19:43 UTC</div><div class="text"><p>This looks good pending some very minor code review comments.</p></div></div>
+<div class="comment" id="comment-16094"><div class="by">Andrew Woods, 2016-02-09 22:58 UTC</div><div class="text"><p>Mohamed Mohideen Abdul Rasheed, when you have addressed Unknown's minor code review comments, please move this JIRA ticket back into the "Start Review" state.<br/>
+Thanks!</p></div></div>
+<div class="comment" id="comment-16264"><div class="by">Unknown, 2016-03-03 15:57 UTC</div><div class="text"><p>This PR supersedes the existing one: <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/9" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/9</a></p>
+
+<p>It combines the changes from Mohamed Mohideen Abdul Rasheed with some very minor code/build changes.</p></div></div>
+<div class="comment" id="comment-16267"><div class="by">Andrew Woods, 2016-03-03 18:17 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/commit/85845284d8bdc1085377caac87721c8bfec1b183" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/commit/85845284d8bdc1085377caac87721c8bfec1b183</a></p></div></div>
+<div class="comment" id="comment-16383"><div class="by">Unknown, 2016-03-22 20:36 UTC</div><div class="text"><p>Update fcrepo-camel with updated fcrepo-java-client</p></div></div>
+<div class="comment" id="comment-16384"><div class="by">Unknown, 2016-03-22 20:37 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel/pull/103" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/pull/103</a></p></div></div>
+<div class="comment" id="comment-16385"><div class="by">Nick Ruest, 2016-03-23 01:46 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-exts/fcrepo-camel/commit/5dfefeecdbc1322ffa7025cef5eac63b2bc33262" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/commit/5dfefeecdbc1322ffa7025cef5eac63b2bc33262</a></p></div></div>
+<div class="comment" id="comment-16386"><div class="by">Nick Ruest, 2016-03-23 07:30 UTC</div><div class="text"><p>...looks like I can't close/resolve tickets, so somebody else will have to do that.</p></div></div>
+<p><a href="data/FCREPO-1761.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3796 Disable on demand internal id translation of outgoing RDF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3796</span> Disable on demand internal id translation of outgoing RDF</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Reopened</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2022-01-13 17:15 UTC</td></tr><tr><th>Updated</th><td>2024-05-23 15:55 UTC</td></tr><tr><th>Components</th><td>core, f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.4.0</td></tr></table>
+<h2>Description</h2>
+<p>RDF with subjects or objects prefixed by</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ info:fedora
+</pre>
+</div></div>
+
+<p>are automatically translated on retrieval such that "info:fedora" is replaced with the base Fedora URI.  In some cases users may want to see the internal resource identifiers instead of the translated ones.  </p>
+
+<p>The task here is to provide a means for indicating in the request that the user would like to suppress the translation behavior.  Whether this ability is accomplished by means of a query param, header, or some other means is up for discussion.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-22938"><div class="by">Dan Field, 2024-01-09 17:37 UTC</div><div class="text"><p>I’ve taken a first crack at this. Let me know if I am barking up the right tree or not </p>
+
+<p><a href="https://github.com/Surfrdan/fcrepo/pull/new/FCREPO-3796" class="external-link" rel="nofollow noreferrer">https://github.com/Surfrdan/fcrepo/pull/new/FCREPO-3796</a></p>
+
+<p>enable the internal ID in the response by adding useInternalId=true</p>
+
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>  curl -u fedoraAdmin:fedoraAdmin -X PUT http://localhost:8080/rest/test1 &amp;&amp;  curl -v  -u fedoraAdmin:fedoraAdmin http://localhost:8080/rest/test1?useInternalId=true
+*   Trying 127.0.0.1:8080...
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+* Server auth using Basic with user 'fedoraAdmin'
+&gt; GET /rest/test1?useInternalId=true HTTP/1.1
+
+&lt;SNIP&gt;
+&lt;
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+@prefix ldp: &lt;http://www.w3.org/ns/ldp#&gt; .
+
+&lt;info:fedora/test1&gt;  fedora:created  "2024-01-09T17:29:16.593190Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:lastModified    "2024-01-10T15:07:46.505004Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:createdBy       "fedoraAdmin" ;
+        fedora:lastModifiedBy  "fedoraAdmin" ;
+        rdf:type               ldp:BasicContainer ;
+        rdf:type               ldp:Resource ;
+        rdf:type               fedora:Resource ;
+        rdf:type               ldp:RDFSource ;
+        rdf:type               ldp:Container ;
+        rdf:type               fedora:Container .</pre>
+</div></div>
+
+<p>vs</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre> curl  -u fedoraAdmin:fedoraAdmin -X PUT http://localhost:8080/rest/test1 &amp;&amp;  curl -v  -u fedoraAdmin:fedoraAdmin http://localhost:8080/rest/test1
+*   Trying 127.0.0.1:8080...
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+* Server auth using Basic with user 'fedoraAdmin'
+&gt; GET /rest/test1 HTTP/1.1
+
+&lt;SNIP&gt;
+&lt;
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+@prefix ldp: &lt;http://www.w3.org/ns/ldp#&gt; .
+
+&lt;http://localhost:8080/rest/test1&gt;
+        fedora:created         "2024-01-09T17:29:16.593190Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:lastModified    "2024-01-10T15:10:20.850877Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:createdBy       "fedoraAdmin" ;
+        fedora:lastModifiedBy  "fedoraAdmin" ;
+        rdf:type               ldp:BasicContainer ;
+        rdf:type               ldp:Resource ;
+        rdf:type               fedora:Resource ;
+        rdf:type               ldp:RDFSource ;
+        rdf:type               ldp:Container ;
+        rdf:type               fedora:Container .</pre>
+</div></div></div></div>
+<div class="comment" id="comment-23052"><div class="by">Dan Field, 2024-05-23 15:55 UTC</div><div class="text"><p>I seem to have messed up my local branches where this PR is concerned. I’ll need to find the changes or redo the work. </p></div></div>
+<p><a href="data/FCREPO-3796.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

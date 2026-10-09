@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3465 Creating a memento on a resouce should always create a new memento</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3465</span> Creating a memento on a resouce should always create a new memento</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-10-22 16:01 UTC</td></tr><tr><th>Updated</th><td>2020-11-14 22:29 UTC</td></tr><tr><th>Resolved</th><td>2020-11-06 21:57 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>The memento creation behavior from F5 to F6 changed. In F5 you could always create a memento on a resource regardless of whether or not the resource changed since the last memento was created. Because of the relationship between mementos and OCFL versions, this behavior was changed in F6 so that a new memento is only created if the resource was changed since the last memento was created.</p>
+
+<p>The problem with the current F6 behavior is that mementos also capture containment and membership, which is not related to whether or not the resource has changed. This means, that its impossible to create a memento to capture containment or membership changes.</p>
+
+<p>The F6 behavior should be reverted to the original F5 behavior. In order to achieve this, the last modified timestamp in the resource headers must be modified on every create memento request.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-21548"><div class="by">Peter Winckles, 2020-11-05 14:59 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo/fcrepo/pull/1789" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1789</a></p></div></div>
+<div class="comment" id="comment-21561"><div class="by">Andrew Woods, 2020-11-06 21:41 UTC</div><div class="text"><p>Build error: <a href="https://travis-ci.com/github/fcrepo/fcrepo/jobs/428716694#L4045" class="external-link" rel="nofollow noreferrer">https://travis-ci.com/github/fcrepo/fcrepo/jobs/428716694#L4045</a></p></div></div>
+<div class="comment" id="comment-21562"><div class="by">Peter Winckles, 2020-11-06 21:57 UTC</div><div class="text"><p>You need to build the fcrepo-storage-ocfl PR too</p></div></div>
+<div class="comment" id="comment-21624"><div class="by">Andrew Woods, 2020-11-14 22:29 UTC</div><div class="text"><p>Resolved with:</p>
+<ul class="alternate" type="square">
+	<li><a href="https://github.com/fcrepo/fcrepo/commit/46c3deb23979ea6b6b8e9a481c8cc9009e319c2d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/46c3deb23979ea6b6b8e9a481c8cc9009e319c2d</a><br/>
+and</li>
+	<li><a href="https://github.com/fcrepo/fcrepo-storage-ocfl/commit/a02393b38e6e5060e30bdef50c5e0bef393cfbfb" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo-storage-ocfl/commit/a02393b38e6e5060e30bdef50c5e0bef393cfbfb</a></li>
+</ul>
+
+
+<p>Related: <a href="https://github.com/fcrepo-exts/migration-utils/commit/0e7c02aa4d5bc546040d74d6c68137c56be8a057" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/0e7c02aa4d5bc546040d74d6c68137c56be8a057</a></p></div></div>
+<p><a href="data/FCREPO-3465.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

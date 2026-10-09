@@ -1,0 +1,56 @@
+Index: src/main/java/fedora/server/storage/DefaultDOManager.java
+===================================================================
+--- src/main/java/fedora/server/storage/DefaultDOManager.java	(revision 8531)
++++ src/main/java/fedora/server/storage/DefaultDOManager.java	(working copy)
+@@ -34,7 +34,6 @@
+ 
+ import fedora.common.Constants;
+ import fedora.common.Models;
+-
+ import fedora.server.Context;
+ import fedora.server.Module;
+ import fedora.server.RecoveryContext;
+@@ -1151,6 +1150,10 @@
+                     {
+                         // iterate over all versions of this dsID
+                         for (Datastream dmc : obj.datastreams(dsID)) {
++                            String id =
++                                obj.getPid() + "+" + dmc.DatastreamID
++                                        + "+" + dmc.DSVersionID;
++                            // if it's a url, we need to grab content for this version
+                             if (URL_PROTOCOL.matcher(dmc.DSLocation).matches()) {
+                                 // if it's a url, we need to grab content for this version
+                                 MIMETypedStream mimeTypedStream;
+@@ -1201,9 +1204,6 @@
+                                                     + "location: "
+                                                     + dmc.DSLocation);
+                                 }
+-                                String id =
+-                                        obj.getPid() + "+" + dmc.DatastreamID
+-                                                + "+" + dmc.DSVersionID;
+                                 if (obj.isNew()) {
+                                     m_permanentStore
+                                             .addDatastream(id, mimeTypedStream
+@@ -1238,12 +1238,16 @@
+                                 if(mimeTypedStream != null) {
+                                     mimeTypedStream.close();
+                                 }
+-                            }
+-                            else {
+-                                String id =
+-                                    obj.getPid() + "+" + dmc.DatastreamID
+-                                            + "+" + dmc.DSVersionID;
+-                                LOG.warn("Inoperable DSLocation \"" + dmc.DSLocation + "\" given for " + id);
++                            } else {
++                                if (!dmc.DSLocation.equals(id)) {
++                                    LOG.warn("Inoperable DSLocation \"" +
++                                                dmc.DSLocation + "\" given for " + id);
++                                } else {
++                                    if (LOG.isDebugEnabled()) {
++                                        LOG.debug("Inoperable DSLocation \"" +
++                                                 dmc.DSLocation + "\" given for " + id);
++                                    }
++                                }
+                             }
+                         }
+                     }

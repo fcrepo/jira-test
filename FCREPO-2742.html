@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2742 Section 5: Allow single-document ACLs using hash URIs for authorizations.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2742</span> Section 5: Allow single-document ACLs using hash URIs for authorizations.</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2018-04-04 11:47 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-08-06 17:53 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>hard, webac</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Required by</th><td><a href="FCREPO-2698.html">FCREPO-2698</a> Section 5.9: Implement support for acl:default</td></tr><tr><th>Required by</th><td><a href="FCREPO-2781.html">FCREPO-2781</a> Modify the algorithm for collecting authorizations  so that all authorizations are read from the file pointed to by the rel=acl link associated with a resource.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2781.html">FCREPO-2781</a> Modify the algorithm for collecting authorizations  so that all authorizations are read from the file pointed to by the rel=acl link associated with a resource.</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2842.html">FCREPO-2842</a> WebAC examples of hash-URIs</td></tr></table>
+<h2>Description</h2>
+<p>Currently, Fedora requires ACLs to be structured as:<br/>
+ a) an ACL container, with <br/>
+ b) N LDP children, one for each authorization in the ACL</p>
+
+<p>This structure is not part of the SOLID spec, and may even be contrary to it. It needs to be possible to express an entire ACL as a <em>document</em>, rather than a multi-resource graph. This means supporting hash URIs for authorizations. ACLs that resemble the examples in the SOLID spec should be supported:</p>
+
+<p>@prefix acl: &lt;<a href="http://www.w3.org/ns/auth/acl" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt;.<br/>
+ &lt;#authorization1&gt;<br/>
+ a acl:Authorization;<br/>
+ acl:agent &lt;<a href="https://alice.databox.me/profile/card#me" class="external-link" rel="nofollow noreferrer">https://alice.databox.me/profile/card#me</a>&gt;; # Alice's WebID<br/>
+ acl:accessTo &lt;<a href="https://alice.databox.me/docs/file1" class="external-link" rel="nofollow noreferrer">https://alice.databox.me/docs/file1</a>&gt;;<br/>
+ acl:mode<br/>
+ acl:Read, acl:Write, acl:Control.</p>
+
+<p> </p>
+
+<p>The task here is as follows: </p>
+<ol>
+	<li>Ignore <a href="http://fedora.info/definitions/v4/webac" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#Acl</a> type in the code.</li>
+	<li>Modify the algorithm for collecting authorizations  so that all authorizations are read from the file pointed to by the rel=acl link associated with a resource.
+	<ol>
+		<li>The task is to check at <a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L368" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-auth-webac/src/main/java/org/fcrepo/auth/webac/WebACRolesProvider.java#L368</a> and modify the algorithm to get hash resources unless `FedoraResource.getChildren()` also gets hash URI children, in which case nevermind.</li>
+	</ol>
+	</li>
+</ol>
+
+
+<p>Notes: <a href="https://gist.github.com/yinlinchen/13c9a3f2c0bdb8dc7cf06bf060f3c520" class="external-link" rel="nofollow noreferrer">https://gist.github.com/yinlinchen/13c9a3f2c0bdb8dc7cf06bf060f3c520</a> </p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-19813"><div class="by">Aaron Birkland, 2018-04-04 13:36 UTC</div><div class="text"><p>Actually, the use of ldp:contains might be disallowed by the Fedora spec too:</p>
+
+<p>"Implementations <em>must</em> use only statements associated with an authorization in the ACL RDF to determine access"</p>
+
+<p>ldp:contains is not "statements associated with authorization", and LDP child authorizations are not "in the ACL"</p></div></div>
+<div class="comment" id="comment-19824"><div class="by">Danny Bernstein, 2018-04-04 22:15 UTC</div><div class="text"><p>For the sake of backwards compatibility,  do we want to consider supporting the current child authorization discovery mechanism ? </p></div></div>
+<div class="comment" id="comment-19826"><div class="by">Aaron Birkland, 2018-04-05 13:50 UTC</div><div class="text"><p>Deprecating it seems reasonable, and make sure the docs only advocate the specified way.  Migration tools ought to provide the option to convert tree-like ACLs to document-like ACLs</p></div></div>
+<div class="comment" id="comment-19837"><div class="by">Peter Matthew Eichman, 2018-04-12 17:01 UTC</div><div class="text"><p>I agree that deprecation is reasonable. I would be willing to go as far as removing it entirely (as a breaking change), but I think that would have to depend on how many people are using the current tree-like ACLs and how big of a burden it would be for them to migrate. At UMD, we are using a small handful (3, I believe) tree-like ACLs, and I would be happy to migrate those as a prerequisite for upgrading to 5.0.0. YMMV, of course.<br/>
+  <br/>
+ </p></div></div>
+<div class="comment" id="comment-19842"><div class="by">Danny Bernstein, 2018-04-12 18:43 UTC</div><div class="text"><p>If there is no strong objection I would support all out removal.</p></div></div>
+<div class="comment" id="comment-19896"><div class="by">Yinlin Chen, 2018-04-20 14:51 UTC</div><div class="text"><p>Update the new workflow. Thanks Peter Matthew Eichman 's help.</p>
+
+<p><a href="https://gist.github.com/yinlinchen/13c9a3f2c0bdb8dc7cf06bf060f3c520" class="external-link" rel="nofollow noreferrer">https://gist.github.com/yinlinchen/13c9a3f2c0bdb8dc7cf06bf060f3c520</a></p></div></div>
+<div class="comment" id="comment-19939"><div class="by">Yinlin Chen, 2018-04-25 20:38 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1341" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1341</a></p>
+
+<p>Just create Patch method for this ticket, although this ticket would be required more than that. </p></div></div>
+<div class="comment" id="comment-19942"><div class="by">Andrew Woods, 2018-04-26 19:33 UTC</div><div class="text"><p>Pending response to code review comment.</p></div></div>
+<div class="comment" id="comment-19958"><div class="by">Yinlin Chen, 2018-04-27 20:14 UTC</div><div class="text"><p>Jared Whiklo I create <a href="https://jira.duraspace.org/browse/FCREPO-2781" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2781</a> for the second part of this ticket. Please see if anything need to be done in the current PR. Thanks!</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20077"><div class="by">Danny Bernstein, 2018-07-18 23:30 UTC</div><div class="text"><p>2781 was closed.  This ticket still needs doing.</p></div></div>
+<div class="comment" id="comment-20121"><div class="by">Danny Bernstein, 2018-08-06 17:53 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1383" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1383</a></p></div></div>
+<div class="comment" id="comment-20128"><div class="by">Peter Matthew Eichman, 2018-08-09 15:07 UTC</div><div class="text"><p>Merged at <a href="https://github.com/fcrepo4/fcrepo4/commit/16363b63de05b554cb8663506a4ac0e35b823fac" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/16363b63de05b554cb8663506a4ac0e35b823fac</a></p></div></div>
+<p><a href="data/FCREPO-2742.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

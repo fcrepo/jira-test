@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1107 Language tag (xml:lang) in RELS-EXT ignored by triple store</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1107</span> Language tag (xml:lang) in RELS-EXT ignored by triple store</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Egbert Gramsbergen</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2012-06-26 18:20 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.5, Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Sub-tasks</th><td><a href="FCREPO-1138.html">FCREPO-1138</a> ResourceIndex should correctly index lang att for RDF statements in RELS-EXT rdf xml<br><a href="FCREPO-1139.html">FCREPO-1139</a> xml:lang attribute should be parameterized in the REST and SOAP relationship APIs<br><a href="FCREPO-1140.html">FCREPO-1140</a> changes to a relationship&#x27;s xml:lang attribute should be propagated through journaling APIs</td></tr></table>
+<h2>Description</h2>
+<p>Language tags (xml:lang) on literals in the RELS-EXT datastream are ignored by the triple store. For example:<br/>
+&lt;rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"&gt;<br/>
+  &lt;rdf:Description xmlns:skos="http://www.w3.org/2004/02/skos/core#" rdf:about="info:fedora/aat:300006036"&gt;<br/>
+    &lt;skos:prefLabel xml:lang="nl-NL"&gt;postkantoren&lt;/skos:prefLabel&gt;<br/>
+    ....<br/>
+SPARQL queries only retrieve the literal "postkantoren" without the language tag.<br/>
+In contrast, triples from the DC datastream do retain the language information correctly. So this is not a pure triple store issue but an issue of translating RELS-EXT into triples (and maybe also RELS-INT, but I did not check that).<br/>
+If this issue is resolved, it would also be nice if the REST API methods for adding/deleting Relationships would be extended with a language parameter.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-12341"><div class="by">Benjamin Armintor, 2012-06-27 04:18 UTC</div><div class="text"><p>Depending on whether the management APIs should support a language attribute for addRelationship and purgeRelationship, this may require changes to the Management interface as well as the Journaling code.  Supporting the language attribute on whole-datastream changes (such as ingest) is a much less drastic change.</p></div></div>
+<div class="comment" id="comment-12435"><div class="by">Egbert Gramsbergen, 2012-08-27 12:54 UTC</div><div class="text"><p>For the test suite: a sample SPARQL query with the example above would be</p>
+
+<p>SELECT ?s ?o<br/>
+WHERE {<br/>
+  ?s &lt;<a href="http://www.w3.org/2004/02/skos/core#prefLabel" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2004/02/skos/core#prefLabel</a>&gt; ?o<br/>
+  FILTER (LANG(?o)='nl')<br/>
+}</p>
+
+<p>to retrieve all objects with a skos prefLabel in Dutch.</p></div></div>
+<div class="comment" id="comment-13096"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1107.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

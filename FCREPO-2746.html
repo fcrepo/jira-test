@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2746 Failed to reset the input stream when not accessing s3 directly or s3 compatible gateway</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2746</span> Failed to reset the input stream when not accessing s3 directly or s3 compatible gateway</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Thomas Schneider</td></tr><tr><th>Created</th><td>2018-04-06 13:20 UTC</td></tr><tr><th>Updated</th><td>2018-04-06 15:57 UTC</td></tr><tr><th>Components</th><td>f4-webapp-plus</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.5</td></tr></table>
+<h2>Environment</h2>Ubuntu 16.04 + OpenJDK 8
+<h2>Description</h2>
+<p>When trying to use a S3 compatible storage <span class="error">&#91;1&#93;</span> <span class="error">&#91;2&#93;</span>, in our case Ceph (Luminous), we get an exception <span class="error">&#91;3&#93;</span>. <br/>
+While trying to debug the problem I set up nginx as S3 Proxy for aws (configuration below) and found out that the same error appears when using this setup <span class="error">&#91;4&#93;</span> (I set up a local dns resolver for this).<br/>
+When removing the redirect and accessing aws directly everything works fine. Tried using other S3-Proxy solutions as well.</p>
+
+<p>Sending 1 byte files throws the same exception and uploading empty files creates exception <span class="error">&#91;5&#93;</span>. If you need access to a Ceph S3 instance for testing I will provide one on our test installation.</p>
+
+<p>kind regards,<br/>
+ts</p>
+
+<p><span class="error">&#91;1&#93;</span><br/>
+&gt;             "username" : "$</p>
+{aws.accessKeyId}
+<p>",<br/>
+&gt;             "password" : "$</p>
+{aws.secretKey}
+<p>",<br/>
+&gt;             "bucketName" : "$</p>
+{aws.bucket}
+<p>",<br/>
+&gt;             "endPoint" : "$</p>
+{aws.endpoint}
+<p>"</p>
+
+<p><span class="error">&#91;2&#93;</span><br/>
+-Daws.bucket=fcrepo -Daws.accessKeyId=XXXXXXXXXX \<br/>
+-Daws.secretKey=YYYYYYYYYYYYYYYYYYYYYYYYYYYYYY \<br/>
+-Daws.endpoint=<a href="http://localhost:7480" class="external-link" rel="nofollow noreferrer">http://localhost:7480</a></p>
+
+<p><span class="error">&#91;3&#93;</span><br/>
+org.modeshape.jcr.value.binary.BinaryStoreException: com.amazonaws.ResetException: Failed to reset the input stream;  If the request involves an input stream, the maximum stream buffer size can be configured via request.getRequestClientOptions().setReadLimit(int)<br/>
+    at org.modeshape.jcr.value.binary.S3BinaryStore.storeValue(S3BinaryStore.java:231)<br/>
+    at org.modeshape.jcr.value.binary.AbstractBinaryStore.storeValue(AbstractBinaryStore.java:251)<br/>
+    at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:257)<br/>
+    at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:49)<br/>
+    at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:149)<br/>
+    at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:41)<br/>
+    at org.fcrepo.kernel.modeshape.FedoraBinaryImpl.setContent(FedoraBinaryImpl.java:187)<br/>
+    at org.fcrepo.http.api.ContentExposingResource.replaceResourceBinaryWithStream(ContentExposingResource.java:784)<br/>
+    at org.fcrepo.http.api.FedoraLdp.createObject(FedoraLdp.java:608)<br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+    at java.lang.reflect.Method.invoke(Method.java:498)<br/>
+    at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)<br/>
+    at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)<br/>
+    at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:161)<br/>
+    at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:160)<br/>
+    at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:99)<br/>
+    at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:389)<br/>
+    at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:347)<br/>
+    at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:102)<br/>
+    at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:326)<br/>
+    at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+    at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+    at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+    at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+    at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+    at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)<br/>
+    at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)<br/>
+    at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)<br/>
+    at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)<br/>
+    at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)<br/>
+    at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)<br/>
+    at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)<br/>
+    at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)<br/>
+    at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:816)<br/>
+    at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:583)<br/>
+    at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+    at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:513)<br/>
+    at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:226)<br/>
+    at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1113)<br/>
+    at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:511)<br/>
+    at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+    at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1047)<br/>
+    at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+    at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:213)<br/>
+    at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:109)<br/>
+    at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:119)<br/>
+    at org.eclipse.jetty.server.Server.handle(Server.java:517)<br/>
+    at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:302)<br/>
+    at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:242)<br/>
+    at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:238)<br/>
+    at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:95)<br/>
+    at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:57)<br/>
+    at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceAndRun(ExecuteProduceConsume.java:213)<br/>
+    at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:147)<br/>
+    at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:654)<br/>
+    at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:572)<br/>
+    at java.lang.Thread.run(Thread.java:748)<br/>
+Caused by: com.amazonaws.ResetException: Failed to reset the input stream;  If the request involves an input stream, the maximum stream buffer size can be configured via request.getRequestClientOptions().setReadLimit(int)<br/>
+    at com.amazonaws.services.s3.internal.AWSS3V4Signer.getContentLength(AWSS3V4Signer.java:196)<br/>
+    at com.amazonaws.services.s3.internal.AWSS3V4Signer.calculateContentHash(AWSS3V4Signer.java:103)<br/>
+    at com.amazonaws.auth.AWS4Signer.sign(AWS4Signer.java:213)<br/>
+    at com.amazonaws.http.AmazonHttpClient$RequestExecutor.executeOneRequest(AmazonHttpClient.java:1155)<br/>
+    at com.amazonaws.http.AmazonHttpClient$RequestExecutor.executeHelper(AmazonHttpClient.java:1030)<br/>
+    at com.amazonaws.http.AmazonHttpClient$RequestExecutor.doExecute(AmazonHttpClient.java:742)<br/>
+    at com.amazonaws.http.AmazonHttpClient$RequestExecutor.executeWithTimer(AmazonHttpClient.java:716)<br/>
+    at com.amazonaws.http.AmazonHttpClient$RequestExecutor.execute(AmazonHttpClient.java:699)<br/>
+    at com.amazonaws.http.AmazonHttpClient$RequestExecutor.access$500(AmazonHttpClient.java:667)<br/>
+    at com.amazonaws.http.AmazonHttpClient$RequestExecutionBuilderImpl.execute(AmazonHttpClient.java:649)<br/>
+    at com.amazonaws.http.AmazonHttpClient.execute(AmazonHttpClient.java:513)<br/>
+    at com.amazonaws.services.s3.AmazonS3Client.invoke(AmazonS3Client.java:4194)<br/>
+    at com.amazonaws.services.s3.AmazonS3Client.invoke(AmazonS3Client.java:4141)<br/>
+    at com.amazonaws.services.s3.AmazonS3Client.putObject(AmazonS3Client.java:1723)<br/>
+    at com.amazonaws.services.s3.AmazonS3Client.putObject(AmazonS3Client.java:1586)<br/>
+    at org.modeshape.jcr.value.binary.S3BinaryStore.storeValue(S3BinaryStore.java:220)<br/>
+    ... 58 more<br/>
+Caused by: java.io.IOException: Resetting to invalid mark<br/>
+    at java.io.BufferedInputStream.reset(BufferedInputStream.java:448)<br/>
+    at org.modeshape.jcr.value.binary.SharedLockingInputStream$8.call(SharedLockingInputStream.java:238)<br/>
+    at org.modeshape.jcr.value.binary.SharedLockingInputStream$8.call(SharedLockingInputStream.java:233)<br/>
+    at org.modeshape.jcr.value.binary.SharedLockingInputStream.doOperation(SharedLockingInputStream.java:263)<br/>
+    at org.modeshape.jcr.value.binary.SharedLockingInputStream.reset(SharedLockingInputStream.java:233)<br/>
+    at com.amazonaws.internal.SdkFilterInputStream.reset(SdkFilterInputStream.java:102)<br/>
+    at com.amazonaws.internal.SdkFilterInputStream.reset(SdkFilterInputStream.java:102)<br/>
+    at com.amazonaws.services.s3.internal.MD5DigestCalculatingInputStream.reset(MD5DigestCalculatingInputStream.java:76)<br/>
+    at com.amazonaws.internal.SdkFilterInputStream.reset(SdkFilterInputStream.java:102)<br/>
+    at com.amazonaws.event.ProgressInputStream.reset(ProgressInputStream.java:168)<br/>
+    at com.amazonaws.internal.SdkFilterInputStream.reset(SdkFilterInputStream.java:102)<br/>
+    at com.amazonaws.services.s3.internal.AWSS3V4Signer.getContentLength(AWSS3V4Signer.java:194)<br/>
+    ... 73 more</p>
+
+<p><span class="error">&#91;4&#93;</span><br/>
+  gzip_proxied any;<br/>
+  gzip_types text/plain application/json;<br/>
+  gzip_min_length 1000;</p>
+
+<p>server {<br/>
+    listen 80;<br/>
+    server_name .s3-proxy .s3.us-east-1.amazonaws.com;<br/>
+    client_max_body_size 10g;</p>
+
+<p>    access_log /var/log/nginx/s3proxy-access.log;<br/>
+    error_log /var/log/nginx/s3proxy-error.log;</p>
+
+
+<p>    proxy_set_header Host $host;<br/>
+    proxy_buffering off;</p>
+
+<p>    location / </p>
+{
+        fastcgi_pass_header Authorization;
+        fastcgi_pass_request_headers on;
+        include fastcgi_params;
+	proxy_pass https://52.216.101.21;
+      proxy_pass_header Server;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+      proxy_set_header Host $host;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_cache_bypass $http_upgrade;
+    }
+<p>}</p>
+
+<p><span class="error">&#91;5&#93;</span><br/>
+org.modeshape.jcr.value.binary.BinaryStoreException: org.modeshape.jcr.value.binary.BinaryStoreException: Unable to find binary value with key "da39a3ee5e6b4b0d3255bfef95601890afd80709" within binary store at "/tmp/modeshape-binary-store"<br/>
+	at org.modeshape.jcr.value.binary.S3BinaryStore.storeValue(S3BinaryStore.java:231)<br/>
+	at org.modeshape.jcr.value.binary.AbstractBinaryStore.storeValue(AbstractBinaryStore.java:251)<br/>
+	at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:257)<br/>
+	at org.modeshape.jcr.value.binary.BinaryStoreValueFactory.create(BinaryStoreValueFactory.java:49)<br/>
+	at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:149)<br/>
+	at org.modeshape.jcr.JcrValueFactory.createBinary(JcrValueFactory.java:41)<br/>
+	at org.fcrepo.kernel.modeshape.FedoraBinaryImpl.setContent(FedoraBinaryImpl.java:187)<br/>
+	at org.fcrepo.http.api.ContentExposingResource.replaceResourceBinaryWithStream(ContentExposingResource.java:778)<br/>
+	at org.fcrepo.http.api.FedoraLdp.createObject(FedoraLdp.java:608)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:498)<br/>
+	at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:161)<br/>
+	at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:160)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:99)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:389)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:347)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:102)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:326)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)<br/>
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)<br/>
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)<br/>
+	at org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:816)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:583)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+	at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:513)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:226)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1113)<br/>
+	at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:511)<br/>
+	at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1047)<br/>
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:213)<br/>
+	at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:109)<br/>
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:119)<br/>
+	at org.eclipse.jetty.server.Server.handle(Server.java:517)<br/>
+	at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:302)<br/>
+	at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:242)<br/>
+	at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:238)<br/>
+	at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:95)<br/>
+	at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:57)<br/>
+	at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceAndRun(ExecuteProduceConsume.java:213)<br/>
+	at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:147)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:654)<br/>
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:572)<br/>
+	at java.lang.Thread.run(Thread.java:748)<br/>
+Caused by: org.modeshape.jcr.value.binary.BinaryStoreException: Unable to find binary value with key "da39a3ee5e6b4b0d3255bfef95601890afd80709" within binary store at "/tmp/modeshape-binary-store"<br/>
+	at org.modeshape.jcr.value.binary.FileSystemBinaryStore.getInputStream(FileSystemBinaryStore.java:319)<br/>
+	at org.modeshape.jcr.value.binary.S3BinaryStore.storeValue(S3BinaryStore.java:220)<br/>
+	... 58 more</p>
+<p><a href="data/FCREPO-2746.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

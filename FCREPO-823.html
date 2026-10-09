@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-823 Ingesting object with managed content DC datastream fails if content specified using a file:/// URL</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-823</span> Ingesting object with managed content DC datastream fails if content specified using a file:/// URL</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-11-19 19:03 UTC</td></tr><tr><th>Updated</th><td>2011-02-21 23:25 UTC</td></tr><tr><th>Resolved</th><td>2011-01-11 22:22 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4, Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Description</h2>
+<p>Reported by Janna Wemekamp<br/>
+<a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-Policy-blocked-datastream-resolution-error-on-ingest-of-Managed-DC-datastream-tp5750061p5750061.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-Policy-blocked-datastream-resolution-error-on-ingest-of-Managed-DC-datastream-tp5750061p5750061.html</a></p>
+
+
+<p>If contentLocation is specified using the <a href="file:/" class="external-link" rel="nofollow noreferrer">file:/</a> protocol for a managed content DC datastream, the ingest fails.</p>
+
+<p>This is because during ingest DC content is read using DatastreamManagedContent.getContentStream(), which uses an external content manager to get the content.   At that point the content (dsLocation) is still the location provided upon ingest, ie the <a href="file:///" class="external-link" rel="nofollow noreferrer">file:///</a> URL.  (The content is read to check if eg a dc:identifier is present, and if not, add it).</p>
+
+<p>As this method does not have access to the Context (uses a default read-only context with no credentials) - this is failing authZ for DC specified using <a href="file:///" class="external-link" rel="nofollow noreferrer">file:///</a> as a content location, even if the appropriate policy is modified to give access to that location (and potentially might fail for http URLs where auth is required?) - XACML policy enforcement will need the context to permit access to the file.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11696"><div class="by">Stephen Bayliss, 2010-11-19 19:06 UTC</div><div class="text"><p>Confirmed this is a bug, I have reproduced this.</p></div></div>
+<div class="comment" id="comment-11697"><div class="by">Stephen Bayliss, 2010-11-20 06:01 UTC</div><div class="text"><p>added a new getContentLocation method which accepts a Context, and modified calling code to pass that through for this situation.</p></div></div>
+<div class="comment" id="comment-11698"><div class="by">Stephen Bayliss, 2010-11-20 07:22 UTC</div><div class="text"><p>changes committed to trunk and maintenance-3.4, leaving open as this could do with a test case</p></div></div>
+<div class="comment" id="comment-11699"><div class="by">Stephen Bayliss, 2010-11-23 13:59 UTC</div><div class="text"><p>Tested by reporter, using maintenance build.</p></div></div>
+<p><a href="data/FCREPO-823.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

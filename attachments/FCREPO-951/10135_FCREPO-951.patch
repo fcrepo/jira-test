@@ -1,0 +1,73 @@
+From ae63ff1f7f1a05a382e1c3bea86d21f88d6026ed Mon Sep 17 00:00:00 2001
+From: frank asseg <frank.asseg@congrace.de>
+Date: Fri, 29 Jul 2011 14:34:57 +0200
+Subject: [PATCH 1/2] added patch for FCREPO-951
+
+---
+ .../org/fcrepo/server/rest/DatastreamResource.java |   25 +++++++++++++++++++-
+ 1 files changed, 24 insertions(+), 1 deletions(-)
+
+diff --git a/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java b/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java
+index 4a6113b..057d9d0 100644
+--- a/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java
++++ b/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java
+@@ -107,7 +107,30 @@ public class DatastreamResource
+         }
+     }
+ 
+-    /**
++	@Path("/infolist")
++	@GET
++	public Response getDatastreams(@PathParam(RestParam.PID) String pid,
++			@QueryParam(RestParam.AS_OF_DATE_TIME) String dateTime,
++			@QueryParam(RestParam.DS_STATE) String dsState) {
++		try {
++			Date asOfDateTime=DateUtility.parseDateOrNull(dateTime);
++			Datastream[] datastreams = apiMService.getDatastreams(getContext(),
++					pid, asOfDateTime, dsState);
++			StringBuilder xmlBuilder=new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<datastreams>");
++			for (Datastream ds:datastreams){
++				//leave validation to user via param?
++				String xml = getSerializer(getContext()).datastreamProfileToXML(pid,
++						ds.DatastreamID, ds, asOfDateTime, false);
++				xmlBuilder.append(xml.substring("<?xml version=\"1.0\" encoding=\"UTF-8\"?>".length()));
++			}
++			xmlBuilder.append("</datastreams>");
++			return Response.ok(xmlBuilder.toString(),MediaType.TEXT_XML).build();
++		} catch (Exception ex) {
++			return handleException(ex);
++		}
++	}
++
++	/**
+      * Invoke API-M.getDatastream(context, pid, dsID, asOfDateTime)
+      * <p/>
+      * GET /objects/{pid}/datastreams/{dsID} ? asOfDateTime &
+-- 
+1.7.6
+
+
+From 4da9dadf03c238af9a66918e2ddfdabae9b06407 Mon Sep 17 00:00:00 2001
+From: frank asseg <frank.asseg@congrace.de>
+Date: Fri, 29 Jul 2011 14:53:43 +0200
+Subject: [PATCH 2/2] FCREPO-951: added  produces annotation
+
+---
+ .../org/fcrepo/server/rest/DatastreamResource.java |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java b/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java
+index 057d9d0..434cc01 100644
+--- a/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java
++++ b/fcrepo-server/src/main/java/org/fcrepo/server/rest/DatastreamResource.java
+@@ -109,6 +109,7 @@ public class DatastreamResource
+ 
+ 	@Path("/infolist")
+ 	@GET
++	@Produces(MediaType.TEXT_XML)
+ 	public Response getDatastreams(@PathParam(RestParam.PID) String pid,
+ 			@QueryParam(RestParam.AS_OF_DATE_TIME) String dateTime,
+ 			@QueryParam(RestParam.DS_STATE) String dsState) {
+-- 
+1.7.6
+

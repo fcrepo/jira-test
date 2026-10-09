@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3234 PaxExam update needed to support Maven&#x27;s HTTPS requirement</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3234</span> PaxExam update needed to support Maven&#x27;s HTTPS requirement</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-02-20 14:11 UTC</td></tr><tr><th>Updated</th><td>2020-02-20 14:11 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.2</td></tr></table>
+<h2>Description</h2>
+<p>Maven now requires you to use HTTPS when downloading packages, but for the KarafIT tests in fcrepo-camel and fcrepo-camel-toolbox the old PaxExam still uses non-SSL connections which fail.</p>
+
+<p>See the <a href="https://github.com/Islandora/documentation/issues/1443" class="external-link" rel="nofollow noreferrer">issue in Islandora</a> that revealed this issue to me.</p>
+
+<p>This needs the 4.14.0 release of PaxExam which is not yet released.</p>
+
+<p>To replicate, delete your local maven repository (~/.m2/repository in Mac or Linux) and build fcrepo-camel.</p>
+
+<p> </p>
+
+<p>See</p>
+
+<p><tt>Running org.fcrepo.camel.integration.KarafIT</tt><br/>
+<tt>[ main] ProbeRunner INFO creating PaxExam runner for class org.fcrepo.camel.integration.KarafIT</tt><br/>
+<tt>[ main] ProbeRunner INFO running test class org.fcrepo.camel.integration.KarafIT</tt><br/>
+<tt>[ main] KarafTestContainer INFO Wait for test container to finish its initialization [ RelativeTimeout value = 180000 ]</tt><br/>
+<tt>[ main] RemoteBundleContextClient INFO Waiting for remote bundle context.. on 21000 name: 64436318-6db6-4eb4-9c41-92203b3d7e49 timout: [ RelativeTimeout value = 180000 ]</tt><br/>
+<tt>2020-02-20 08:07:03,238 | WARN | pool-7-thread-1 | AetherBasedResolver | 1 - org.ops4j.pax.logging.pax-logging-api - 1.8.5 | Error resolving artifactorg.ops4j.pax.exam:pax-exam-features:xml:4.9.2:Could not transfer artifact org.ops4j.pax.exam:pax-exam-features:xml:4.9.2 from/to central (<a href="http://repo1.maven.org/maven2/):" class="external-link" rel="nofollow noreferrer">http://repo1.maven.org/maven2/):</a> Failed to transfer file: <a href="http://repo1.maven.org/maven2/org/ops4j/pax/exam/pax-exam-features/4.9.2/pax-exam-features-4.9.2.xml" class="external-link" rel="nofollow noreferrer">http://repo1.maven.org/maven2/org/ops4j/pax/exam/pax-exam-features/4.9.2/pax-exam-features-4.9.2.xml</a>. Return code is: 501 , ReasonPhrase:HTTPS Required.</tt><br/>
+<tt>shaded.org.eclipse.aether.resolution.ArtifactResolutionException: Could not transfer artifact org.ops4j.pax.exam:pax-exam-features:xml:4.9.2 from/to central (<a href="http://repo1.maven.org/maven2/):" class="external-link" rel="nofollow noreferrer">http://repo1.maven.org/maven2/):</a> Failed to transfer file: <a href="http://repo1.maven.org/maven2/org/ops4j/pax/exam/pax-exam-features/4.9.2/pax-exam-features-4.9.2.xml" class="external-link" rel="nofollow noreferrer">http://repo1.maven.org/maven2/org/ops4j/pax/exam/pax-exam-features/4.9.2/pax-exam-features-4.9.2.xml</a>. Return code is: 501 , ReasonPhrase:HTTPS Required.</tt><br/>
+{{ at shaded.org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolve(DefaultArtifactResolver.java:444)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at shaded.org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolveArtifacts(DefaultArtifactResolver.java:246)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at shaded.org.eclipse.aether.internal.impl.DefaultArtifactResolver.resolveArtifact(DefaultArtifactResolver.java:223)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at shaded.org.eclipse.aether.internal.impl.DefaultRepositorySystem.resolveArtifact(DefaultRepositorySystem.java:294)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at org.ops4j.pax.url.mvn.internal.AetherBasedResolver.resolve(AetherBasedResolver.java:650)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at org.ops4j.pax.url.mvn.internal.AetherBasedResolver.resolve(AetherBasedResolver.java:598)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at org.ops4j.pax.url.mvn.internal.AetherBasedResolver.resolve(AetherBasedResolver.java:576)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at org.ops4j.pax.url.mvn.internal.AetherBasedResolver.resolve(AetherBasedResolver.java:550)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at org.ops4j.pax.url.mvn.internal.Connection.getInputStream(Connection.java:123)<span class="error">&#91;7:org.ops4j.pax.url.mvn:2.4.7&#93;</span>}}<br/>
+{{ at java.net.URL.openStream(URL.java:1038)<span class="error">&#91;:1.8.0_45&#93;</span>}}</p>
+<p><a href="data/FCREPO-3234.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

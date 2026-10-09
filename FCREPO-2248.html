@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2248 Missing/Incorrect Content-Length header on HEAD request</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2248</span> Missing/Incorrect Content-Length header on HEAD request</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Robert Sanderson</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2016-09-28 16:20 UTC</td></tr><tr><th>Updated</th><td>2017-01-25 03:29 UTC</td></tr><tr><th>Resolved</th><td>2016-10-29 00:15 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1882.html">FCREPO-1882</a> Missing/Incorrect HTTP Headers</td></tr></table>
+<h2>Description</h2>
+<p>The headers returned from RDF Sources, and particularly Containers, have a few minor issues: </p>
+
+<ul>
+	<li>Content-Length is 0 on a HEAD, and should be the number of bytes of the representation if you had done a GET instead.</li>
+</ul>
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-17911"><div class="by">Danny Bernstein, 2016-10-28 18:42 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1131" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1131</a></p></div></div>
+<div class="comment" id="comment-17917"><div class="by">Danny Bernstein, 2016-10-29 00:11 UTC</div><div class="text"><p>escowles: I like the other changes in this PR, but I'm worried about the performance implications of this, esp. for resources with many links to other repository children. Producing the output in order to get its size seems very counter-productive. What is the point of doing a HEAD request if it isn't fast?<br/>
+acoburn: I completely agree with @escowles<br/>
+dbernstein:  @escowles That's an excellent point. I agree with you here. I assumed whoever opened the issue deemed it important to address. Assuming this is still the case, do you have any other ideas about how I might approach this one? Also to consider: once we address the performance concerns related to resources with many links, perhaps your concerns may be less of an issue?<br/>
+acoburn: @dbernstein *personally, I think we should close the issue as "Won't Fix". IMO, the only viable alternative is to not include a Content-Length header for HEAD requests on containers. When I looked into this ticket earlier, I did not see a way to do that, as Jersey will (helpfully) add a Content-Length header for you.<br/>
+Even if the performance considerations have been addressed, a HEAD request should, under no circumstances, try to fetch and/or serialize an entire object &#8211; it should only check whether the object exists along with some of the basic LDP types.*</p></div></div>
+<div class="comment" id="comment-17918"><div class="by">Danny Bernstein, 2016-10-29 00:12 UTC</div><div class="text"><p>Andrew Woods - please close this issue with "won't fix status"</p></div></div>
+<p><a href="data/FCREPO-2248.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1440 Multiple events published for NonRdfResources</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1440</span> Multiple events published for NonRdfResources</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Former user</td></tr><tr><th>Created</th><td>2015-04-02 19:12 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-08 15:24 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr></table>
+<h2>Environment</h2>Ubuntu 14.04, Using activemq-camel 5.10.0
+<h2>Description</h2>
+<p>Multiple events are getting published to the activemq topic with regards to NonRDFSourceDescriptions.  It appears to be happening only for NODE_ADDED and NODE_REMOVED events.  PROPERTY_ADDED, PROPERTY_CHANGED, PROPERTY_REMOVED are fine.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-13870"><div class="by">Former user, 2015-04-03 18:46 UTC</div><div class="text"><p>The duplicate events were being generated because one event was for the file node being added, and the second was for the content property being added.  I've updated the filter that combines events to combine these into single event:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/763" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/763</a></p></div></div>
+<div class="comment" id="comment-13873"><div class="by">Former user, 2015-04-06 18:44 UTC</div><div class="text"><p>Andrew Woods: I don't see a way to assign you was a reviewer on this ticket.  Can you review it?</p></div></div>
+<div class="comment" id="comment-13874"><div class="by">Andrew Woods, 2015-04-06 20:20 UTC</div><div class="text"><p>Pending response to code review comment.</p></div></div>
+<div class="comment" id="comment-13878"><div class="by">Former user, 2015-04-07 13:54 UTC</div><div class="text"><p>I've updated <a href="https://github.com/fcrepo4/fcrepo4/pull/763" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/763</a></p>
+
+<p>It still uses node path munging to identify events about the same node and collapse them, but it now uses the (superior) logic in FedoraEvent instead of a regex.  I've also included an IT demonstrating that only a single event is emitted when a content node is added.</p></div></div>
+<div class="comment" id="comment-13896"><div class="by">Andrew Woods, 2015-04-08 15:24 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/3de050c781632dedf8e182ac099406017a1e22b6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/3de050c781632dedf8e182ac099406017a1e22b6</a></p></div></div>
+<p><a href="data/FCREPO-1440.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

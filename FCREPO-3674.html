@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3674 migration-utils:  add option to migrate HEAD version only</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3674</span> migration-utils:  add option to migrate HEAD version only</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2021-03-16 17:44 UTC</td></tr><tr><th>Updated</th><td>2022-11-16 17:57 UTC</td></tr><tr><th>Resolved</th><td>2022-11-16 17:57 UTC</td></tr><tr><th>Components</th><td>migration-utils</td></tr><tr><th>Fix versions</th><td>migration-utils-6.3.0</td></tr></table>
+<h2>Description</h2>
+<p>Some users of migration-utils may not be interested in bringing their entire object histories with them during the migration.   Since the migration-utils migrate object history by default, the task here is to provide the option to migrate only the latest version of each datastream.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-22610"><div class="by">Paul Trilsbeek, 2022-03-22 08:54 UTC</div><div class="text"><p>I’m also interested in this, but I would like to be able to choose for which datastream IDs to disregard the history (or for which ones to keep it). E.g. we have many objects with large numbers of POLICY (XACML) and RELS-EXT datastream versions, which I’m not particularly interested in keeping, but I would like to keep any versions of the main OBJ datastream. </p></div></div>
+<div class="comment" id="comment-22617"><div class="by">Jakov M. Vežić, 2022-03-25 11:34 UTC</div><div class="text"><p>We are also interested in this feature, as well as in what Paul Trilsbeek is suggesting. There are some specific datastream IDs for which we have no interest in keeping the history and where we only need the latest/active datastream (TN - thumbnail and DC - Dublin Core being some examples). </p>
+
+<p>Another feature which would be very welcome for us is to disregard some datastream IDs completely and ignore them for migration. For example, we have a FULL_TEXT datastream on nearly every object which we used for indexing purposes, but we will handle this differently once we migrate to F6, so that specific datastream becomes obsolete and is not needed for our migration. If you want, I can create a separate ticket for this.</p></div></div>
+<div class="comment" id="comment-22627"><div class="by">Michael Ritter, 2022-04-25 20:07 UTC</div><div class="text"><p>PR available: <a href="https://github.com/fcrepo-exts/migration-utils/pull/185" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/pull/185</a> </p>
+
+<p>This adds functionality for specifying datastream ids which should be migrated HEAD only, but not for ignoring datastreams. I believe we will need a separate ticket for that.</p></div></div>
+<div class="comment" id="comment-22631"><div class="by">Calvin Xu, 2022-05-05 15:04 UTC</div><div class="text"><p>did some testing with the --headonly option in migration, looks like there was not much change in term of migrated content size and file numbers, looks like ocfl still have multiple version folder but now each version consist of a separate datastreams. here’s an example of same item migrated:</p>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<td class='confluenceTd'>Without -headonly</td>
+<td class='confluenceTd'>With -headonly</td>
+</tr>
+<tr>
+<td class='confluenceTd'>├── 0=ocfl_object_1.0<br/>
+├── inventory.json<br/>
+├── inventory.json.sha512<br/>
+├── v1<br/>
+│   ├── content<br/>
+│   │   ├── AUDIT<br/>
+│   │   ├── AUDIT~fcr-desc.nt<br/>
+│   │   └── fcr-container.nt<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v2<br/>
+│   ├── content<br/>
+│   │   ├── DC<br/>
+│   │   ├── DC~fcr-desc.nt<br/>
+│   │   ├── RELS-EXT<br/>
+│   │   └── RELS-EXT~fcr-desc.nt<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v3<br/>
+│   ├── content<br/>
+│   │   ├── DMDINDEX<br/>
+│   │   ├── DMDINDEX~fcr-desc.nt<br/>
+│   │   ├── MARCXML<br/>
+│   │   ├── MARCXML~fcr-desc.nt<br/>
+│   │   ├── METS<br/>
+│   │   ├── METS~fcr-desc.nt<br/>
+│   │   ├── OCR~fcr-desc.nt<br/>
+│   │   ├── PDF~fcr-desc.nt<br/>
+│   │   ├── Preview~fcr-desc.nt<br/>
+│   │   └── THUMB~fcr-desc.nt<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v4<br/>
+│   ├── content<br/>
+│   │   └── DMDINDEX<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v5<br/>
+│   ├── content<br/>
+│   │   └── DMDINDEX<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v6<br/>
+│   ├── content<br/>
+│   │   └── DC<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+└── v7<br/>
+    ├── content<br/>
+    │   └── RELS-EXT<br/>
+    ├── inventory.json<br/>
+    └── inventory.json.sha512</td>
+<td class='confluenceTd'>├── 0=ocfl_object_1.0<br/>
+├── inventory.json<br/>
+├── inventory.json.sha512<br/>
+├── v1<br/>
+│   ├── content<br/>
+│   │   ├── AUDIT<br/>
+│   │   ├── AUDIT~fcr-desc.nt<br/>
+│   │   └── fcr-container.nt<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v2<br/>
+│   ├── content<br/>
+│   │   ├── MARCXML<br/>
+│   │   ├── MARCXML~fcr-desc.nt<br/>
+│   │   ├── METS<br/>
+│   │   ├── METS~fcr-desc.nt<br/>
+│   │   ├── OCR~fcr-desc.nt<br/>
+│   │   ├── PDF~fcr-desc.nt<br/>
+│   │   ├── Preview~fcr-desc.nt<br/>
+│   │   └── THUMB~fcr-desc.nt<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v3<br/>
+│   ├── content<br/>
+│   │   ├── DMDINDEX<br/>
+│   │   └── DMDINDEX~fcr-desc.nt<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+├── v4<br/>
+│   ├── content<br/>
+│   │   ├── DC<br/>
+│   │   └── DC~fcr-desc.nt<br/>
+│   ├── inventory.json<br/>
+│   └── inventory.json.sha512<br/>
+└── v5<br/>
+    ├── content<br/>
+    │   ├── fcr-container.nt<br/>
+    │   ├── RELS-EXT<br/>
+    │   └── RELS-EXT~fcr-desc.nt<br/>
+    ├── inventory.json<br/>
+    └── inventory.json.sha512</td>
+</tr>
+</tbody></table>
+</div>
+
+
+</div></div>
+<div class="comment" id="comment-22651"><div class="by">Calvin Xu, 2022-06-02 13:31 UTC</div><div class="text"><p>tested the new PR and now seems like the F3 datastreams all consolidate into single version folder in ocfl</p></div></div>
+<div class="comment" id="comment-22658"><div class="by">Danny Bernstein, 2022-06-09 14:41 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo-exts/migration-utils/commit/217a309631f9fdc9ad319ee4d856f651f0e82982" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/migration-utils/commit/217a309631f9fdc9ad319ee4d856f651f0e82982</a> </p></div></div>
+<p><a href="data/FCREPO-3674.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

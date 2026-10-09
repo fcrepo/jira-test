@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-755 RELS-EXT/INT support for other RDF formats</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-755</span> RELS-EXT/INT support for other RDF formats</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2010-08-05 19:55 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-10-12 21:09 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr></table>
+<h2>Description</h2>
+<p>From Steve's recent message to the user list<span class="error">&#91;1&#93;</span>: "Alternatives could include N3 and N-Triples, both of which tend to be more readable (and therefore potentially easier to author) than RDF/XML - possibly useful to those less experienced in creating RDF/XML.</p>
+
+<p>This would not be possible with the current 3.3 release, as the RELS-* datastreams must be XML as they are "X" datastreams (N3 and N-Triples are not XML), but could be an option for 3.4 onwards now that we support M datastreams for RELS-*.</p>
+
+<p>(Additionally, RDF/XML has limitations as to to what RDF can be serialized as RDF/XML.)"</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-FOXML-RELS-EXT-member-of-two-collections-tt5373319.html#a5376035" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-FOXML-RELS-EXT-member-of-two-collections-tt5373319.html#a5376035</a></p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-11498"><div class="by">Chris Wilper, 2010-08-05 20:04 UTC</div><div class="text"><p>+1...I also think Turtle would be useful.  Doing this would also force the issue of the "validation" of the RDF being more flexible...the verification that the subject of all triples is the current object should be done in terms of the deserialized RDF, rather than being format-dependent as it is today.</p></div></div>
+<div class="comment" id="comment-11501"><div class="by">Asger Askov Blekinge, 2010-08-06 13:33 UTC</div><div class="text"><p>I fear the work involved in this idea. But yes, it could be useful, especially as part of the High Level Storage.</p>
+
+<p>My point is, a lost of stuff in the code, especially ECM, parse the RDF by hand, and with xpath. Firstly, we would need some good serialization independent methods in the server, for working with the relations. Then, we would refactor all the code touching these datastreams to use these methods, not the RDF itself. Sort of what I did with the getContentModels method, instead of quering for the #hasModel relation.</p>
+
+<p>Of course, if we could define that the resource index is required, most of this could be saved, as rather than querying against the RDF, you query the resource index, always. But since the resource index has no versioning, that would break any attempts to use asOfDateTime in anything that even remotely uses relations.</p>
+
+<p>I feel that instead of piecemally opening stuff like this up to the user, we should look at redesigning the object model. At the moment, the presentation format and the storage format is the same, so every backend thing has to accept any simplification we do to the user format. Rather, lets make a virtual object format, only represented as java. Various frontends could then store their stuff in this, in various formats, and the stores could save this as the serialization they prefers. But wait, that is basically the idea of high level storage </p>
+
+<p>What we should do, in this action, is to define a serialization neutral way of representing relations in java. One java representation which could be created from various RDF serializations, and stored as another set of rdf serializations. </p></div></div>
+<div class="comment" id="comment-11502"><div class="by">Chris Wilper, 2010-08-06 19:53 UTC</div><div class="text"><p>I think it is a good move for us to keep the RDF parsing well contained so that most internal access to the relationships is via Java objects.  Doing so would be a prerequisite for this change, but would have other benefits as well (more maintainable code being one).</p>
+
+<p>A cleaner object model would certainly make this kind of feature easier to implement and maintain, but keep in mind that we <b>already</b> have the relations accessible as pure Java in the existing code.  See DOReader.getRelationships(..), which returns a Set of objects representing the relationships.  Could this be improved?  Yes...in fact I think we should use the Sesame RIO interfaces rather than our own.  For example, the relations returned by this method are currently org.fcrepo.server.storage.types.RelationshipTuple objects, but I'd much prefer if they were RIO Statement objects: <a href="http://www.openrdf.org/doc/rio/api/org/openrdf/model/Statement.html" class="external-link" rel="nofollow noreferrer">http://www.openrdf.org/doc/rio/api/org/openrdf/model/Statement.html</a>  </p>
+
+<p>If we used the RIO abstractions, serializing and deserializing to/from the various RDF formats would be easy.  See RIO's Parser interface: <a href="http://www.openrdf.org/doc/rio/api/org/openrdf/rio/Parser.html" class="external-link" rel="nofollow noreferrer">http://www.openrdf.org/doc/rio/api/org/openrdf/rio/Parser.html</a> (note how you can set a StatementHandler, which listens for Statement objects encountered while processing the stream).</p></div></div>
+<div class="comment" id="comment-11508"><div class="by">Asger Askov Blekinge, 2010-08-09 13:30 UTC</div><div class="text"><p>Hi Chris</p>
+
+<p>I agree that we should move to one system. Yes, there is the ability to get the relations from the Reader currently. I simply missed that one. This renders some of what I have said void.</p>
+
+<p>Steve pointed out the danger of library bloat. ECM currently (trunk 8732) uses owlapi to parse the ontologies. This is not directly supported by RIO. I do not want to parse the ontologies as RDF and then do the owl parsing in my own code. If we are going to do owl reasoning, we obviously need the relations and the ontology in formats that the reasoner supports.</p>
+
+<p>I have no experience with RIO. I have some experience with OWLAPI and it is a nice simple bit of code, that have made my work a lot easier. But it does not include a reasoner, so validation is something I have to do myself in ECM</p></div></div>
+<div class="comment" id="comment-11626"><div class="by">Chris Wilper, 2010-10-05 21:44 UTC</div><div class="text"><p>The sense from the committer discussion on Oct 5th was that adding support for additional formats directly on the standard Fedora API would be problematic.  It would put a new requirement on utilities designed to work with Fedora RELS-EXT/INT datastreams to interpret all those formats.</p></div></div>
+<div class="comment" id="comment-11627"><div class="by">Chris Wilper, 2010-10-05 21:49 UTC</div><div class="text"><p>Will ultimately close this issue, but we want to take this opportunity to describe why such convenience capabilities should lie outside the Fedora core API and be dealt with by client code or services.</p></div></div>
+<div class="comment" id="comment-11628"><div class="by">Stephen Bayliss, 2010-10-06 00:54 UTC</div><div class="text"><p>Reference for the comment "(Additionally, RDF/XML has limitations as to to what RDF can be serialized as RDF/XML.)":</p>
+
+<p><a href="http://www.w3.org/TR/rdf-syntax-grammar/#section-Serialising" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/rdf-syntax-grammar/#section-Serialising</a></p>
+
+<ul class="alternate" type="square">
+	<li>"There are some RDF Graphs as defined in RDF Concepts and Abstract Syntax that cannot be serialized in RDF/XML"</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11629"><div class="by">Daniel Davis, 2010-10-06 22:20 UTC</div><div class="text"><p>Even though the requirements described in this issue are needed to support known use cases. I suggest this issue be closed and reformulated to meet the goals described using other features, extensions or tools.  A major aspect of the RELS-EXT/INT implementation is to provide a standards-based implementation of a datastream containing RDF.  It is purposely limited in its expressiveness to provide a specified level of interoperatibility already recognizing that RDF/XML still gives it a powerful degree of extensibility.  RDF/XML was selected because it is the only W3C standard for expressing RDF.  There is also a general desire to limit the expansion of the Fedora API where built-in extension points can be used or added, which is likely in this case.  There is always going to be this tension between interoperability and extensibility that must be considered for this issue.</p>
+
+<p>The RELS-EXT datastream is part of the default content model in Fedora 3.x (which uses an extension point of the core Fedora information model for its implementation). This avoids over specifying or over-generalizing the features of Fedora's current release. Implementations are free to add datastreams which can contain the RDF format of their choice and which is needed to express statements that the constraints of RELS-EXT or RDF/XML cannot.  The contents of these added datastreams can be produced by tooling external to the Fedora core and disseminated by applications or custom services.  In general, it is a goal of Fedora and Fedora Create to produce and share tooling for creating and using Fedora Digital Objects and content.</p>
+
+<p>However, Fedora does not provide some easy-to-use generic, extensible functionality that is implied by this issue.  For example, it is high desirable to be able to create graphs by merging two or more datastreams containing RDF, possibly in different formats. Fedora's datastream orientation is consistent with the W3C specification of the semantic web in that datastreams contain serializations of RDF messages (representations).  In many cases, an RDF representation must be retrieved to be used by suitable code for interpretation. Tooling, applications, services, and the use of JMS notification can be employed in the current version of Fedora for help retrieve/update the representation, but this can likely be done much better through the additional features, some of which are already described in JIRA.</p>
+
+<p>In particular, it would be useful to combine RDF into the Fedora-supplied RDF database (triplestore).  I suggest considering adding features to facilitate this in the High Level Storage initiative.  We have also suggested that implementing "writable" services (formerly known as disseminators) could simplify update of individual objects.  Improved shared, open-source libraries to simplify creating and modifying digital objects is clearly missing from Fedora-related offerings even though many of our users have created just such libraries.  Also, validation and policy features need to be considered.  Please do not take this comment to pre-suppose exactly how this functionality should be designed and implemented but instead as a few thought exercises.</p>
+
+<p>I suggest we take this up as one or more projects leading to a series of well-scoped JIRA features that can be added to Fedora or its associated framework over time.  This issue illuminates additions to Fedora that can enormously increase its functionality, decrease its complexity, and enable architectures that are more than the sum of their parts.</p></div></div>
+<p><a href="data/FCREPO-755.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

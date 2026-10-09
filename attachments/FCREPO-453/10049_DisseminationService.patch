@@ -1,0 +1,52 @@
+--- code/old/DisseminationService.java	2009-03-25 12:33:08.777372000 -0400
++++ code/new/DisseminationService.java	2009-03-25 12:29:05.294086000 -0400
+@@ -63,6 +63,7 @@
+ import fedora.server.security.BackendPolicies;
+ import fedora.server.security.BackendSecurity;
+ import fedora.server.security.BackendSecuritySpec;
++import fedora.server.storage.ExternalContentManager;
+ import fedora.server.storage.ServiceDeploymentReader;
+ import fedora.server.storage.types.DatastreamMediation;
+ import fedora.server.storage.types.DeploymentDSBindRule;
+@@ -742,6 +743,7 @@
+                     }
+ 
+                     // Dispatch backend service URL request authenticating as necessary based on beSecurity configuration
++                    
+                     dissemination =
+                             getDisseminationContent(dissURL,
+                                                     context,
+@@ -757,7 +759,13 @@
+                 LOG.error(message);
+                 throw new DisseminationException(message);
+ 
+-            } else {
++            } else if (protocolType.equalsIgnoreCase("file")) {
++                ExternalContentManager externalContentManager = (ExternalContentManager)
++                    s_server.getModule("fedora.server.storage.ExternalContentManager");
++                dissemination = externalContentManager.getExternalContent(dissURL, context);
++            }
++            
++            else {
+                 String message =
+                         "[DisseminationService] Protocol type: " + protocolType
+                                 + "NOT supported.";
+@@ -1154,7 +1162,17 @@
+                                                    String user,
+                                                    String pass)
+             throws GeneralException, HttpServiceNotFoundException {
+-        return get(url, user, pass);
++        if(url.startsWith("http:") || url.startsWith("https:")){
++            return get(url, user, pass);
++        }
++        ExternalContentManager externalContentManager = (ExternalContentManager)
++        s_server.getModule("fedora.server.storage.ExternalContentManager");
++        try{
++            return externalContentManager.getExternalContent(url, context);
++        }
++        catch(Exception e){
++            throw new GeneralException("Error getting dissemination content: " + e.toString(),e);
++        }
+     }
+ 
+ }

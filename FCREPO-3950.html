@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3950 ACLs are reindexed into container membership and containment </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3950</span> ACLs are reindexed into container membership and containment </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2024-07-19 13:13 UTC</td></tr><tr><th>Updated</th><td>2024-08-20 14:02 UTC</td></tr><tr><th>Resolved</th><td>2024-07-19 20:09 UTC</td></tr><tr><th>Fix versions</th><td>fcrepo 6.5.1</td></tr></table>
+<h2>Description</h2>
+<p>The Reindexing service is adding ACLs into the containers membership and containment properties </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>cat inputs/acl/m-uzivatel.ttl
+@prefix rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; .
+@prefix acl: &lt;http://www.w3.org/ns/auth/acl#&gt; .
+@prefix foaf: &lt;http://xmlns.com/foaf/0.1/ &gt; .
+@prefix webac: &lt;http://fedora.info/definitions/v4/webac#&gt; .
+&lt;#authzReadWrite&gt; a acl:Authorization ;
+   rdfs:label "Read &amp; Write Authorization" ;
+   rdfs:comment "Define users authorized for full control over the container." ;
+   acl:accessTo info:fedora/AMCR/model/uzivatel ;
+   acl:agent "AMCR" ;
+   acl:mode acl:Read, acl:Write .
+
+&lt;#authzRead&gt; a acl:Authorization ;
+   rdfs:label "Read Authorization" ;
+   rdfs:comment "Define users authorized for access to the container." ;
+   acl:accessTo info:fedora/AMCR/model/uzivatel ;
+   acl:default info:fedora/AMCR/model/uzivatel ;
+   acl:agent "Digiarchiv" ;
+   acl:mode acl:Read .</pre>
+</div></div>
+
+<p>added by:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -v -X PUT -ufedoraAdmin:fedoraAdmin -H "Content-type: text/turtle"  --data-binary @inputs/acl/m-uzivatel.ttl http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel/fcr:acl
+and subsequently requested:
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+@prefix ldp: &lt;http://www.w3.org/ns/ldp# &gt; .
+&lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel&gt;
+        ldp:insertedContentRelation  ldp:MemberSubject ;
+        ldp:membershipResource       &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel&gt; ;
+        ldp:hasMemberRelation        ldp:member ;
+        fedora:created               "2024-07-17T15:28:10.688651Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:lastModified          "2024-07-17T15:28:10.688651Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:createdBy             "fedoraAdmin" ;
+        fedora:lastModifiedBy        "fedoraAdmin" ;
+        rdf:type                     ldp:IndirectContainer ;
+        rdf:type                     ldp:Resource ;
+        rdf:type                     fedora:Resource ;
+        rdf:type                     ldp:RDFSource ;
+        rdf:type                     ldp:Container ;
+        rdf:type                     fedora:Container ;
+        ldp:contains                 &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel/U-000159&gt; ;
+        ldp:member                   &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel/U-000159&gt; .</pre>
+</div></div>
+
+<p>BUT after reindexing, note the addition of new ldp:contains and ldp:member for the acl:</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix fedora: &lt;http://fedora.info/definitions/v4/repository#&gt; .
+@prefix ldp: &lt;http://www.w3.org/ns/ldp# &gt; .
+&lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel&gt;
+        ldp:insertedContentRelation  ldp:MemberSubject ;
+        ldp:membershipResource       &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel&gt; ;
+        ldp:hasMemberRelation        ldp:member ;
+        fedora:created               "2024-07-17T15:28:10.688651Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:lastModified          "2024-07-17T15:28:10.688651Z"^^&lt;http://www.w3.org/2001/XMLSchema#dateTime&gt; ;
+        fedora:createdBy             "fedoraAdmin" ;
+        fedora:lastModifiedBy        "fedoraAdmin" ;
+        rdf:type                     ldp:IndirectContainer ;
+        rdf:type                     ldp:Resource ;
+        rdf:type                     fedora:Resource ;
+        rdf:type                     ldp:RDFSource ;
+        rdf:type                     ldp:Container ;
+        rdf:type                     fedora:Container ;
+        ldp:contains                 &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel/fcr:acl&gt; ;
+        ldp:contains                 &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel/U-000159&gt; ;
+        ldp:member                   &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel/fcr:acl&gt; ;
+        ldp:member                   &lt;http://localhost:8080/fcrepo/rest/AMCR/model/uzivatel/U-000159&gt; .</pre>
+</div></div>
+
+<p>should we be excluding the fcr:acl objects from being added as ldp:contains and ldp:members on reindex?</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-23077"><div class="by">Ben Pennell, 2024-07-19 20:09 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/pull/2087" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2087</a></p></div></div>
+<p><a href="data/FCREPO-3950.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

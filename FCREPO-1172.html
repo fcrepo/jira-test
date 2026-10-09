@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1172 API-M purgeRelationship null object not working as expected</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1172</span> API-M purgeRelationship null object not working as expected</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2012-12-01 05:13 UTC</td></tr><tr><th>Updated</th><td>2013-08-06 06:28 UTC</td></tr><tr><th>Resolved</th><td>2013-08-06 06:28 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Environment</h2>RHEL
+<h2>Description</h2>
+<p>According to the documentation, supplying purgeRelationship with an "object" of null should result in purging all relations which match </p>
+
+<p><a href="http://www.fedora-commons.org/documentation/3.0/userdocs/server/webservices/apim/index.html#methods.purgeRelationship" class="external-link" rel="nofollow noreferrer">http://www.fedora-commons.org/documentation/3.0/userdocs/server/webservices/apim/index.html#methods.purgeRelationship</a></p>
+
+<p>However, when I supply it with null, I get the following:</p>
+
+<p>INFO 2012-11-30 11:11:59.763 <span class="error">&#91;ajp-bio-8009-exec-2&#93;</span> (DefaultManagement) Completed purgeRelationship(pid: uuid:4ecc25e9-cc02-4191-8589-ffbaecac258f, relationship: <a href="http://cdr.unc.edu/definitions/1.0/bas" class="external-link" rel="nofollow noreferrer">http://cdr.unc.edu/definitions/1.0/bas</a><br/>
+e-model.xml#isPublished, object: null, isLiteral: true, datatype: null)<br/>
+ERROR 2012-11-30 11:11:59.764 <span class="error">&#91;ajp-bio-8009-exec-2&#93;</span> (FedoraAPIMBindingSOAPHTTPImpl) Error purging relationships<br/>
+java.lang.IllegalArgumentException: Null "newLexicalForm" parameter<br/>
+        at org.jrdf.graph.AbstractLiteral.&lt;init&gt;(AbstractLiteral.java:109) <span class="error">&#91;mulgara-core-2.1.11.jar:na&#93;</span><br/>
+        at org.fcrepo.common.rdf.SimpleLiteral.&lt;init&gt;(SimpleLiteral.java:22) <span class="error">&#91;fcrepo-common-3.5.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.SimpleDOWriter.createTriple(SimpleDOWriter.java:484) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+...</p>
+
+<p>Setting object to not be a literal also fails, although slightly differently:</p>
+
+<p>INFO 2012-11-30 11:07:46.931 <span class="error">&#91;ajp-bio-8009-exec-6&#93;</span> (DefaultManagement) Completed purgeRelationship(pid: uuid:4ecc25e9-cc02-4191-8589-ffbaecac258f, relationship: <a href="http://cdr.unc.edu/definitions/1.0/base-model.xml#isPublished" class="external-link" rel="nofollow noreferrer">http://cdr.unc.edu/definitions/1.0/base-model.xml#isPublished</a>, object: null, isLiteral: false, datatype: null)<br/>
+ERROR 2012-11-30 11:07:46.933 <span class="error">&#91;ajp-bio-8009-exec-6&#93;</span> (FedoraAPIMBindingSOAPHTTPImpl) Error purging relationships<br/>
+java.lang.NullPointerException: null<br/>
+        at java.net.URI$Parser.parse(URI.java:3004) <span class="error">&#91;na:1.6.0_37&#93;</span><br/>
+        at java.net.URI.&lt;init&gt;(URI.java:577) <span class="error">&#91;na:1.6.0_37&#93;</span><br/>
+        at org.fcrepo.server.storage.SimpleDOWriter.createTriple(SimpleDOWriter.java:489) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.SimpleDOWriter.purgeRelationship(SimpleDOWriter.java:406) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+        at org.fcrepo.server.storage.SimpleDOWriter.purgeRelationship(SimpleDOWriter.java:391) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+        at org.fcrepo.server.management.DefaultManagement.purgeRelationship(DefaultManagement.java:1755) <span class="error">&#91;fcrepo-server-3.5.jar:na&#93;</span><br/>
+...</p>
+
+<p>Looking at the source for SimpleDOWriter, there does not seem to be any case to check for the "object" being set to null, and AbstractLiteral doesn't seem to care for that:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/storage/SimpleDOWriter.java#L474" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/storage/SimpleDOWriter.java#L474</a></p>
+
+<p>The matching method, FilteredTripleIterator.matches(), also doesn't allow for a positive match when the searching for a null from what I can tell, so if it weren't excepting out earlier it would probably still not purge any relations:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/utilities/FilteredTripleIterator.java#L99" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/blob/master/fcrepo-server/src/main/java/org/fcrepo/server/utilities/FilteredTripleIterator.java#L99</a></p>
+
+<p>Our setup is with an external mulgara triple store, running 3.6.1 at the moment</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12556"><div class="by">Benjamin Armintor, 2013-08-06 06:28 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/54a1690a59eac4549144fbf07f017adaa9f45db4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/54a1690a59eac4549144fbf07f017adaa9f45db4</a></p></div></div>
+<p><a href="data/FCREPO-1172.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

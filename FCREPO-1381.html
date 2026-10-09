@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1381 Unterminated namespace incorrectly interpreted</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1381</span> Unterminated namespace incorrectly interpreted</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-02-25 18:49 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-10 21:34 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to determine where in the application stack sparql-update requests, like the one below, are having their namespace declaration mis-interpreted.<br/>
+The following example should successfully create a "esc" namespace prefix.</p>
+<ol>
+	<li>Request<br/>
+curl -i -XPATCH -H"Content-Type: application/sparql-update" --data-binary @props.sparql localhost:8080/rest/testcontainer</li>
+</ol>
+
+
+<ol>
+	<li>Where, props.sparql is:<br/>
+---------------<br/>
+PREFIX esc: &lt;<a href="http://myurl.org" class="external-link" rel="nofollow noreferrer">http://myurl.org</a>&gt;<br/>
+INSERT 
+{
+&lt;&gt;
+esc:package "ppp";
+}
+<p>WHERE { }<br/>
+---------------</p></li>
+</ol>
+
+
+<p>See: <a href="https://groups.google.com/d/msg/fedora-tech/rk8U4KCKWbc/2J6bZkP3AxwJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/rk8U4KCKWbc/2J6bZkP3AxwJ</a></p>
+<h2>Comments (16)</h2>
+<div class="comment" id="comment-13565"><div class="by">Osman Din, 2015-02-26 20:59 UTC</div><div class="text"><p>The misinterpretation is happening in Jena <a href="https://github.com/apache/jena/blob/bc37348521aa016a4481dea74ed884d720001920/jena-arq/src/main/java/com/hp/hpl/jena/sparql/core/Prologue.java#L188" class="external-link" rel="nofollow noreferrer">Prologue </a>.-</p>
+
+<p>The result is that the update statement <del>returned by the parser</del> is :</p>
+
+<p>INSERT &lt;<a href="http://localhost:8080/rest/object1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/object1</a>&gt; &lt;<a href="http://myurl.orgpackage" class="external-link" rel="nofollow noreferrer">http://myurl.orgpackage</a>&gt; "ppp" WHERE {}</p>
+
+<p>versus:</p>
+
+<p>INSERT &lt;<a href="http://localhost:8080/rest/object1" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/object1</a>&gt; &lt;<a href="http://myurl.org/package" class="external-link" rel="nofollow noreferrer">http://myurl.org/package</a>&gt; "ppp" WHERE {}</p>
+
+<p>I think one way around this grammar issue would be updating the FedoraLdp code (in this case the patch method) to do a regex check/substitution for urls without a terminating slash.</p></div></div>
+<div class="comment" id="comment-13567"><div class="by">Andrew Woods, 2015-02-26 21:23 UTC</div><div class="text"><p>Osman Din, since this issue would also be observed by someone using F4 in an embedded configuration (no REST-API), could your solution be pushed deeper into the stack? For example, in JcrPropertyStatementListener?</p></div></div>
+<div class="comment" id="comment-13580"><div class="by">Osman Din, 2015-02-27 20:34 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo4/fcrepo4/pull/739" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/739</a></p>
+
+<p>Please note that there were minor updates to this PR.</p></div></div>
+<div class="comment" id="comment-13642"><div class="by">Andrew Woods, 2015-03-07 00:50 UTC</div><div class="text"><p>Please merge the following PR into your branch if you agree:<br/>
+<a href="https://github.com/osmandin/fcrepo4/pull/2" class="external-link" rel="nofollow noreferrer">https://github.com/osmandin/fcrepo4/pull/2</a></p></div></div>
+<div class="comment" id="comment-13644"><div class="by">Osman Din, 2015-03-07 04:04 UTC</div><div class="text"><p>Merged into the PR. Thanks.</p></div></div>
+<div class="comment" id="comment-13646"><div class="by">Andrew Woods, 2015-03-08 16:03 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/f257425b72e939a0d159ff9b16de5fb1792fa213" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f257425b72e939a0d159ff9b16de5fb1792fa213</a></p></div></div>
+<div class="comment" id="comment-13651"><div class="by">Andrew Woods, 2015-03-08 22:01 UTC</div><div class="text"><p>Rolled back update with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/af48df0c6c564d46c1cea8777e4d88c1a1900dab" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/af48df0c6c564d46c1cea8777e4d88c1a1900dab</a></p></div></div>
+<div class="comment" id="comment-13730"><div class="by">Osman Din, 2015-03-13 18:27 UTC</div><div class="text"><p>I added a comment related to the rollback:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/739#issuecomment-77781019" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/739#issuecomment-77781019</a></p></div></div>
+<div class="comment" id="comment-13750"><div class="by">Osman Din, 2015-03-17 20:50 UTC</div><div class="text"><p>Ok, the bug is coming from the following Jena method:</p>
+
+<p><a href="https://github.com/apache/jena/blob/f243e9e0eec72407f855be3b718f142380bda758/jena-core/src/main/java/com/hp/hpl/jena/rdf/model/impl/Util.java#L46" class="external-link" rel="nofollow noreferrer">https://github.com/apache/jena/blob/f243e9e0eec72407f855be3b718f142380bda758/jena-core/src/main/java/com/hp/hpl/jena/rdf/model/impl/Util.java#L46</a></p>
+
+<p>Basically, our kernel-impl PropertyConverter ends up relying on this method via:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/converters/PropertyConverter.java#L116" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/rdf/converters/PropertyConverter.java#L116</a></p>
+
+<p>L116 gets the namespace as "http://", instead of the full "http://myurl.org", and then of course Modeshape registers "http://" as ns001, etc.</p>
+
+<p>So, the namespace map from Jena is correct (I checked). As a confirmation test, when I manipulate the PropertyConverter to substitute "http://" with "http://myurl.org", the IT correctly identifies the node property "esc:myurl.orgp" (mushed as per cbeer's spec reference).</p>
+
+<p>However, when I print the Model, the triple seems to be:</p>
+
+<p><span class="error">&#91;info:fedora/testRefObject, http://myurl.orgmyurl.orgp, &quot;aaa&quot;&#93;</span> </p>
+
+<p>whereas, if I don't touch PropertyConverter, the triple is:</p>
+
+<p><span class="error">&#91;info:fedora/testRefObject, http://myurl.orgp, &quot;aaa&quot;&#93;</span></p>
+
+<p>So, I'm not sure if reporting/patching the Jena Util.java method would not introduce some other kind of issue (while it seems to definitely address this current JIRA issue). </p>
+
+<p>Please let me know what you think.</p></div></div>
+<div class="comment" id="comment-13751"><div class="by">Andrew Woods, 2015-03-17 21:31 UTC</div><div class="text"><p>Can you be more specific about where the bug is being introduced in:<br/>
+<a href="https://github.com/apache/jena/blob/f243e9e0eec72407f855be3b718f142380bda758/jena-core/src/main/java/com/hp/hpl/jena/rdf/model/impl/Util.java#L46" class="external-link" rel="nofollow noreferrer">https://github.com/apache/jena/blob/f243e9e0eec72407f855be3b718f142380bda758/jena-core/src/main/java/com/hp/hpl/jena/rdf/model/impl/Util.java#L46</a></p>
+
+<p>And what a patch would look like?</p>
+
+<p>You say the namespace map from Jena is correct, but you also say there is a bug in Jena. So I am unclear as to where the issue actually is.</p></div></div>
+<div class="comment" id="comment-13754"><div class="by">Osman Din, 2015-03-17 23:27 UTC</div><div class="text"><p>The issue is in this specific utility method we're indirectly relying on in PropertyConverter (and likely not with other namespace population logic, in whatever package or method or classes that resides in Jena). </p>
+
+<p>The specific lines are 70-72. It looks for a terminating character (working backwards), and the first slash it can find backwards in “<a href="http://myurl.org" class="external-link" rel="nofollow noreferrer">http://myurl.org</a>” is “http://“. When PropertyConverter asks for a namespace to lookup/register in JCR, it gets "http://", and registers “http://“ (as opposed to getting "http://myurl.org").</p>
+
+<p>Looking at the method’s Javadoc, it seems that the method is correct technically, but its usage is broken as far as PropetryConverter is concerned. Currently, I'm not familiar with their API or the source code to guess what a patch would look like if necessary. This method is called by other Jena methods as well.</p>
+
+<p><a href="https://github.com/apache/jena/search?utf8=%E2%9C%93&amp;q=splitNamespace" class="external-link" rel="nofollow noreferrer">https://github.com/apache/jena/search?utf8=%E2%9C%93&amp;q=splitNamespace</a></p></div></div>
+<div class="comment" id="comment-13803"><div class="by">Osman Din, 2015-03-23 18:30 UTC</div><div class="text"><p>Added a comment:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/739#issuecomment-85133854" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/739#issuecomment-85133854</a></p></div></div>
+<div class="comment" id="comment-13805"><div class="by">Osman Din, 2015-03-23 20:33 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/753" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/753</a></p></div></div>
+<div class="comment" id="comment-13813"><div class="by">Osman Din, 2015-03-24 14:11 UTC</div><div class="text"><p>Added the following page to Wiki to comply with the comment on GitHub. </p>
+
+<p><a href="https://wiki.duraspace.org/display/FEDORA4x/Usage+Best+Practices" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Usage+Best+Practices</a></p>
+
+<p>Closed PR request 753 (PR #2)</p></div></div>
+<div class="comment" id="comment-13815"><div class="by">Osman Din, 2015-03-24 18:32 UTC</div><div class="text"><p>PR 1: Removed ignored unit test (that was meant to test a patch) via <a href="https://github.com/fcrepo4/fcrepo4/pull/754" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/754</a></p>
+
+<p>PR 2: Added logger warning via <a href="https://github.com/fcrepo4/fcrepo4/pull/755" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/755</a></p>
+
+<p>So, there are 2 separate but related PRs. I chose separate PRs this time (instead of pushing up updates to a PR) because it might be easier for repo watchers to look at the commit message (rather than the ticket) to see why a change was made.</p>
+
+<p>I can create a consolidated one, though, if you so prefer.</p></div></div>
+<div class="comment" id="comment-13940"><div class="by">Andrew Woods, 2015-04-10 21:34 UTC</div><div class="text"><p>PRs- 754 and 755 have been merged with the master branch.</p></div></div>
+<p><a href="data/FCREPO-1381.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

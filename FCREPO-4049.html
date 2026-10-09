@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4049 Incorrect Content-Length header when returning 406 NOT ACCEPTABLE on a non-RDF resource</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4049</span> Incorrect Content-Length header when returning 406 NOT ACCEPTABLE on a non-RDF resource</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2026-01-15 14:31 UTC</td></tr><tr><th>Updated</th><td>2026-01-29 16:25 UTC</td></tr><tr><th>Resolved</th><td>2026-01-29 16:25 UTC</td></tr></table>
+<h2>Description</h2>
+<p>From <a href="https://github.com/fcrepo/fcrepo/issues/2278" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/issues/2278</a> <br/>
+Fedora version: <tt>Release: 6.5.1 | Commit 6d5a1bb</tt></p>
+
+<p><b>Steps to reproduce</b></p>
+
+<ul>
+	<li>Create a new binary file eg with <tt>curl -u fedoraAdmin:fedoraAdmin -XPUT <a href="http://localhost:8080/fcrepo/rest/my-file" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/my-file</a> --data-binary @my-file</tt></li>
+	<li>Try to get that file with an unexpected mime-type eg <tt>curl -v -u fedoraAdmin:fedoraAdmin -XGET <a href="http://localhost:8080/fcrepo/rest/my-file" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/my-file</a> -H "Accept: application/xml</tt></li>
+</ul>
+
+
+<p><b>Expected</b>: A 406 response with the content-length equal to the HTML error message in the body.</p>
+
+<p><b>Actual</b>: A 406 response with the content-length equal to the binary resource.</p>
+
+<p><b>Impact</b>: When the binary file is longer than the returned error message the client will hang waiting for the rest of the message and will eventually timeout. This makes it difficult to properly handle the 406 response.</p>
+
+<p><b>Notes</b></p>
+
+<p>This seems to only affect non-RDF resources.</p>
+
+<p>Tested behaviour with bruno, curl and Spring HTTP clients.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-27448"><div class="by">Dan Field, 2026-01-21 14:05 UTC</div><div class="text"><p>The issue is only present where running in a container server like Tomcat. In that situation it returns a tomcat rendered error message with a content-length of the underlying binary. </p>
+
+<p>If running from <tt>mvn jetty:run</tt> Fedora returns a 0 length body and a content-length header of 0 to match.  </p></div></div>
+<div class="comment" id="comment-27514"><div class="by">Dan Field, 2026-01-23 10:07 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo/fcrepo/pull/2282" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/2282</a> </p></div></div>
+<p><a href="data/FCREPO-4049.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

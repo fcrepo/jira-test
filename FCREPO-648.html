@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-648 Initial move to a modern dependency injection framework</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-648</span> Initial move to a modern dependency injection framework</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2010-03-07 23:41 UTC</td></tr><tr><th>Updated</th><td>2012-05-31 18:02 UTC</td></tr><tr><th>Resolved</th><td>2012-05-31 18:02 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.6</td></tr><tr><th>Required by</th><td><a href="FCREPO-9.html">FCREPO-9</a> Web-Based Server Management</td></tr></table>
+<h2>Description</h2>
+<p>Use standard, well-known frameworks/libraries to:</p>
+<ul>
+	<li>Resolve inter-module dependencies via dependency injection</li>
+	<li>Provide hooks to initialize/de-initialize modules when the webapp container starts and stops</li>
+	<li>Allow re-configuration and plugging in of alternative modules without re-compiling</li>
+</ul>
+
+
+<p>For more in-depth information on this work, please see: <a href="http://fedora-commons.org/confluence/x/JAAbAQ" class="external-link" rel="nofollow noreferrer">http://fedora-commons.org/confluence/x/JAAbAQ</a></p>
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-11471"><div class="by">Benjamin Armintor, 2010-07-07 22:39 UTC</div><div class="text"><p>The issue branch creates Server objects that:<br/>
+1. Load xml bean definitions from FEDORA_HOME/server/config/spring<br/>
+2. Translates the fcfg module definitions into bean definitions</p>
+
+<p>There is some weirdness about relative pathing of the resource index data that I'm working on.</p></div></div>
+<div class="comment" id="comment-11481"><div class="by">Benjamin Armintor, 2010-07-14 22:27 UTC</div><div class="text"><p>Update on the issue branch:</p>
+<ul>
+	<li>Servers create a Spring application context, and register themselves as a singleton bean.  Servers create a child context for all other beans, including modules.</li>
+	<li>Servers register bean definitions from $
+{fedora.home}
+<p>/server/config/spring with an XML bean definition reader</p></li>
+	<li>Servers parse the fcfg, and create bean definitions from all module configurations.</li>
+	<li>Server required module roles are validated if they appear as Spring bean definitions or ar fcfg configurations.</li>
+	<li>Servers instantiate all modules as Spring beans.  This allows all the modules, and the context Server, to be autowired into other Spring bean definitions.</li>
+	<li>Existing modules can run un-changed; most Spring work confined to the Server abstract class.  ResourceIndex modifed to allow location of triplestore connector via Spring.</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11482"><div class="by">Benjamin Armintor, 2010-07-15 00:39 UTC</div><div class="text"><p>Outstanding concerns:<br/>
+1. Ensure the Server.overrideModuleClass and Server.overrideModuleRole methods work as intended when object definitions are loaded as Spring beans<br/>
+2. Identify global fcfg values and implement GlobalConfig<br/>
+3. Identify references to ServerConfiguration that can be replaced with getters or bean definition refs in 3.5 </p></div></div>
+<div class="comment" id="comment-11489"><div class="by">Benjamin Armintor, 2010-07-27 21:29 UTC</div><div class="text"><p>Should the override-able ModelBasedTripleGenerator configuration be moved out of code in Server, and into a default Spring xml file in the config directory?  There is a dependency between ResourceIndex and TripleGenerator, so maybe the in-code definition could check first whether there is a local bean definition.</p></div></div>
+<div class="comment" id="comment-11543"><div class="by">Stephen Bayliss, 2010-08-19 15:42 UTC</div><div class="text"><p>Moving out of 3.4 and into 3.5, lack of time to complete implementation for 3.4</p></div></div>
+<div class="comment" id="comment-12308"><div class="by">eddie, 2012-05-31 18:02 UTC</div><div class="text"><p><b>initial</b> move has been made</p></div></div>
+<p><a href="data/FCREPO-648.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

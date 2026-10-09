@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3350 Fix rollback logic</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3350</span> Fix rollback logic</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-06-11 16:35 UTC</td></tr><tr><th>Updated</th><td>2020-07-09 20:43 UTC</td></tr><tr><th>Resolved</th><td>2020-07-09 20:43 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>loose-end</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>The rollback logic in TransactionImpl is not quite right:</p>
+
+<p>    public synchronized void rollback() {<br/>
+        failIfCommited();<br/>
+        if (this.rolledback) </p>
+{
+            return;
+        }
+<p>        try {<br/>
+            log.debug("Rolling back transaction {}", id);<br/>
+            this.rolledback = true;<br/>
+            this.getPersistentSession().rollback();<br/>
+            this.getContainmentIndex().rollbackTransaction(this);<br/>
+            this.getEventAccumulator().clearEvents(id);<br/>
+        } catch (final PersistentStorageException ex) </p>
+{
+            throw new RepositoryRuntimeException("failed to rollback transaction " + id, ex);
+        }
+<p>    }</p>
+
+<p>The persistent session and containment index rollbacks can throw exceptions which would short-circuit the rollback process.</p>
+
+<p>Additionally, if there is an exception during rollback, this exception is thrown in place of the exception that triggered the rollback in the first place in TransactionImpl.commit(). The original exception should be propagated; not the rollback exception. </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-21292"><div class="by">Danny Bernstein, 2020-06-23 17:45 UTC</div><div class="text"><p>Duplicates <a href="https://jira.lyrasis.org/browse/FCREPO-3130" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3130</a></p></div></div>
+<div class="comment" id="comment-21299"><div class="by">Peter Winckles, 2020-06-29 12:25 UTC</div><div class="text"><p>This issue is not a duplicate of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3130" >
+                <a href="FCREPO-3130.html" class="jira-issue-macro-key issue-link"  title="Complete implementation of OCFLPersistentStorageSession.rollback()" >
+            
+            FCREPO-3130
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+. 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3130" >
+                <a href="FCREPO-3130.html" class="jira-issue-macro-key issue-link"  title="Complete implementation of OCFLPersistentStorageSession.rollback()" >
+            
+            FCREPO-3130
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ is about implementing additional rollback features. This ticket is about fixing bugs in the existing rollback code.</p></div></div>
+<div class="comment" id="comment-21323"><div class="by">Peter Winckles, 2020-07-08 12:58 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1716" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1716</a></p></div></div>
+<div class="comment" id="comment-21330"><div class="by">Andrew Woods, 2020-07-08 21:29 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-21333"><div class="by">Andrew Woods, 2020-07-09 20:43 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/2aea8d8d37fef19738ccdb7a60d29c01839c0691" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/2aea8d8d37fef19738ccdb7a60d29c01839c0691</a></p></div></div>
+<p><a href="data/FCREPO-3350.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1342 Maven fails to resolve plugin dependency</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1342</span> Maven fails to resolve plugin dependency</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Assignee</th><td>Osman Din</td></tr><tr><th>Created</th><td>2015-01-31 19:15 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:26 UTC</td></tr><tr><th>Resolved</th><td>2015-04-11 14:15 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.2.0</td></tr></table>
+<h2>Description</h2>
+<p>Executing ```mvn -U dependency:resolve-plugins``` fails with:</p>
+
+<p>"Failed to execute goal org.apache.maven.plugins:maven-dependency-plugin:2.8:resolve-plugins (default-cli) on project fcrepo: Nested: Could not find artifact org.eclipse.mylyn.github:org.eclipse.egit.github.core:jar:3.1.0.201310021548-r in fcrepo-thirdparty (<a href="http://maven.fcrepo.org/nexus/content/repositories/thirdparty/" class="external-link" rel="nofollow noreferrer">http://maven.fcrepo.org/nexus/content/repositories/thirdparty/</a>)"</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1342/10216_fcrepo-1342.patch">fcrepo-1342.patch</a>, 776 bytes, added by Ralf Claussnitzer on 2015-03-22</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-13313"><div class="by">Ralf Claussnitzer, 2015-02-03 13:12 UTC</div><div class="text"><p>There is an existing ticket to update build plugins immediately following this week's Fedora release: <a href="https://jira.duraspace.org/browse/FCREPO-1338" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1338</a></p></div></div>
+<div class="comment" id="comment-13573"><div class="by">Ralf Claussnitzer, 2015-02-27 11:59 UTC</div><div class="text"><p><a href="https://jira.duraspace.org/browse/FCREPO-1338" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1338</a> is closed, but this didn't help here. Still get:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary:
+[INFO] 
+[INFO] Fedora Commons 4 .................................. FAILURE [38.800s]
+[INFO] Fedora Repository BOM ............................. SKIPPED
+[INFO] Fedora Repository JCR BOM ......................... SKIPPED
+[INFO] Fedora Repository BOMs ............................ SKIPPED
+[INFO] Fedora Repository Kernel API ...................... SKIPPED
+[INFO] Fedora Repository Metrics Module .................. SKIPPED
+[INFO] Fedora Repository Minter Module ................... SKIPPED
+[INFO] Fedora Repository Configurations Module ........... SKIPPED
+[INFO] Fedora Repository Kernel Implementation ........... SKIPPED
+[INFO] Fedora Repository JMS Module ...................... SKIPPED
+[INFO] Fedora Repository Object Serialization Module ..... SKIPPED
+[INFO] Fedora Repository HTTP Commons Module ............. SKIPPED
+[INFO] Fedora Repository FileSystem Connector Module ..... SKIPPED
+[INFO] Fedora Repository Authorization Commons Module .... SKIPPED
+[INFO] Fedora Repository HTTP API Module ................. SKIPPED
+[INFO] Fedora Repository RDF Transformations Module ...... SKIPPED
+[INFO] Fedora Repository Deployable Web Application ...... SKIPPED
+[INFO] Fedora Repository LDP integration tests Module .... SKIPPED
+[INFO] Fedora Repository RDF integration tests Module .... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 54.279s
+[INFO] Finished at: Fri Feb 27 12:56:56 CET 2015
+[INFO] Final Memory: 23M/307M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-dependency-plugin:2.10:resolve-plugins (default-cli) on project fcrepo: Nested: Could not find artifact org.eclipse.mylyn.github:org.eclipse.egit.github.core:jar:3.1.0.201310021548-r in fcrepo-thirdparty (http://maven.fcrepo.org/nexus/content/repositories/thirdparty/)
+[ERROR] 
+[ERROR] Try downloading the file manually from the project website.
+[ERROR] 
+[ERROR] Then, install it using the command:
+[ERROR] mvn install:install-file -DgroupId=org.eclipse.mylyn.github -DartifactId=org.eclipse.egit.github.core -Dversion=3.1.0.201310021548-r -Dpackaging=jar -Dfile=/path/to/file
+[ERROR] 
+[ERROR] Alternatively, if you host your own repository you can deploy the file there:
+[ERROR] mvn deploy:deploy-file -DgroupId=org.eclipse.mylyn.github -DartifactId=org.eclipse.egit.github.core -Dversion=3.1.0.201310021548-r -Dpackaging=jar -Dfile=/path/to/file -Durl=[url] -DrepositoryId=[id]
+[ERROR] 
+[ERROR] 
+[ERROR] org.eclipse.mylyn.github:org.eclipse.egit.github.core:jar:3.1.0.201310021548-r
+[ERROR] 
+[ERROR] from the specified remote repositories:
+[ERROR] fcrepo-snapshot (http://maven.fcrepo.org/nexus/content/repositories/snapshots/, releases=false, snapshots=true),
+[ERROR] fcrepo-thirdparty (http://maven.fcrepo.org/nexus/content/repositories/thirdparty/, releases=true, snapshots=false),
+[ERROR] jboss-public-repository-group (http://repository.jboss.org/nexus/content/groups/public/, releases=true, snapshots=false),
+[ERROR] jboss-public-repository-group-snapshot (http://snapshots.jboss.org/maven2/, releases=false, snapshots=true),
+[ERROR] maven2-repository.dev.java.net (http://download.java.net/maven/2/, releases=true, snapshots=false),
+[ERROR] apache-snapshot (http://repository.apache.org/snapshots/, releases=false, snapshots=true),
+[ERROR] sonatype-nexus-snapshots (https://oss.sonatype.org/content/repositories/snapshots, releases=false, snapshots=true),
+[ERROR] central (http://repo.maven.apache.org/maven2, releases=true, snapshots=false)
+[ERROR] -&gt; [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-13789"><div class="by">Andrew Woods, 2015-03-21 13:55 UTC</div><div class="text"><p>I see the same error when running:<br/>
+mvn -U dependency:resolve-plugins</p>
+
+<p>It does not, however, appear to have a functional effect on builds or releases. Are you seeing an adverse result, Ralf Claussnitzer?<br/>
+Also, if you have a patch, please link it to this ticket.</p></div></div>
+<div class="comment" id="comment-13801"><div class="by">Ralf Claussnitzer, 2015-03-22 14:51 UTC</div><div class="text"><p>I found a 'solution' here: <a href="https://github.com/github/maven-plugins/issues/74" class="external-link" rel="nofollow noreferrer">https://github.com/github/maven-plugins/issues/74</a><br/>
+The patch is attached.</p>
+
+<p>But what is the reason? Fedora doesn't include this dependency explicitly, it's some other dependencies mixed-up metadata.<br/>
+What  is the plugin?<br/>
+Can we remove it completely?</p></div></div>
+<div class="comment" id="comment-13818"><div class="by">Osman Din, 2015-03-27 19:09 UTC</div><div class="text"><p>The need for this dependency comes from our use of site-maven-plugin:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L475" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/pom.xml#L475</a></p>
+
+<p>I've created a PR based on your patch snippet:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/758" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/758</a></p>
+
+<p>(Of course, instead of the PR, an admin could alternatively upload the jar directly to a fcrepo maven repo using:</p>
+
+<p> mvn deploy:deploy-file -DgroupId=org.eclipse.mylyn.github -DartifactId=org.eclipse.egit.github.core -Dversion=3.1.0.201310021548-r -Dpackaging=jar -Dfile=/path/to/file -Durl=<span class="error">&#91;url&#93;</span> -DrepositoryId=<span class="error">&#91;id&#93;</span></p>
+
+<p>Not user if it would need updates, though.)</p></div></div>
+<div class="comment" id="comment-13951"><div class="by">Andrew Woods, 2015-04-11 14:15 UTC</div><div class="text"><p>PR-758 has been merged with the master branch.</p></div></div>
+<p><a href="data/FCREPO-1342.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

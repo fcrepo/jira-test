@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2005 Default activemq configuration results in dropped messages to fcrepo-camel-indexing-triplestore under load.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2005</span> Default activemq configuration results in dropped messages to fcrepo-camel-indexing-triplestore under load.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-04-21 19:18 UTC</td></tr><tr><th>Updated</th><td>2017-01-23 20:59 UTC</td></tr><tr><th>Resolved</th><td>2016-10-10 13:50 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.1</td></tr><tr><th>Labels</th><td>messaging</td></tr></table>
+<h2>Description</h2>
+<p>In the default activemq configuration a ConstantPendingMessageLimitStrategy is used to limit messages on the topic to 1000. </p>
+
+<p><a href="http://activemq.apache.org/slow-consumer-handling.html" class="external-link" rel="nofollow noreferrer">http://activemq.apache.org/slow-consumer-handling.html</a></p>
+
+<p>In the camel toolbox the fcrepo-camel-indexing-triplestore connects to that topic and in my case at least, is slower to process those messages than fedora is generating them and for large batch ingests a bunch get dropped leaving the triplestore in a worthless state.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-16575"><div class="by">A. Soroka, 2016-04-21 19:49 UTC</div><div class="text"><p>I'm not sure why a topic is being used here. I think we want a feeder network of queues. We really need to guarantee delivery for this stuff.</p></div></div>
+<div class="comment" id="comment-16590"><div class="by">Unknown, 2016-04-27 09:58 UTC</div><div class="text"><p>The default ActiveMQ configuration is terrible for production. The first thing I did for our production setup is change the topic to a queue that gets pushed to a remote broker network. Perhaps more documentation about how to do this would be good.</p></div></div>
+<div class="comment" id="comment-16593"><div class="by">A. Soroka, 2016-04-27 13:34 UTC</div><div class="text"><p>If you have a better scheme already designed, why not just put it into the default? Is there some reason we have this janky setup configured?</p></div></div>
+<div class="comment" id="comment-16595"><div class="by">Unknown, 2016-04-27 13:39 UTC</div><div class="text"><p>I think I big reason for using a <tt>topic</tt> is that not everyone consumes the JMS messages, and for those folks, you wouldn't want to needlessly fill up an unused <tt>queue</tt> in the local broker.</p>
+
+<p>A counter argument to this is that if someone isn't using the messaging infrastructure, they should disable this via spring.</p>
+
+<p>Either way, there is currently documentation for how to convert the topic into a queue in the <tt>activemq.xml</tt> file here: <a href="https://wiki.duraspace.org/display/FEDORA4x/Setup+Camel+Message+Integrations" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Setup+Camel+Message+Integrations</a></p>
+
+<p>including how to push those messages to a remote broker, which I'd highly recommend. </p></div></div>
+<div class="comment" id="comment-16597"><div class="by">A. Soroka, 2016-04-27 13:42 UTC</div><div class="text"><p>Yeah, I don't buy that argument. The number of people who will want no messaging is a fraction of the number of people who will want no indexing: pretty small. We should use a guaranteed-delivery setup as the default and offer instructions on how to turn it off for those who so desire. The evidence? Someone as bright and experienced as Michael Durbin, <em>a committer</em>, got fouled up by this unexpected behavior.</p></div></div>
+<div class="comment" id="comment-16598"><div class="by">Unknown, 2016-04-27 13:48 UTC</div><div class="text"><p>I completely agree that these messages need some notion of "guaranteed delivery". A JMS topic is anything but guaranteed (topics are more like: we guarantee that at some point we'll drop messages).</p>
+
+<p>I'd be in favor of changing the topic to a queue and providing documentation for disabling messaging (for those who don't use it).</p></div></div>
+<div class="comment" id="comment-17582"><div class="by">Unknown, 2016-09-21 14:17 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1101" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1101</a></p></div></div>
+<div class="comment" id="comment-17764"><div class="by">A. Soroka, 2016-10-10 13:50 UTC</div><div class="text"><p>Fixed with <a href="https://github.com/fcrepo4/fcrepo4/commit/6262b042876acd42963bbb0c5896865d3cac0412" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/6262b042876acd42963bbb0c5896865d3cac0412</a></p></div></div>
+<p><a href="data/FCREPO-2005.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

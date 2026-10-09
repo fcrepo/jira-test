@@ -1,0 +1,82 @@
+TEST:  set PID from REST request URL
+  Creating a test object via the REST API with FOXML in the body, no PID specified in the FOXML:  test:IngestFOXMLNoPID (SHOULD PASS)
+    => curl -i -H "Content-type: text/xml" -XPOST "http://localhost:9091/fedora/objects/test:IngestFOXMLNoPID?label=IngestFOXMLNoPID" --data @foxml-no-pid.xml -u fedoraAdmin:xxxxxxx
+HTTP/1.1 201 Created
+Server: Apache-Coyote/1.1
+Location: http://localhost:9091/fedora/objects/test%3AIngestFOXMLNoPID
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 21:39:10 GMT
+
+test:IngestFOXMLNoPID
+
+  Creating a test object via the REST API with FOXML in the body, a different PID specified in the FOXML:  test:IngestFOXMLMismatchedPID (SHOULD FAIL)
+    => curl -i -H "Content-type: text/xml" -XPOST "http://localhost:9091/fedora/objects/test:IngestFOXMLMismatchedPID?label=IngestFOXMLMismatchedPID" --data @foxml-mismatched-pid.xml -u fedoraAdmin:xxxxxxx
+HTTP/1.1 500 Internal Server Error
+Server: Apache-Coyote/1.1
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Date: Thu, 19 Aug 2010 21:39:10 GMT
+Connection: close
+
+javax.ws.rs.WebApplicationException: org.fcrepo.server.errors.GeneralException: The PID of the digital object and the PID provided as parameter are different. Digital object: test:ABogusPID parameter: test:IngestFOXMLMismatchedPID
+	at org.fcrepo.server.rest.BaseRestResource.handleException(BaseRestResource.java:168)
+	at org.fcrepo.server.rest.FedoraObjectResource.createObject(FedoraObjectResource.java:298)
+	at sun.reflect.GeneratedMethodAccessor69.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at com.sun.jersey.server.impl.model.method.dispatch.AbstractResourceMethodDispatchProvider$ResponseOutInvoker._dispatch(AbstractResourceMethodDispatchProvider.java:175)
+	at com.sun.jersey.server.impl.model.method.dispatch.ResourceJavaMethodDispatcher.dispatch(ResourceJavaMethodDispatcher.java:67)
+	at com.sun.jersey.server.impl.uri.rules.HttpMethodRule.accept(HttpMethodRule.java:163)
+	at com.sun.jersey.server.impl.uri.rules.ResourceClassRule.accept(ResourceClassRule.java:71)
+	at com.sun.jersey.server.impl.uri.rules.RightHandPathRule.accept(RightHandPathRule.java:111)
+	at com.sun.jersey.server.impl.uri.rules.RootResourceClassesRule.accept(RootResourceClassesRule.java:63)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl._handleRequest(WebApplicationImpl.java:689)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:647)
+	at com.sun.jersey.server.impl.application.WebApplicationImpl.handleRequest(WebApplicationImpl.java:638)
+	at com.sun.jersey.spi.container.servlet.WebComponent.service(WebComponent.java:309)
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:425)
+	at com.sun.jersey.spi.container.servlet.ServletContainer.service(ServletContainer.java:590)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:717)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:290)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterRestApiFlash.doFilter(FilterRestApiFlash.java:79)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.fcrepo.server.security.servletfilters.FilterSetup.doFilter(FilterSetup.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:235)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:206)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:233)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:191)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:525)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:128)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)
+	at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:568)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:109)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:286)
+	at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:845)
+	at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:583)
+	at org.apache.tomcat.util.net.JIoEndpoint$Worker.run(JIoEndpoint.java:447)
+	at java.lang.Thread.run(Thread.java:619)
+Caused by: org.fcrepo.server.errors.GeneralException: The PID of the digital object and the PID provided as parameter are different. Digital object: test:ABogusPID parameter: test:IngestFOXMLMismatchedPID
+	at org.fcrepo.server.storage.DefaultDOManager.getIngestWriter(DefaultDOManager.java:855)
+	at org.fcrepo.server.management.DefaultManagement.ingest(DefaultManagement.java:160)
+	at sun.reflect.GeneratedMethodAccessor66.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.fcrepo.server.messaging.NotificationInvocationHandler.invoke(NotificationInvocationHandler.java:68)
+	at $Proxy0.ingest(Unknown Source)
+	at org.fcrepo.server.management.ManagementModule.ingest(ManagementModule.java:354)
+	at org.fcrepo.server.rest.FedoraObjectResource.createObject(FedoraObjectResource.java:293)
+	... 45 more
+
+

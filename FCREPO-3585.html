@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3585 Rollback with auto-versioning disabled can leave Fedora in an inconsistent state</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3585</span> Rollback with auto-versioning disabled can leave Fedora in an inconsistent state</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-12-10 03:51 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 21:44 UTC</td></tr><tr><th>Components</th><td>core, f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>fcrepo-6.1.0</td></tr></table>
+<h2>Description</h2>
+<p>After this PR (<a href="https://github.com/fcrepo/fcrepo/pull/1835" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1835</a>) it is still possible for a non-autoversioned to be left in an inconsistent state, but only in very specific circumstances. A resource will be left in an inconsistent state, meaning the state in the db does not match the state on disk, if the folllowing occurs:</p>
+
+<p>1. The resource has a mutable head (prior to the start of the transaction)<br/>
+2. The resource was updated in a long-running transaction along with other resources<br/>
+3. The db changes for all of the resources were successfully committed<br/>
+4. The ocfl changes for the resources were successfully committed to the mutable head<br/>
+5. After committing the ocfl changes, another resource failed to commit its changes, causing the entire transaction to rollback</p>
+
+<p>If that series of events occurs, the db changes will be rolled back but the ocfl changes will NOT be rolled back.</p>
+
+<p>Currently, if this were to happen, users would have to reindex their entire repository.</p>
+
+<p>Fedora could potentially attempt to reindex resources that could not be completely rolled back. However, this code does not currently exist, and would need to take into account updating membership and containment. This is essentially the same code that we'd need if we wanted to support allowing users to reindex individual resources on demand.</p>
+
+<p>For the time being, this problem can be easily avoided by users by:</p>
+
+<p>1. Keeping resources in a mutable state for as short of period of time as possible<br/>
+2. Not updating resources with mutable heads in long-running transactions<br/>
+3. Creating an immutable version (memento) immediately before updating the resource in a long running transaction</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-21976"><div class="by">Danny Bernstein, 2021-01-28 19:20 UTC</div><div class="text"><p>Post beta, possibly post release</p></div></div>
+<p><a href="data/FCREPO-3585.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

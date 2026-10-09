@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy
+    xmlns="urn:oasis:names:tc:xacml:2.0:policy:schema:os"
+    xmlns:xacml-context="urn:oasis:names:tc:xacml:2.0:context:schema:os"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:oasis:names:tc:xacml:2.0:policy:schema:os http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-policy-schema-os.xsd
+  urn:oasis:names:tc:xacml:2.0:context:schema:os http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-context-schema-os.xsd"
+    PolicyId="permit-apia-unauthenticated"
+    RuleCombiningAlgId="urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:permit-overrides">
+  <Description>A policy to provide access to API-A methods.  This policy is necessary if allowing unauthenticated access to API-A.  Without it users will be required to authenticate.</Description>
+  <Target>
+    <Subjects>
+      <Subject>
+        <!-- match on subjects with public role -->
+        <SubjectMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+          <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">public</AttributeValue>
+          <SubjectAttributeDesignator AttributeId="urn:fedora:names:fedora:2.1:subject:role" DataType="http://www.w3.org/2001/XMLSchema#string" />
+        </SubjectMatch>
+      </Subject>
+    </Subjects>
+    <Actions>
+      <Action>
+        <ActionMatch MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+          <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">urn:fedora:names:fedora:2.1:action:api-a</AttributeValue>
+          <ActionAttributeDesignator DataType="http://www.w3.org/2001/XMLSchema#string"
+              AttributeId="urn:fedora:names:fedora:2.1:action:api"/>
+        </ActionMatch>
+      </Action>
+    </Actions> 	
+  </Target>
+  <Rule Effect="Permit" RuleId="au:edu:mq:melcoe:ramp:fedora:xacml:2.0:rule:generic-permit">
+    <Condition>
+        <!-- argument order: the 2nd argument will return "indeterminate"
+        if there is not one-and-only dsid; the test for 0 datastreams must come first
+        otherwise for the case where there are 0 datastreams, the result will be indeterminate
+        ( true OR indeterminate = true; indeterminate OR true = indeterminate ) -->
+      <Apply  FunctionId="urn:oasis:names:tc:xacml:1.0:function:or">
+        <!-- true if no dsid specified -->
+        <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:integer-equal">
+          <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-bag-size">
+            <ResourceAttributeDesignator DataType="http://www.w3.org/2001/XMLSchema#string"
+                AttributeId="urn:fedora:names:fedora:2.1:resource:datastream:id"/>
+          </Apply>
+          <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#integer">0</AttributeValue>
+        </Apply>
+        <!-- true if dsid is in the permitted list in the string-bag function -->
+        <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-is-in">
+          <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-one-and-only">
+            <ResourceAttributeDesignator DataType="http://www.w3.org/2001/XMLSchema#string"
+                AttributeId="urn:fedora:names:fedora:2.1:resource:datastream:id"/>
+          </Apply>
+          <Apply FunctionId="urn:oasis:names:tc:xacml:1.0:function:string-bag">
+            <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">DC</AttributeValue>
+          </Apply>
+        </Apply>
+      </Apply>
+    </Condition>
+  </Rule>
+</Policy>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3191 migration-utils fails with &quot;unable to delete directory&quot; exception</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3191</span> migration-utils fails with &quot;unable to delete directory&quot; exception</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Scott Prater</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2020-01-29 15:41 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 16:39 UTC</td></tr><tr><th>Resolved</th><td>2020-01-30 15:31 UTC</td></tr><tr><th>Components</th><td>f4-migration</td></tr><tr><th>Fix versions</th><td>fcrepo-migration-utils-4.5.0, Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Addresses</th><td><a href="FCREPO-3187.html">FCREPO-3187</a> migration-utils 4.4.1 does not complete specified limit during testing</td></tr></table>
+<h2>Environment</h2>CentOs 7 Linux, Java 11, CIFS-mounted source filesystem (Fedora 3.8.1, Akubra storage), CIFS-mounted target filesystem
+<h2>Description</h2>
+<p>migration-utils fails with the exception when attempting to migrate an object:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+(FileUtil) Failed to delete file: /fedora-migration-test/staging/1711.dl:4RJO2AJNM55JH82
+java.nio.file.DirectoryNotEmptyException: /fedora-migration-test/staging/1711.dl:4RJO2AJNM55JH82" when attempting to migrate <span class="code-keyword">this</span> single object.
+[...]
+Unable to delete file: /fedora-migration-test/staging/1711.dl:4RJO2AJNM55JH82/BIB0</pre>
+</div></div>
+<p>However, the directory is empty when I examine it:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ find /fedora-migration-test/staging/1711.dl:4RJO2AJNM55JH82 -ls
+6952825092 0 drwxr-x--- 2 sprater sprater 0 Jan 28 17:59 /fedora-migration-test/staging/1711.dl:4RJO2AJNM55JH82</pre>
+</div></div>
+<p>The same object causes the same exception with every run, regardless of whether I attempt to migrate many objects, or just this one.</p>
+
+<p>Attached are the full log and the problematic object, exported in Fedora 3.x archive format.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3191/10343_migration.log">migration.log</a>, 7369 bytes, added by Scott Prater on 2020-01-29</li>
+<li><a href="attachments/FCREPO-3191/10344_testobject.xml.zip">testobject.xml.zip</a>, 12929 bytes, added by Scott Prater on 2020-01-29</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20998"><div class="by">Scott Prater, 2020-01-29 15:44 UTC</div><div class="text"><p>May be the underlying cause to <a href="https://jira.lyrasis.org/projects/FCREPO/issues/FCREPO-3187" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/projects/FCREPO/issues/FCREPO-3187</a></p></div></div>
+<div class="comment" id="comment-21004"><div class="by">Peter Winckles, 2020-01-30 15:32 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-exts/migration-utils/pull/101" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/pull/101</a></p></div></div>
+<div class="comment" id="comment-21007"><div class="by">Scott Prater, 2020-01-30 15:47 UTC</div><div class="text"><p>PR 101 seems to have resolved this issue.  I re-ran the test object migration, with success this time:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+$ java -jar target/migration-utils-4.4.1-SNAPSHOT-driver.jar --source-type=akubra --datastreams-dir=/fedora3-prod/fedora/datastreams --objects-dir=/fedora3-prod/fedora/objects --target-dir=/fedora-migration-test --layout=pairtree --pid-file=/<span class="code-keyword">var</span>/tmp/test-migration-pids.txt --index-dir=/<span class="code-keyword">var</span>/tmp/datastream-index
+WARN 13:43:59.918 (InternalIDResolver) Index exists at <span class="code-quote">"/<span class="code-keyword">var</span>/tmp/datastream-index"</span> and will be used.  To clear index, simply delete <span class="code-keyword">this</span> directory and re-run the application.
+INFO 14:17:11.175 (Migrator) Processing <span class="code-quote">"1711.dl:4RJO2AJNM55JH82"</span>...
+INFO 14:17:11.966 (OCFLFedora4Client) createVersionSnapshot: 1711.dl:4RJO2AJNM55JH82, version-id: ignored
+INFO 14:17:12.633 (OCFLFedora4Client) createVersionSnapshot: 1711.dl:4RJO2AJNM55JH82, version-id: ignored
+INFO 14:17:12.848 (OCFLFedora4Client) createVersionSnapshot: 1711.dl:4RJO2AJNM55JH82, version-id: ignored
+INFO 14:17:13.130 (OCFLFedora4Client) createVersionSnapshot: 1711.dl:4RJO2AJNM55JH82, version-id: ignored
+INFO 14:17:13.425 (OCFLFedora4Client) createVersionSnapshot: 1711.dl:4RJO2AJNM55JH82, version-id: ignored
+INFO 14:17:13.709 (OCFLFedora4Client) createVersionSnapshot: 1711.dl:4RJO2AJNM55JH82, version-id: ignored
+INFO 14:17:14.010 (OCFLFedora4Client) createVersionSnapshot: 1711.dl:4RJO2AJNM55JH82, version-id: ignored
+date
+$ date
+Wed Jan 29 18:19:25 CST 2020
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-21010"><div class="by">Andrew Woods, 2020-01-30 18:26 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/migration-utils/commit/5156f0d68a252fe574bfc777fd29a4317a43daf2" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/migration-utils/commit/5156f0d68a252fe574bfc777fd29a4317a43daf2</a></p></div></div>
+<p><a href="data/FCREPO-3191.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

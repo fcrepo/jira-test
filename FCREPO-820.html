@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-820 modifyObject API-M with no state change causes XACML policy to be removed from index.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-820</span> modifyObject API-M with no state change causes XACML policy to be removed from index.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Mark Roy</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-11-13 06:58 UTC</td></tr><tr><th>Updated</th><td>2011-02-21 23:25 UTC</td></tr><tr><th>Resolved</th><td>2011-01-06 19:00 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr></table>
+<h2>Description</h2>
+<p>Calling modifyObject AP-M method with no state change (ie sending "null" as the objectState) on an object with a FESLPOLICY datastream causes PolicyIndexInvocationHandler.java to incorrectly remove the policy from the cache.   I dont believe this issue will exist for setting datastream states as well since the dsState can not be null in the setDatastreamState API-M method.</p>
+
+<p>I have attached a patch that seems to fix the problem.   The patch adds a check to make sure that managementMethod.parameters.objectState is not null or empty before touching the policy cache.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-820/10115_PolicyIndexInvocationHandler.patch">PolicyIndexInvocationHandler.patch</a>, 12707 bytes, added by Mark Roy on 2010-11-16</li>
+<li><a href="attachments/FCREPO-820/10114_PolicyIndexInvocationHandler.patch">PolicyIndexInvocationHandler.patch</a>, 3235 bytes, added by Mark Roy on 2010-11-13</li>
+<li><a href="attachments/FCREPO-820/10116_PolicyObject.patch">PolicyObject.patch</a>, 766 bytes, added by Mark Roy on 2010-11-16</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11683"><div class="by">Mark Roy, 2010-11-13 09:04 UTC</div><div class="text"><p>A related issue that I just found was a similar behaviour when any datastream is purged from an object the policy is removed from the index and not added back.   </p>
+
+<p>Another issue that I see from examining the code is when adding any datastream, if the object has a policy it will be added to the index again regardless of whether or not it was already there.   Not sure if the index can handle having two policies for the same object, but I think it is something that should be avoided so that the policies in the index dont become out of sync with the repository.</p>
+
+<p>I will go through the logic of this class and attempt to find some rules that make sense.   I think at least for the datastream modification rules it needs to check if the datastream being operated on is in fact the FESLPOLICY stream.  Otherwise, it makes no sense to change the index.</p></div></div>
+<div class="comment" id="comment-11684"><div class="by">Mark Roy, 2010-11-16 05:01 UTC</div><div class="text"><p>I've updated the rules in PolicyIndexInvocationHandler so that it now properly manages the cache.  It now will only proceed with the datastream rules iff the datastream being operated on is the FESLPOLICY stream.     Purging the policy stream also no longer necessarily deletes the policy from the cache; it checks after the delete is performed to see if there is still a policy and if so updates instead of deletes the policy.</p>
+
+<p>The PolicyObject class also is modified so that if isPolicyActive() is called on an Object that does not have a FESLPOLICY stream, it returns false rather than throwing a null pointer exception.  isDatastreamActive() was also modified to return FALSE if the FESLPOLICY stream does not exist instead of throwing a null pointer exception.</p>
+
+<p>See the attached patches.</p></div></div>
+<div class="comment" id="comment-11685"><div class="by">Stephen Bayliss, 2010-11-16 16:29 UTC</div><div class="text"><p>Mark - many thanks for your contributions on this, I will work on testing and integrating your patches, and also extending the test coverage for this.</p></div></div>
+<div class="comment" id="comment-11754"><div class="by">Stephen Bayliss, 2011-01-06 19:00 UTC</div><div class="text"><ul>
+	<li>integration tests added for PolicyIndex</li>
+	<li>patch integrated<br/>
+Artefacts from the maintenance-3.4 branch (including installer jar) at <a href="https://bamboo.duraspace.org/browse/FCREPO-MAINT-19/artifact" class="external-link" rel="nofollow noreferrer">https://bamboo.duraspace.org/browse/FCREPO-MAINT-19/artifact</a></li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-820.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

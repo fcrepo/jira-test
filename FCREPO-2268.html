@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2268 Document how to set up a queue-based JMS broker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2268</span> Document how to set up a queue-based JMS broker</h1>
+<table class="meta"><tr><th>Type</th><td>Documentation</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2016-10-12 17:02 UTC</td></tr><tr><th>Updated</th><td>2018-10-11 20:44 UTC</td></tr><tr><th>Resolved</th><td>2018-10-11 20:08 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.6.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2417.html">FCREPO-2417</a> Improve JMS queue configuration</td></tr></table>
+<h2>Description</h2>
+<p>The default JMS broker configuration uses an activemq topic. There should be documentation for how to set up the use of a queue.</p>
+
+<p>Make clear that we should not use topics in production.</p>
+
+<p>Also update this document: <a href="https://wiki.duraspace.org/display/FEDORA5x/How+to+Disable+Messaging" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/How+to+Disable+Messaging </a></p>
+
+<p>which has been filled out for 4.7</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-17885"><div class="by">Andrew Woods, 2016-10-26 22:50 UTC</div><div class="text"><p>Is there any reason not to make the default a queue? If not, I would suggest we do it.</p></div></div>
+<div class="comment" id="comment-17886"><div class="by">Unknown, 2016-10-27 01:05 UTC</div><div class="text"><p>The only reason I was waiting on that was because I though that would be a breaking change (clients would need to be modified or server configuration would need to be modified in order to avoid client changes). I was thinking this would be part of a 4.8.0 release.</p></div></div>
+<div class="comment" id="comment-17887"><div class="by">Andrew Woods, 2016-10-27 13:46 UTC</div><div class="text"><p>OK, we can wait on changing the default. <br/>
+As for the documentation mentioned in this ticket, your plan is to expand this page?<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/Setup+Camel+Message+Integrations#SetupCamelMessageIntegrations-SupportingQueues" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/Setup+Camel+Message+Integrations#SetupCamelMessageIntegrations-SupportingQueues</a></p></div></div>
+<div class="comment" id="comment-20392"><div class="by">Peter Matthew Eichman, 2018-10-10 17:38 UTC</div><div class="text"><p>Andrew Woods Should we go ahead with making the default a queue for 5.0.0?</p></div></div>
+<div class="comment" id="comment-20394"><div class="by">Andrew Woods, 2018-10-10 18:49 UTC</div><div class="text"><p>Peter Matthew Eichman: I would have concerns that unsuspecting installations would run into memory issues with unread messages building up.<br/>
+I think we should make the documentation for configuring a Queue prominent, as well as disabling messaging:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/How+to+Disable+Messaging" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/How+to+Disable+Messaging</a></p>
+
+<p>Maybe we can discuss on the tech call. <a href="https://wiki.duraspace.org/display/FF/2018-10-11+-+Fedora+Tech+Meeting" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/2018-10-11+-+Fedora+Tech+Meeting</a></p></div></div>
+<div class="comment" id="comment-20411"><div class="by">Aaron Birkland, 2018-10-11 16:02 UTC</div><div class="text"><p>Virtual topics too.  They have been so convenient for us</p>
+
+<p>The default amq configuration in the war, at least for 4.7, is completely broken for supporting all but the smallest queues.  Need to check to see if it has changed or not.  If not, it's an easy fix</p></div></div>
+<div class="comment" id="comment-20415"><div class="by">Peter Matthew Eichman, 2018-10-11 17:40 UTC</div><div class="text"><p>Aaron Birkland The current config in activemq.xml has resource limits of 20MB for memory, 1GB disk space, and 100MB temp disk space. Do you think those need to be changed?</p></div></div>
+<div class="comment" id="comment-20416"><div class="by">Peter Matthew Eichman, 2018-10-11 18:42 UTC</div><div class="text"><p>Added usage comments to the fcrepo-config.xml file.</p>
+
+<p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1449" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1449</a></p>
+
+<p>Documentation pages updated:</p>
+<ul>
+	<li><a href="https://wiki.duraspace.org/display/FEDORA5x/How+to+Switch+from+a+JMS+Topic+to+a+Queue" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/How+to+Switch+from+a+JMS+Topic+to+a+Queue</a></li>
+	<li><a href="https://wiki.duraspace.org/display/FEDORA5x/How+to+Disable+Messaging" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/How+to+Disable+Messaging</a></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-20418"><div class="by">Andrew Woods, 2018-10-11 19:13 UTC</div><div class="text"><p>Pending response to review.</p></div></div>
+<div class="comment" id="comment-20420"><div class="by">Andrew Woods, 2018-10-11 20:44 UTC</div><div class="text"><p>Resolved with:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/commit/ed53269a773c206c4716f0e8289434f4fcbb1251" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/ed53269a773c206c4716f0e8289434f4fcbb1251</a><br/>
+and documentation updates:<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA5x/How+to+Disable+Messaging" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/How+to+Disable+Messaging</a><br/>
+<a href="https://wiki.duraspace.org/display/FEDORA5x/How+to+Switch+from+a+JMS+Topic+to+a+Queue" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA5x/How+to+Switch+from+a+JMS+Topic+to+a+Queue</a></p></div></div>
+<p><a href="data/FCREPO-2268.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

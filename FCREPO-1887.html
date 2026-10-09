@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1887 Fedora4 Rest API GET Method &quot;Accept-Post&quot; header does not list all allowed supported RDF formats </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1887</span> Fedora4 Rest API GET Method &quot;Accept-Post&quot; header does not list all allowed supported RDF formats </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Diego Pino Navarro</td></tr><tr><th>Assignee</th><td>Diego Pino Navarro</td></tr><tr><th>Created</th><td>2016-02-04 18:01 UTC</td></tr><tr><th>Updated</th><td>2016-10-24 17:06 UTC</td></tr><tr><th>Resolved</th><td>2016-10-19 17:26 UTC</td></tr><tr><th>Components</th><td>f4-core, f4-ldp</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0, Fedora 4.5.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.1</td></tr><tr><th>Labels</th><td>api-spec</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1882.html">FCREPO-1882</a> Missing/Incorrect HTTP Headers</td></tr></table>
+<h2>Environment</h2>Unix, Linux, OSX
+<h2>Description</h2>
+<p>Response headers for a direct GET rest end point call (root resource) list the following RDF formats in the Accept-Post header<br/>
+..<br/>
+Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,multipart/form-data,application/sparql-update<br/>
+..</p>
+
+<p>But POST method allows also application/ld+json (not listed in the previous header) as valid rdf format source for new Resources:</p>
+
+<p>example (tested on 4.4.x and 4.5.0) to reproduce: <br/>
+$ curl -XGET <a href="http://localhost:8080/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest</a> -v</p>
+
+<p>outputs (trimmed, only headers)</p>
+
+<ul>
+	<li>Connected to localhost (::1) port 8080 (#0)<br/>
+&gt; GET /rest HTTP/1.1<br/>
+&gt; User-Agent: curl/7.38.0<br/>
+&gt; Host: localhost:8080<br/>
+&gt; Accept: <b>/</b><br/>
+&gt; <br/>
+&lt; HTTP/1.1 200 OK<br/>
+&lt; Date: Thu, 04 Feb 2016 17:54:57 GMT<br/>
+&lt; Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+&lt; Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+&lt; Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+&lt; Accept-Patch: application/sparql-update<br/>
+&lt; Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,multipart/form-data,application/sparql-update<br/>
+&lt; Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS<br/>
+&lt; Preference-Applied: return=representation<br/>
+&lt; Vary: Prefer<br/>
+&lt; Vary: Accept, Range, Accept-Encoding, Accept-Language<br/>
+&lt; Content-Type: text/turtle<br/>
+&lt; Content-Length: 2327</li>
+	<li>Server Jetty(9.2.3.v20140905) is not blacklisted<br/>
+&lt; Server: Jetty(9.2.3.v20140905)</li>
+</ul>
+
+
+<p>Now create a new resources using POST using application/ld+json which is not listed.</p>
+
+<p>$ curl -XPOST  -H "Content-Type: application/ld+json" -H "Slug:testjsonld" --data-binary "@jsonld.txt" -v <a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a></p>
+
+<p>jsonld.txt file content (body)<br/>
+[<br/>
+  {<br/>
+    "@id": "http://localhost:8080/rest/testjsonld",<br/>
+    "@type": [<br/>
+      "http://www.w3.org/ns/ldp#RDFSource",<br/>
+      "http://www.w3.org/ns/ldp#Container"<br/>
+    ],<br/>
+    "http://purl.org/dc/elements/1.1/title": [</p>
+      {
+        "@value": "json ld test"
+      }
+<p>    ]<br/>
+  }<br/>
+]</p>
+
+<p>Response (resource created):</p>
+
+<ul>
+	<li>Connected to localhost (::1) port 8080 (#0)<br/>
+&gt; POST /rest/ HTTP/1.1<br/>
+&gt; User-Agent: curl/7.38.0<br/>
+&gt; Host: localhost:8080<br/>
+&gt; Accept: <b>/</b><br/>
+&gt; Content-Type: application/ld+json<br/>
+&gt; Slug:testjsonld2<br/>
+&gt; Content-Length: 276<br/>
+&gt; </li>
+	<li>upload completely sent off: 276 out of 276 bytes<br/>
+&lt; HTTP/1.1 201 Created<br/>
+&lt; Date: Thu, 04 Feb 2016 17:26:24 GMT<br/>
+&lt; ETag: "6654d7f2f741be93df0f265571ab9e1bcadbd21c"<br/>
+&lt; Last-Modified: Thu, 04 Feb 2016 17:26:24 GMT<br/>
+&lt; Location: <a href="http://localhost:8080/rest/testjsonld" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testjsonld</a><br/>
+&lt; Content-Type: text/plain<br/>
+&lt; Content-Length: 38</li>
+	<li>Server Jetty(9.2.3.v20140905) is not blacklisted<br/>
+&lt; Server: Jetty(9.2.3.v20140905)<br/>
+&lt; </li>
+	<li>Connection #0 to host localhost left intact<br/>
+<a href="http://localhost:8080/rest/testjsonld" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testjsonld</a></li>
+</ul>
+
+
+<p>Are there other rdf formats also available that can be used and are not listed? I guess json-ld is the only one.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-16146"><div class="by">Andrew Woods, 2016-02-16 00:21 UTC</div><div class="text"><p>Diego Pino Navarro, here is a great first ticket for you to work. See:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L637-L638" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L637-L638</a></p>
+
+<p>..and process notes:<br/>
+<a href="https://wiki.duraspace.org/display/FF/Guide+for+New+Developers" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Guide+for+New+Developers</a></p>
+
+<p>You will want to make the simple fix, then add a new integration test method in the following class to verify your update. Ideally, your new integration test will fail before your update, and pass afterwards:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/test/java/org/fcrepo/integration/http/api/FedoraLdpIT.java</a></p>
+
+<p>You can see all of the supported RDF content-types here:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L199-L201" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L199-L201</a></p></div></div>
+<div class="comment" id="comment-16147"><div class="by">Diego Pino Navarro, 2016-02-16 12:53 UTC</div><div class="text"><p>Thanks for this Andrew Woods. Will solve during this week.</p></div></div>
+<div class="comment" id="comment-16259"><div class="by">Andrew Woods, 2016-03-03 14:46 UTC</div><div class="text"><p>Diego Pino Navarro, any status on this?</p></div></div>
+<div class="comment" id="comment-16851"><div class="by">Andrew Woods, 2016-06-03 17:54 UTC</div><div class="text"><p>Diego Pino Navarro, any status on this?</p></div></div>
+<div class="comment" id="comment-17267"><div class="by">Andrew Woods, 2016-08-25 14:46 UTC</div><div class="text"><p>Diego Pino Navarro, any status on this?</p></div></div>
+<div class="comment" id="comment-17865"><div class="by">Unknown, 2016-10-19 17:26 UTC</div><div class="text"><p>This was resolved with 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1882" >
+                <a href="FCREPO-1882.html" class="jira-issue-macro-key issue-link"  title="Missing/Incorrect HTTP Headers" >
+            
+            FCREPO-1882
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p></div></div>
+<p><a href="data/FCREPO-1887.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

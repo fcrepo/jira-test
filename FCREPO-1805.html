@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1805 Review triples in HTTP representations for legitimacy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1805</span> Review triples in HTTP representations for legitimacy</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Assignee</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2015-10-29 15:49 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-core, f4-ontology</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Labels</th><td>legitimacy</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1936.html">FCREPO-1936</a> Remove JCR-sourced properties from ontologies</td></tr></table>
+<h2>Description</h2>
+<p>Review all RDF representations available from Fedora's HTTP API to separate them into two categories:</p>
+
+<ul class="alternate" type="square">
+	<li>Those that are documented in a Fedora API module ontology and to which the Fedora architecture is committed.</li>
+	<li>Those to be added to a kill-list for removal.</li>
+</ul>
+
+
+<p>All JCR-exposing triples should certainly be removed.</p>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-16218"><div class="by">A. Soroka, 2016-02-29 15:17 UTC</div><div class="text"><p>Unknown, I think I am right in assuming that you have removed all JCR-triples from the representations?</p></div></div>
+<div class="comment" id="comment-16230"><div class="by">Unknown, 2016-03-01 14:02 UTC</div><div class="text"><p>Yes and no. The representations themselves are in a pretty good state now. The main exception to that is:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+    &lt;&gt; fedora:exportAs &lt;/foo/fcr:export?format=jcr/xml&gt;
+    &lt;/foo/fcr:export?format=jcr/xml&gt; dc:format &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#jcr/xml&gt;</span>
+</pre>
+</div></div>
+
+<p>The other issue is that FedoraResourceImpl::getTriples(), when requesting server managed triples, will include all sorts of internal JCR properties: jcr:primaryType, jcr:mixinTypes, etc, which the HTTP api then filters out after the fact. It would be much better to simply <em>not</em> produce those triples in the first place. I have a ticket to remove those: 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1935" >
+                <a href="FCREPO-1935.html" class="jira-issue-macro-key issue-link"  title="remove internal jcr/modeshape types from RDF generation" >
+            
+            FCREPO-1935
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, but first, we need to change how the template rendering happens, which depends on the existence of those properties. See 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1934" >
+                <a href="FCREPO-1934.html" class="jira-issue-macro-key issue-link"  title="remove dependency on modeshape/jcr internal types in template rendering" >
+            
+            FCREPO-1934
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p>
+
+<p>W/R/T the <tt>fcr::export</tt> endpoint, that seems tied directly to a JCR representation of the internal node. Is that deprecated now? Especially given the camel-based serialization tool? Andrew Woods can weigh in on that.</p></div></div>
+<div class="comment" id="comment-16231"><div class="by">Unknown, 2016-03-01 14:15 UTC</div><div class="text"><p>As a side note, the current F4 ontology contains a number of JCR-specific properties that should be evaluated: <tt>frozenMixinTypes</tt>, <tt>frozenPrimaryTypes</tt>, <tt>frozenUuid</tt>, <tt>hasNodeType</tt>, <tt>mixinTypes</tt>, <tt>primaryType</tt>, <tt>uuid</tt>, <tt>UnmappedType</tt>, <tt>hasDefaultWorkspace</tt>, <tt>hasWorkspace</tt>, <tt>hasWorkspaces</tt>. There may be others in this category, but those jumped out at me.</p></div></div>
+<div class="comment" id="comment-16232"><div class="by">A. Soroka, 2016-03-01 14:36 UTC</div><div class="text"><p>I'll open a separate ticket for bad properties in the ontology.</p></div></div>
+<div class="comment" id="comment-16233"><div class="by">A. Soroka, 2016-03-01 14:38 UTC</div><div class="text"><p>I have no problem with the JCR/XML export format. It's not a part of our ontology, it's just one possible format amongst whatever. Unless we dislike it for other reasons, or just because it exposes impl? Those things aren't good, but the fact that it is part of the triples doesn't bother me. I don't think.</p></div></div>
+<div class="comment" id="comment-16235"><div class="by">Unknown, 2016-03-01 14:45 UTC</div><div class="text"><p>The only issues I have with the export format is that the generated RDF violates the single subject rule (see the RDF snippet above). The RDF also implies that <tt><a href="http://fedora.info/definitions/v4/repository#jcr/xml" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#jcr/xml</a></tt> exists in the ontology, which is does not (and should not).</p></div></div>
+<div class="comment" id="comment-16237"><div class="by">A. Soroka, 2016-03-01 14:48 UTC</div><div class="text"><p>Those are good points. I'm not sure whether we have to maintain the single-subject rule for <em>exports</em>, if export is something other than the result of a <tt>GET</tt> request. Of course, I would prefer that it just be the result of a <tt>GET</tt> request.</p></div></div>
+<div class="comment" id="comment-16239"><div class="by">Unknown, 2016-03-01 19:35 UTC</div><div class="text"><p>I just noticed that the RDF from a Binary description still contains some JCR properties, in particular <tt>mix:mimeType</tt> and <tt>nt:resource</tt>.</p></div></div>
+<div class="comment" id="comment-17729"><div class="by">Unknown, 2016-10-07 02:36 UTC</div><div class="text"><p>I looked through the various representations of resources (from the current 4.8.0-SNAPSHOT), and I'm in favor of closing this issue. I did not see any MODE- or JCR-related triples.</p></div></div>
+<div class="comment" id="comment-22391"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-1805.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

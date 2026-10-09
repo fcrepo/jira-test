@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2086 Fedora object created with &quot;indexed&quot; path element</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2086</span> Fedora object created with &quot;indexed&quot; path element</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jim Coble</td></tr><tr><th>Assignee</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2016-07-21 14:24 UTC</td></tr><tr><th>Updated</th><td>2016-11-10 22:54 UTC</td></tr><tr><th>Resolved</th><td>2016-10-11 18:08 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.0</td></tr><tr><th>Labels</th><td>bug</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2055.html">FCREPO-2055</a> Error updating binary: javax.jcr.nodetype.ConstraintViolationException</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2271.html">FCREPO-2271</a> Back-port &quot;indexed&quot; path element patch to 4.6.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2272.html">FCREPO-2272</a> Back-port &quot;indexed&quot; path element patch to 4.7.0</td></tr></table>
+<h2>Description</h2>
+<p>We are using Fedora 4's default ID minter.  During an operation using multiple Resque workers (10) to create objects in Fedora 4, we ended up with an object in the repository with ID "8b/80%5B2%5D/54/6c/8b80546c-2e35-4a85-b311-1c8fbae3397a" (essentially "8b/80<span class="error">&#91;2&#93;</span>/54/6c/8b80546c-2e35-4a85-b311-1c8fbae3397a").  Two of the Resque jobs failed at essentially the same time, each with the error message:</p>
+
+<p>STATUS: 500 javax.jcr.nodetype.ConstraintViolationException: Cannot find a definition for a child named '{}80' on the node at '/prod/8b' with primary type 'nt:folder' and mixin types: <span class="error">&#91;fedora:Pairtree&#93;</span> at org.modeshape.jcr.AbstractJcrNode.nodeDefinition(AbstractJcrNode.java:2911) at org.modeshape.jcr.AbstractJcrNode.getDefinition(AbstractJcrNode.java:2835) at org.modeshape.jcr.AbstractJcrNode.isCheckedOut(AbstractJcrNode.java:3222) at org.modeshape.jcr.AbstractJcrNode.addChildNode(AbstractJcrNode.java:1131) at org.modeshape.jcr.AbstractJcrNode.addNode(AbstractJcrNode.java:1072) at org.modeshape.jcr.AbstractJcrNode.addNode(AbstractJcrNode.java:986) at org.modeshape.jcr.AbstractJcrNode.addNode(AbstractJcrNode.java:101) at org.modeshape.jcr.api.JcrTools.findOrCreateNode(JcrTools.java:437) at org.modeshape.jcr.api.JcrTools.findOrCreateNode(JcrTools.java:377) at org.fcrepo.kernel.modeshape.services.AbstractService.findOrCreateNode(AbstractService.java:50) at org.fcrepo.kernel.modeshape.servi...</p>
+
+<p>Objects were created in the repository by the two failed jobs &#8211; one with ID 8b/80/f1/bc/8b80f1bc-e51f-4336-bd10-293d13bbf2f0 and one with the ID noted above; namely; 8b/80%5B2%5D/54/6c/8b80546c-2e35-4a85-b311-1c8fbae3397a.  My suspicion is that, by chance, UUID's 8b80f1bc-e51f-4336-bd10-293d13bbf2f0 and 8b80546c-2e35-4a85-b311-1c8fbae3397a were generated in close proximity time-wise and that the "indexed" path element resulted from the attempt to create the pathified versions of these objects at essentially the same time.</p>
+
+<p>(For what it's worth, the operation during which this occurred was a migration of Fedora 3 objects to Fedora 4 using a customized version of Hydra's Fedora-Migrate). </p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2086/10280_fcrepo-webapp-4.8.0-SNAPSHOT.war">fcrepo-webapp-4.8.0-SNAPSHOT.war</a>, 44461507 bytes, added by Michael Durbin on 2016-10-07</li>
+</ul>
+<h2>Comments (14)</h2>
+<div class="comment" id="comment-17097"><div class="by">Andrew Woods, 2016-07-21 14:27 UTC</div><div class="text"><p>A. Soroka, Situ, Longshou, Unknown: this looks similar to: <a href="https://jira.duraspace.org/browse/FCREPO-2055" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2055</a></p></div></div>
+<div class="comment" id="comment-17099"><div class="by">Jim Coble, 2016-07-21 14:33 UTC</div><div class="text"><p>Also, FWIW, the 8b80f1bc-e51f-4336-bd10-293d13bbf2f0 object has a fedora:created timestamp of 2016-07-20T23:37:34.311Z and the 80%5B2%5D/54/6c/8b80546c-2e35-4a85-b311-1c8fbae3397a object has a fedora:created timestamp of 2016-07-20T23:37:34.327Z .</p></div></div>
+<div class="comment" id="comment-17100"><div class="by">Situ, Longshou, 2016-07-21 14:38 UTC</div><div class="text"><p>Andrew Woods, A. Soroka, Unknown: Yes, I think this ticket should be considered to be handled together with <a href="https://jira.duraspace.org/browse/FCREPO-2055" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2055</a>, which is a concurrent support issue as well. But it doesn't looks like a Modeshape bug  since no SNS created, while the error is correct.</p></div></div>
+<div class="comment" id="comment-17102"><div class="by">Jim Coble, 2016-07-21 18:58 UTC</div><div class="text"><p>If this is indeed another manifestation of the same issue as 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2055" >
+                <a href="FCREPO-2055.html" class="jira-issue-macro-key issue-link"  title="Error updating binary: javax.jcr.nodetype.ConstraintViolationException" >
+            
+            FCREPO-2055
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, this may already be a known part of that problem but I wanted to point out that I am unable to delete either of the objects referenced in my initial report above.  `curl -u xxx:yyy -X DELETE "&lt;resource uri&gt;"` for either resource results in ...</p>
+
+<p>javax.jcr.nodetype.ConstraintViolationException: Cannot find a definition for a child named '{}80' on the node at '/prod/8b' with primary type 'nt:folder' and mixin types: <span class="error">&#91;fedora:Pairtree&#93;</span><br/>
+	at org.modeshape.jcr.AbstractJcrNode.nodeDefinition(AbstractJcrNode.java:2911)<br/>
+	at org.modeshape.jcr.AbstractJcrNode.getDefinition(AbstractJcrNode.java:2835)<br/>
+	at org.modeshape.jcr.AbstractJcrNode.isCheckedOut(AbstractJcrNode.java:3222)<br/>
+	at org.modeshape.jcr.AbstractJcrNode.internalRemove(AbstractJcrNode.java:3179)<br/>
+	at org.modeshape.jcr.AbstractJcrNode.removeShare(AbstractJcrNode.java:3149)<br/>
+	at org.modeshape.jcr.AbstractJcrNode.remove(AbstractJcrNode.java:3445)<br/>
+	at org.fcrepo.kernel.modeshape.FedoraResourceImpl.delete(FedoraResourceImpl.java:384)<br/>
+	at org.fcrepo.http.api.FedoraLdp.deleteObject(FedoraLdp.java:266)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br/>
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)<br/>
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)<br/>
+	at java.lang.reflect.Method.invoke(Method.java:498)<br/>
+	at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:151)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:171)<br/>
+	at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:152)<br/>
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:104)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:384)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:342)<br/>
+	at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:101)<br/>
+	at org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)<br/>
+	at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:315)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:297)<br/>
+	at org.glassfish.jersey.internal.Errors.process(Errors.java:267)<br/>
+	at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:297)<br/>
+	at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:254)<br/>
+	at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1030)<br/>
+	at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:373)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:381)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:344)<br/>
+	at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:221)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:303)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)<br/>
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241)<br/>
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)<br/>
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:220)<br/>
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:122)<br/>
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:610)<br/>
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:171)<br/>
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:102)<br/>
+	at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:950)<br/>
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:116)<br/>
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:408)<br/>
+	at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1040)<br/>
+	at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:607)<br/>
+	at org.apache.tomcat.util.net.JIoEndpoint$SocketProcessor.run(JIoEndpoint.java:314)<br/>
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)<br/>
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)<br/>
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)<br/>
+	at java.lang.Thread.run(Thread.java:745)</p></div></div>
+<div class="comment" id="comment-17114"><div class="by">Situ, Longshou, 2016-07-23 16:00 UTC</div><div class="text"><p>Thanks Jim Coble for the additional information.<br/>
+Andrew Woods, A. Soroka, Unknown: I'll hold off working on <a href="https://jira.duraspace.org/browse/FCREPO-2055" class="external-link" rel="nofollow noreferrer">FCREPO-2055</a> for now until we agree on a solution for this ticket. I can <font color="red">NOT</font> replicate the SNS issue from the MODE level (see <a href="https://jira.duraspace.org/browse/FCREPO-2055?focusedCommentId=50987&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-50987" class="external-link" rel="nofollow noreferrer">comment-50987</a>), and I can only see it exists in the Fedora 4 modeshape4 branch. I don't know whether we should still report 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2055" >
+                <a href="FCREPO-2055.html" class="jira-issue-macro-key issue-link"  title="Error updating binary: javax.jcr.nodetype.ConstraintViolationException" >
+            
+            FCREPO-2055
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ as MODE bug or just fix it in Fedora in this case. But I can file a MODE ticket if you still want me to do that.<br/>
+For the ConstraintViolationExcep error in this ticket, I think once the error is thrown by MODE, then the system is in an inconsistent state and the error records created will be no longer accessible. Should we prevent the error from happening, or allow the ingest to be failed? Maybe we need some kind of metadata clean up on error as well?</p></div></div>
+<div class="comment" id="comment-17305"><div class="by">Michael Durbin, 2016-08-31 13:31 UTC</div><div class="text"><p>I can consistently reproduce this bug with the following bash script:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -XPUT "http://localhost:8080/rest/test" &amp;
+curl -XPUT "http://localhost:8080/rest/test" &amp;
+curl -XPUT "http://localhost:8080/rest/test" &amp;
+curl -XPUT "http://localhost:8080/rest/test" &amp;
+</pre>
+</div></div>
+
+<p>The culprit seems to be:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/fcrepo-4.5.1/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L349-L355" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/fcrepo-4.5.1/fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraLdp.java#L349-L355</a><br/>
+(or actually almost that whole method because the changes aren't committed until the session is saved)</p>
+
+<p>The simplest (but overly aggressive) solution of synchronizing that method against something static (since due to it being a bean, there may be multiple instances of that class to service multiple concurrent requests) alleviates the symptoms.</p>
+
+<p>Should I go forward and implement a fix that synchronizes access a little more narrowly... perhaps synchronizing updates at the level of the affected path.  That approach won't work for transactions, but changing the kernel API to allow for the kind of locking we'd need is a pretty tall order.</p></div></div>
+<div class="comment" id="comment-17306"><div class="by">Andrew Woods, 2016-08-31 14:13 UTC</div><div class="text"><p>Michael Durbin, a PR would be great.<br/>
+As a note, Situ, Longshou is also working this from the ModeShape angle: <a href="https://issues.jboss.org/browse/MODE-2624" class="external-link" rel="nofollow noreferrer">https://issues.jboss.org/browse/MODE-2624</a></p></div></div>
+<div class="comment" id="comment-17309"><div class="by">Michael Durbin, 2016-08-31 20:18 UTC</div><div class="text"><p>Here's a PR.</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/1096" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1096</a></p></div></div>
+<div class="comment" id="comment-17368"><div class="by">Michael Durbin, 2016-09-05 14:53 UTC</div><div class="text"><p>I've updated the PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1096" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1096</a></p>
+
+<p>It makes the lock manager (now called PathLockManager) injectable but provides a default injected implementation.</p>
+
+<p>It also supports our peartree nodes, while addressing concerns about long-running PUT of binary resources.  This is accomplished specifically by only acquiring write locks on nodes that will actually be written (ie, the subject node and any peartree nodes that haven't yet been created).  </p>
+
+<p>It allows for folks who want alternate locking implementations, such as Unknown's distributed implementation.</p>
+
+<p>This should sidestep a concurrency or configuration issue with ModeShape regarding the allowing or disallowing of same name siblings, though we'd need to resolve that if we wanted to make an implementation of PathLockManager that utilized jcr locking.</p>
+
+<p>Transaction resources still aren't locked for the duration of the transaction, but we decided that was out of scope for this ticket.</p>
+
+<p>Probably most important in a review is that if there's a scenario you want to make sure is supported, convey that and I'll add a unit test.  I've done the heavy lifting to allow for relatively easy and clear multi-threaded unit tests, so it's pretty low-cost to add them now.</p></div></div>
+<div class="comment" id="comment-17749"><div class="by">Michael Durbin, 2016-10-07 14:11 UTC</div><div class="text"><p>I've attached a jar file that is a build of the fcrepo-webapp module of the current snapshot with the above PR applied. ( <span class="nobr"><a href="attachments/FCREPO-2086/10280_fcrepo-webapp-4.8.0-SNAPSHOT.war" title="fcrepo-webapp-4.8.0-SNAPSHOT.war attached to FCREPO-2086" data-attachment-type="file" data-attachment-name="fcrepo-webapp-4.8.0-SNAPSHOT.war" data-media-services-type="file" data-media-services-id="1217f6a2-b842-4e56-8dd8-4041f3aaa055" rel="noreferrer">fcrepo-webapp-4.8.0-SNAPSHOT.war</a></span>)</p></div></div>
+<div class="comment" id="comment-17781"><div class="by">Andrew Woods, 2016-10-10 20:54 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-17783"><div class="by">Michael Durbin, 2016-10-11 18:08 UTC</div><div class="text"><p>I pushed some new commits to the PR to address your review, Andrew Woods.</p></div></div>
+<div class="comment" id="comment-17784"><div class="by">Andrew Woods, 2016-10-11 18:38 UTC</div><div class="text"><p>Michael Durbin, see: <a href="https://github.com/mikedurbin/fcrepo4/pull/2" class="external-link" rel="nofollow noreferrer">https://github.com/mikedurbin/fcrepo4/pull/2</a></p></div></div>
+<div class="comment" id="comment-17786"><div class="by">Andrew Woods, 2016-10-11 19:17 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/1288372228d1fe729087f06746dc982bf23dc61d" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1288372228d1fe729087f06746dc982bf23dc61d</a></p></div></div>
+<p><a href="data/FCREPO-2086.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

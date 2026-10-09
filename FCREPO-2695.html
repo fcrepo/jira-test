@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2695 HTML UI: &quot;Download Content&quot; missing icon</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2695</span> HTML UI: &quot;Download Content&quot; missing icon</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Mohamed Mohideen Abdul Rasheed</td></tr><tr><th>Created</th><td>2018-03-06 18:02 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-09-21 20:15 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>html-ui</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>I have not explored in which version this bug was introduced, but the download  icon/image for binary content is no longer rendering.<br/>
+See attached image for how the button currently looks.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2695/10335_jetty.png">jetty.png</a>, 138959 bytes, added by Danny Bernstein on 2018-09-20</li>
+<li><a href="attachments/FCREPO-2695/10334_Screen_Shot_2018-09-17_at_3.32.00_PM.png">Screen Shot 2018-09-17 at 3.32.00 PM.png</a>, 27131 bytes, added by Danny Bernstein on 2018-09-17</li>
+<li><a href="attachments/FCREPO-2695/10330_Screenshot_from_2018-03-06_12-58-29.png">Screenshot from 2018-03-06 12-58-29.png</a>, 3556 bytes, added by Andrew Woods on 2018-03-06</li>
+<li><a href="attachments/FCREPO-2695/10336_tomcat.png">tomcat.png</a>, 136327 bytes, added by Danny Bernstein on 2018-09-20</li>
+<li><a href="attachments/FCREPO-2695/10337_tomcat_console_warning.png">tomcat console warning.png</a>, 39474 bytes, added by Danny Bernstein on 2018-09-20</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-20247"><div class="by">Danny Bernstein, 2018-09-17 22:31 UTC</div><div class="text"><p>I took a look at this one, but I'm not seeing the problem.  I recommend that unless it can clearly be reproduced we close it.</p></div></div>
+<div class="comment" id="comment-20248"><div class="by">Andrew Woods, 2018-09-18 13:44 UTC</div><div class="text"><p>Danny Bernstein: in your local installation, do you see the "down arrow" within the green "Download Content" button? See comparison images above.</p></div></div>
+<div class="comment" id="comment-20264"><div class="by">Danny Bernstein, 2018-09-20 04:40 UTC</div><div class="text"><p>The problem is not apparent using ```mvn jetty:run``` but it is apparent in my local tomcat installation.</p>
+
+<p>See attached screenshots of the glyphicon file's response headers.  Notice that jetty has no content-type and the content-length is just over half the size of what is reported by tomcat.  Tomcat on the other hand is returning the correct content-type.  Tomcat also reports console warning.  When I suppress the content-type in tomcat by commenting out the appropriate mimetypes in the global web.xml file,  I see the above warnings disappear but the icons still do not display.  It is also worth noting that the content-length doesn't change either. </p>
+
+<p>I was not able to dig up anything useful searching for the console messages and other related queries. ("tomcat woff icons not displaying", etc)</p></div></div>
+<div class="comment" id="comment-20265"><div class="by">Danny Bernstein, 2018-09-20 04:41 UTC</div><div class="text"><p>My guess is that there is some kind of encoding or compression related issue.  Hmmm...</p></div></div>
+<div class="comment" id="comment-20287"><div class="by">Mohamed Mohideen Abdul Rasheed, 2018-09-21 20:14 UTC</div><div class="text"><p>Maven filtering (resources plugin / war plugin) corrupts binary files. Some of the common image extensions are excluded by default and we can configure a list of file extensions to be excluded.</p>
+<ul>
+	<li><a href="https://stackoverflow.com/questions/32690418/i-cant-load-fonts-while-using-tomcat" class="external-link" rel="nofollow noreferrer">https://stackoverflow.com/questions/32690418/i-cant-load-fonts-while-using-tomcat</a></li>
+	<li><a href="https://maven.apache.org/plugins/maven-resources-plugin/examples/binaries-filtering.html" class="external-link" rel="nofollow noreferrer">https://maven.apache.org/plugins/maven-resources-plugin/examples/binaries-filtering.html</a></li>
+	<li><a href="https://maven.apache.org/plugins/maven-war-plugin/examples/adding-filtering-webresources.html" class="external-link" rel="nofollow noreferrer">https://maven.apache.org/plugins/maven-war-plugin/examples/adding-filtering-webresources.html</a></li>
+</ul>
+
+
+<p>Fixed with PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1419" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1419</a></p></div></div>
+<div class="comment" id="comment-20288"><div class="by">Peter Matthew Eichman, 2018-09-21 20:38 UTC</div><div class="text"><p>Merged: <a href="https://github.com/fcrepo4/fcrepo4/commit/783428fa4825de67b62deeab4e1bd81b5a504a8c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/783428fa4825de67b62deeab4e1bd81b5a504a8c</a></p></div></div>
+<p><a href="data/FCREPO-2695.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

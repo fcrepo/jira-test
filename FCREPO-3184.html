@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3184 Import export utility validate BagIt Profile on import</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3184</span> Import export utility validate BagIt Profile on import</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Michael Ritter</td></tr><tr><th>Assignee</th><td>Michael Ritter</td></tr><tr><th>Created</th><td>2020-01-24 20:56 UTC</td></tr><tr><th>Updated</th><td>2020-02-27 15:52 UTC</td></tr><tr><th>Resolved</th><td>2020-02-17 21:51 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr></table>
+<h2>Description</h2>
+<p>When importing a bag through the import export utility, a bagit profile can be specified though no validation is done to check that the bag conforms to the specified profile. If implemented this can serve to add an additional layer of verification of the data being imported.</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-20984"><div class="by">Michael Ritter, 2020-01-27 19:24 UTC</div><div class="text"><p>Andrew Woods, Danny Bernstein I had a question with respect to how the import functionality currently works for Bags and was looking to get some feedback:</p>
+<ul>
+	<li>When checking a BagIt bag against a bag profile, there's a question of if we should halt before the bag is imported. This makes sense to me as the bag profile allows for stronger guarantees about what you are receiving. I noticed that the import process does not halt for bags which have invalid entries in their manifest, so I'm trying to get an understanding of expected behavior.</li>
+	<li>There is a comment about using the bagit-java library to do bag validation once there's an updated release. In the pom it is pulling in 5.0.0-BETA, so this feels like it is in reference to having a release rather than a beta/snapshot. Just checking to see if my assumption is correct here.</li>
+	<li>The import process currently reads a SHA-1 manifest and uses those checksums in the headers when issuing a PUT for each binary. This allows partial uploads of BagIt bags to a repository, which I'm not sure is desired behavior. I'm not sure how many files would end up being touched if validation of the entire bag is also performed, but wanted to explore it.
+	<ul>
+		<li>Related to this - is there a desire to expanding beyond only using the SHA-1 manifest for BagIt bags? I imagine that would be a separate issue, but bags seem to offer more flexibility in that regard, especially if using a profile.</li>
+	</ul>
+	</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-20991"><div class="by">Andrew Woods, 2020-01-28 00:18 UTC</div><div class="text"><p>1. If a bag fails to validate, halting before any ingest makes sense.<br/>
+2. A bagit-java release would be preferred, but using BETA is an option... since it is only used for validation... and if it appears that the outstanding issues on the BETA are reasonable.<br/>
+3. I am not sure I completely understand your question. Is it related to your first question, and halting? In any case, supporting SHA-256 and MD5 would be great.</p></div></div>
+<div class="comment" id="comment-20995"><div class="by">Michael Ritter, 2020-01-28 16:17 UTC</div><div class="text"><p>Andrew Woods 3 is related to the first question with respect to halting. I wasn't sure if the current behavior is intended when importing bags or if the utility should be updated to halt if a bag cannot verify its manifest.</p></div></div>
+<div class="comment" id="comment-20996"><div class="by">Andrew Woods, 2020-01-28 17:10 UTC</div><div class="text"><p>+1 to halting... the tool certainly has room for improvement.</p></div></div>
+<div class="comment" id="comment-21057"><div class="by">Michael Ritter, 2020-02-17 21:51 UTC</div><div class="text"><p>PR is now ready for review: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/139" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/139</a></p></div></div>
+<div class="comment" id="comment-21070"><div class="by">Danny Bernstein, 2020-02-25 22:28 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/0ee662b1762b598fb90342db750dc275b2a7d47f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/0ee662b1762b598fb90342db750dc275b2a7d47f</a></p></div></div>
+<p><a href="data/FCREPO-3184.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

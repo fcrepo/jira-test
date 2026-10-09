@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2369 Import-export verification tool&#x27;s rdf comparison fails on unicode-escaped characters</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2369</span> Import-export verification tool&#x27;s rdf comparison fails on unicode-escaped characters</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Joshua Allan Westgard</td></tr><tr><th>Assignee</th><td>Youn Noh</td></tr><tr><th>Created</th><td>2016-12-18 04:42 UTC</td></tr><tr><th>Updated</th><td>2017-05-24 01:00 UTC</td></tr><tr><th>Resolved</th><td>2017-05-24 01:00 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-verify-0.1.0</td></tr><tr><th>Labels</th><td>import-export-phase-2, verification</td></tr></table>
+<h2>Description</h2>
+<p>The import-export verification tool, when encountering unicode-escaped characters in an RDF document serialized to disk, fails to translate the characters in a way that allows it to recognize the same triples coming from Fedora.</p>
+
+<p>It seems like the tool ought to be able to make the necessary transformation to recognize that the two resources are equivalent.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2369/10304_fcrepo4-data-4.6.0-backup.zip">fcrepo4-data-4.6.0-backup.zip</a>, 85963 bytes, added by Youn Noh on 2017-05-22</li>
+<li><a href="attachments/FCREPO-2369/10305_fcrepo4-data-4.7.3-RC-backup.zip">fcrepo4-data-4.7.3-RC-backup.zip</a>, 83812 bytes, added by Youn Noh on 2017-05-22</li>
+</ul>
+<h2>Comments (20)</h2>
+<div class="comment" id="comment-18279"><div class="by">Joshua Allan Westgard, 2016-12-19 02:18 UTC</div><div class="text"><p>The problem is in the these lines: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/blob/master/verify.py#L225-L226" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/blob/master/verify.py#L225-L226</a></p>
+
+<p>If you parse the data directly with rdflib, the graphs are correctly interpreted as equivalent, but if you pass the response data to the parser with 'data=response.text', the graphs are interpreted as different. This must have to do with how unicode escapes are encoded/decoded during the handling of this data.</p></div></div>
+<div class="comment" id="comment-18739"><div class="by">Jim Coble, 2017-05-17 19:00 UTC</div><div class="text"><p>Joshua Allan Westgard Did I understand you to say that this problem occurs only when trying to verify an import?  Or does it happen for both exports and imports?  I ask because I have a couple of objects on my workstation that include Cyrillic and Chinese characters.  If I run an export and verify the export, they seem to verify fine.  </p></div></div>
+<div class="comment" id="comment-18740"><div class="by">Joshua Allan Westgard, 2017-05-17 19:13 UTC</div><div class="text"><p>Jim Coble, it is possible that I could have said that.  But I've also subsequently seen issues on exports.  I have some newspapers where there are non-ASCII quotation marks that seem to get evaluated as different when comparing triples.</p>
+
+<p>But all of this needs more research.  Any additional testing of various scenarios with content that pushes the boundaries of things we have tried will be helpful.</p></div></div>
+<div class="comment" id="comment-18741"><div class="by">Jim Coble, 2017-05-17 19:25 UTC</div><div class="text"><p>Joshua Allan Westgard Well, as I've said, I haven't seen issues verifying exports of a couple of objects that contain Cyrillic and Chinese characters.  I don't know enough about Unicode to say for sure exactly how these characters are encoded, except that I believe they are UTF-8.  When I look at them in a web browser using the Fedora API, or indexed in Solr by Hydra, or in the export .ttl file, I just see them as Cyrillic or Chinese characters.  Not sure how my experience relates to the issues you've seen, though.</p></div></div>
+<div class="comment" id="comment-18742"><div class="by">Jim Coble, 2017-05-17 19:26 UTC</div><div class="text"><p>Joshua Allan Westgard Forgot to add ... if you'll share the sample dataset that you made for youn with me, I can see if I see the same errors.</p></div></div>
+<div class="comment" id="comment-18771"><div class="by">Jim Coble, 2017-05-18 19:56 UTC</div><div class="text"><p>Youn Noh, Joshua Allan Westgard As I noted on IRC, I downloaded the 4.7.2 single item backup, restored it, exported it, and ran the verification tool with no verification failures.</p></div></div>
+<div class="comment" id="comment-18780"><div class="by">Youn Noh, 2017-05-19 12:24 UTC</div><div class="text"><p>Jim Coble, Joshua Allan Westgard: My results were the same as Jim's. I uploaded the csv output from verification to the team drive.</p></div></div>
+<div class="comment" id="comment-18781"><div class="by">Jim Coble, 2017-05-19 12:36 UTC</div><div class="text"><p>Youn Noh, Joshua Allan Westgard I thought I would download the Fedora 4.6.0 one-click, restore Joshua Allan Westgard's 4.6.0 backup, export, and see if I can replicate the verification errors he encountered.  Then, I guess a decision needs to be made about how to proceed.  E.g., do we try to pinpoint more precisely the Fedora versions which do / do not encounter this problem?  do we try to determine the exact nature of the issue with exports from earlier versions of Fedora?  etc.  The simplest answer might be just to say something like the following in the tool's README: "The verification tool is known to work correctly on exports from Fedora 4.7.2 but has been observed to flag potentially spurious mismatches related to Unicode-escaped characters on exports from certain earlier versions of Fedora (e.g., 4.6.0)."</p></div></div>
+<div class="comment" id="comment-18782"><div class="by">Andrew Woods, 2017-05-19 13:39 UTC</div><div class="text"><p>Jim Coble: I suspect some documentation in the README along the lines you suggested would be sufficient for this ticket.</p></div></div>
+<div class="comment" id="comment-18783"><div class="by">Joshua Allan Westgard, 2017-05-19 13:44 UTC</div><div class="text"><p>Youn Noh, Jim Coble: I agree with Jim's assessment. It would be good to follow up on this some more and try to pinpoint the problem, but I'm not sure that there is going to be enough production use of the verification tool with 4.6 Fedoras to warrant a lot of time investigating the specific cause.  A simple note in the README might be best.</p>
+
+<p>The other element at play here is that I'm not quite sure that we have identified the cause of all the permutations of this issue.  The original bug came up during the third import-export sprint and was definitely associated with unicode-escaped characters in the RDF that was being written to disk by the exporter.  I will attempt to recreate that behavior today and confirm whether it is also only found in the 4.6 version, or whether that can be demonstrated in 4.7.2. The effect was the same, but the apparent cause was slightly different.</p></div></div>
+<div class="comment" id="comment-18791"><div class="by">Jim Coble, 2017-05-19 17:16 UTC</div><div class="text"><p>Joshua Allan Westgard Youn Noh I brought 4.6.0 one-click on my workstation and created an object with various non-Roman / non-ASCII characters.  Exported and ran verification tool.  Verification tool reported a triples mismatch, which is consistent with Joshua Allan Westgard's experience with an export from 4.6.0.  Going to bring up 4.7.2 one-click, create the same object, export, and run the verification tool.  Will report on the results – I'm expecting no verification mismatches.</p></div></div>
+<div class="comment" id="comment-18793"><div class="by">Jim Coble, 2017-05-19 17:25 UTC</div><div class="text"><p>Joshua Allan Westgard Youn Noh As expected, verification of export from 4.7.2 containing same characters as above did not result in a triples mismatch.</p></div></div>
+<div class="comment" id="comment-18794"><div class="by">Youn Noh, 2017-05-19 17:35 UTC</div><div class="text"><p>Jim Coble: Thanks very much for running these tests. I agree that a note in the README for the verification tool might be best. Would you like to add the note, or should I? Thanks!!</p></div></div>
+<div class="comment" id="comment-18798"><div class="by">Youn Noh, 2017-05-19 18:46 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/28" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/28</a></p></div></div>
+<div class="comment" id="comment-18799"><div class="by">Joshua Allan Westgard, 2017-05-19 18:54 UTC</div><div class="text"><p>The issue was determined to be at least in part specific to fcrepo 4.6.0, and could not be reproduced in 4.7.2.  It was agreed that an update to the documentation of the verification tool would be a good first step. This update was completed with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/bc57af2f08ee24cdbc47afb6e91af83cd4dd34f4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/bc57af2f08ee24cdbc47afb6e91af83cd4dd34f4</a>.</p>
+
+<p>This ticket should remain open for the time being until we determine whether any version of this sort of error can be shown to exist in 4.7.2.</p></div></div>
+<div class="comment" id="comment-18828"><div class="by">Youn Noh, 2017-05-22 17:58 UTC</div><div class="text"><p>The attached backup contains a resource with a title in various alternate scripts. The title is not Unicode escaped in the repository nor in the export. The verification tool generates an error on Book1.ttl even though its checksum is identical to checksums generated on metadata retrieved via the RESTful HTTP API from the original repository and the restored repository.</p>
+
+<p>MD5 (Book1_fcrepo4-data-4.6.0_REST.ttl) = 68335703b83bb7de66c57065fb511a56<br/>
+MD5 (Book1_fcrepo4-data-4.6.0-restore_REST.ttl) = 68335703b83bb7de66c57065fb511a56<br/>
+MD5 (fcrepo4-data-4.6.0-restore-export/rest/Collection1/Book1.ttl) = 68335703b83bb7de66c57065fb511a56<br/>
+<span class="nobr"><a href="attachments/FCREPO-2369/10304_fcrepo4-data-4.6.0-backup.zip" title="fcrepo4-data-4.6.0-backup.zip attached to FCREPO-2369" data-attachment-type="file" data-attachment-name="fcrepo4-data-4.6.0-backup.zip" data-media-services-type="file" data-media-services-id="c6920a39-72c8-4970-8b6c-22dece14e6d4" rel="noreferrer">fcrepo4-data-4.6.0-backup.zip</a></span> </p></div></div>
+<div class="comment" id="comment-18829"><div class="by">Youn Noh, 2017-05-22 18:14 UTC</div><div class="text"><p>The attached backup was created from and restored to a 4.7.3-RC repository using the one-click jar. It contains a resource with a title in various alternate scripts. The title is not Unicode escaped in the repository nor in the export. The verification tool does not generate any errors.<br/>
+ <span class="nobr"><a href="attachments/FCREPO-2369/10305_fcrepo4-data-4.7.3-RC-backup.zip" title="fcrepo4-data-4.7.3-RC-backup.zip attached to FCREPO-2369" data-attachment-type="file" data-attachment-name="fcrepo4-data-4.7.3-RC-backup.zip" data-media-services-type="file" data-media-services-id="f5164d27-3af1-4394-b69b-a46c1525b01c" rel="noreferrer">fcrepo4-data-4.7.3-RC-backup.zip</a></span> </p></div></div>
+<div class="comment" id="comment-18831"><div class="by">Joshua Allan Westgard, 2017-05-22 19:17 UTC</div><div class="text"><p>Thanks, Youn Noh, for doing all this great legwork. This would appear to confirm that the other 'flavor' of this problem is also specific to the 4.6 line.</p></div></div>
+<div class="comment" id="comment-18864"><div class="by">Joshua Allan Westgard, 2017-05-23 18:34 UTC</div><div class="text"><p>I have not been able to reproduce the problem encountered earlier with escapes in serialized resources using the 4.7.2 version of fcrepo.</p>
+
+<p>I think that these two commits:</p>
+
+<ul>
+	<li><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/bc57af2f08ee24cdbc47afb6e91af83cd4dd34f4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/bc57af2f08ee24cdbc47afb6e91af83cd4dd34f4</a></li>
+	<li><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/382c95b948104987fda9a537f548b7a9658d0fc5" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/382c95b948104987fda9a537f548b7a9658d0fc5</a></li>
+</ul>
+
+
+<p>together with the research and testing that went on around them, are sufficient for us to consider this issue resolved.  The problem seems to be limited to fcrepo v4.6 and its underlying Modeshape version.</p></div></div>
+<div class="comment" id="comment-18865"><div class="by">Joshua Allan Westgard, 2017-05-23 18:41 UTC</div><div class="text"><p>This issue has been reviewed and tested and can be closed (the PRs above solve the problem).</p></div></div>
+<p><a href="data/FCREPO-2369.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

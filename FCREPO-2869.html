@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2869 Timegate request for specific date returns wrong Memento</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2869</span> Timegate request for specific date returns wrong Memento</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>kefo</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2018-09-19 22:40 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 21:00 UTC</td></tr><tr><th>Resolved</th><td>2018-09-20 17:24 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>fall-2018-sprint-1</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Environment</h2>Jetty
+<h2>Description</h2>
+<p>Taking the exact "Memento-datetime" and using that as the "Accept-datetime" value results in a 302 response to an earlier Memento.</p>
+
+<p> </p>
+
+<p>Note the URI in the first request and the Memento-datetime value.  When using that value in the second request (to the Timegate), note that the Location URI is <b>not</b> the same as the URI in the first request, but to an earlier version.  The third request demonstrates that incrementing the Accept-datetime value by one second will result in the expected URI.</p>
+
+<p> </p>
+
+<p>$ curl -I --user fedoraAdmin:fedoraAdmin <font color="#ff8b00"><a href="http://localhost:8080/rest/versioning/12/fcr:versions/20180905210730" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:versions/20180905210730</a></font><br/>
+HTTP/1.1 200 OK<br/>
+Date: Wed, 19 Sep 2018 22:30:48 GMT<br/>
+Set-Cookie: JSESSIONID=4mru6wo7e8wi19sx8ky8raw0f;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Tue, 18-Sep-2018 22:30:48 GMT<br/>
+ETag: W/"9c57aaa81c48dcbe55ff439572983ba026f48649"<br/>
+Last-Modified: Wed, 05 Sep 2018 20:11:28 GMT<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/ContainerConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ContainerConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a>&gt;; rel="timegate"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a>&gt;; rel="original"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:versions</a>&gt;; rel="timemap"<br/>
+Accept-External-Content-Handling: copy,redirect,proxy<br/>
+Allow: GET,HEAD,OPTIONS,DELETE<br/>
+Memento-Datetime: <font color="#ff8b00">Wed, 5 Sep 2018 21:07:30 GMT</font><br/>
+Link: &lt;<a href="http://mementoweb.org/ns#Memento" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#Memento</a>&gt;; rel="type"<br/>
+Preference-Applied: return=representation<br/>
+Vary: Prefer<br/>
+Vary: Accept<br/>
+Vary: Range<br/>
+Vary: Accept-Encoding<br/>
+Vary: Accept-Language<br/>
+Content-Type: text/turtle;charset=utf-8<br/>
+Content-Length: 0<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p>$ curl -I --user fedoraAdmin:fedoraAdmin -H "Accept-datetime: <font color="#ff8b00">Wed, 5 Sep 2018 21:07:30 GMT</font>" <a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a><br/>
+HTTP/1.1 302 Found<br/>
+Date: Wed, 19 Sep 2018 22:31:21 GMT<br/>
+Set-Cookie: JSESSIONID=iz5k83uzqoj0ss1v4jrl9o61;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Tue, 18-Sep-2018 22:31:21 GMT<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/ContainerConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ContainerConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a>&gt;; rel="timegate"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a>&gt;; rel="original"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:versions</a>&gt;; rel="timemap"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"<br/>
+Accept-External-Content-Handling: copy,redirect,proxy<br/>
+Accept-Patch: application/sparql-update<br/>
+Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,application/ld+json<br/>
+Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:acl</a>&gt;; rel="acl"<br/>
+Preference-Applied: return=representation<br/>
+Vary: Prefer<br/>
+Vary: Accept<br/>
+Vary: Range<br/>
+Vary: Accept-Encoding<br/>
+Vary: Accept-Language<br/>
+Vary: Accept-Datetime<br/>
+Location: <font color="#de350b"><a href="http://localhost:8080/rest/versioning/12/fcr:versions/20180905203128" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:versions/20180905203128</a></font><br/>
+Content-Type: application/ld+json<br/>
+Content-Length: 0<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p>$ curl -I --user fedoraAdmin:fedoraAdmin -H "Accept-datetime: <font color="#de350b">Wed, 5 Sep 2018 21:07:31 GMT</font>" <a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a><br/>
+HTTP/1.1 302 Found<br/>
+Date: Wed, 19 Sep 2018 22:32:53 GMT<br/>
+Set-Cookie: JSESSIONID=14kv8m198aismqkrf2265vbes;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Tue, 18-Sep-2018 22:32:53 GMT<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/ContainerConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ContainerConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a>&gt;; rel="timegate"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12</a>&gt;; rel="original"<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:versions</a>&gt;; rel="timemap"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#OriginalResource" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://mementoweb.org/ns#TimeGate" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#TimeGate</a>&gt;; rel="type"<br/>
+Accept-External-Content-Handling: copy,redirect,proxy<br/>
+Accept-Patch: application/sparql-update<br/>
+Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,application/ld+json<br/>
+Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS<br/>
+Link: &lt;<a href="http://localhost:8080/rest/versioning/12/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:acl</a>&gt;; rel="acl"<br/>
+Preference-Applied: return=representation<br/>
+Vary: Prefer<br/>
+Vary: Accept<br/>
+Vary: Range<br/>
+Vary: Accept-Encoding<br/>
+Vary: Accept-Language<br/>
+Vary: Accept-Datetime<br/>
+Location: <font color="#de350b"><a href="http://localhost:8080/rest/versioning/12/fcr:versions/20180905210730" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/versioning/12/fcr:versions/20180905210730</a></font><br/>
+Content-Type: application/ld+json<br/>
+Content-Length: 0<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-20266"><div class="by">Ben Pennell, 2018-09-20 17:24 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1415" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1415</a></p></div></div>
+<div class="comment" id="comment-20269"><div class="by">Danny Bernstein, 2018-09-20 18:45 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/9d0d40261d7944b80a2f6409fbb83543ab401566" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/9d0d40261d7944b80a2f6409fbb83543ab401566</a></p></div></div>
+<p><a href="data/FCREPO-2869.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

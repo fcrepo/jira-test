@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1775 Basic search page gives a 500 Internal Server Error</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1775</span> Basic search page gives a 500 Internal Server Error</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Steve DiDomenico</td></tr><tr><th>Created</th><td>2015-10-16 15:55 UTC</td></tr><tr><th>Updated</th><td>2017-01-27 04:40 UTC</td></tr><tr><th>Resolved</th><td>2016-02-12 19:25 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.8.1</td></tr></table>
+<h2>Description</h2>
+<p>The Fedora basic search page ( /fedora/search ) gives a 500 Internal Server error when attempting to access the page with no queries.</p>
+
+<p>The error happens at line 244 of org.fcrepo.server.access.FieldSearchServlet.doGet , FieldSearchServlet.java (see attached stack trace). Within the code, it looks like the FieldSearchResult fsr is set to null, which causes problems as search results are attempted to be displayed even when the page first loads.  A possible code fix is to check to see if there are any results at all (in fieldsArray) before attempting to iterate through the results. I could try to fix this myself (I'd need to set up a dev environment first though).</p>
+
+<p>There are two imperfect workarounds:</p>
+
+<p>1. Put in some search terms as a GET request, such as (at minimum it appears):</p>
+
+<p>/fedora/search?query=&amp;pid=true&amp;maxResults=0</p>
+
+<p>This allows the page to load and be used. An Apache redirect could help if this is hard to remember:</p>
+
+<p>    RewriteEngine on<br/>
+    RewriteCond "%</p>
+{QUERY_STRING}
+<p>" "^$"<br/>
+    RewriteCond "%</p>
+{THE_REQUEST}
+<p>" "^GET.*$"<br/>
+    RewriteRule "^/fedora/search$" "/fedora/search?query=&amp;pid=true&amp;maxResults=0" <span class="error">&#91;R,L&#93;</span></p>
+
+<p>This workaround works pretty well, though it does seem like a bit of a hack.</p>
+
+<p>2. Use the Fedora admin page instead ( /fedora/admin )</p>
+
+<p>Though this page doesn't have the same functionality, such as easy access to disseminators.</p>
+
+
+<p>Update: I just noticed that there is a near-identical search page (that works) here:</p>
+
+<p>/fedora/objects</p>
+
+<p>This basically resolves this problem, the old search page should either be removed or redirect to the new one.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1775/10244_fedora_basic_search_500_error_stack_trace.txt">fedora_basic_search_500_error_stack_trace.txt</a>, 2957 bytes, added by Steve DiDomenico on 2015-10-16</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-15557"><div class="by">Steve DiDomenico, 2015-10-23 15:36 UTC</div><div class="text"><p>Note: I've updated this description to note there is a solution that basically resolves this issue.</p></div></div>
+<div class="comment" id="comment-16134"><div class="by">Andrew Woods, 2016-02-12 19:25 UTC</div><div class="text"><p>Thanks, Steve DiDomenico. I am closing this issue since Fedora 3.8.1 is the end of the 3.x line. But this ticket will still be visible if users search for it in the future.</p></div></div>
+<p><a href="data/FCREPO-1775.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

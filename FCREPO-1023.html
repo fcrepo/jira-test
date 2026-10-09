@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1023 No Support for Latest W3C SPARQL Query Results XML Format</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1023</span> No Support for Latest W3C SPARQL Query Results XML Format</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Egbert Gramsbergen</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2011-10-31 21:19 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora, legacy - Trippi</td></tr><tr><th>Affects versions</th><td>Fedora 3.4.2, Fedora 3.5, Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Is related to</th><td><a href="FCREPO-479.html">FCREPO-479</a> No SPARQL Support for ASK </td></tr></table>
+<h2>Description</h2>
+<p>The current Sparql result format for queries in the RI index does not conform to the W3C recommendation at <a href="http://www.w3.org/TR/rdf-sparql-XMLres/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/rdf-sparql-XMLres/</a></p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1023/10152_risearch.png">risearch.png</a>, 25479 bytes, added by frank asseg on 2012-05-04</li>
+</ul>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-12095"><div class="by">Stephen Bayliss, 2011-11-01 20:15 UTC</div><div class="text"><p>Thanks - could you identify what the specific differences are?</p></div></div>
+<div class="comment" id="comment-12096"><div class="by">Benjamin Armintor, 2011-11-01 20:19 UTC</div><div class="text"><p>There's certainly a namespace issue:<br/>
+Actual: &lt;sparql xmlns="http://www.w3.org/2001/sw/DataAccess/rf1/result"&gt;<br/>
+W3C: &lt;sparql xmlns="http://www.w3.org/2005/sparql-results#"&gt;</p>
+
+<p>This may be just passed along from Mulgara; will need follow-up.</p></div></div>
+<div class="comment" id="comment-12097"><div class="by">Egbert Gramsbergen, 2011-11-01 20:47 UTC</div><div class="text"><p>The currently used format follows a very early draft at <a href="http://www.w3.org/TR/2004/WD-rdf-sparql-XMLres-20041221/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/2004/WD-rdf-sparql-XMLres-20041221/</a><br/>
+It is more than just a namespace issue. As an illustration, compare (within a &lt;result&gt; element)<br/>
+old:<br/>
+    &lt;hpage uri="http://work.example.org/bob/"/&gt;<br/>
+and new:<br/>
+    &lt;binding name="hpage"&gt;<br/>
+        &lt;uri&gt;<a href="http://work.example.org/bob/" class="external-link" rel="nofollow noreferrer">http://work.example.org/bob/</a> &lt;/uri&gt;<br/>
+    &lt;/binding&gt;<br/>
+(where I added a space after /bob/ because otherwise the Wiki screws things up)<br/>
+Btw, it would be nice if both forms would be available e.g. through a different "format" parameter in the RI search service. Speaking for myself, I have lots of predefined queries where the results are processed with xslt and modifying all these is more than a trivial task.</p></div></div>
+<div class="comment" id="comment-12098"><div class="by">Stephen Bayliss, 2011-11-01 23:20 UTC</div><div class="text"><p>Thanks - and a good point on providing both "old" and "new" outputs as this would effectively be an API change that would break people's existing code without this.</p></div></div>
+<div class="comment" id="comment-12105"><div class="by">Chris Wilper, 2011-11-08 22:42 UTC</div><div class="text"><p>I think we should deprecate the old format eventually, giving people some warning about it changing....a time period where both work, but where the old way eventually doesn't need to be maintained anymore.</p></div></div>
+<div class="comment" id="comment-12287"><div class="by">frank asseg, 2012-05-04 13:21 UTC</div><div class="text"><p>Screenshot with new format parameter</p></div></div>
+<div class="comment" id="comment-12288"><div class="by">frank asseg, 2012-05-04 13:25 UTC</div><div class="text"><p>I added this functionality using a new format parameter.<br/>
+Please check out <a href="https://github.com/fcrepo/trippi/tree/fcrepo-1023" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/trippi/tree/fcrepo-1023</a>. The format parameter is called "SPARQL_W3C" as can be seen in the attached screenshot. The result of a query looks something like this:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-xml"><span class="code-tag">&lt;?xml version=<span class="code-quote">"1.0"</span> encoding=<span class="code-quote">"UTF-8"</span>?&gt;</span>
+<span class="code-tag">&lt;sparql xmlns=<span class="code-quote">"http://www.w3.org/2005/sparql-results#"</span>&gt;</span>
+	<span class="code-tag">&lt;head&gt;</span>
+		<span class="code-tag">&lt;variable name=<span class="code-quote">"object"</span>/&gt;</span>
+		<span class="code-tag">&lt;variable name=<span class="code-quote">"modified"</span>/&gt;</span>
+	<span class="code-tag">&lt;/head&gt;</span>
+	<span class="code-tag">&lt;results&gt;</span>
+		<span class="code-tag">&lt;result&gt;</span>
+			<span class="code-tag">&lt;binding name=<span class="code-quote">"object"</span>&gt;</span><span class="code-tag">&lt;uri&gt;</span>info:fedora/demo:1<span class="code-tag">&lt;/uri&gt;</span><span class="code-tag">&lt;/binding&gt;</span>
+			<span class="code-tag">&lt;binding name=<span class="code-quote">"modified"</span>&gt;</span><span class="code-tag">&lt;literal datatype=<span class="code-quote">"http://www.w3.org/2001/XMLSchema#dateTime"</span>&gt;</span>2012-05-04T07:52:30.986Z<span class="code-tag">&lt;/literal&gt;</span><span class="code-tag">&lt;/binding&gt;</span>
+		<span class="code-tag">&lt;/result&gt;</span>
+		<span class="code-tag">&lt;result&gt;</span>
+			<span class="code-tag">&lt;binding name=<span class="code-quote">"object"</span>&gt;</span><span class="code-tag">&lt;uri&gt;</span>info:fedora/demo:19<span class="code-tag">&lt;/uri&gt;</span><span class="code-tag">&lt;/binding&gt;</span>
+			<span class="code-tag">&lt;binding name=<span class="code-quote">"modified"</span>&gt;</span><span class="code-tag">&lt;literal datatype=<span class="code-quote">"http://www.w3.org/2001/XMLSchema#dateTime"</span>&gt;</span>2012-05-04T07:52:27.08Z<span class="code-tag">&lt;/literal&gt;</span><span class="code-tag">&lt;/binding&gt;</span>
+		<span class="code-tag">&lt;/result&gt;</span>
+	<span class="code-tag">&lt;/results&gt;</span>
+<span class="code-tag">&lt;/sparql&gt;</span>
+</pre>
+</div></div>
+
+<p>Problem is that i don't know how to handle null nodes. In the standard SparqlTupleWriter.java null nodes get printed qith an attribute bound="false" but i have not found anything in the W3C spec about this. Can you guys give me an hint?</p></div></div>
+<div class="comment" id="comment-12447"><div class="by">David Chandek-Stark (old account), 2012-09-12 03:22 UTC</div><div class="text"><p>Please check also the JSON and TSV standards for SPARQL results.  Apache Jena error, e.g.: "TSV Results malformed - variable names must begin with a ? in the header".  It would be nice to be able to use a library like Jean with RISearch on the client side.</p></div></div>
+<div class="comment" id="comment-12488"><div class="by">A. Soroka, 2012-11-06 23:37 UTC</div><div class="text"><p>Frank, did this get merged for a release yet?</p></div></div>
+<div class="comment" id="comment-12517"><div class="by">Henk Berg, van den, 2013-02-13 17:05 UTC</div><div class="text"><p>While on the job....</p>
+
+<p>The CSV-format returned from Tuple queries is not very helpful. It quotes ("x") your resultset variables, which is hindering futher processing. Execute the following sparql query:<br/>
+SELECT ?s ?p ?o<br/>
+WHERE </p>
+{ ?s ?p ?o }
+
+<p>The CSV returned starts with: "s","p","o". Load the stream in a Jena ResultSet ... <br/>
+ResultSet resultSet = ResultSetFactory.load(entity.getContent(), ResultsFormat.FMT_RS_CSV);<br/>
+... and print the variables:<br/>
+System.out.println(resultSet.getResultVars());<br/>
+Producing the output: <span class="error">&#91;&quot;s&quot;, &quot;p&quot;, &quot;o&quot;&#93;</span></p>
+
+<p>Now transform the resultset to sparql xml, using the Jena ResultSetFormatter:<br/>
+ResultSetFormatter.outputAsXML(..., resultSet);<br/>
+And you get invalid xml like: &lt;variable name=""s""/&gt;</p>
+
+<p>So why are my variables quoted in the first place?</p>
+</div></div>
+<div class="comment" id="comment-12979"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-1023.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

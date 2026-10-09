@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2499 Import fails for binaries with text/turtle media type</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2499</span> Import fails for binaries with text/turtle media type</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-05-26 17:11 UTC</td></tr><tr><th>Updated</th><td>2017-05-27 16:45 UTC</td></tr><tr><th>Resolved</th><td>2017-05-27 16:45 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2502.html">FCREPO-2502</a> Java client should allow setting disposition without filename</td></tr></table>
+<h2>Description</h2>
+<p>Import fails with a nondescript error:<br/>
+INFO 12:57:00.426 (Importer) Imported binary: <a href="http://localhost:8080/fcrepo/rest/apix/extensions/image" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/apix/extensions/image</a><br/>
+ERROR 12:57:00.433 (ImportExportDriver) Error performing import/export: Index: 0, Size: 0</p>
+
+<p><a href="http://localhost:8080/fcrepo/rest/apix/extensions/image" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/apix/extensions/image</a> is a binary of type text/turtle, and is in the export directory as "export/fcrepo/rest/apix/extensions/image.binary".    A tar of the export is attached</p>
+
+<p>Exported with:<br/>
+java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar --mode export --resource <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a> --dir export --binaries</p>
+
+<p>Imported into an empty repo with:<br/>
+java -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar --mode import --resource <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a> --dir export --binaries</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2499/10306_export.tar.gz">export.tar.gz</a>, 3590 bytes, added by Aaron Birkland on 2017-05-26</li>
+</ul>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-19004"><div class="by">Esmé Cowles, 2017-05-26 17:35 UTC</div><div class="text"><p>Aaron Birkland, I assume you created the binary with some other content type and then used PATCH to change the mime type to text/turtle?  It seems like the import utility could do the same thing.</p></div></div>
+<div class="comment" id="comment-19005"><div class="by">Aaron Birkland, 2017-05-26 17:46 UTC</div><div class="text"><p>Esmé Cowles No, I'm pretty sure it was deposited using `Content-Disposition: attachment`, which forces it to be a binary regardless of media type (at least in the modeshape impl).  I don't think I've ever tried patching media type after the fact.  Does the importer need to do that anyway (i.e. deposit the binary, discover the URI of the descriptive LDP-RS the server creates, then PATCH it with the contents of the exported descriptive LDP-RS?)? </p></div></div>
+<div class="comment" id="comment-19006"><div class="by">Esmé Cowles, 2017-05-26 17:49 UTC</div><div class="text"><p>Aaron Birkland, I had forgotten about the `Content-Disposition: attachment` approach to forcing it to be treated as a binary.  That seems like a very easy fix.</p>
+
+<p>If that doesn't work for whatever reason, we do patch the binary to add the metadata, so we could do that if needed.</p></div></div>
+<div class="comment" id="comment-19019"><div class="by">Esmé Cowles, 2017-05-26 20:29 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/100" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/100</a></p>
+
+<p> </p>
+
+<p>Note: this PR depends on updates to the java client in <a href="https://github.com/fcrepo4-exts/fcrepo-java-client/pull/29" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-java-client/pull/29</a></p></div></div>
+<div class="comment" id="comment-19027"><div class="by">Andrew Woods, 2017-05-26 23:23 UTC</div><div class="text"><p>Given the dependency on: <a href="https://jira.duraspace.org/browse/FCREPO-2502" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2502</a> ...which has code review comments that may require changes to the implementation, I am transitively reopening this ticket as well.</p></div></div>
+<div class="comment" id="comment-19041"><div class="by">Andrew Woods, 2017-05-27 16:45 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/8c4381ce0a1a226a5f957402b013334a4749ac54" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/8c4381ce0a1a226a5f957402b013334a4749ac54</a></p></div></div>
+<p><a href="data/FCREPO-2499.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1803 Can&#x27;t update fcr:metadata</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1803</span> Can&#x27;t update fcr:metadata</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Alex Dolski</td></tr><tr><th>Created</th><td>2015-10-28 15:30 UTC</td></tr><tr><th>Updated</th><td>2015-11-04 23:07 UTC</td></tr><tr><th>Resolved</th><td>2015-11-02 20:56 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Duplicates</th><td><a href="FCREPO-1753.html">FCREPO-1753</a> Can&#x27;t PUT to update NonRDFSource metadata</td></tr></table>
+<h2>Description</h2>
+<p>Something has changed in Fedora 4.4 with regard to the way it handles updates to fcr:metadata. The following sequence works in 4.3 but not 4.4:</p>
+
+<p>1) Create a binary</p>
+
+<p>    curl -X POST -H "Content-Type: text/plain" -H "Slug: new-binary" "http://localhost:8080/fedora/rest/"</p>
+
+<p>2) GET its fcr:metadata</p>
+
+<p>    curl -H "Accept: text/turtle" "http://localhost:8080/fedora/rest/new-binary/fcr:metadata" &gt; new-binary.rdf</p>
+
+<p>3) Add some triples</p>
+
+<p>    &lt;&gt; &lt;<a href="http://example.org/bytestreamShape" class="external-link" rel="nofollow noreferrer">http://example.org/bytestreamShape</a>&gt; &lt;<a href="http://example.org/Bytestream/Shape/Original" class="external-link" rel="nofollow noreferrer">http://example.org/Bytestream/Shape/Original</a>&gt;;<br/>
+       &lt;<a href="http://example.org/bytestreamType" class="external-link" rel="nofollow noreferrer">http://example.org/bytestreamType</a>&gt; &lt;<a href="http://example.org/Bytestream/Type/Master" class="external-link" rel="nofollow noreferrer">http://example.org/Bytestream/Type/Master</a>&gt;;<br/>
+       &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#hasMimeType</a>&gt; "audio/aiff";<br/>
+       rdfs:Class &lt;<a href="http://pcdm.org/models#File" class="external-link" rel="nofollow noreferrer">http://pcdm.org/models#File</a>&gt; .</p>
+
+<p>4) PUT it back</p>
+
+<p>    curl -X PUT -H "Content-Type: text/turtle" --data-binary "@new-binary.rdf" "http://localhost:8080/fedora/rest/new-binary/fcr:metadata"</p>
+
+<p>The added triples are present in 4.3 but missing in 4.4.</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-15710"><div class="by">Esmé Cowles, 2015-11-02 20:56 UTC</div><div class="text"><p>This is a duplicate of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1753" >
+                <a href="FCREPO-1753.html" class="jira-issue-macro-key issue-link"  title="Can&#39;t PUT to update NonRDFSource metadata" >
+            
+            FCREPO-1753
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<p><a href="data/FCREPO-1803.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

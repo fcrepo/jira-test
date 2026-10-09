@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-774 REST Servlet throws exception under access load.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-774</span> REST Servlet throws exception under access load.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Daniel Davis</td></tr><tr><th>Created</th><td>2010-08-19 03:28 UTC</td></tr><tr><th>Updated</th><td>2011-02-21 23:25 UTC</td></tr><tr><th>Resolved</th><td>2010-12-02 17:38 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.4</td></tr><tr><th>Fix versions</th><td>Fedora 3.4.2</td></tr><tr><th>Is related to</th><td><a href="FCREPO-811.html">FCREPO-811</a> POLICY datastreams (possibly others) subject to race conditions when control group is &quot;R&quot;</td></tr></table>
+<h2>Environment</h2>Operating in Tomcat on a Red Hat 5 VM.  Identified in 3.4 RC1
+<h2>Description</h2>
+<p>Two exceptions are thrown periodically while accessing Fedora via the REST Servlet.  The system is operating under a moderate-high load but none of its resources are bottlenecked.  Subsequent access operations function normally with the exceptions thrown at random but regular intervals.  The VM is also under load with the ingest of digital object and very small numbers of managed datastreams.  The events seem to correspond to 500 notifications in the client.  There does not seem to be any effect to the ingest operations.</p>
+
+<p>The exceptions are found in the localhost log attached.  The catalina log is attached for completeness.</p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-774/10084_catalina.2010-08-18.log">catalina.2010-08-18.log</a>, 2678 bytes, added by Daniel Davis on 2010-08-19</li>
+<li><a href="attachments/FCREPO-774/10085_localhost.2010-08-18.log">localhost.2010-08-18.log</a>, 50745 bytes, added by Daniel Davis on 2010-08-19</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11635"><div class="by">Asger Askov Blekinge, 2010-10-19 21:52 UTC</div><div class="text"><p>This bug derive from the same source as 811. The MIMETypedStream is causing it. This time, the code in BaseRestResource fails</p>
+
+<p>From BaseRestResource</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java"> <span class="code-keyword">protected</span> Response buildResponse(MIMETypedStream result) <span class="code-keyword">throws</span> Exception {
+        <span class="code-keyword">if</span> (result.MIMEType.equalsIgnoreCase(<span class="code-quote">"application/fedora-redirect"</span>)) {
+            URI location = URI.create(IOUtils.toString(result.getStream()));
+            <span class="code-keyword">return</span> Response.temporaryRedirect(location).build();
+        } <span class="code-keyword">else</span> {
+            ResponseBuilder builder = Response.ok();
+
+            <span class="code-keyword">if</span> (result.header != <span class="code-keyword">null</span>) {
+                <span class="code-keyword">for</span> (Property header : result.header) {
+                    <span class="code-keyword">if</span> (header.name != <span class="code-keyword">null</span>
+                            &amp;&amp; !(header.name.equalsIgnoreCase(<span class="code-quote">"transfer-encoding"</span>))
+                            &amp;&amp; !(header.name.equalsIgnoreCase(<span class="code-quote">"content-type"</span>))) {
+                        builder.header(header.name, header.value);
+                    }
+                }
+            }
+
+            <span class="code-keyword">if</span> (!result.MIMEType.equals("")){
+                builder.type(result.MIMEType);
+            }
+            builder.entity(result.getStream());
+            <span class="code-keyword">return</span> builder.build();
+        }
+    }
+</pre>
+</div></div>
+
+<p>Look at the two final lines. <br/>
+            builder.entity(result.getStream());<br/>
+            return builder.build();</p>
+
+<p>This is the execution flow.<br/>
+1. Builder is given a reference to the inputstream from "result"<br/>
+2. Builder constructs a Response, with the reference to the inputstream<br/>
+3. Method returns, and result is no longer needed<br/>
+4. result is garbagecollected<br/>
+5. result closes the inputstream, due to the bug<br/>
+6. The framework tries to serialize the Response object to something. This fails, as the stream is not closed</p>
+</div></div>
+<div class="comment" id="comment-11636"><div class="by">Asger Askov Blekinge, 2010-10-19 21:54 UTC</div><div class="text"><p>And for good measure, the relevant parts of the MIMETypedStream</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">    <span class="code-keyword">private</span> <span class="code-keyword">final</span> <span class="code-object">boolean</span> gotStream = <span class="code-keyword">false</span>;
+
+    /**
+     * Retrieves the underlying stream.
+     * Caller is responsible to close the stream,
+     * either by calling MIMETypedStream.close()
+     * or by calling close() on the stream.
+     *
+     * @<span class="code-keyword">return</span> The <span class="code-object">byte</span> stream
+     */
+    <span class="code-keyword">public</span> InputStream getStream() {
+        <span class="code-keyword">return</span> stream;
+    }
+
+    /**
+     * Closes the underlying stream <span class="code-keyword">if</span> it's not already closed.
+     *
+     * In the event of an error, a warning will be logged.
+     */
+    <span class="code-keyword">public</span> void close() {
+        <span class="code-keyword">if</span> (<span class="code-keyword">this</span>.stream != <span class="code-keyword">null</span>) {
+            <span class="code-keyword">try</span> {
+                <span class="code-keyword">this</span>.stream.close();
+                <span class="code-keyword">this</span>.stream = <span class="code-keyword">null</span>;
+            } <span class="code-keyword">catch</span> (IOException e) {
+                logger.warn(<span class="code-quote">"Error closing stream"</span>, e);
+            }
+        }
+    }
+
+    /**
+     * Ensures the underlying stream is closed at garbage-collection time
+     * <span class="code-keyword">if</span> the stream has not been retrieved. If getStream() has been called
+     * the caller is responsible to close the stream.
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    <span class="code-keyword">public</span> void finalize() {
+        <span class="code-keyword">if</span>(!gotStream) {
+            close();
+        }
+    }
+</pre>
+</div></div>
+
+<p>Notice that gotStream is declared final, to guard against anyone ever setting it to true</p></div></div>
+<div class="comment" id="comment-11714"><div class="by">Stephen Bayliss, 2010-11-30 23:09 UTC</div><div class="text"><p>Also see <a href="http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-Occasional-random-FilterSetup-Can-t-do-next-doFilter-error-td5657344.html" class="external-link" rel="nofollow noreferrer">http://fedora-commons.1317035.n2.nabble.com/fcrepo-user-Occasional-random-FilterSetup-Can-t-do-next-doFilter-error-td5657344.html</a> for another report of this.</p></div></div>
+<div class="comment" id="comment-11723"><div class="by">Stephen Bayliss, 2010-12-03 19:57 UTC</div><div class="text"><p>Jörg Panzer and Janna Wemekamp both confirmed that the fix committed for this have resolved the issue.</p></div></div>
+<p><a href="data/FCREPO-774.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

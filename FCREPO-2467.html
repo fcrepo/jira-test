@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2467 Improve -M command line option for source/resource map to handle the trailing slash</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2467</span> Improve -M command line option for source/resource map to handle the trailing slash</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Situ, Longshou</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-05-22 16:33 UTC</td></tr><tr><th>Updated</th><td>2017-05-24 14:50 UTC</td></tr><tr><th>Resolved</th><td>2017-05-24 14:50 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr></table>
+<h2>Description</h2>
+<p>awoods: lsitu: hmm... I think that needs more than an README update. We should either allow for maps that include or exclude a trailing slash, or we should respond with an informative error message.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-18821"><div class="by">Esmé Cowles, 2017-05-22 16:38 UTC</div><div class="text"><p>FWIW, I did see some issues relating to having a source with a slash and a destination without, or vice versa.  I considering munging the URLs to make sure they both had slashed, but decided against it because it would limit the flexibility.</p>
+
+<p>Maybe we should check for the mismatch and log a warning?</p></div></div>
+<div class="comment" id="comment-18825"><div class="by">Situ, Longshou, 2017-05-22 17:27 UTC</div><div class="text"><p>Esmé Cowles I see it works with the following command that exclude the slash:<br/>
+$ java -Dfcrepo.log.importexport=DEBUG  -jar target/fcrepo-import-export-0.1.1-SNAPSHOT.jar -a -d data -m import -M <a href="http://localhost:8686/f4/rest,http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8686/f4/rest,http://localhost:8080/fcrepo/rest</a> -r <a href="http://localhost:8080/fcrepo/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/</a></p>
+
+<p>While it'll fail with status 404 for the wrong server address (which were converted to <a href="http://localhost:8686/fcrepo/rest/book0" class="external-link" rel="nofollow noreferrer">http://localhost:8686/fcrepo/rest/book0</a>) when append a slash to both the source and resource:<br/>
+INFO 10:08:39.054 (Importer) Importing container .../data/fcrepo/rest/book0.ttl to <a href="http://localhost:8686/fcrepo/rest/book0" class="external-link" rel="nofollow noreferrer">http://localhost:8686/fcrepo/rest/book0</a><br/>
+ERROR 10:08:39.108 (Importer) Error while importing .../data/fcrepo/rest/book0.ttl (404) ...</p>
+
+<p>I am fine with either way that you want, update README, responds with an informative error message, allow the maps to include or exclude a trailing slash, or ... I haven't worked on it yet. Just feel free to make any changes. Thanks.</p></div></div>
+<div class="comment" id="comment-18827"><div class="by">Andrew Woods, 2017-05-22 17:44 UTC</div><div class="text"><p>Esmé Cowles: what flexibility limitations do you have in mind?</p>
+<blockquote><p> I considering munging the URLs to make sure they both had slashed, but decided against it because it would limit the flexibility.</p></blockquote></div></div>
+<div class="comment" id="comment-18830"><div class="by">Esmé Cowles, 2017-05-22 18:35 UTC</div><div class="text"><p>I was thinking about mappings where you wanted to replace a slash with something else, e.g.:</p>
+
+<p><a href="http://localhost:8080/rest/dev/a" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/dev/a</a> to <a href="http://localhost:8080/rest/dev-a" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/dev-a</a><br/>
+<a href="http://localhost:8080/rest/dev/b" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/dev/b</a> to <a href="http://localhost:8080/rest/dev-b" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/dev-b</a></p>
+
+<p>or wanted to make a change that wasn't terminated at a slash, e.g.:</p>
+
+<p><a href="http://localhost:8080/rest/aabb" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/aabb</a> to <a href="http://localhost:8080/rest/xxbb" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/xxbb</a></p></div></div>
+<div class="comment" id="comment-18854"><div class="by">Esmé Cowles, 2017-05-23 15:08 UTC</div><div class="text"><p>Would logging a warning when one URI ended with a slash and the other didn't be good enough here?  I agree that they should typically match, but would like to avoid munging the URIs (since that would frustrate users trying to do mappings that depended on the mismatch).</p></div></div>
+<div class="comment" id="comment-18855"><div class="by">Situ, Longshou, 2017-05-23 15:20 UTC</div><div class="text"><p>Esmé Cowles I think the major issue is that it fails when both the source/resource have slash appended at the end. Something weird and it seems like a bug somewhere.</p></div></div>
+<div class="comment" id="comment-18878"><div class="by">Esmé Cowles, 2017-05-24 14:07 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/90" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/90</a></p></div></div>
+<div class="comment" id="comment-18883"><div class="by">Andrew Woods, 2017-05-24 14:50 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/d4780ca2a36d7bf6b61120e176b928cfc52c078f" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/d4780ca2a36d7bf6b61120e176b928cfc52c078f</a></p></div></div>
+<p><a href="data/FCREPO-2467.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

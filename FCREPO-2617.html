@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2617 POST request to LDPCv to create LDPRm</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2617</span> POST request to LDPCv to create LDPRm</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Ben Pennell</td></tr><tr><th>Assignee</th><td>Ben Pennell</td></tr><tr><th>Created</th><td>2017-09-22 18:20 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-03-08 18:53 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Depends on</th><td><a href="FCREPO-2639.html">FCREPO-2639</a> Create LDPCv resource</td></tr><tr><th>Required by</th><td><a href="FCREPO-2614.html">FCREPO-2614</a> Add versioning headers for LDPRm HEAD/GET responses</td></tr><tr><th>Required by</th><td><a href="FCREPO-2623.html">FCREPO-2623</a> Support HEAD / GET on LDPCv</td></tr><tr><th>Required by</th><td><a href="FCREPO-2626.html">FCREPO-2626</a> Restore an LDPRm</td></tr><tr><th>Required by</th><td><a href="FCREPO-2620.html">FCREPO-2620</a> Allow deletion of binary and binary description mementos (LDPRm) </td></tr><tr><th>Required by</th><td><a href="FCREPO-2615.html">FCREPO-2615</a> Support OPTIONS request on LDPRms</td></tr><tr><th>Required by</th><td><a href="FCREPO-2616.html">FCREPO-2616</a> Prevent modification requests to LDPRm</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2643.html">FCREPO-2643</a> Create Memento type/mixin for filtering versions.</td></tr><tr><th>Required by</th><td><a href="FCREPO-2680.html">FCREPO-2680</a> PUT, POST, and PATCH must return 405 method not allowed on LDPm</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2681.html">FCREPO-2681</a> GET on LDPCv returns 500 on Binary Resource</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2697.html">FCREPO-2697</a> Create mementos of LDP-RS in the HTML UI </td></tr></table>
+<h2>Description</h2>
+<p>Update POST to LDPCv to include support for versioning headers.  In practice, the LDPCv for object with uri &lt;<a href="http://localhost/rest/a" class="external-link" rel="nofollow noreferrer">http://localhost/rest/a</a>&gt; would be &lt;<a href="http://localhost/rest/a/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost/rest/a/fcr:versions</a>&gt;<br/>
+See: <a href="https://fcrepo.github.io/fcrepo-specification/#ldpcvpost" class="external-link" rel="nofollow noreferrer">https://fcrepo.github.io/fcrepo-specification/#ldpcvpost</a></p>
+<ul>
+	<li>if the request contained a body, then a new LDPRm is created from the submitted body</li>
+	<li>if the request body was empty, then a new LDPRm is created from the current version of the LDPRv.</li>
+	<li>If a Memento-Datetime header is provided as part of this POST request, then the newly created LDPRm must attempt to use it as the memento datetime
+	<ul>
+		<li>If a LDPRm already exists with the same Memento-Datetime specified, then the LDPRm is not created and a '412 already exists' response is returned.</li>
+	</ul>
+	</li>
+	<li>Response from a successful creation should return a LDPRm headers, particularly the Memento-Datetime of the new LDPRm.</li>
+	<li>Response must include a Location header referencing the URI of the newly created LDPRm.</li>
+</ul>
+
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-19500"><div class="by">Mohamed Mohideen Abdul Rasheed, 2017-10-10 01:21 UTC</div><div class="text"><p>Created a Work In Progress (WIP) PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1262" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1262</a></p>
+
+<p>As there are other issues dependent on this, I have pushed the work I have done so far to the above branch so that someone else can work on this, if necessary. I will try to continue on this next weekend if this is still incomplete. </p></div></div>
+<div class="comment" id="comment-19501"><div class="by">Andrew Woods, 2017-10-10 02:51 UTC</div><div class="text"><p>Thanks for making your progress available, Mohamed Mohideen Abdul Rasheed.</p></div></div>
+<div class="comment" id="comment-19527"><div class="by">Jared Whiklo, 2017-10-27 02:37 UTC</div><div class="text"><p>I have a question about this. I am wondering if there is a use case for providing a Memento-Datetime without a Body and vice versa?</p>
+
+<p>I can see either:<br/>
+1. you POST to the LDPCv and get a new Memento created from the current resource with the current datetime<br/>
+2. you POST to the LDPCv with a Memento-Datetime header and a body to create a version for the specified date and the specified content.</p>
+
+<p>I'm not clear on a use case for creating a version of the current resource body but with a different date and/or creating a version with a different body but the current datetime.</p>
+
+<p>Does that make sense?</p></div></div>
+<div class="comment" id="comment-19528"><div class="by">Andrew Woods, 2017-10-29 15:18 UTC</div><div class="text"><p>In addition to your 1. and 2. use cases, the other use case that we should support is:</p>
+
+<p>3. you POST to the LDPCv with a Memento-Datetime header and an EMPTY body to create an EMPTY version for the specified date and the specified content.</p>
+
+<ul>
+	<li>
+	<ul>
+		<li>Actually, this is probably better numbered as 2b. since it is an example usage of 2.</li>
+	</ul>
+	</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19699"><div class="by">Ben Pennell, 2018-03-08 18:52 UTC</div><div class="text"><p> <a href="https://github.com/fcrepo4/fcrepo4/pull/1296" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1296</a></p></div></div>
+<div class="comment" id="comment-19702"><div class="by">Danny Bernstein, 2018-03-08 21:23 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/9630a378158d64459788fa469c17544f71c5c620" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/9630a378158d64459788fa469c17544f71c5c620</a></p></div></div>
+<p><a href="data/FCREPO-2617.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

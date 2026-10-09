@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1244 Disallow the creation of the namespace: &#x27;fcr&#x27;</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1244</span> Disallow the creation of the namespace: &#x27;fcr&#x27;</h1>
+<table class="meta"><tr><th>Type</th><td>Documentation</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2014-12-02 23:58 UTC</td></tr><tr><th>Updated</th><td>2014-12-19 02:46 UTC</td></tr><tr><th>Resolved</th><td>2014-12-11 20:53 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.0</td></tr></table>
+<h2>Description</h2>
+<p>For example, a user should not be able to implicitly create a namespace with prefix: "fcr".<br/>
+Such as, by updating a resource's property including the statement:<br/>
+PREFIX fcr: &lt;<a href="http://xmlns.com/my-fcr/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/my-fcr/</a>&gt;</p>
+
+<p>The issue of creating the "fcr" namespace prefix can be seen when calculating the fixity of a versioned resource:<br/>
+curl localhost:8080/rest/collection/image/fcr:versions/v0/fcr:fixity</p>
+<h2>Comments (9)</h2>
+<div class="comment" id="comment-12680"><div class="by">Andrew Woods, 2014-12-05 16:29 UTC</div><div class="text"><p><a href="https://groups.google.com/d/msg/fedora-tech/qw3GlptWBQw/Pmly99yHoDIJ" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/msg/fedora-tech/qw3GlptWBQw/Pmly99yHoDIJ</a></p></div></div>
+<div class="comment" id="comment-12684"><div class="by">Situ, Longshou, 2014-12-06 01:09 UTC</div><div class="text"><p>Andrew Woods, Balancing the best location to reject the sparql update that contains the fcr namespace prefix, I have to touch the bottom FedoraResource.java to throw the exception I need. Another possible location is just to throw the exception in ContentExposingResource.java but it need extra overhead to manipulate the String requestBody parameter in method patchResourcewithSparql(...). Please let me know if you like this way better and I'll change it.</p>
+
+<p>See PR <a href="https://github.com/fcrepo4/fcrepo4/pull/673" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/673</a>.</p></div></div>
+<div class="comment" id="comment-12687"><div class="by">Andrew Woods, 2014-12-06 16:30 UTC</div><div class="text"><p>Looks good, pending response to code review comment.</p></div></div>
+<div class="comment" id="comment-12689"><div class="by">Situ, Longshou, 2014-12-08 17:52 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo4/fcrepo4/pull/673" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/673</a>, commit <a href="https://github.com/lsitu/fcrepo4/commit/90bebb57676d6da5003a14e9e8d3884d6e8cbf65" class="external-link" rel="nofollow noreferrer">https://github.com/lsitu/fcrepo4/commit/90bebb57676d6da5003a14e9e8d3884d6e8cbf65</a></p></div></div>
+<div class="comment" id="comment-12696"><div class="by">Andrew Woods, 2014-12-11 20:07 UTC</div><div class="text"><p>See code review comments. The more specific exceptions should be advertised on the interfaces.</p></div></div>
+<div class="comment" id="comment-12697"><div class="by">Situ, Longshou, 2014-12-11 20:53 UTC</div><div class="text"><p>See PR <a href="https://github.com/fcrepo4/fcrepo4/pull/673" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/673</a>, commit <a href="https://github.com/lsitu/fcrepo4/commit/efd3eab5322ebad0670551011be7ecba9ad81aa8" class="external-link" rel="nofollow noreferrer">https://github.com/lsitu/fcrepo4/commit/efd3eab5322ebad0670551011be7ecba9ad81aa8</a>.</p></div></div>
+<div class="comment" id="comment-12698"><div class="by">Andrew Woods, 2014-12-11 21:39 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/38d593913878967d39a796776c2cef65662a8ab4" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/38d593913878967d39a796776c2cef65662a8ab4</a></p></div></div>
+<div class="comment" id="comment-12700"><div class="by">Situ, Longshou, 2014-12-12 01:57 UTC</div><div class="text"><p>Andrew Woods, this feature is reimplemented as suggested. See <a href="https://github.com/fcrepo4/fcrepo4/pull/679" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/679</a>.</p></div></div>
+<div class="comment" id="comment-12713"><div class="by">Andrew Woods, 2014-12-19 02:46 UTC</div><div class="text"><p>Resolved (second try) with: <a href="https://github.com/fcrepo4/fcrepo4/commit/f2471a755a2fa27ed61ff8bf4ac16bc24388821a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/f2471a755a2fa27ed61ff8bf4ac16bc24388821a</a></p></div></div>
+<p><a href="data/FCREPO-1244.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

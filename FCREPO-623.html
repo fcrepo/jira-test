@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-623 Journaling RMI transport writer does not send close() events</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-623</span> Journaling RMI transport writer does not send close() events</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2010-01-12 16:08 UTC</td></tr><tr><th>Updated</th><td>2010-09-01 16:11 UTC</td></tr><tr><th>Resolved</th><td>2010-01-19 01:13 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.3</td></tr><tr><th>Fix versions</th><td>Fedora 3.4</td></tr></table>
+<h2>Description</h2>
+<p>RMI transports will always fail when rolling over to a new journal file.  A receiver will terminate the connection with an exception indicating refusal to write to a new journal while another is still open.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-623/10074_rmi.patch">rmi.patch</a>, 2273 bytes, added by Aaron Birkland on 2010-01-12</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-11211"><div class="by">Aaron Birkland, 2010-01-12 16:22 UTC</div><div class="text"><p>This does not affect 3.2 or earlier versions.  There is no relevant code change in Fedora 3.3, leading me to believe that perhaps the behaviour of a third party library has changed (or a different implementation is being used).  The problem seems to come from the StAX XMLEventWriter.  The code assumes that XMLEventWriter.close() will result in close() being called on the underlying writer (which is in this case is an RMI journal transport class).  For whatever reason, this is not happening in this version, so the transport is never closed.  </p>
+
+<p>I made a quick workaround patch that explicitly closes the rmi transport writer (attached), but this issue deserves to be look at in more depth to verify that similar situation does not occur elsewhere, and determine if it is the StAX impl's fault (i.e. a buggy library), or if the code is making an improper assumption that just happened to work</p></div></div>
+<div class="comment" id="comment-11212"><div class="by">Aaron Birkland, 2010-01-12 16:27 UTC</div><div class="text"><p>Patch against 3.3 release</p></div></div>
+<div class="comment" id="comment-11215"><div class="by">Aaron Birkland, 2010-01-19 01:13 UTC</div><div class="text"><p>Fix is in trunk and maintenance-3.3 branch</p></div></div>
+<p><a href="data/FCREPO-623.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

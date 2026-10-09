@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1356 Fix javadocs: fcrepo4-oaiprovider</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1356</span> Fix javadocs: fcrepo4-oaiprovider</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Nianli Ma</td></tr><tr><th>Created</th><td>2015-02-05 22:19 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:41 UTC</td></tr><tr><th>Resolved</th><td>2015-02-20 20:57 UTC</td></tr><tr><th>Components</th><td>f4-oaiprovider</td></tr><tr><th>Affects versions</th><td>Fedora 4.1.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.1.1</td></tr></table>
+<h2>Description</h2>
+<p>This task is to run the following command on the fcrepo4-oaiprovider codebase: <br/>
+mvn javadoc:jar </p>
+
+<p>...and fix the issues that cause build failure.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1356/10210_javadoc.out">javadoc.out</a>, 29464 bytes, added by Andrew Woods on 2015-02-19</li>
+</ul>
+<h2>Comments (10)</h2>
+<div class="comment" id="comment-13382"><div class="by">Nianli Ma, 2015-02-11 14:59 UTC</div><div class="text"><p>Although I can build jar file now, I still have some warning errors like: error: package org.openarchives.oai._2 does not exist. Actually those packages are in target/generated-sources, and this path is in my build path. I don't know why javadoc can not find it. I tried several ways, but all failed. <br/>
+At the mean time, I will try to submit a pull-request today, so that we can test if the jar can be built on other's machine. </p></div></div>
+<div class="comment" id="comment-13393"><div class="by">Nianli Ma, 2015-02-12 15:53 UTC</div><div class="text"><p>The version I created pull-request won't work either. I checked on Java 8. And the reason is Javadoc in Java 8 is stricter on the requirements. I tried to disable the strict checking, and it works on Java 8. I am trying to fix the error today to see if I can let Java 8 happy.</p></div></div>
+<div class="comment" id="comment-13410"><div class="by">Andrew Woods, 2015-02-16 15:09 UTC</div><div class="text"><p>Closed PR-13 due to the extreme number of unrelated updates to this ticket.<br/>
+Please create a new PR that only contains javadoc-related updates.</p></div></div>
+<div class="comment" id="comment-13516"><div class="by">Andrew Woods, 2015-02-19 23:53 UTC</div><div class="text"><p>See attached "javadoc.out" for the errors I am seeing when running:<br/>
+`mvn javadoc:jar`</p></div></div>
+<div class="comment" id="comment-13517"><div class="by">Nianli Ma, 2015-02-20 00:01 UTC</div><div class="text"><p>That's the part I need help, since it is a dynamic import. Those classes or interfaces actually in target directory. That's why there is no warning showing in the second time. Please let me know if you know how to fix it.</p>
+
+<p>Thanks!</p></div></div>
+<div class="comment" id="comment-13518"><div class="by">Andrew Woods, 2015-02-20 00:20 UTC</div><div class="text"><p>See the configuration options:<br/>
+<a href="http://maven.apache.org/plugins/maven-javadoc-plugin/jar-mojo.html#excludePackageNames" class="external-link" rel="nofollow noreferrer">http://maven.apache.org/plugins/maven-javadoc-plugin/jar-mojo.html#excludePackageNames</a></p></div></div>
+<div class="comment" id="comment-13521"><div class="by">Nianli Ma, 2015-02-20 05:45 UTC</div><div class="text"><p>I added the excludePackageNames in pom.xml. Please check. </p></div></div>
+<div class="comment" id="comment-13522"><div class="by">Andrew Woods, 2015-02-20 15:37 UTC</div><div class="text"><p>You are on the right track. Here is a PR off of your work with some minor modifications:<br/>
+<a href="https://github.com/nianma/fcrepo4-oaiprovider/pull/1" class="external-link" rel="nofollow noreferrer">https://github.com/nianma/fcrepo4-oaiprovider/pull/1</a></p>
+
+<p>I still get warnings if I run:<br/>
+`mvn clean javadoc:jar`</p>
+
+<p>...but the javadocs are successfully created.<br/>
+However, if I run:<br/>
+`mvn clean javadoc:javadoc; mvn javadoc:jar`<br/>
+...there are no warnings.</p>
+
+<p>In any case, I think it should work in the important case of running the release tasks.</p></div></div>
+<div class="comment" id="comment-13530"><div class="by">Nianli Ma, 2015-02-20 16:28 UTC</div><div class="text"><p>Getting weird. I had no warning by running 'mvn clean javadoc:jar'. Not so sure what's different in my setting. Following is the output:<br/>
+-------------------------------<br/>
+<span class="error">&#91;nianma@birch fcrepo-oaiprovider&#93;</span>$ mvn clean javadoc:jar<br/>
+OpenJDK 64-Bit Server VM warning: ignoring option MaxPermSize=256m; support was removed in 8.0<br/>
+<span class="error">&#91;INFO&#93;</span> Scanning for projects...<br/>
+<span class="error">&#91;INFO&#93;</span>                                                                         <br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Building fcrepo-oaiprovider 4.1.1-SNAPSHOT<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> <br/>
+<span class="error">&#91;INFO&#93;</span> &#8212; maven-clean-plugin:2.6.1:clean (default-clean) @ fcrepo-oaiprovider &#8212;<br/>
+<span class="error">&#91;INFO&#93;</span> <br/>
+<span class="error">&#91;INFO&#93;</span> &#8212; maven-javadoc-plugin:2.10.1:jar (default-cli) @ fcrepo-oaiprovider &#8212;<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> BUILD SUCCESS<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+<span class="error">&#91;INFO&#93;</span> Total time: 2.178s<br/>
+<span class="error">&#91;INFO&#93;</span> Finished at: Fri Feb 20 11:15:41 EST 2015<br/>
+<span class="error">&#91;INFO&#93;</span> Final Memory: 22M/327M<br/>
+<span class="error">&#91;INFO&#93;</span> ------------------------------------------------------------------------<br/>
+[</p></div></div>
+<div class="comment" id="comment-13536"><div class="by">Andrew Woods, 2015-02-21 00:55 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/0eef7554ba6c6deb96202889b3fea29b3d668565" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo4-oaiprovider/commit/0eef7554ba6c6deb96202889b3fea29b3d668565</a></p></div></div>
+<p><a href="data/FCREPO-1356.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

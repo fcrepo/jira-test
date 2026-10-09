@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1767 Top-level Error page</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1767</span> Top-level Error page</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Nianli Ma</td></tr><tr><th>Created</th><td>2015-10-09 15:05 UTC</td></tr><tr><th>Updated</th><td>2017-10-25 23:14 UTC</td></tr><tr><th>Resolved</th><td>2017-10-25 23:14 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.3.0</td></tr></table>
+<h2>Description</h2>
+<p>This task is to create a top-level HTML view that will catch all otherwise uncaught stacktraces. <br/>
+For example, the error seen in the following scenario should not result in a stracktrace to the browser:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1766" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1766</a></p>
+<h2>Comments (13)</h2>
+<div class="comment" id="comment-15449"><div class="by">A. Soroka, 2015-10-14 13:19 UTC</div><div class="text"><p>Shouldn't the `WildcardExceptionMapper` catch this now?</p></div></div>
+<div class="comment" id="comment-15452"><div class="by">Andrew Woods, 2015-10-14 13:29 UTC</div><div class="text"><p>The WildcardExceptionMapper catches top-level exceptions, but there are many scenarios that result in an unformatted HTML stacktrace.</p></div></div>
+<div class="comment" id="comment-15454"><div class="by">A. Soroka, 2015-10-14 13:33 UTC</div><div class="text"><p>What kind of throwable is escaping that mapper? Doesn't it catch `RuntimeException`?</p></div></div>
+<div class="comment" id="comment-15455"><div class="by">Andrew Woods, 2015-10-14 13:38 UTC</div><div class="text"><p>As you can see, the WildcardExceptionMapper returns a stacktrace:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/exceptionhandlers/WildcardExceptionMapper.java#L60" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/exceptionhandlers/WildcardExceptionMapper.java#L60</a></p>
+
+<p>This ticket is to address the fact that we do not want to inflict an unformatted stacktrace in the HTML view, hence the "top-level error page".</p></div></div>
+<div class="comment" id="comment-15456"><div class="by">A. Soroka, 2015-10-14 13:40 UTC</div><div class="text"><p>Did you notice the flag in that mapper for exactly that? <tt>Boolean showStackTrace</tt>?</p></div></div>
+<div class="comment" id="comment-15457"><div class="by">Andrew Woods, 2015-10-14 13:50 UTC</div><div class="text"><p>The stacktrace is nice. This ticket is not trying to get rid of the stacktrace. <br/>
+This ticket is to address the fact that we do not want to inflict an unformatted stacktrace in the HTML view, hence the "top-level error page".</p></div></div>
+<div class="comment" id="comment-15458"><div class="by">A. Soroka, 2015-10-14 13:51 UTC</div><div class="text"><p>I don't understand what you are talking about, but it doesn't matter, since I'm not going to take this ticket.</p></div></div>
+<div class="comment" id="comment-15460"><div class="by">Yinlin Chen, 2015-10-14 14:48 UTC</div><div class="text"><p>Didn't see a stracktrace to the browser after follow the description in <a href="https://jira.duraspace.org/browse/FCREPO-1766" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1766</a> . So what is this ticket about?</p></div></div>
+<div class="comment" id="comment-15463"><div class="by">Andrew Woods, 2015-10-14 15:02 UTC</div><div class="text"><p>Yinlin Chen, As noted in comments on 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1766" >
+                <a href="FCREPO-1766.html" class="jira-issue-macro-key issue-link"  title="Error on redefining namespace prefix" >
+            
+            FCREPO-1766
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+, it would appear that you did not exactly following the steps in that ticket for reproducing the error.</p></div></div>
+<div class="comment" id="comment-15466"><div class="by">Yinlin Chen, 2015-10-14 15:36 UTC</div><div class="text"><p>Andrew Woods  please see  <a href="https://jira.duraspace.org/browse/FCREPO-1766?focusedCommentId=45781&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-45781" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1766?focusedCommentId=45781&amp;page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-45781</a></p></div></div>
+<div class="comment" id="comment-15736"><div class="by">Andrew Woods, 2015-11-04 17:41 UTC</div><div class="text"><p>Nianli Ma, here is an example of an error scenario that is caught and displayed in the HTML UI within a pop-up window:</p>
+<ul>
+	<li>Create a container in the HTML UI</li>
+	<li>Use the "Update Properties" field to make this update:
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>INSERT { &lt;&gt; junk:comment "hello"}
+WHERE { }
+</pre>
+</div></div></li>
+</ul>
+</div></div>
+<div class="comment" id="comment-15860"><div class="by">Andrew Woods, 2015-11-20 17:51 UTC</div><div class="text"><p>Nianli Ma, you may also find it helpful in understanding how the error pop-up works by examining:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.js#L257" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.js#L257</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.js#L349" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.js#L349</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common-header.vsl#L53-L69" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common-header.vsl#L53-L69</a></p>
+
+<p>...possibly (#errorModal) handlers should be added elsewhere in the vsl code.</p></div></div>
+<div class="comment" id="comment-16290"><div class="by">A. Soroka, 2016-03-10 16:29 UTC</div><div class="text"><p>Nianli Ma, is this still something you are going to work on? Thanks!</p></div></div>
+<p><a href="data/FCREPO-1767.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

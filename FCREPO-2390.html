@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2390 Sparql-Update: Delete Non-Existing</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2390</span> Sparql-Update: Delete Non-Existing</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Former user</td></tr><tr><th>Created</th><td>2017-01-24 03:04 UTC</td></tr><tr><th>Updated</th><td>2017-01-24 17:00 UTC</td></tr><tr><th>Resolved</th><td>2017-01-24 14:02 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr></table>
+<h2>Description</h2>
+<p>This bug can be seen when executing a sparql-update request that attempts to delete a property that does not exist.<br/>
+The response returns with a 204, but no properties are deleted.<br/>
+The solution to this issue should be to return a 400 Bad Request.</p>
+
+<p>To demonstrate the error:</p>
+<ol>
+	<li>Create a resource, "test".<br/>
+&gt; curl -i -XPUT localhost:8080/rest/test</li>
+	<li>Add properties to the new resource<br/>
+&gt; curl -i -XPATCH -H"Content-Type: application/sparql-update" --data-binary @rdf_insert.txt localhost:8080/rest/test</li>
+	<li>Attempt to delete resources<br/>
+&gt; curl -i -XPATCH -H"Content-Type: application/sparql-update" --data-binary @rdf_delete_one_multiple_one_non_existing.txt localhost:8080/rest/test
+	<ul>
+		<li>Notice 204 response but no change in the "test" resource</li>
+	</ul>
+	</li>
+</ol>
+
+
+<p>See attached "rdf_insert.txt" and "rdf_delete_one_multiple_one_non_existing.txt"</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-2390/10296_rdf_delete_one_multiple_one_non_existing.txt">rdf_delete_one_multiple_one_non_existing.txt</a>, 1648 bytes, added by Andrew Woods on 2017-01-24</li>
+<li><a href="attachments/FCREPO-2390/10297_rdf_insert.txt">rdf_insert.txt</a>, 3540 bytes, added by Andrew Woods on 2017-01-24</li>
+</ul>
+<h2>Comments (17)</h2>
+<div class="comment" id="comment-18468"><div class="by">A. Soroka, 2017-01-24 10:55 UTC</div><div class="text"><p>I don't think this is incorrect at all. This is perfectly normal behavior for a SPARQL Update impl. A 400 would be appropriate for a malformed request (bad syntax).</p></div></div>
+<div class="comment" id="comment-18469"><div class="by">Unknown, 2017-01-24 14:02 UTC</div><div class="text"><p>This is expected behavior (it is <em>not</em> an error). A SPARQL Update with a WHERE clause will attempt to match a graph. If the match pattern contains a triple that does not exist in the resource, there is no match. If there is no match, nothing will be removed. Therefore, there would be no change in the resource, and a 204 would be an appropriate response.</p></div></div>
+<div class="comment" id="comment-18470"><div class="by">Unknown, 2017-01-24 14:02 UTC</div><div class="text"><p>Marking this as Won't fix, as it is not a bug.</p></div></div>
+<div class="comment" id="comment-18471"><div class="by">Former user, 2017-01-24 14:27 UTC</div><div class="text"><p>Here is the real problem:<br/>
+1. The sparql updates have, let's say 10 delete statements (s1, s2, ..s10)<br/>
+2. Only one delete (s1) does not have corresponding properties<br/>
+3. Result:  after the request is executed, the other 9 delete were not executed.  </p>
+
+<p>It is expected that s1 should not affect the execution of s2, ...s10.</p>
+
+<p>thanks<br/>
+Steve</p></div></div>
+<div class="comment" id="comment-18472"><div class="by">Unknown, 2017-01-24 14:56 UTC</div><div class="text"><p>The current behavior is in line with the Sparql Update recommendation: <a href="https://www.w3.org/TR/2013/REC-sparql11-update-20130321/#deleteWhere" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/2013/REC-sparql11-update-20130321/#deleteWhere</a></p>
+
+<p>If you want 10 separate delete statements, you need to execute them as 10 delete statements, not a single delete statement. It seems that you would rather have a Sparql Update like this:</p>
+
+<p>DELETE WHERE </p>
+{ &lt;&gt; ex:foo1 ?o1 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo2 ?o2 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo3 ?o3 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo4 ?o4 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo5 ?o5 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo6 ?o6 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo7 ?o7 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo8 ?o8 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo9 ?o9 }
+<p>;<br/>
+DELETE WHERE </p>
+{ &lt;&gt; ex:foo10 ?o10 }
+<p>;</p>
+
+<p>That can be part of a single HTTP request and is probably more in line with what you are looking for.</p></div></div>
+<div class="comment" id="comment-18473"><div class="by">Andrew Woods, 2017-01-24 15:06 UTC</div><div class="text"><p>Unknown, can you be more specific about how exactly "The current behavior is in line with the Sparql Update recommendation: <a href="https://www.w3.org/TR/2013/REC-sparql11-update-20130321/#deleteWhere" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/2013/REC-sparql11-update-20130321/#deleteWhere</a>".<br/>
+I am not seeing where it is recommended that a delete/where clause with multiple statements should silently fail if one of those statements does not match the graph.</p></div></div>
+<div class="comment" id="comment-18474"><div class="by">Unknown, 2017-01-24 15:12 UTC</div><div class="text"><p>My point is this: it is not a failure. Just as a SPARQL Query that doesn't match a graph, a SPARQL Update that doesn't match a graph results in no change. This is from the spec:</p>
+
+<p>The DELETE WHERE operation is a shortcut form for the DELETE/INSERT operation where bindings matched by the WHERE clause are used to define the triples in a graph that will be deleted. Analogous to DELETE/INSERT, deleting triples that are not present, or from a graph that is not present will have no effect and will result in success.</p></div></div>
+<div class="comment" id="comment-18475"><div class="by">Andrew Woods, 2017-01-24 15:17 UTC</div><div class="text"><p>Thanks, Unknown. That helps.<br/>
+What do you suggest is the "correct" behavior in this case, where some statements in the delete/where match the graph and others do not?</p></div></div>
+<div class="comment" id="comment-18476"><div class="by">Unknown, 2017-01-24 15:18 UTC</div><div class="text"><p>More from the spec:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>The pattern in WHERE is matched against the Graph Store. The resulting sequence of
+solutions to the WHERE clause is used to instantiate the triple patterns in the
+DELETE template similar to CONSTRUCT in SPARQL 1.1 Query. The resulting
+triples are then removed from the Graph Store.
+</pre>
+</div></div>
+
+<p>Thus, if there is no match from the WHERE clause, nothing will be removed because there are no triples in the resulting graph.</p></div></div>
+<div class="comment" id="comment-18477"><div class="by">Unknown, 2017-01-24 15:18 UTC</div><div class="text"><p>The correct behavior is to make no change to the resource.</p></div></div>
+<div class="comment" id="comment-18478"><div class="by">Jared Whiklo, 2017-01-24 15:22 UTC</div><div class="text"><p>Ok,</p>
+
+<p>So I'm horrible at specs but if I read the SPARQL <a href="https://www.w3.org/TR/sparql11-update/#deleteWhere" class="external-link" rel="nofollow noreferrer">delete where</a> correctly it indicates that attempting to delete missing triples should have no effect and the query should still complete correctly.</p>
+
+<p>What I saw was this. The delete completes with a 204 response but doesn't do anything. It seems like it should either fail (some sort of 400) or delete the matching triples.</p>
+
+<p>But perhaps I am misreading something.</p>
+
+<p>Here is a gist with my object before and after and the command I ran.<br/>
+<a href="https://gist.github.com/whikloj/d1362ddce96e75d48b189a77dba4ac58" class="external-link" rel="nofollow noreferrer">https://gist.github.com/whikloj/d1362ddce96e75d48b189a77dba4ac58</a></p></div></div>
+<div class="comment" id="comment-18479"><div class="by">Jared Whiklo, 2017-01-24 15:24 UTC</div><div class="text"><p>Alright, I clearly need to reload JIRA before commenting. </p></div></div>
+<div class="comment" id="comment-18480"><div class="by">Unknown, 2017-01-24 15:25 UTC</div><div class="text"><p>No, a <tt>DELETE WHERE</tt> is, effectively, a conditional delete. It deletes the triples <em>if</em> the <tt>WHERE</tt> clause matches. If the <tt>WHERE</tt> clause doesn't match, there's nothing to delete.</p></div></div>
+<div class="comment" id="comment-18481"><div class="by">Benjamin Armintor, 2017-01-24 15:30 UTC</div><div class="text"><p>You have to read across the entire DELETE/INSERT spec to resolve the ambiguity that results from read the DELETE WHERE shortcut spec in isolation. It expands to DELETE </p>
+{...} WHERE {...}
+<p>, with the same pattern:<br/>
+"The QuadPattern is used both as a pattern for matching against triples and graphs, and as the template for deletion."</p>
+
+<p>And from DELETE:<br/>
+"The WHERE clause identifies data in existing graphs, and creates bindings to be used by the template. The graphs to apply the GroupGraphPattern follow the same rules as for DELETE/INSERT."</p>
+
+<p>And from DELETE/INSERT:<br/>
+"The GroupGraphPattern in the WHERE clause is evaluated as in a SPARQL query "SELECT * WHERE GroupGraphPattern" and all the solution bindings are applied to the preceding DELETE and INSERT templates for defining the triples to be deleted from or inserted into the Graph Store."</p>
+
+<p>If the WHERE doesn't match the resource, there is no solution set to pass to DELETE.</p></div></div>
+<div class="comment" id="comment-18482"><div class="by">Unknown, 2017-01-24 15:34 UTC</div><div class="text"><p>Thank you Benjamin Armintor, that is much clearer than what I had written.</p></div></div>
+<div class="comment" id="comment-18483"><div class="by">Benjamin Armintor, 2017-01-24 15:40 UTC</div><div class="text"><p>Unknown sometimes it's easier to clarify someone else's work than to identify the problem, much less provide some query alternatives. Thank you for being on top of this!</p>
+</div></div>
+<div class="comment" id="comment-18485"><div class="by">Andrew Woods, 2017-01-24 17:00 UTC</div><div class="text"><p></p></div></div>
+<p><a href="data/FCREPO-2390.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

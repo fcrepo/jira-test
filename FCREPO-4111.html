@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4111 Camel Toolbox Fixity Checking Service issues with many datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4111</span> Camel Toolbox Fixity Checking Service issues with many datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>In Progress</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>yuri.carrer</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2026-09-29 09:01 UTC</td></tr><tr><th>Updated</th><td>2026-09-29 11:25 UTC</td></tr><tr><th>Components</th><td>fcrepo-camel-toolbox</td></tr></table>
+<h2>Description</h2>
+<p>We tried to use Camel Toolbox Fixity Checking Service (as described here: <a href="https://github.com/fcrepo-exts/fcrepo-camel-toolbox#fixity-checking-service" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel-toolbox#fixity-checking-service</a> ) but with many objects the queue will fill up, and Camel will stop to make checks. We used the service and have the fixity failure be handled by a script. The confs are here: <a href="https://github.com/phaidra/phaidra/blob/main/camel-toolbox-config/configuration.properties" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/phaidra/phaidra/blob/main/camel-toolbox-config/configuration.properties</a>  The script: <a href="https://github.com/phaidra/phaidra/blob/main/scripts/fixity_handler.sh" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/phaidra/phaidra/blob/main/scripts/fixity_handler.sh</a>  just manage the output of camel to do the proper action, logging, etc. The problem is in Camel Toolbox Fixity Checking Service , after a while this happen:</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>WARN 09:02:01.781 [ActiveMQ Transport: tcp:///xxx.xxx.xxx.xxx:41094@61616] (Queue) Usage(default:store:queue://fixity:store) percentUsage=0%, usage=1638041234, limit=1073741824, percentUsageMinDelta=1%;Parent:Usage(default:store) percentUsage=152%, usage=1638041234, limit=1073741824, percentUsageMinDelta=1%: Persistent store is Full, 100% of 1073741824. Stopping producer (ID:0df6362b43cd-45511-1784710534158-1:12:1:1) to prevent flooding queue://fixity. See http://activemq.apache.org/producer-flow-control.html  for more info (blocking for: 361s)</pre>
+</div></div>
+
+<p>I've incremented the limits several time with a custom activemq.xml, but it reached the new limit and stuck again. Usually the checks starts very fast and over time they start to slow down.</p>
+
+<p>Finally, using 48GB as storage size, I’ve been able to check fixity on 30M datastreams but I had to restart the Camel process once because checks was very slow. After the restart, checks were fast again. Moreover this error appears in the log, even if other threads work correctly and process queue messages:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ERROR 07:21:31.627 [Camel (camel-1) thread #17 - JmsConsumer[reindexing]] (DefaultJmsMessageListenerContainer) Could not refresh JMS Connection for destination 'reindexing' - retrying using FixedBackOff{interval=5000, currentAttempts=2438, maxAttempts=unlimited}. Cause: Error while attempting to add new Connection to the pool; nested exception is javax.jms.JMSException: Could not connect to broker URL: tcp://fedora:61616. Reason: java.lang.IllegalStateException: Timer already cancelled.</pre>
+</div></div>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-29148"><div class="by">Dan Field, 2026-09-29 11:25 UTC</div><div class="text"><p><font color="#ffffff">I have confirmed that the issue is purely the value configured for storeUsage. I set up fedora 7 and camel toolbox and was able to reproduce your log errors. The reason it looks like messages are not being deleted on read is that camel reads 1 message and generates 2 more. one to send the file to fixity and another to traverse it to find any children. this multiplication gives the impression of not reducing the queue size but its actually just adding yet more messages to the already full store. Unfortunately, there is no single configuration that we can ship which suits every user. Some element of configuration at the activemq level will be required dependant on local requirements. This may be a case of better documentation being required, rather than a code/config fix</font></p></div></div>
+<p><a href="data/FCREPO-4111.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

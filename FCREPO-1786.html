@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1786 Fixity for &quot;external&quot; content always reports success.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1786</span> Fixity for &quot;external&quot; content always reports success.</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Duplicate</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Michael Durbin</td></tr><tr><th>Created</th><td>2015-10-21 20:10 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-04-11 17:47 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>preservation</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1836.html">FCREPO-1836</a> Fixity on Federated Content</td></tr><tr><th>Duplicates</th><td><a href="FCREPO-2752.html">FCREPO-2752</a> Section 3.9: Ensure that HEAD and GET to External Content Contain Required Headers </td></tr></table>
+<h2>Description</h2>
+<p>Performing fixity on a resource that is external (was produced using the message/external-body mime type) always returns true.  Furthermore the stated message digest is also misleading, as it's the sha1 of an empty String.</p>
+
+<p>It might be sufficient just to remove support for fixity on resources with external bodies, but alternately it might be nice to support an accurate (at least at time of ingest) sha1 for that external content, and therefore allow fixity to be performed on the external resource.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-15808"><div class="by">Julie Allinson, 2015-11-12 14:10 UTC</div><div class="text"><p>I do think it would be a nice added extra for Fedora to support fixity checking on federated filestores. I have a couple of use cases:</p>
+
+<ul class="alternate" type="square">
+	<li>resources in our digital preservation store (Archvematica AIP store), as noted above</li>
+	<li>large files/datasets that we don't want to store <b>in</b> F4 itself</li>
+</ul>
+
+
+<p>The first is speculative, but the second reflects the way we currently store a lot of data with F3 and at the moment have no checksums or fixity checking. </p></div></div>
+<div class="comment" id="comment-15814"><div class="by">Michael Durbin, 2015-11-12 14:35 UTC</div><div class="text"><p>This ticket only touches on federatation in the case where your "external" resource is a URI that resolves to your federated resource in Fedora 4.  This pattern is useful (and possibly even recommended) when you want to add properties about your federated content, but doesn't refer to the actual fixity checks on the federated content itself.</p></div></div>
+<div class="comment" id="comment-15835"><div class="by">Andrew Woods, 2015-11-13 17:50 UTC</div><div class="text"><p>Here is a new ticket targeting the issue of fixity in federation:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1836" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1836</a></p></div></div>
+<div class="comment" id="comment-16033"><div class="by">James Griffin, 2016-01-26 15:23 UTC</div><div class="text"><p>Hello Michael Durbin, Julie Allinson, and Andrew Woods,</p>
+
+<p>My apologies for the delay in my addressing this.  Regarding the request in this issue:</p>
+
+<blockquote>
+<p>It might be sufficient just to remove support for fixity on resources with external bodies</p></blockquote>
+
+<p>This is straightforward, and I can structure a pull request featuring this.</p>
+
+<blockquote>
+<p>it might be nice to support an accurate (at least at time of ingest) sha1 for that external content</p></blockquote>
+
+<p>I certainly agree with this in principle, but as I understand the code base (specifically, the fcrepo-kernel-modeshape package), the implementation may interfere with the degree to which Modeshape is integrated.</p>
+
+<p>Currently, the fixity appears to be generated from the raw bytestream accessed using a JCR Binary Node Object:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeHeader panelHeader" style="border-bottom-width: 1px;"><b>fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/FedoraBinaryImpl.java</b></div><div class="codeContent panelContent">
+<pre class="code-java">
+    /*                                                                                                                                                                                                                                        
+         * (non-Javadoc)                                                                                                                                                                                                                      
+         * @see org.fcrepo.kernel.api.models.FedoraBinary#getContent()                                                                                                                                                                        
+         */
+    @Override
+    <span class="code-keyword">public</span> InputStream getContent() {
+	<span class="code-keyword">try</span> {
+            <span class="code-keyword">return</span> getBinaryContent().getStream();
+	} <span class="code-keyword">catch</span> (<span class="code-keyword">final</span> RepositoryException e) {
+            <span class="code-keyword">throw</span> <span class="code-keyword">new</span> RepositoryRuntimeException(e);
+        }
+    }
+
+    /*                                                                                                                                                                                                                                        
+     * (non-Javadoc)                                                                                                                                                                                                                          
+     * @see org.fcrepo.kernel.api.models.FedoraBinary#getBinaryContent()                                                                                                                                                                      
+     */
+    @Override
+    <span class="code-keyword">public</span> javax.jcr.Binary getBinaryContent() {
+	<span class="code-keyword">try</span> {
+            <span class="code-keyword">return</span> getProperty(JCR_DATA).getBinary();
+        } <span class="code-keyword">catch</span> (<span class="code-keyword">final</span> PathNotFoundException e) {
+            <span class="code-keyword">throw</span> <span class="code-keyword">new</span> PathNotFoundRuntimeException(e);
+        } <span class="code-keyword">catch</span> (<span class="code-keyword">final</span> RepositoryException e) {
+            <span class="code-keyword">throw</span> <span class="code-keyword">new</span> RepositoryRuntimeException(e);
+        }
+    }
+</pre>
+</div></div>
+
+<p>I can override one of these method implementations in order to issue a GET request in order to resolve the URL of the external resource, and hence, retrieve the content.</p>
+
+<p>The alternative might be to introduce this functionality somewhere higher within the API, such as FedoraFixity#getDatastreamFixity:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeHeader panelHeader" style="border-bottom-width: 1px;"><b>fcrepo-http-api/src/main/java/org/fcrepo/http/api/FedoraFixity.java</b></div><div class="codeContent panelContent">
+<pre class="code-java">
+    /**                                                                                                                                                                                                                                       
+     * Get the results of a fixity check <span class="code-keyword">for</span> a path                                                                                                                                                                                           
+     *                                                                                                                                                                                                                                        
+     * GET /path/to/some/datastream/fcr:fixity                                                                                                                                                                                                
+     *                                                                                                                                                                                                                                        
+     * @<span class="code-keyword">return</span> datastream fixity in the given format                                                                                                                                                                                          
+     */
+    @GET
+    @Timed
+    @HtmlTemplate(value = <span class="code-quote">"fcr:fixity"</span>)
+    @Produces({TURTLE + <span class="code-quote">";qs=10"</span>, JSON_LD + <span class="code-quote">";qs=8"</span>,
+            N3, N3_ALT2, RDF_XML, NTRIPLES, APPLICATION_XML, TEXT_PLAIN, TURTLE_X,
+            TEXT_HTML, APPLICATION_XHTML_XML, <span class="code-quote">"*/*"</span>})
+    <span class="code-keyword">public</span> RdfStream getDatastreamFixity() {
+
+	<span class="code-keyword">if</span> (!(resource() <span class="code-keyword">instanceof</span> FedoraBinary)) {
+            <span class="code-keyword">throw</span> <span class="code-keyword">new</span> NotFoundException(resource() + <span class="code-quote">" is not a binary"</span>);
+	}
+
+        LOGGER.info(<span class="code-quote">"Get fixity <span class="code-keyword">for</span> <span class="code-quote">'{}'</span>"</span>, externalPath);
+        <span class="code-keyword">return</span> ((FedoraBinary)resource()).getFixity(translator())
+                .topic(translator().reverse().convert(resource()).asNode())
+                .session(session);
+
+    }
+</pre>
+</div></div>
+
+<p>Using this approach, of course, there are likely to be implications for cases where the JCR Binary Nodes within Modeshape don't retrieve the content of these remote resources.</p>
+
+<p>Please let me know if I am misunderstanding any aspect of this issue, and how best to proceed.  Thank you.</p>
+
+<p>Sincerely,<br/>
+James</p></div></div>
+<div class="comment" id="comment-16216"><div class="by">James Griffin, 2016-02-25 16:54 UTC</div><div class="text"><p>Submitting the issue for review (as "incomplete"), as certain questions in relation to Fedora architecture block the introduction of a potential resolution (i. e. feedback from the community would be greatly valued before moving forward).</p></div></div>
+<div class="comment" id="comment-19595"><div class="by">Andrew Woods, 2018-01-11 15:30 UTC</div><div class="text"><p>The issue of support fixity for externally referenced content should be addressed in the context of alignment with the Fedora API Specification (i.e. Want-Digest).</p>
+
+<p>//adding to API-Alignment Epic</p></div></div>
+<div class="comment" id="comment-19832"><div class="by">Danny Bernstein, 2018-04-11 17:47 UTC</div><div class="text"><p>I'm closing this issue for now as I believe it is already covered by <a href="https://jira.duraspace.org/browse/FCREPO-2752" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2752</a></p></div></div>
+<p><a href="data/FCREPO-1786.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

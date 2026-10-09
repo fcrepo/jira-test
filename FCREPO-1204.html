@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1204 Fedora 3.7.1 fails to start with legacy-fs storage option chosen</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1204</span> Fedora 3.7.1 fails to start with legacy-fs storage option chosen</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Mike Korcynski</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2013-11-20 03:22 UTC</td></tr><tr><th>Updated</th><td>2014-08-07 22:03 UTC</td></tr><tr><th>Resolved</th><td>2013-11-25 08:48 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.7.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.8.0</td></tr></table>
+<h2>Environment</h2>RHEL6
+<h2>Description</h2>
+<p>I just started a 3.7.1 upgrade at Tufts as well.  While running the<br/>
+installer we ran into a different initial problem, and having resolved<br/>
+that have caught up the problem reported here, so first off, thanks for<br/>
+the info here in this thread.  The problem we initially hit is that in our<br/>
+install we specify the low level storage option as legacy-fs, which upon<br/>
+start up results in the following error:</p>
+
+<p>ERROR 13:46:21.014 (Server) Module<br/>
+(org.fcrepo.server.storage.lowlevel.ILowlevelStorage) failed to initialize<br/>
+org.fcrepo.server.errors.ModuleInitializationException: couldn't set up<br/>
+path_algorithm for objectPaths  Class<br/>
+org.fcrepo.server.storage.lowlevel.defaultstore.Store can not access a<br/>
+member of class org.fcrepo.server.storage.lowlevel.TimestampPathAlgorithm<br/>
+with modifiers "public"<br/>
+        at<br/>
+org.fcrepo.server.storage.lowlevel.DefaultLowlevelStorageModule.postInitMod<br/>
+ule(DefaultLowlevelStorageModule.java:44) ~<span class="error">&#91;fcrepo-server-3.7.1.jar:na&#93;</span></p>
+
+<p>Looking at the fcrepo-server source it seemed to be related to this commit:</p>
+
+<p><a href="https://github.com/fcrepo/fcrepo/commit/5ad360edf39bfeca57038974639b41073af1fd1b#diff-644ddc1704c65930c61becbd9826bee1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/5ad360edf39bfeca57038974639b41073af1fd1b#diff-644ddc1704c65930c61becbd9826bee1</a></p>
+
+<p>Where the Store class moved from being a support within<br/>
+DefaultLowlevelStorage in the org.fcrepo.server.storage.lowlevel package<br/>
+to the org.fcrepo.server.storage.lowlevel.default package as a top level<br/>
+class.</p>
+
+<p>I confirmed that by making the TimestampPathAlgorithm class public this<br/>
+issue goes away at startup since Store would then have access.  Not sure<br/>
+if this is the correct fix or if Store should've stayed in the previous<br/>
+package.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-12580"><div class="by">Benjamin Armintor, 2013-11-25 08:48 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/df8b6d38d7d5303ec521315028d129009e843d84" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/df8b6d38d7d5303ec521315028d129009e843d84</a></p></div></div>
+<div class="comment" id="comment-12589"><div class="by">Chris Rohrer, 2014-04-28 19:27 UTC</div><div class="text"><p>I am having the same issue trying to upgrade from 3.5 to 3.7.1 </p>
+
+<p>Is there a new release where this bug fix has been integrated? Or what am I supposed to do to work around this?</p></div></div>
+<div class="comment" id="comment-12590"><div class="by">Benjamin Armintor, 2014-04-28 19:57 UTC</div><div class="text"><p>Until 3.7.2 is out, you'll have to build from source to use the legacy-fs store on 3.7.x.</p></div></div>
+<div class="comment" id="comment-12591"><div class="by">Chris Rohrer, 2014-04-28 21:43 UTC</div><div class="text"><p>Any guesstimates when 3.7.2 will hit the stores?</p></div></div>
+<div class="comment" id="comment-12602"><div class="by">Scott Prater, 2014-08-07 21:58 UTC</div><div class="text"><p>3.72. is now known as Release 3.8.0.  Our hope is to get it out the door before the end of summer 2014.</p></div></div>
+<p><a href="data/FCREPO-1204.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

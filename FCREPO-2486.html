@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2486 Verification tool failed to verify resource with binary excluded</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2486</span> Verification tool failed to verify resource with binary excluded</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Situ, Longshou</td></tr><tr><th>Assignee</th><td>Joshua Allan Westgard</td></tr><tr><th>Created</th><td>2017-05-24 23:58 UTC</td></tr><tr><th>Updated</th><td>2017-12-07 16:49 UTC</td></tr><tr><th>Resolved</th><td>2017-06-12 22:27 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-verify-0.2.0</td></tr><tr><th>Labels</th><td>verification</td></tr></table>
+<h2>Description</h2>
+<p>The verification tool  failed to verify the resource with binary excluded, even the triples have the same count. It seems like that it doesn't inline with the export tool to exclude binary references from exported and rewrite the RDF.<br/>
+Export with binary excluded:<br/>
+$ java -Dfcrepo.log.importexport=DEBUG -jar bin/fcrepo-import-export-0.1.1-SNAPSHOT.jar -a -d data -m export  -r <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a></p>
+
+<p>Verify useing the following configuration to verify:<br/>
+mode: export<br/>
+predicates: <a href="http://www.w3.org/ns/ldp#contains" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#contains</a><br/>
+resource: <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a><br/>
+source: <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a><br/>
+dir: /Users/lsitu/Documents/Fedora_Import_Export/data<br/>
+binaries: false<br/>
+rdfLang: text/turtle</p>
+
+<p>Result:<br/>
+2017-05-24 16:09:09,842 WARNING  verifier     : 144 =&gt;  Resource Mismatch "/fcrepo/rest/audit/8a/7e/1d/94/8a7e1d94-2cd4-4fa6-8447-4f794b6c6718"<br/>
+2017-05-24 16:09:09,843 INFO     verifier     : 151 =&gt;    rel  =&gt; /fcrepo/rest/audit/8a/7e/1d/94/8a7e1d94-2cd4-4fa6-8447-4f794b6c6718<br/>
+2017-05-24 16:09:09,843 INFO     verifier     : 152 =&gt;    orig =&gt; <a href="http://localhost:8080/fcrepo/rest/audit/8a/7e/1d/94/8a7e1d94-2cd4-4fa6-8447-4f794b6c6718" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/audit/8a/7e/1d/94/8a7e1d94-2cd4-4fa6-8447-4f794b6c6718</a><br/>
+2017-05-24 16:09:09,843 INFO     verifier     : 153 =&gt;    dest =&gt; /Users/lsitu/Documents/Fedora_Import_Export/data_1_/fcrepo/rest/audit/8a/7e/1d/94/8a7e1d94-2cd4-4fa6-8447-4f794b6c6718.ttl<br/>
+2017-05-24 16:09:09,843 INFO     verifier     : 156 =&gt;    Verifying original to copy... False &#8211; 18+18 triples - mismatch<br/>
+2017-05-24 16:09:09,884 INFO     verifier     : 139 =&gt;  RESOURCE 157: fedora rdf<br/>
+2017-05-24 16:09:09,884 WARNING  verifier     : 144 =&gt;  Resource Mismatch "/fcrepo/rest/audit/d1/06/8c/da/d1068cda-fdca-448d-b676-2c3539d0c0cb"<br/>
+2017-05-24 16:09:09,884 INFO     verifier     : 151 =&gt;    rel  =&gt; /fcrepo/rest/audit/d1/06/8c/da/d1068cda-fdca-448d-b676-2c3539d0c0cb<br/>
+2017-05-24 16:09:09,884 INFO     verifier     : 152 =&gt;    orig =&gt; <a href="http://localhost:8080/fcrepo/rest/audit/d1/06/8c/da/d1068cda-fdca-448d-b676-2c3539d0c0cb" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/audit/d1/06/8c/da/d1068cda-fdca-448d-b676-2c3539d0c0cb</a><br/>
+2017-05-24 16:09:09,884 INFO     verifier     : 153 =&gt;    dest =&gt; /Users/lsitu/Documents/Fedora_Import_Export/data_1_/fcrepo/rest/audit/d1/06/8c/da/d1068cda-fdca-448d-b676-2c3539d0c0cb.ttl<br/>
+2017-05-24 16:09:09,885 INFO     verifier     : 156 =&gt;    Verifying original to copy... False &#8211; 18+17 triples - mismatch</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-18939"><div class="by">Joshua Allan Westgard, 2017-05-25 13:43 UTC</div><div class="text"><p>This bug was created with the addition of a new feature of import/export, and at first glance it's going to be a bit complicated to deal with.  The current behavior is that the verifier simply excludes nonRDFsource resources and files on disk with the .binary extension when it is traversing the tree of resources to check.</p>
+
+<p>Now in addition we'll need to filter the rdf to remove references to binaries from the origin resource before comparing to the destination resource.  Determining which triples to filter out could be a little bit tricky.</p></div></div>
+<div class="comment" id="comment-18947"><div class="by">Situ, Longshou, 2017-05-25 16:51 UTC</div><div class="text"><p>Joshua Allan Westgard I agree. Maybe at least we need to a way to address this issue so that users won't try the verification tool with binary excluded? It seem like that users may use a simple command like "java -jar bin/fcrepo-import-export-0.1.1-SNAPSHOT.jar -d data -m export  -r <a href="http://localhost:8080/fcrepo/rest" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest</a>" to export a dataset without the binary (-b) option and verify it at the very beginning, which could be disappointed with those mismatching messages. Andrew Woods, Esmé Cowles Thoughts?</p></div></div>
+<div class="comment" id="comment-18949"><div class="by">Esmé Cowles, 2017-05-25 17:21 UTC</div><div class="text"><p>Can we use the same approach as the exporter (doing a HEAD to check that the resource is a binary?) <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/exporter/Exporter.java#L373-L381" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/blob/master/src/main/java/org/fcrepo/importexport/exporter/Exporter.java#L373-L381</a></p></div></div>
+<div class="comment" id="comment-18952"><div class="by">Joshua Allan Westgard, 2017-05-25 17:34 UTC</div><div class="text"><p>Esmé Cowles, thanks. I think we could.  Just to make sure I understand, the logic is:</p>
+<ol>
+	<li>for each rdf resource get the graph</li>
+	<li>find all the triples with objects that begin with the repository base</li>
+	<li>do a head on each one and if it is a binary, filter that triple</li>
+</ol>
+</div></div>
+<div class="comment" id="comment-18955"><div class="by">Esmé Cowles, 2017-05-25 17:38 UTC</div><div class="text"><p>Joshua Allan Westgard, Yes, that's the algorithm.</p>
+
+<p>I'm a little worried about doing a HEAD request for each resource, but we're already doing it on export, so I think it won't be as much of an issue in verification.</p></div></div>
+<div class="comment" id="comment-19107"><div class="by">Joshua Allan Westgard, 2017-06-12 22:27 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/48" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/pull/48</a></p></div></div>
+<div class="comment" id="comment-19564"><div class="by">Andrew Woods, 2017-11-25 23:17 UTC</div><div class="text"><p>Danny Bernstein: when you have a chance, can you review this?</p></div></div>
+<div class="comment" id="comment-19575"><div class="by">Danny Bernstein, 2017-12-06 18:10 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/32bd8de046a4c7566037ce3d08e6eba091c1efb0" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export-verify/commit/32bd8de046a4c7566037ce3d08e6eba091c1efb0</a></p></div></div>
+<p><a href="data/FCREPO-2486.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

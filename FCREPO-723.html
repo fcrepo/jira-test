@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-723 Journaling unit tests cannot handle multiple instances of repo on same server</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-723</span> Journaling unit tests cannot handle multiple instances of repo on same server</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Martin</td></tr><tr><th>Assignee</th><td>eddie</td></tr><tr><th>Created</th><td>2010-06-14 11:04 UTC</td></tr><tr><th>Updated</th><td>2012-08-22 12:52 UTC</td></tr><tr><th>Resolved</th><td>2012-08-22 12:23 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.2.1, Fedora 3.3, Fedora 3.4, Fedora 3.5, Fedora 3.6</td></tr><tr><th>Fix versions</th><td>Fedora 3.6.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-731.html">FCREPO-731</a> TestZip tmp files are not deleted and not unique</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1025.html">FCREPO-1025</a> Let the test-framework create and delete temporary directories (update JUnit from 4.5 to 4.10)</td></tr></table>
+<h2>Description</h2>
+<p>fcrepo-server/src/test/java/fedora/server/journal/readerwriter/multifile/TestLockingFollowingJournalReader.java -&gt; fedoraTestingJournalFiles cannot handle multiple instances of repo on same server. The folder fedoraTestingJournalFiles is created in a tmp directory. The first instance to create this folder blocks other instances depending on write permissions.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-723/10083_FCREPO-tmpFileName-3.2.1.patch">FCREPO-tmpFileName-3.2.1.patch</a>, 739 bytes, added by Martin on 2010-06-14</li>
+<li><a href="attachments/FCREPO-723/10082_tmpFileName.patch">tmpFileName.patch</a>, 761 bytes, added by Martin on 2010-06-14</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11425"><div class="by">Martin, 2010-06-15 10:08 UTC</div><div class="text"><p>A prettier patch might be the following or something of the like:</p>
+
+<p>private File createTempDirectory(String name) </p>
+{
+
+        File directory = File.createTempFile(name, System.nanoTime(), System.getProperty("java.io.tmpdir") );
+
+        directory.mkdir();
+        cleanOutDirectory(directory);
+        directory.deleteOnExit();
+        return directory;
+    }</div></div>
+<div class="comment" id="comment-11493"><div class="by">Chris Wilper, 2010-08-03 21:06 UTC</div><div class="text"><p>Probably using a random UUID or possibly something from commons-io.</p>
+
+<p>This probably applies to other ("unit"/system tests)</p></div></div>
+<div class="comment" id="comment-12382"><div class="by">eddie, 2012-08-16 08:02 UTC</div><div class="text"><p>flagging this against 3.6 for review</p></div></div>
+<div class="comment" id="comment-12401"><div class="by">eddie, 2012-08-22 12:23 UTC</div><div class="text"><p>Fixed in 63254288e1990cea77d66e06187fc40aae59f018.</p>
+
+<p>Thanks again for the report, Martin.</p></div></div>
+<p><a href="data/FCREPO-723.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

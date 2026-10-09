@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2331 Dead Reference Removal Utility</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2331</span> Dead Reference Removal Utility</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Created</th><td>2016-12-06 23:36 UTC</td></tr><tr><th>Updated</th><td>2017-01-23 17:00 UTC</td></tr><tr><th>Components</th><td>f4-utility</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2323.html">FCREPO-2323</a> Resource with URI property containing hash inaccessible when target is deleted </td></tr></table>
+<h2>Description</h2>
+<p>This task is to create a utility that runs against a <b>stopped</b> Fedora repository, </p>
+<ul class="alternate" type="square">
+	<li>traversing resources,</li>
+	<li>looking for properties of type WEAKREFERENCE or REFERENCE,</li>
+	<li>with values that reference non-existent resources,</li>
+	<li>and removing the dead reference property values.</li>
+</ul>
+
+
+<p>This utility will likely follow a similar model as:<br/>
+<a href="https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/blob/master/src/main/java/org/fcrepo/upgrade/utils/TechnicalMetadataMigrator.java#L51" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo4-upgrade-utils/blob/master/src/main/java/org/fcrepo/upgrade/utils/TechnicalMetadataMigrator.java#L51</a></p>
+
+<p>Completion of this task is defined by:</p>
+<ul class="alternate" type="square">
+	<li>first running a script, TBD (kefo?), that detects dead references,</li>
+	<li>followed by running this utility</li>
+	<li>followed by running the initial script again... showing no dead references.</li>
+</ul>
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-18099"><div class="by">Jared Whiklo, 2016-12-07 16:26 UTC</div><div class="text"><p>Would you see this as being another tool inside the fcrepo4-upgrade-utils package or a completely new package?</p></div></div>
+<div class="comment" id="comment-18101"><div class="by">Andrew Woods, 2016-12-07 18:01 UTC</div><div class="text"><p>Jared Whiklo, although it follows a very similar pattern to the fcrepo4-upgrade-utils code, it is not an upgrade function... so this work should probably go in a new Git repo.</p></div></div>
+<div class="comment" id="comment-18465"><div class="by">kefo, 2017-01-23 17:00 UTC</div><div class="text"><p>I wanted to add a comment here for two reasons:  1) to start resurfacing this issue and 2) to provide any background to what I've done in the past that may or may not be helpful.  Let's consider the 1st point covered.</p>
+
+<p>As for the 2nd point, when it comes to testing whether this issue exists, I basically wrote a script that traverses a repository, gathers all the URIs, and then performs a HEAD and GET request on each resource looking for a 200, 404 pattern respectively.  That's all it really is.  It's more or less a single python script so easy to distribute and use.  (I'll add that it is also possible, now, to perform a GET on each resource and tail the fcrepo.log, which now outputs INFO about each requested resource with a reference to a non-existent resource.)</p>
+
+<p>I don't know if the following idea is helpful, but it is something we've contemplated on our end to correcting this sooner rather than later.  We think we could simply perform a GET on each resource, strip the Fedora-specific properties, and PUT the resource back in the repo.  We've not moved on this beyond theoretical discussion, but I'd welcome any immediate thoughts on it.</p>
+
+
+</div></div>
+<p><a href="data/FCREPO-2331.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

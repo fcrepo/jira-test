@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1800 Do not add server-managed triples to hash URI pseudo-containers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1800</span> Do not add server-managed triples to hash URI pseudo-containers</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2015-10-28 13:29 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 20:01 UTC</td></tr><tr><th>Resolved</th><td>2015-11-03 18:59 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>When hash URI fragments are created, they have a bunch of server-managed triples automatically attached to them.  But hash URI fragments are intended to be lightweight portions of a resource, and the server-managed predicates aren't useful in that context.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-15591"><div class="by">justin, 2015-10-28 14:35 UTC</div><div class="text"><p>This is a big performance concern for our application. We have one resource with 6070 statements which takes a long time to query against.  Many of these statements could be omitted from the graph when this ticket is closed:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>pp t.list_source.resource.statements.group_by { |s| s.predicate }.map { |k, v| "#{v.size} #{k}" }; nil
+["2362 http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+ "337 http://fedora.info/definitions/v4/repository#lastModifiedBy",
+ "337 http://fedora.info/definitions/v4/repository#createdBy",
+ "337 http://fedora.info/definitions/v4/repository#primaryType",
+ "337 http://fedora.info/definitions/v4/repository#created",
+ "338 http://fedora.info/definitions/v4/repository#mixinTypes",
+ "337 http://fedora.info/definitions/v4/repository#lastModified",
+ "1 http://www.iana.org/assignments/link-relations/first",
+ "1 http://www.iana.org/assignments/link-relations/last",
+ "1 info:fedora/fedora-system:def/model#hasModel",
+ "336 http://purl.org/dc/terms/hasPart",
+ "1 http://fedora.info/definitions/v4/repository#writable",
+ "1 http://fedora.info/definitions/v4/repository#hasParent",
+ "1 http://fedora.info/definitions/v4/repository#exportsAs",
+ "336 http://www.openarchives.org/ore/terms/proxyFor",
+ "335 http://www.iana.org/assignments/link-relations/next",
+ "336 http://www.openarchives.org/ore/terms/proxyIn",
+ "335 http://www.iana.org/assignments/link-relations/prev",
+ "1 http://purl.org/dc/elements/1.1/format"]
+=&gt; nil
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-15707"><div class="by">Esmé Cowles, 2015-11-02 18:02 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/936" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/936</a></p></div></div>
+<div class="comment" id="comment-15717"><div class="by">A. Soroka, 2015-11-03 18:59 UTC</div><div class="text"><p>Fixed with:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/fbde4f7808ebb1b94abab3c3cfdc2f2f54da4972" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/fbde4f7808ebb1b94abab3c3cfdc2f2f54da4972</a></p></div></div>
+<p><a href="data/FCREPO-1800.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

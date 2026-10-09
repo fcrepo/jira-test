@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2354 Add support for Bag Profiles</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2354</span> Add support for Bag Profiles</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-12-12 18:35 UTC</td></tr><tr><th>Updated</th><td>2017-07-14 20:26 UTC</td></tr><tr><th>Resolved</th><td>2016-12-13 19:37 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.1.0</td></tr><tr><th>Labels</th><td>import-export-phase-2</td></tr><tr><th>Parent</th><td><a href="FCREPO-2221.html">FCREPO-2221</a> Export BagIt bags from Fedora</td></tr></table>
+<h2>Description</h2>
+<p>Add support for parsing BagIt profiles.  At a minimum, use the profile to determine:<br/>
+1. Which digest algorithm(s) to use<br/>
+2. If the required metadata fields have been supplied</p>
+<h2>Comments (17)</h2>
+<div class="comment" id="comment-18187"><div class="by">Esmé Cowles, 2016-12-13 15:15 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/63" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/63</a></p>
+
+<p>Out of scope for now:</p>
+<ul>
+	<li>Bag size limits (can use existing tools to split bags)</li>
+	<li>File naming conventions (specified outside the tool)</li>
+	<li>Enforcing metadata requirements (waiting on 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2352" >
+                <a href="FCREPO-2352.html" class="jira-issue-macro-key issue-link"  title="Add support for user-supplied Bag metadata" >
+            
+            FCREPO-2352
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+)</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-18194"><div class="by">Adam Wead, 2016-12-13 17:20 UTC</div><div class="text"><p>Export appears to be working. However, when I try to validate it using the Ruby BagIt library, it's reporting bad checksums:</p>
+
+<p>"expected /Users/awead/Projects/Fedora/fcrepo-import-export/hydra-export/data/rest/dev/32/ce/1a/60/32ce1a60-6676-4e4a-b8c2-406e616b4a00.ttl to have Digest::SHA1: 464189699A46660FD5FC2B5BF91002546C939CE6, actual is 464189699a46660fd5fc2b5bf91002546c939ce6"</p>
+
+<p>However, this issue is that the export checksums are in upper case, but they're still correct. So I'm not sure if this is a problem with the ruby library or not. Any suggestions for a (better) validation process?</p></div></div>
+<div class="comment" id="comment-18195"><div class="by">Esmé Cowles, 2016-12-13 17:25 UTC</div><div class="text"><p>I've been editing the manifest-* files and replacing the single space with two spaces.  After that, I can validate them with shasum and mdsum.  There's a related ticket we filed in the bagit-java about the format of the manifest files not being compatible with the standard command-line tools: <a href="https://github.com/LibraryOfCongress/bagit-java/issues/69" class="external-link" rel="nofollow noreferrer">https://github.com/LibraryOfCongress/bagit-java/issues/69</a></p>
+
+<p>I see that Jared Whiklo just closed that ticket, though, so I'll need to think about what the best validation strategy is.</p></div></div>
+<div class="comment" id="comment-18196"><div class="by">Esmé Cowles, 2016-12-13 17:59 UTC</div><div class="text"><p>Adam Wead: is the Ruby BagIt tool you are you using <a href="https://github.com/tipr/bagit" class="external-link" rel="nofollow noreferrer">https://github.com/tipr/bagit</a> ?  I think we should file a bug if it can't handle uppercase letters in the checksums.</p></div></div>
+<div class="comment" id="comment-18197"><div class="by">Adam Wead, 2016-12-13 18:09 UTC</div><div class="text"><p>Esmé CowlesYes, and yes.</p></div></div>
+<div class="comment" id="comment-18198"><div class="by">Jared Whiklo, 2016-12-13 18:20 UTC</div><div class="text"><p>My apologizes if I closed that ticket prematurely, their response seemed to orbit around only using BagIt tools to verify BagIt manifests. Which (while I don't necessarily agree with) I can see their point that these manifest files while <em>looking</em> like shasum manifests <b>aren't</b>.</p></div></div>
+<div class="comment" id="comment-18199"><div class="by">Adam Wead, 2016-12-13 18:22 UTC</div><div class="text"><p>I filled a ticket for the Ruby BagIt gem: <a href="https://github.com/tipr/bagit/issues/27" class="external-link" rel="nofollow noreferrer">https://github.com/tipr/bagit/issues/27</a></p></div></div>
+<div class="comment" id="comment-18200"><div class="by">Jared Whiklo, 2016-12-13 18:23 UTC</div><div class="text"><p>I'll add that I installed the <a href="https://github.com/LibraryOfCongress/bagit-python" class="external-link" rel="nofollow noreferrer">Bagit-python</a> tool and was able to validate the bags very easily.</p></div></div>
+<div class="comment" id="comment-18201"><div class="by">Esmé Cowles, 2016-12-13 18:26 UTC</div><div class="text"><p>BTW, I noticed that the uppercase letters are the result of the hex-encoding method we were using.  I just pushed a new commit to that PR that switches to using Commons Codec's Hex.encodeHex, which produces lowercase letters (and is supposed to be faster, too).  Both of them are in the dependency tree already anyway.</p></div></div>
+<div class="comment" id="comment-18202"><div class="by">Esmé Cowles, 2016-12-13 18:32 UTC</div><div class="text"><p>Jared Whiklo: Don't worry about closing that ticket.  It seems less and less likely that they'll be open to a change, so I don't think it's necessarily worth your time to try to press them.  Being compatible with commonly-available tools is a big pet peeve of mine, so I'll keep at it a big longer.</p></div></div>
+<div class="comment" id="comment-18203"><div class="by">Jared Whiklo, 2016-12-13 18:43 UTC</div><div class="text"><p>I was just adding an IT for some changes related to importing bags and I think I should have written a better IT for export too. I am getting this related message on my new test.</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+java.lang.RuntimeException: Error verifying bag: File [/sw/<span class="code-keyword">var</span>/www/fcrepo4/fcrepo-<span class="code-keyword">import</span>-export/target/test-classes/sample/bag/data/fcrepo/<span class="code-keyword">rest</span>/1f2a607f-10ff-4e51-879c-ca9e58a9a3f2.ttl] is suppose to have a SHA-1 hash of [FED45878477099DB65DB909CFD14BF75646845F9] but was computed [fed45878477099db65db909cfd14bf75646845f9]
+	at org.fcrepo.importexport.importer.Importer.verifyBag(Importer.java:480)
+	at org.fcrepo.importexport.importer.Importer.&lt;init&gt;(Importer.java:126)
+	at org.fcrepo.importexport.integration.BagItIT.testImportBag(BagItIT.java:115)
+Caused by: gov.loc.repository.bagit.exceptions.CorruptChecksumException: File [/sw/<span class="code-keyword">var</span>/www/fcrepo4/fcrepo-<span class="code-keyword">import</span>-export/target/test-classes/sample/bag/data/fcrepo/<span class="code-keyword">rest</span>/1f2a607f-10ff-4e51-879c-ca9e58a9a3f2.ttl] is suppose to have a SHA-1 hash of [FED45878477099DB65DB909CFD14BF75646845F9] but was computed [fed45878477099db65db909cfd14bf75646845f9]
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-18204"><div class="by">Esmé Cowles, 2016-12-13 18:48 UTC</div><div class="text"><p>My latest commit (<a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/63/commits/067d7d25459855cb922b83d23391db2ef0188704" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/63/commits/067d7d25459855cb922b83d23391db2ef0188704</a>) generates lowercase checksums.  But maybe the test should use <tt>equalsIgnoreCase</tt> ?</p></div></div>
+<div class="comment" id="comment-18205"><div class="by">Jared Whiklo, 2016-12-13 18:52 UTC</div><div class="text"><p> I agree, but I'm not going back to LoC to suggest that. Your latest commit should fix it. </p></div></div>
+<div class="comment" id="comment-18206"><div class="by">Adam Wead, 2016-12-13 18:58 UTC</div><div class="text"><p>Thanks, Esmé Cowles, I can now validate with the Ruby gem. I've exported the hydra dataset with each profile: default, metaarchive, and aptrust. Each works correctly and is valid. However, I'm not seeing any differences between the profiles. Is that out of scope for this ticket?</p></div></div>
+<div class="comment" id="comment-18207"><div class="by">Esmé Cowles, 2016-12-13 19:03 UTC</div><div class="text"><p>There's no support for user-supplied metadata yet, so that's the big change in profiles that isn't implemented.</p>
+
+<p>But there should be SHA-1 and SHA-256 manifests when you use the APTrust profile, and just SHA-1 when using the default or MetaArchive profiles.</p></div></div>
+<div class="comment" id="comment-18210"><div class="by">Adam Wead, 2016-12-13 19:08 UTC</div><div class="text"><p>Esmé Cowles yep, confirmed. OK, this is good to go.</p></div></div>
+<div class="comment" id="comment-18211"><div class="by">Jared Whiklo, 2016-12-13 19:37 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/aa8f25c18a9754a64eb9659b93a9103800e3ffe3" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/aa8f25c18a9754a64eb9659b93a9103800e3ffe3</a></p></div></div>
+<p><a href="data/FCREPO-2354.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

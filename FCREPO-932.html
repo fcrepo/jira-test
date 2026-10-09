@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-932 HTML output broken on system disseminations for viewObjectProfile and viewMethodIndex</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-932</span> HTML output broken on system disseminations for viewObjectProfile and viewMethodIndex</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2011-05-04 00:22 UTC</td></tr><tr><th>Updated</th><td>2011-05-08 15:20 UTC</td></tr><tr><th>Resolved</th><td>2011-05-08 15:20 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 3.5</td></tr><tr><th>Fix versions</th><td>Fedora 3.5</td></tr><tr><th>Is related to</th><td><a href="FCREPO-936.html">FCREPO-936</a> Move API serializers into a separate package</td></tr></table>
+<h2>Environment</h2>ConfigB, ConfigC (not tested A)
+<h2>Description</h2>
+<p>eg<br/>
+<a href="http://localhost:8080/fedora/objects/fedora-system%3AContentModel-3.0/methods/fedora-system%3A3/viewObjectProfile" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/fedora-system%3AContentModel-3.0/methods/fedora-system%3A3/viewObjectProfile</a></p>
+
+<p><a href="http://localhost:8080/fedora/objects/fedora-system%3AContentModel-3.0/methods/fedora-system%3A3/viewMethodIndex" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fedora/objects/fedora-system%3AContentModel-3.0/methods/fedora-system%3A3/viewMethodIndex</a></p>
+
+<p>Both are not showing valid HTML output.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-11938"><div class="by">Benjamin Armintor, 2011-05-04 01:57 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/ee4492cbfdc0940dd2636400c22210589540a921#fcrepo-server/src/main/java/org/fcrepo/server/access/defaultdisseminator/DefaultDisseminatorImpl.java" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/ee4492cbfdc0940dd2636400c22210589540a921#fcrepo-server/src/main/java/org/fcrepo/server/access/defaultdisseminator/DefaultDisseminatorImpl.java</a></p>
+
+<p>is the only change to that class I can see for months, and doesn't look like it would change anything.  How is the HTML broken?</p></div></div>
+<div class="comment" id="comment-11939"><div class="by">Stephen Bayliss, 2011-05-04 03:02 UTC</div><div class="text"><p>By not being HTML, viewObjectProfile is some text, no HTML tags, viewMethodIndex seems to be blank.</p></div></div>
+<div class="comment" id="comment-11941"><div class="by">Stephen Bayliss, 2011-05-04 11:57 UTC</div><div class="text"><p>The underlying cause of this is the schema/output changes on the REST API for these two methods.</p>
+
+<p>We have two places where the responses are serialised to XML (before then being transformed to HTML)</p>
+
+<p>DefaultDisseminatorImpl uses org.fcrepo.server.access.defaultdisseminator.ObjectInfoAsXML()</p>
+
+<p>Whereas the REST API uses org.fcrepo.server.rest.DefaultSerializer.objectProfileToXML()</p>
+
+<p>Similarly for viewMethodIndex dissemination and the corresponding REST API method</p>
+
+<p>The outputs of both of these are converted to HTML using the view stylesheets; however since the stylesheets have been modified in line with namespace changes etc in the REST XML output, the stylesheets no longer work against the system methods outputs as the XML generators for these have not been updated in line with the REST XML output.</p>
+
+<p>We should only be generating this XML in one place, this would avoid this problem in future.</p>
+
+<p>Suggest that org.fcrepo.server.access.defaultdisseminator.ObjectInfoAsXML() should be refactored to re-use the REST API XML serialiser.</p>
+
+<p>Longer-term (or perhaps as part of resolving this) suggest that serialisers of Fedora entities should live in their own package; perhaps org.fcrepo.server.storage.types.serializers, or org.fcrepo.server.storage.serializers.  And could be added to in the future eg to provide alternative serialisations such as json.</p></div></div>
+<div class="comment" id="comment-11942"><div class="by">Stephen Bayliss, 2011-05-04 12:08 UTC</div><div class="text"><p>Should also be noted that the XML responses of these two methods are not schema-valid.</p></div></div>
+<div class="comment" id="comment-11947"><div class="by">Stephen Bayliss, 2011-05-08 13:06 UTC</div><div class="text"><p>Refactoring to re-use the REST serializers for these two methods.  There are other methods here that should probably be worked into a standard serialization package (see 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-936" >
+                <a href="FCREPO-936.html" class="jira-issue-macro-key issue-link"  title="Move API serializers into a separate package" >
+            
+            FCREPO-936
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) - not sure if these other serializations are provided by the REST API, and as they are not causing problems I am leaving alone for the moment.</p></div></div>
+<p><a href="data/FCREPO-932.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

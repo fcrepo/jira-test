@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3918 simplify pipelines to build fcrepo Docker images</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3918</span> simplify pipelines to build fcrepo Docker images</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Thomas Bernhart</td></tr><tr><th>Assignee</th><td>Thomas Bernhart</td></tr><tr><th>Created</th><td>2024-01-11 19:43 UTC</td></tr><tr><th>Updated</th><td>2025-03-27 15:13 UTC</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3912.html">FCREPO-3912</a> tag name of fcrepo Docker image built by release pipeline of fcrepo/fcrepo does not follow new naming scheme</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3924.html">FCREPO-3924</a> Automate tagged Docker Releases </td></tr><tr><th>Is related to</th><td><a href="FCREPO-3942.html">FCREPO-3942</a> Automated tagged Docker releases for camel-toolbox</td></tr></table>
+<h2>Description</h2>
+<p>Currently fcrepo Docker image is built in 2 pipelines:</p>
+
+<ol>
+	<li>The pipeline of fcrepo whenever a new releases has been created.</li>
+	<li>The pipeline of fcrepo-docker (either triggered manually or by a commit to <tt>main</tt> or automatically based on a weekly schedule)</li>
+</ol>
+
+
+<p>While researching for a solution for <a href="FCREPO-3913.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3913</a> I found a few interesting approaches that could simplify the current solution.</p>
+
+<p>Main goals:</p>
+
+<ol>
+	<li>Only build fcrepo Docker image in pipeline of fcrepo-docker</li>
+	<li>Don’t check out and build fcrepo when building the Docker image</li>
+	<li>Automatically detect the latest releases.</li>
+</ol>
+
+
+
+
+<p>For now this ticket is here as way for me to document the approaches. Resources:</p>
+
+<ul>
+	<li>Trigger pipeline from another repository:
+	<ul>
+		<li><a href="https://blog.marcnuri.com/triggering-github-actions-across-different-repositories" title="smart-link" class="external-link" rel="nofollow noreferrer">https://blog.marcnuri.com/triggering-github-actions-across-different-repositories</a></li>
+		<li><a href="https://stackoverflow.com/questions/74775432/trigger-another-repo-in-github-actions" title="smart-link" class="external-link" rel="nofollow noreferrer">https://stackoverflow.com/questions/74775432/trigger-another-repo-in-github-actions</a></li>
+	</ul>
+	</li>
+	<li>Get latest release of fcrepo from Github releases with Bash/curl:
+	<ul>
+		<li><a href="https://fabianlee.org/2021/02/16/bash-determining-latest-github-release-tag-and-version/" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fabianlee.org/2021/02/16/bash-determining-latest-github-release-tag-and-version/</a> (corresponding releases API: <a href="https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release" title="smart-link" class="external-link" rel="nofollow noreferrer">https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release</a>)</li>
+		<li>query available tags via Github API: <a href="https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28#list-matching-references" title="smart-link" class="external-link" rel="nofollow noreferrer">https://docs.github.com/en/rest/git/refs?apiVersion=2022-11-28#list-matching-references</a></li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>Get releases from Github via API:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl --silent "https://api.github.com/repos/fcrepo-exts/fcrepo-camel-toolbox/releases"</pre>
+</div></div>
+
+<p>Get latest release:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl --silent "https://api.github.com/repos/fcrepo-exts/fcrepo-camel-toolbox/releases/latest"</pre>
+</div></div>
+
+<p>Extract tag name:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl --silent "https://api.github.com/repos/fcrepo-exts/fcrepo-camel-toolbox/releases/latest" | jq ".tag_name"</pre>
+</div></div>
+
+<p>Extract release number from tag name:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl --silent "https://api.github.com/repos/REPO/releases/latest" \\
+| jq ".tag_name" \\
+| sed -E 's/^"TAG_PREFIX-(.+)"$/\1/'</pre>
+</div></div>
+<p><a href="data/FCREPO-3918.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

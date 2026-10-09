@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-724 Provide a rebuild utility to compute and store SIZE attributes for managed content datastreams</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-724</span> Provide a rebuild utility to compute and store SIZE attributes for managed content datastreams</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Stephen Bayliss</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2010-06-16 23:31 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:02 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:02 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr><tr><th>Required by</th><td><a href="FCREPO-64.html">FCREPO-64</a> Datastream SIZE attribute not fully implemented</td></tr><tr><th>Depends on</th><td><a href="FCREPO-726.html">FCREPO-726</a> Provide solution to allow legacy LLStore plug-ins to work with new java package names</td></tr><tr><th>Is related to</th><td><a href="FCREPO-765.html">FCREPO-765</a> Create an Admin module (similar to Management, Access) for Admin type &quot;API&quot; methods</td></tr><tr><th>Required by</th><td><a href="FCREPO-182.html">FCREPO-182</a> Improved HTTP 1.1 support (Content-Length and Content-Range)</td></tr></table>
+<h2>Description</h2>
+<p>
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-64" >
+                <a href="FCREPO-64.html" class="jira-issue-macro-key issue-link"  title="Datastream SIZE attribute not fully implemented" >
+            
+            FCREPO-64
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ means that SIZE attributes are now computed and stored for managed content datastreams.  However pre-existing managed datastream versions won't have this attribute, so the size won't be correctly reported.</p>
+
+<p>Therefore provide some kind of rebuild/migration tool to calculate SIZE for existing M datastream versions that don't have the SIZE attribute and save in the FOXML.</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-11514"><div class="by">Stephen Bayliss, 2010-08-10 16:47 UTC</div><div class="text"><p>Proposal:</p>
+
+<p>For the REST api, getDatastream, include an additional parameter calculateSize <span class="error">&#91;true|false&#93;</span> which forces a recalculation of the SIZE attribute (FOXML).  For 3.4 restrict this to "M" datastreams; for future release consider expanding to other datastream control groups (as discussed on recent committer call, SIZE attribute needs considering for E and R datastreams; this method could be useful once we implement size for these - for instance to "pre-fetch" size of external content as a batch job).</p>
+
+<p>For the SOAP api, a new method getDatastreamSize (or calculateDatastreamSize, fetchDatastreamSize??) (as we did for compareDatastreamChecksum).</p>
+
+<p>Requirement:</p>
+
+<p>There is currently nothing in ILowLevelStorage that will allow getting of the size of a managed content datastream (but the interface was updated to return the size when adding/modifying content as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-64" >
+                <a href="FCREPO-64.html" class="jira-issue-macro-key issue-link"  title="Datastream SIZE attribute not fully implemented" >
+            
+            FCREPO-64
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+).  Therefore a new method, or modification of existing method, would be required.</p>
+
+<p>ILowlevelStorage.retrieveDatastream currently returns an InputStream - we could consider wrapping this in a class that also specifies the size.  Need to consider downstream impact, particularly on those that have implemented their own storage.  Maybe this could be considered as part of 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-726" >
+                <a href="FCREPO-726.html" class="jira-issue-macro-key issue-link"  title="Provide solution to allow legacy LLStore plug-ins to work with new java package names" >
+            
+            FCREPO-726
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ - the plugin could return zero where implementors do not provide the ability to return a size (as would be the current situation); when implementors update their storage layer interface (as part of updating to use the new Java package names) they could implement getting of the size (or return zero if the storage layer does not permit).</p></div></div>
+<div class="comment" id="comment-11515"><div class="by">Stephen Bayliss, 2010-08-10 16:48 UTC</div><div class="text"><p>Wrapper should handle proposed ILowlevelStorage interface modifications that allow retrieval of datastream size.</p></div></div>
+<div class="comment" id="comment-11520"><div class="by">Stephen Bayliss, 2010-08-11 00:33 UTC</div><div class="text"><p>Discussed on committer call 2010-08-10<br/>
+1) ok to add a new ILowlevelStore method to get size of existing datastream<br/>
+2) follow a pattern similar to "reload policies" to expose service (ie not part of main APIs).  NB need to ensure:</p>
+<ul class="alternate" type="square">
+	<li>Authz for this (including with XACML)</li>
+	<li>FeSL Authz for this</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11545"><div class="by">Stephen Bayliss, 2010-08-19 15:44 UTC</div><div class="text"><p>Moved out of 3.4 into 3.5 - not enough time to complete.  We could consider releasing a separate admin utility as a stand-alone package prior to 3.5 release.</p></div></div>
+<div class="comment" id="comment-11934"><div class="by">Benjamin Armintor, 2011-05-03 20:52 UTC</div><div class="text"><p>Moved into 3.6.  Since rebuilders <b>should</b> be Spring-configurable now, this could be released in Fedora-Create between releases, and rolled into trunk the following release.</p></div></div>
+<div class="comment" id="comment-12348"><div class="by">Chris Wilper, 2012-07-19 20:09 UTC</div><div class="text"><p>Just wanted to mention that I started to put together a utility that can be used for this purpose. It can be used with old versions of Fedora 3.x through 3.6 (legacy and akubra-fs support), but currently does not have a pre-written filter to <b>just</b> compute new size values for managed datastreams. It can do a fixity re-computation, though, and a size-only "filter" could be written. </p>
+
+<p>More info:<br/>
+<a href="https://wiki.duraspace.org/display/~cwilper/A+New+Fedora+Storage+Utility" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/~cwilper/A+New+Fedora+Storage+Utility</a></p></div></div>
+<div class="comment" id="comment-13135"><div class="by">Andrew Woods, 2015-01-16 21:02 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-724.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

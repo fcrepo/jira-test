@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1186 Fedora overrides logback configuration for other webapps as well</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1186</span> Fedora overrides logback configuration for other webapps as well</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jan van Mansum</td></tr><tr><th>Assignee</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2013-02-13 14:13 UTC</td></tr><tr><th>Updated</th><td>2013-10-03 22:29 UTC</td></tr><tr><th>Resolved</th><td>2013-10-03 22:29 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.5, Fedora 3.6.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Environment</h2>Tomcat 6 (but probably other web containers, too)
+<h2>Description</h2>
+<p>The class org.fcrepo.utilities.LogConfig initializes the logback configuration with its initFromFile method.  It does so, however, by setting the system property <b>logback.configurationFile</b> if it is not already set.  This leads to one of the following problems:</p>
+
+<ul class="alternate" type="square">
+	<li>If the property is already set, the fedora logback configuration is not used.</li>
+	<li>If the property is not already set, Fedora sets it, overriding any logback.xml files that may be on the classpath, even for other web applications.</li>
+</ul>
+
+
+<p>A better way to programmatically load a logback configuration, just for your own webapplication, would be to use a ServletContextListener and have it execute something like the following in its contextInitialized method:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">       LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+       JoranConfigurator configurator = <span class="code-keyword">new</span> JoranConfigurator();
+       configurator.setContext(lc);
+       lc.reset();
+       configurator.doConfigure(externalConfigFile);
+       logger.info(<span class="code-quote">"Configured Logback with config file from: {}"</span>, externalConfigFile.getAbsolutePath());
+</pre>
+</div></div>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12567"><div class="by">Benjamin Armintor, 2013-10-03 22:29 UTC</div><div class="text"><p>merged <a href="https://github.com/fcrepo/fcrepo/commit/d37876973b783b99b74a74adad8bdf2fd564fbbf" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/d37876973b783b99b74a74adad8bdf2fd564fbbf</a></p></div></div>
+<p><a href="data/FCREPO-1186.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

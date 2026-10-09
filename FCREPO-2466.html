@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2466 Parallel build failures</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2466</span> Parallel build failures</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2017-05-19 21:12 UTC</td></tr><tr><th>Updated</th><td>2017-08-16 14:10 UTC</td></tr><tr><th>Resolved</th><td>2017-06-01 20:27 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.7.4</td></tr><tr><th>Labels</th><td>bug</td></tr></table>
+<h2>Description</h2>
+<p>When doing a build with parallelization turned on (e.g.,  mvn -Dfcrepo.streaming.parallel=true clean install), I am seeing intermittent failures in these three ITs:</p>
+
+<p>  FedoraLdpIT.testReplaceGraph:765 expected:&lt;204&gt; but was:&lt;500&gt;<br/>
+  FedoraLdpIT.testRoundTripReplaceGraph:831 expected:&lt;204&gt; but was:&lt;500&gt;<br/>
+ FedoraLdpIT.testRoundTripReplaceGraphForDatastreamDescription:1952 expected:&lt;204&gt; but was:&lt;500&gt;</p>
+
+<p>If I do the same build with parallization turned off, the build succeeds.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-18808"><div class="by">Andrew Woods, 2017-05-19 21:16 UTC</div><div class="text"><p>Travis intermittently has shown the same errors:</p>
+
+<p><a href="https://travis-ci.org/fcrepo4/fcrepo4/builds" class="external-link" rel="nofollow noreferrer">https://travis-ci.org/fcrepo4/fcrepo4/builds</a></p></div></div>
+<div class="comment" id="comment-18813"><div class="by">Esmé Cowles, 2017-05-20 10:41 UTC</div><div class="text"><p>I just verified that 4.7.2 builds fine for me, and bisected the commits between then and master.  It looks like the offending commit is <a href="https://github.com/fcrepo4/fcrepo4/commit/b00873e7d47ecf9f266e3628fcb9270e35edcc9c" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/b00873e7d47ecf9f266e3628fcb9270e35edcc9c</a> (consolidating the spring config).  Maybe an unintentional change to the config is the source of the problem?</p>
+
+<p>Update: my mistake — of course it's the parallel rdf output: </p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/commit/cd5b69e2b8e85f13651fe7e88e88c6d7154105c6" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/cd5b69e2b8e85f13651fe7e88e88c6d7154105c6</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-18815"><div class="by">Esmé Cowles, 2017-05-22 13:43 UTC</div><div class="text"><p>When debugging parallel build failures in another PR, and then in master, I saw build failures in one or more of those tests mentioned in the description.  But none of them fail consistently.</p>
+
+<p>When I enable debug logging, I see the stacktrace for the errors is:</p>
+
+<p><a href="https://gist.github.com/escowles/61ba8f628beca566c5332de19ce93c55" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/61ba8f628beca566c5332de19ce93c55</a></p>
+
+<p>Since all of the tests that are failing are doing PUTs with RDF content, and none of the other tests are failing, I suspect FedoraResourceImpl.replaceProperties is involved.</p></div></div>
+<div class="comment" id="comment-19062"><div class="by">Danny Bernstein, 2017-06-01 20:27 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1198" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1198</a></p></div></div>
+<div class="comment" id="comment-19064"><div class="by">Andrew Woods, 2017-06-01 21:36 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/bb8e9f995b94e439de5ea6df1dece4bf1710eaac" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/bb8e9f995b94e439de5ea6df1dece4bf1710eaac</a></p></div></div>
+<p><a href="data/FCREPO-2466.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

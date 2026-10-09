@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4027 Long or Large Transactions Issues</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4027</span> Long or Large Transactions Issues</h1>
+<table class="meta"><tr><th>Type</th><td>Documentation</td></tr><tr><th>Status</th><td>Open</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Dan Field</td></tr><tr><th>Assignee</th><td>Dan Field</td></tr><tr><th>Created</th><td>2025-07-03 08:09 UTC</td></tr><tr><th>Updated</th><td>2025-12-11 16:35 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 6.5.0</td></tr><tr><th>Fix versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Description</h2>
+<p>A Number if users have reported issues with very large transactions. These issues can manifest in a number of ways including not reporting the closure of a transaction or timeouts from the server. This ticket is to gather these issues together and then generate individual tickets for each fix. </p>
+
+<p>Initial investigations lead to some possible database improvements in the form of rewriting SQL statements, adding new indexes and upgrading the underlying database client libraries as part of the dependancy upgrade project. </p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-26056"><div class="by">Dan Field, 2025-07-03 13:51 UTC</div><div class="text"><p><em>On one of our instances which has about 70k objects, uploading suddenly started to take more than 1min. I tracked this down to Fedora committing a transaction (which we use to reduce OCFL versions).</em></p>
+
+<p><a href="https://fedora-project.slack.com/archives/C8B5TSR4J/p1750791389094999" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-project.slack.com/archives/C8B5TSR4J/p1750791389094999</a> </p></div></div>
+<div class="comment" id="comment-26089"><div class="by">Dan Field, 2025-07-03 15:36 UTC</div><div class="text"><p><em>When committing a long running Fedora transaction, in which the time needed to perform the commit is long (due to a large total size of files of many gigabytes and a large numbers of files for example), the database connections needs to stay open for a long time without any activity because moving all those files from OCFL staging directory to the OCFL root (committing the OCFL persistent storage session,</em> <a href="https://github.com/fcrepo/fcrepo/blob/a2ec2ac5b273670c421b74df1ad9174b3289f663/fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/TransactionImpl.java#L361" class="external-link" rel="nofollow noreferrer"><ins><em>fcrepo-kernel-impl/src/main/java/org/fcrepo/kernel/impl/TransactionImpl.java#L361</em></ins></a><em>) can take a considerable amount of time.</em></p>
+
+<p><a href="FCREPO-3970.html" title="smart-link" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3970?src=confmacro</a> </p></div></div>
+<p><a href="data/FCREPO-4027.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-855 API-M JMS messages do not include certain parameters of the original call</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-855</span> API-M JMS messages do not include certain parameters of the original call</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2011-01-28 02:46 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 20:59 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>As per the Messaging module documentation, the Atom messages emitted over JMS in connection with API-M calls include <em>almost</em> everything one would need to recreate the call. Except:</p>
+
+<p>'• Each &lt;category&gt; corresponds to a method's argument:</p>
+<ul>
+	<li>The term indicates the argument value. However, null values are indicated as "null", and non-null xsd:base64Binary values are indicated as "<span class="error">&#91;OMITTED&#93;</span>".'</li>
+</ul>
+
+
+<p>-from <a href="https://wiki.duraspace.org/display/FCR30/Messaging" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FCR30/Messaging</a></p>
+
+<p>so that a message consumer has almost, but not quite enough information to know exactly what happened in the case of 'ingest' and 'modifyDatastreamByValue' calls. It would be better to allow JMS messages to contain a full report of the method call. I understand that this could produce some really large messages, so it would be best to allow this as a configurable option.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-11793"><div class="by">A. Soroka, 2011-01-28 02:58 UTC</div><div class="text"><p>It looks to me like the code of interest is in:</p>
+
+<p>org.fcrepo.server.messaging.AtomAPIMMessage.objectToString(Object obj, String xsdType)</p>
+
+<p>where, at line 269, the serialization ends before accounting for xsd:base64Binary datatypes.</p>
+
+<p>I would be happy to work up a patch which checked for some appropriately-named parameter on the Messaging module config (e.g. "includeBase64") and if desired, serialized base64 values into exactly that- base64 values. If I have time, I'll be happy to try for a filtering arrangement wherein an additional parameter can be offered (e.g. "onlyIfSmallerThan", but better-named </p>
+{grin}
+<p>).</p></div></div>
+<div class="comment" id="comment-11794"><div class="by">A. Soroka, 2011-01-28 03:01 UTC</div><div class="text"><p>Actually, I may be wrong, but perhaps it would be best to offer a switch to just try to encode anything that doesn't meet the earlier tests in that method as base64, instead of picking out those that originally were? I'm not clear as to whether payloads for REST ingest and modifyDatastreamByValue have that metadata, and those are the two very things I would want to catch.</p></div></div>
+<div class="comment" id="comment-12177"><div class="by">A. Soroka, 2012-01-02 04:53 UTC</div><div class="text"><p>Coming back to this after some time, I now wonder whether any time to spent on this issue wouldn't be better spent moving forward Steve Bayliss' redesign of the Messaging module event stream. His design, working over content URLs in a way that truly captures the spirit of Atom, would solve the problem behind this issue and do much more besides.</p></div></div>
+<div class="comment" id="comment-12883"><div class="by">Andrew Woods, 2015-01-16 20:59 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-855.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

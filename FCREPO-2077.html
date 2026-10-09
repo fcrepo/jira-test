@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2077 Can&#x27;t paginate child resources via REST API</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2077</span> Can&#x27;t paginate child resources via REST API</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>David Chandek-Stark (old account)</td></tr><tr><th>Created</th><td>2016-07-13 15:46 UTC</td></tr><tr><th>Updated</th><td>2017-01-12 23:47 UTC</td></tr><tr><th>Resolved</th><td>2017-01-12 23:47 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1880.html">FCREPO-1880</a> Limit child resource count</td></tr></table>
+<h2>Description</h2>
+<p><a href="https://wiki.duraspace.org/display/FEDORA4x/RESTful+HTTP+API#RESTfulHTTPAPI-GETRetrievethecontentoftheresource" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/RESTful+HTTP+API#RESTfulHTTPAPI-GETRetrievethecontentoftheresource</a> offer the "Limit" header option but no way to get the "next batch".  This is scaling issue because not limiting the children can take an inordinately long time (~20 minutes in our 330K object repo).</p>
+<h2>Comments (17)</h2>
+<div class="comment" id="comment-17033"><div class="by">Andrew Woods, 2016-07-13 16:06 UTC</div><div class="text"><p>I believe there are two issues here:</p>
+<ol>
+	<li>An "Offset" capability should accompany the "Limit" capability</li>
+	<li>Performance of loading all of the children of a container (including the root container) can take a long time.</li>
+</ol>
+
+
+<p>I believe the second of these issues has been resolved by: <a href="https://jira.duraspace.org/browse/FCREPO-1880" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1880</a></p>
+
+<p>So I understand correctly, is your use case simply wanting to page through contained resources of a container via the REST API? Or is your use case more nuanced?</p></div></div>
+<div class="comment" id="comment-17066"><div class="by">Unknown, 2016-07-20 12:07 UTC</div><div class="text"><p>Until Fedora supports LDP Paging (which, itself never made it into the LDP recommendation &#8211; it is merely published as a "WG Note" <a href="https://www.w3.org/TR/ldp-paging/" class="external-link" rel="nofollow noreferrer">https://www.w3.org/TR/ldp-paging/</a>), I wonder if this isn't, more like something a triplestore would be better designed to handle.</p>
+
+<p>Effectively, what you're asking the repository to do is very much like "list all keys for a bucket" in Riak and other such types of non-relational databases: <a href="http://docs.basho.com/riak/kv/2.1.4/developing/api/http/list-keys/" class="external-link" rel="nofollow noreferrer">http://docs.basho.com/riak/kv/2.1.4/developing/api/http/list-keys/</a>. And like with Riak, while this operation is possible over HTTP, it is not recommended for production use. This is especially true if the client reading the response buffers that data entirely in memory (if you're not processing the response as a Stream, you will eventually run into memory problems). It is precisely for this reason that the triplestore indexer excludes LDP Containment triples (it keeps resource size small), since in a triplestore you can either use inference to get the ldp:contains triples or use the inverse property fedora:hasParent.</p></div></div>
+<div class="comment" id="comment-17068"><div class="by">A. Soroka, 2016-07-20 13:21 UTC</div><div class="text"><p>Yes, definitely this is a job more appropriately assigned to a triplestore or other index. One way to think about this as a principle: the closer to actual end-user consumption a request is formulated, the more likely it is that the request should go to some service on the asynchronous periphery of the repository-centered integrated system.</p></div></div>
+<div class="comment" id="comment-17070"><div class="by">David Chandek-Stark (old account), 2016-07-20 13:42 UTC</div><div class="text"><p>FWIW, A. Soroka, I don't see this as an end-user issue. A practical, production use case would be to rebuild your repository index (e.g., Solr).  We actually had to do this once with Fedora 3 due to lost data after an unscheduled outage.  I can't argue with the idea that the function is better (i.e., more efficiently) handle by a triple store, but it seems that the such a component should become part of the recommended usage of FCR4, at least for large repositories.</p></div></div>
+<div class="comment" id="comment-17071"><div class="by">A. Soroka, 2016-07-20 13:46 UTC</div><div class="text"><p>David Chandek-Stark (old account), rebuilding your repository index is an end-user task, with the end-user being a repository manager. No component in the Fedora ecosystem is going to trigger a repository reindex as part of some other operation. That having been said, in what way is paging a requirement for rebuilding a repository index? That is an extremely unexpected configuration.</p>
+
+<p>Otherwise, I agree that it may very well be that operating sidecar indexes should become normal recommended use. That's a good question to bring up at the next text meeting, or on the mailing lists.</p></div></div>
+<div class="comment" id="comment-17072"><div class="by">David Chandek-Stark (old account), 2016-07-20 14:02 UTC</div><div class="text"><p>A. Soroka it's not clear that the current list operation scales (w/r/t Unknown's comment), which is where paging comes in.  A enhancement was already made to return just the first N number.  This issue just extends that work.  </p></div></div>
+<div class="comment" id="comment-17073"><div class="by">A. Soroka, 2016-07-20 14:05 UTC</div><div class="text"><p>I understand that the current operation is difficult (or impossible) to use for this purpose. What's not clear is that paging is the immediate alternative. A properly streaming list operation could work. Paging is not nearly as simply as might be supposed.</p></div></div>
+<div class="comment" id="comment-17075"><div class="by">Andrew Woods, 2016-07-20 14:11 UTC</div><div class="text"><p>One fairly low-hanging option would be to include an "Offset" header that could be used in concert with the existing "Limit" header.</p></div></div>
+<div class="comment" id="comment-17076"><div class="by">A. Soroka, 2016-07-20 14:13 UTC</div><div class="text"><p>That is not a low-hanging option at all; the order of resources returned is not defined. We've had this discussion several times before, and Benjamin Armintor has delved thoroughly into the costs and difficulties. Benjamin Armintor, can you comment?</p></div></div>
+<div class="comment" id="comment-17077"><div class="by">Unknown, 2016-07-20 14:14 UTC</div><div class="text"><p>David Chandek-Stark (old account) w/r/t "scaling", you need to be more clear about why the current behavior doesn't scale. If you are trying to read the entire response into memory (which IIRC active-fedora does), then no, that won't work. But that's because of how the response is read, not because of how the response is produced. Traversing the resource hierarchy should always be done with a client capable of working with streaming RDF: either a SAX parser (for XML) or a n-triples based parser, where triples of certain types are acted upon (i.e. pushed onto another queue) as the response is being streamed through the client.</p></div></div>
+<div class="comment" id="comment-17078"><div class="by">A. Soroka, 2016-07-20 14:16 UTC</div><div class="text"><p>Unknown, thank you for reminding me that the current operation <em>is</em> streaming. For some reason I had forgotten that.</p></div></div>
+<div class="comment" id="comment-17079"><div class="by">Unknown, 2016-07-20 14:27 UTC</div><div class="text"><p>As a side note, the fcrepo-reindexing application already supports stream-based response handling. It was specifically designed to support repositories in which certain resources had very large numbers of child nodes.</p>
+
+<p><a href="https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/master/fcrepo-reindexing" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel-toolbox/tree/master/fcrepo-reindexing</a></p></div></div>
+<div class="comment" id="comment-17081"><div class="by">David Chandek-Stark (old account), 2016-07-20 14:30 UTC</div><div class="text"><p>Unknown - Which makes Camel a "requirement". </p></div></div>
+<div class="comment" id="comment-17082"><div class="by">A. Soroka, 2016-07-20 14:35 UTC</div><div class="text"><p>David Chandek-Stark (old account), any properly streaming HTTP client could be used for this task, in your choice of language and with your choice of workflow. But if you want to reuse the work that other people have already done, in particular, then you will have to agree to use the same tools they used. This is a little like worrying that Fedora itself requires a Java servlet container.</p>
+
+<p>One of the avowed intentions of the API specification effort is precisely to make these choices visible and free for the server-side, as they now are for the client-side.</p></div></div>
+<div class="comment" id="comment-17154"><div class="by">Benjamin Armintor, 2016-07-29 20:58 UTC</div><div class="text"><p>A. Soroka sorry, for some reason I missed this thread. Introducing a limit is complicated for this work because there's currently no consistently defined order for objects, and the limit is on triples and thus may interrupt a resource if contained resources are included.</p>
+
+<p>I initially had a violent reaction to what I thought was an obtuse deliberation from the WG on this, but (as usual) it turns out that they had been thoughtful and I had been rash. Addressing this really requires either a sidecar index, a sidecar flat store, or providing a query facility.</p></div></div>
+<div class="comment" id="comment-17155"><div class="by">A. Soroka, 2016-07-30 12:31 UTC</div><div class="text"><p>NP, Benjamin Armintor, I just wanted David Chandek-Stark (old account) to understand that we're not trying to ignore or cavalierly dismiss his concerns. The quick answers came because we've been here before and we know what the issues are. There are moderately deep reasons that paging is hard for us and there aren't quick solutions. This problem is meet for the use of continuations or something akin, but we don't have that and aren't getting it anytime soon.</p></div></div>
+<div class="comment" id="comment-17168"><div class="by">David Chandek-Stark (old account), 2016-08-01 16:02 UTC</div><div class="text"><p>Given the comments above I am OK with closing this issue unfixed as expressed here.  I do think Fedora should have a reasonable way to guarantee (taken advisedly) that its contents can be enumerated, but that conversation can be reframed and carried out in another venue.</p></div></div>
+<p><a href="data/FCREPO-2077.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

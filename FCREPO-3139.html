@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3139 Design a disambiguation pattern for the OCFL filenaming</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3139</span> Design a disambiguation pattern for the OCFL filenaming</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Peter Winckles</td></tr><tr><th>Created</th><td>2019-11-21 18:55 UTC</td></tr><tr><th>Updated</th><td>2020-08-27 16:28 UTC</td></tr><tr><th>Resolved</th><td>2020-08-27 16:28 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr><tr><th>Required by</th><td><a href="FCREPO-3140.html">FCREPO-3140</a> Implement disambiguation pattern for OCFL file naming collisions</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3238.html">FCREPO-3238</a> Address naming collisions for .fcrepo files</td></tr><tr><th>Is related to</th><td><a href="FCREPO-3182.html">FCREPO-3182</a> Migration-utils: Align persistence with Fedora 6 expectations</td></tr></table>
+<h2>Description</h2>
+<p>This ticket is to design some disambiguation pattern for filenaming in the OCFL persistence layer when conflicts occur.</p>
+
+<p>In general the identifier a user provides will be used all the way to the OCFL persistence layer to make it more "readable". But in certain cases file naming conflicts will occur.</p>
+
+<p>Example</p>
+
+<p>The current design pattern of a Archival Group would allow for the following overlap</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+license.txt # user creates
+license.txt-description.nt
+license.txt-description.nt # user creates
+license.txt-description.nt-description.nt </pre>
+</div></div>
+<p>The user generated <tt>license.txt-description.nt</tt> would attempt to overwrite the Fedora generated file of the same name.</p>
+
+<p>We need to alter one of these filenames (Probably the second created one) and still track the relationship somehow to the original identifier. Please figure out how we want to do this.</p>
+
+<p> </p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-21172"><div class="by">Andrew Woods, 2020-05-05 15:03 UTC</div><div class="text"><p>A potentially different approach could be for Fedora to prefix all files it creates with something like "fcrepo-". So in the example in this ticket we would have:<br/>
+license.txt # user creates<br/>
+fcrepo-license.txt-description.nt (or fcrepo-license.txt.nt)<br/>
+license.txt-description.nt # user creates<br/>
+fcrepo-license.txt-description.nt-description.nt (or fcrepo-license.txt-description.nt)</p></div></div>
+<div class="comment" id="comment-21398"><div class="by">Peter Winckles, 2020-08-27 16:28 UTC</div><div class="text"><p>Fixed in related issues</p></div></div>
+<p><a href="data/FCREPO-3139.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

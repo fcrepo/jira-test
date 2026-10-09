@@ -1,0 +1,907 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "There was a typo in the original command in the ticket description, so that error is not valid. However, the ticket is still valid as you cannot create historic versions of external binaries because the VersionService has no way to receive external content uris currently.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "A corrected command:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "attrs": {
+         "language": "java"
+        },
+        "content": [
+         {
+          "text": "curl -i -XPUT -H \"Link: <http://mementoweb.org/ns#OriginalResource>; rel=\\\"type\\\"\" -H \"Link: <https://duraspace.org/wp-content/themes/duraspace/assets/images/whitedura.png>; rel=\\\"http://fedora.info/definitions/fcrepo#ExternalContent\\\"; handling=\\\"proxy\\\"; type=\\\"image/png\\\"\" \"http://localhost:8080/rest/put_v2\" -ufedoraAdmin:fedoraAdmin",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "This produces a memento as a FedoraInternalBinary with no content and no proxyUri property.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "Also, to create the associated fcr:metadata memento (although this is not necessary to reproduce this bug):",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "attrs": {
+         "language": "java"
+        },
+        "content": [
+         {
+          "text": "echo '@prefix premis:  <http://www.loc.gov/premis/rdf/v1#> .\r\n@prefix test:  <info:fedora/test/> .\r\n@prefix pcdm:  <http://pcdm.org/models#> .\r\n@prefix memento:  <http://mementoweb.org/ns#> .\r\n@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .\r\n@prefix webac:  <http://fedora.info/definitions/v4/webac#> .\r\n@prefix acl:  <http://www.w3.org/ns/auth/acl#> .\r\n@prefix ns001:  <http://www.iana.org/assignments/relation/> .\r\n@prefix xsi:  <http://www.w3.org/2001/XMLSchema-instance> .\r\n@prefix xmlns:  <http://www.w3.org/2000/xmlns/> .\r\n@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\r\n@prefix fedora:  <http://fedora.info/definitions/v4/repository#> .\r\n@prefix xml:  <http://www.w3.org/XML/1998/namespace> .\r\n@prefix ebucore:  <http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#> .\r\n@prefix ldp:  <http://www.w3.org/ns/ldp#> .\r\n@prefix xs:  <http://www.w3.org/2001/XMLSchema> .\r\n@prefix fedoraconfig:  <http://fedora.info/definitions/v4/config#> .\r\n@prefix foaf:  <http://xmlns.com/foaf/0.1/> .\r\n@prefix dc:  <http://purl.org/dc/elements/1.1/> .<http://localhost:8080/rest/put_v2>\r\n        rdf:type                 fedora:NonRdfSourceDescription ;\r\n        rdf:type                 fedora:Binary ;\r\n        rdf:type                 fedora:Resource ;\r\n        fedora:lastModifiedBy    \"fedoraAdmin\" ;\r\n        premis:hasSize           \"4167\"^^<http://www.w3.org/2001/XMLSchema#long> ;\r\n        ebucore:hasMimeType      \"image/png\" ;\r\n        fedora:createdBy         \"fedoraAdmin\" ;\r\n        fedora:created           \"2018-07-03T19:00:28.354Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;\r\n        fedora:lastModified      \"2018-07-03T19:00:28.354Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;\r\n        ebucore:filename         \"\" ;\r\n        rdf:type                 ldp:NonRDFSource ;\r\n        fedora:writable          true ;\r\n        ns001:describedby        <http://localhost:8080/rest/put_v2/fcr:metadata> ;\r\n        fedora:hasFixityService  <http://localhost:8080/rest/put_v2/fcr:fixity> .' | curl -XPOST -H \"Content-Type: text/turtle\" -H \"Memento-Datetime: Sat, 1 Jan 2000 00:00:00 GMT\" --data-binary \"@-\" http://localhost:8080/rest/put_v2/fcr:metadata/fcr:versions -ufedoraAdmin:fedoraAdmin",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": " ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2018-07-03T16:59:38.335-0300",
+     "id": "20034",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment/20034",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2018-07-03T16:59:38.335-0300"
+    },
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo4/fcrepo4/pull/1365"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo4/fcrepo4/pull/1365",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2018-07-06T09:59:38.815-0300",
+     "id": "20048",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment/20048",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2018-07-06T09:59:38.815-0300"
+    },
+    {
+     "author": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "Resolved with ",
+          "type": "text"
+         },
+         {
+          "marks": [
+           {
+            "attrs": {
+             "href": "https://github.com/fcrepo4/fcrepo4/commit/27044c41def748ac87813d923bc0b010e61cd6e7"
+            },
+            "type": "link"
+           }
+          ],
+          "text": "https://github.com/fcrepo4/fcrepo4/commit/27044c41def748ac87813d923bc0b010e61cd6e7",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2018-07-10T23:08:14.374-0300",
+     "id": "20052",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment/20052",
+     "updateAuthor": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2018-07-10T23:08:14.374-0300"
+    }
+   ],
+   "maxResults": 3,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment",
+   "startAt": 0,
+   "total": 3
+  },
+  "components": [],
+  "created": "2018-06-28T15:57:15.846-0300",
+  "creator": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": "FCREPO-2582",
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|102w48:",
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "2018-07-10T23:08:14.374-0300",
+  "customfield_10025": "1_*:*_1_*:*_16039531_*|*_3_*:*_1_*:*_246351075_*|*_6_*:*_1_*:*_0_*|*_10002_*:*_1_*:*_392915571_*|*_10003_*:*_1_*:*_407352377",
+  "customfield_10026": null,
+  "customfield_10029": {
+   "accountId": "6089a4c12a753d0071341edb",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+   },
+   "displayName": "Jared Whiklo",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10030": [
+   {
+    "id": "10020",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/customFieldOption/10020",
+    "value": "API Specification"
+   },
+   {
+    "id": "10023",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/customFieldOption/10023",
+    "value": "Services: Versioning"
+   }
+  ],
+  "customfield_10037": null,
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "Creating a versioned external binary works, as well as creating a memento from the current version. However, creating an external historic memento fails. See the following commands:",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "curl -i -XPOST -H \"Slug:logov\"",
+       "type": "text"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "-H \"Link: <[http://mementoweb.org/ns#OriginalResource]>; rel=\\\"type\\\"\"",
+       "type": "text"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "\"Link: <[https://duraspace.org/wp-content/themes/duraspace/assets/images/whitedura.png]>; rel=\\\"[http://fedora.info/definitions/fcrepo#ExternalContent]\\\"; handling=\\\"proxy\\\"; type=\\\"image/png\\\"\"",
+       "type": "text"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "\"http://localhost:8080/rest/\"",
+       "type": "text"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "-ufedoraAdmin:fedoraAdmin",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "curl -XPOST http://localhost:8080/rest/logov/fcr:versions -H \"Memento-Datetime: Sat, 1 Jan 2000 00:00:00 GMT\" -H \"Link: <[https://wiki.duraspace.org/download/attachments/31655033/fedora_logo_2in.png]>; rel=\\\"[http://fedora.info/definitions/fcrepo#ExternalContent]\\\"; handling=\\\"proxy\\\"; type=\\\"image/png\\\"\" -ufedoraAdmin:fedoraAdmin",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "#Response:",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "# < HTTP/1.1",
+       "type": "text"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "415",
+       "type": "text"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "Unsupported Media Type",
+       "type": "text"
+      },
+      {
+       "type": "hardBreak"
+      },
+      {
+       "marks": [
+        {
+         "type": "code"
+        }
+       ],
+       "text": "# Invalid Content Type application/octet-stream",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": null,
+  "fixVersions": [
+   {
+    "archived": false,
+    "description": "",
+    "id": "10112",
+    "name": "Fedora 5.0.0",
+    "releaseDate": "2018-12-14",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10112"
+   }
+  ],
+  "issuelinks": [],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10303,
+   "description": "A problem or error.",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium",
+   "id": "10004",
+   "name": "Bug",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10004",
+   "subtask": false
+  },
+  "labels": [],
+  "lastViewed": null,
+  "parent": {
+   "fields": {
+    "issuetype": {
+     "description": "A big user story that needs to be broken down. Created by Jira Software - do not edit or delete.",
+     "hierarchyLevel": 1,
+     "iconUrl": "https://fedora-repository.atlassian.net/images/icons/issuetypes/epic.svg",
+     "id": "10000",
+     "name": "Epic",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10000",
+     "subtask": false
+    },
+    "priority": {
+     "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/critical.svg",
+     "id": "10001",
+     "name": "Critical",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10001"
+    },
+    "status": {
+     "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+     "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+     "id": "6",
+     "name": "Closed",
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+     "statusCategory": {
+      "colorName": "green",
+      "id": 3,
+      "key": "done",
+      "name": "Done",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+     }
+    },
+    "summary": "API Alignment"
+   },
+   "id": "12479",
+   "key": "FCREPO-2582",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12479"
+  },
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/minor.svg",
+   "id": "10004",
+   "name": "Minor",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10004"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "A fix for this issue is checked into the tree and tested.",
+   "id": "10004",
+   "name": "Fixed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10004"
+  },
+  "resolutiondate": "2018-07-06T09:59:38.804-0300",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": null,
+  "subtasks": [],
+  "summary": "Section 3.9 Creation of historic memento of external binary fails",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2018-10-01T16:01:11.459-0300",
+  "versions": [
+   {
+    "archived": false,
+    "description": "",
+    "id": "10112",
+    "name": "Fedora 5.0.0",
+    "releaseDate": "2018-12-14",
+    "released": true,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10112"
+   }
+  ],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-2815/votes",
+   "votes": 0
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-2815/watchers",
+   "watchCount": 2
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "12750",
+ "key": "FCREPO-2815",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>There was a typo in the original command in the ticket description, so that error is not valid. However, the ticket is still valid as you cannot create historic versions of external binaries because the VersionService has no way to receive external content uris currently.</p>\n\n<p>A corrected command:</p>\n<div class=\"code panel\" style=\"border-width: 1px;\"><div class=\"codeContent panelContent\">\n<pre class=\"code-java\">\r\ncurl -i -XPUT -H <span class=\"code-quote\">\"Link: &lt;http:<span class=\"code-comment\">//mementoweb.org/ns#OriginalResource&gt;; rel=\\\"</span>type\\<span class=\"code-quote\">\"\" -H \"</span>Link: &lt;https://duraspace.org/wp-content/themes/duraspace/assets/images/whitedura.png&gt;; rel=\\<span class=\"code-quote\">\"http://fedora.info/definitions/fcrepo#ExternalContent\\\"</span>; handling=\\<span class=\"code-quote\">\"proxy\\\"</span>; type=\\<span class=\"code-quote\">\"image/png\\\"</span><span class=\"code-quote\">\" \"</span>http://localhost:8080/<span class=\"code-keyword\">rest</span>/put_v2\" -ufedoraAdmin:fedoraAdmin</span>\r\n</pre>\n</div></div>\n<p>This produces a memento as a FedoraInternalBinary with no content and no proxyUri property.</p>\n\n<p>Also, to create the associated fcr:metadata memento (although this is not necessary to reproduce this bug):</p>\n<div class=\"code panel\" style=\"border-width: 1px;\"><div class=\"codeContent panelContent\">\n<pre class=\"code-java\">\r\necho '@prefix premis:  &lt;http:<span class=\"code-comment\">//www.loc.gov/premis/rdf/v1#&gt; .\r\n</span>@prefix test:  &lt;info:fedora/test/&gt; .\r\n@prefix pcdm:  &lt;http:<span class=\"code-comment\">//pcdm.org/models#&gt; .\r\n</span>@prefix memento:  &lt;http:<span class=\"code-comment\">//mementoweb.org/ns#&gt; .\r\n</span>@prefix rdfs:  &lt;http:<span class=\"code-comment\">//www.w3.org/2000/01/rdf-schema#&gt; .\r\n</span>@prefix webac:  &lt;http:<span class=\"code-comment\">//fedora.info/definitions/v4/webac#&gt; .\r\n</span>@prefix acl:  &lt;http:<span class=\"code-comment\">//www.w3.org/ns/auth/acl#&gt; .\r\n</span>@prefix ns001:  &lt;http:<span class=\"code-comment\">//www.iana.org/assignments/relation/&gt; .\r\n</span>@prefix xsi:  &lt;http:<span class=\"code-comment\">//www.w3.org/2001/XMLSchema-instance&gt; .\r\n</span>@prefix xmlns:  &lt;http:<span class=\"code-comment\">//www.w3.org/2000/xmlns/&gt; .\r\n</span>@prefix rdf:  &lt;http:<span class=\"code-comment\">//www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .\r\n</span>@prefix fedora:  &lt;http:<span class=\"code-comment\">//fedora.info/definitions/v4/repository#&gt; .\r\n</span>@prefix xml:  &lt;http:<span class=\"code-comment\">//www.w3.org/XML/1998/namespace&gt; .\r\n</span>@prefix ebucore:  &lt;http:<span class=\"code-comment\">//www.ebu.ch/metadata/ontologies/ebucore/ebucore#&gt; .\r\n</span>@prefix ldp:  &lt;http:<span class=\"code-comment\">//www.w3.org/ns/ldp#&gt; .\r\n</span>@prefix xs:  &lt;http:<span class=\"code-comment\">//www.w3.org/2001/XMLSchema&gt; .\r\n</span>@prefix fedoraconfig:  &lt;http:<span class=\"code-comment\">//fedora.info/definitions/v4/config#&gt; .\r\n</span>@prefix foaf:  &lt;http:<span class=\"code-comment\">//xmlns.com/foaf/0.1/&gt; .\r\n</span>@prefix dc:  &lt;http:<span class=\"code-comment\">//purl.org/dc/elements/1.1/&gt; .&lt;http://localhost:8080/<span class=\"code-keyword\">rest</span>/put_v2&gt;\r\n</span>        rdf:type                 fedora:NonRdfSourceDescription ;\r\n        rdf:type                 fedora:Binary ;\r\n        rdf:type                 fedora:Resource ;\r\n        fedora:lastModifiedBy    <span class=\"code-quote\">\"fedoraAdmin\"</span> ;\r\n        premis:hasSize           <span class=\"code-quote\">\"4167\"</span>^^&lt;http:<span class=\"code-comment\">//www.w3.org/2001/XMLSchema#<span class=\"code-object\">long</span>&gt; ;\r\n</span>        ebucore:hasMimeType      <span class=\"code-quote\">\"image/png\"</span> ;\r\n        fedora:createdBy         <span class=\"code-quote\">\"fedoraAdmin\"</span> ;\r\n        fedora:created           <span class=\"code-quote\">\"2018-07-03T19:00:28.354Z\"</span>^^&lt;http:<span class=\"code-comment\">//www.w3.org/2001/XMLSchema#dateTime&gt; ;\r\n</span>        fedora:lastModified      <span class=\"code-quote\">\"2018-07-03T19:00:28.354Z\"</span>^^&lt;http:<span class=\"code-comment\">//www.w3.org/2001/XMLSchema#dateTime&gt; ;\r\n</span>        ebucore:filename         \"\" ;\r\n        rdf:type                 ldp:NonRDFSource ;\r\n        fedora:writable          <span class=\"code-keyword\">true</span> ;\r\n        ns001:describedby        &lt;http:<span class=\"code-comment\">//localhost:8080/<span class=\"code-keyword\">rest</span>/put_v2/fcr:metadata&gt; ;\r\n</span>        fedora:hasFixityService  &lt;http:<span class=\"code-comment\">//localhost:8080/<span class=\"code-keyword\">rest</span>/put_v2/fcr:fixity&gt; .' | curl -XPOST -H <span class=\"code-quote\">\"Content-Type: text/turtle\"</span> -H <span class=\"code-quote\">\"Memento-Datetime: Sat, 1 Jan 2000 00:00:00 GMT\"</span> --data-binary <span class=\"code-quote\">\"@-\"</span> http://localhost:8080/<span class=\"code-keyword\">rest</span>/put_v2/fcr:metadata/fcr:versions -ufedoraAdmin:fedoraAdmin</span>\r\n</pre>\n</div></div>\n<p> </p>",
+     "created": "03/Jul/18 4:59 PM",
+     "id": "20034",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment/20034",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "03/Jul/18 4:59 PM"
+    },
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p><a href=\"https://github.com/fcrepo4/fcrepo4/pull/1365\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo4/fcrepo4/pull/1365</a></p>",
+     "created": "06/Jul/18 9:59 AM",
+     "id": "20048",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment/20048",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "06/Jul/18 9:59 AM"
+    },
+    {
+     "author": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p>Resolved with <a href=\"https://github.com/fcrepo4/fcrepo4/commit/27044c41def748ac87813d923bc0b010e61cd6e7\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo4/fcrepo4/commit/27044c41def748ac87813d923bc0b010e61cd6e7</a></p>",
+     "created": "10/Jul/18 11:08 PM",
+     "id": "20052",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment/20052",
+     "updateAuthor": {
+      "accountId": "6089a4c12a753d0071341edb",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/45c30a3354c38331cc42d11962474554?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FJW-1.png"
+      },
+      "displayName": "Jared Whiklo",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a4c12a753d0071341edb",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "10/Jul/18 11:08 PM"
+    }
+   ],
+   "maxResults": 3,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750/comment",
+   "startAt": 0,
+   "total": 3
+  },
+  "components": null,
+  "created": "28/Jun/18 3:57 PM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "10/Jul/18 11:08 PM",
+  "customfield_10025": null,
+  "customfield_10026": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p><tt>Creating a versioned external binary works, as well as creating a memento from the current version. However, creating an external historic memento fails. See the following commands:</tt></p>\n\n<p><tt>curl -i -XPOST -H \"Slug:logov\"</tt> <tt>-H \"Link: &lt;<a href=\"http://mementoweb.org/ns#OriginalResource\" class=\"external-link\" rel=\"nofollow noreferrer\">http://mementoweb.org/ns#OriginalResource</a>&gt;; rel=\\\"type\\\"\"</tt> <tt>\"Link: &lt;<a href=\"https://duraspace.org/wp-content/themes/duraspace/assets/images/whitedura.png\" class=\"external-link\" rel=\"nofollow noreferrer\">https://duraspace.org/wp-content/themes/duraspace/assets/images/whitedura.png</a>&gt;; rel=\\\"<a href=\"http://fedora.info/definitions/fcrepo#ExternalContent\" class=\"external-link\" rel=\"nofollow noreferrer\">http://fedora.info/definitions/fcrepo#ExternalContent</a>\\\"; handling=\\\"proxy\\\"; type=\\\"image/png\\\"\"</tt> <tt>\"http://localhost:8080/rest/\"</tt> <tt>-ufedoraAdmin:fedoraAdmin</tt><br/>\n  <br/>\n <tt>curl -XPOST http:</tt><tt>//localhost:8080/rest/logov/fcr:versions -H \"Memento-Datetime: Sat, 1 Jan 2000 00:00:00 GMT\" -H \"Link: &lt;<a href=\"https://wiki.duraspace.org/download/attachments/31655033/fedora_logo_2in.png\" class=\"external-link\" rel=\"nofollow noreferrer\">https://wiki.duraspace.org/download/attachments/31655033/fedora_logo_2in.png</a>&gt;; rel=\\\"<a href=\"http://fedora.info/definitions/fcrepo#ExternalContent\" class=\"external-link\" rel=\"nofollow noreferrer\">http://fedora.info/definitions/fcrepo#ExternalContent</a>\\\"; handling=\\\"proxy\\\"; type=\\\"image/png\\\"\" -ufedoraAdmin:fedoraAdmin</tt><br/>\n  <br/>\n <tt>#Response:</tt><br/>\n <tt># &lt; HTTP/</tt><tt>1.1</tt> <tt>415</tt> <tt>Unsupported Media Type</tt><br/>\n <tt># Invalid Content Type application/octet-stream</tt></p>",
+  "duedate": null,
+  "environment": "",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "06/Jul/18 9:59 AM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": null,
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "01/Oct/18 4:01 PM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/12750"
+}

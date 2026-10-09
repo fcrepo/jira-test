@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3612 Test performance of DB rebuild optimization</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3612</span> Test performance of DB rebuild optimization</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Done</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2021-01-27 07:06 UTC</td></tr><tr><th>Updated</th><td>2021-07-07 16:39 UTC</td></tr><tr><th>Resolved</th><td>2021-07-02 17:16 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>The rebuild process is now parallelized and should perform better than the single threaded approach.  However,  we have not verified this.  The task here is to test the rebuild of a repository with a significant number of resources of different types.  As a starting point we might try: </p>
+
+<p>   a repo with 10 thousand basic container objects      </p>
+
+<p>   a repo with 10 thousand containers objects,  each of which includes  10 binaries</p>
+
+<p>   The same as previous but doubling the number of containers to 20,000.  </p>
+
+<p> </p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-22095"><div class="by">Danny Bernstein, 2021-02-20 05:11 UTC</div><div class="text"><p>Test #1: 100,000 binaries</p>
+
+<p>Deployment: Elastic Beanstalk in docker container with tomcat</p>
+
+<p>Instance Type: t3.large</p>
+
+<p>Instance Type: db.t2.large</p>
+
+<p>Disk:  10GB 100 IOPS</p>
+
+<p>fcrepo.ocfl.reindex.threads: -1 (default - guess optimal based on processor count)</p>
+
+<p><b>Reindexing 100K binaries took about 75 minutes.   Steady rate from beginning to end.</b>  </p>
+
+<p>INFO 23:01:40.994 (IndexBuilderImpl) Initiating index rebuild. This may take a while. Progress will be logged periodically.</p>
+
+<p>INFO 23:06:41.301 (ReindexManager) Index rebuild progress: Complete: 7500; Errored: 0; Time: 5 mins, 0 secs; Rate: 25/s<br/>
+ INFO 23:11:41.303 (ReindexManager) Index rebuild progress: Complete: 14500; Errored: 0; Time: 10 mins, 0 secs; Rate: 24/s<br/>
+ INFO 23:16:41.303 (ReindexManager) Index rebuild progress: Complete: 21505; Errored: 0; Time: 15 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:21:41.304 (ReindexManager) Index rebuild progress: Complete: 28300; Errored: 0; Time: 20 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:26:41.305 (ReindexManager) Index rebuild progress: Complete: 35000; Errored: 0; Time: 25 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:31:41.305 (ReindexManager) Index rebuild progress: Complete: 41921; Errored: 0; Time: 30 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:36:41.306 (ReindexManager) Index rebuild progress: Complete: 49000; Errored: 0; Time: 35 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:41:41.306 (ReindexManager) Index rebuild progress: Complete: 56100; Errored: 0; Time: 40 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:46:41.307 (ReindexManager) Index rebuild progress: Complete: 63200; Errored: 0; Time: 45 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:51:41.307 (ReindexManager) Index rebuild progress: Complete: 70100; Errored: 0; Time: 50 mins, 0 secs; Rate: 23/s<br/>
+ INFO 23:56:41.307 (ReindexManager) Index rebuild progress: Complete: 77200; Errored: 0; Time: 55 mins, 0 secs; Rate: 23/s<br/>
+ INFO 00:01:41.308 (ReindexManager) Index rebuild progress: Complete: 84263; Errored: 0; Time: 0 mins, 0 secs; Rate: 23/s<br/>
+ INFO 00:06:41.313 (ReindexManager) Index rebuild progress: Complete: 91000; Errored: 0; Time: 1 hours, 5 mins, 0 secs; Rate: 23/s<br/>
+ INFO 00:11:41.325 (ReindexManager) Index rebuild progress: Complete: 97900; Errored: 0; Time: 1 hours, 10 mins, 0 secs; Rate: 23/s</p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-22096"><div class="by">Danny Bernstein, 2021-02-20 05:41 UTC</div><div class="text"><p>Test #2: 31,666 binaries</p>
+
+<p>Deployment: Elastic Beanstalk in docker container with tomcat</p>
+
+<p>Instance Type: m5.2x-large</p>
+
+<p>Instance Type: db.m5.2x-large</p>
+
+<p>INFO 05:27:52.756 (IndexBuilderImpl) Initiating index rebuild. This may take a while. Progress will be logged periodically.<br/>
+ INFO 05:34:47.442 (IndexBuilderImpl) Reindexing complete.<br/>
+ INFO 05:34:47.443 (IndexBuilderImpl) Index rebuild completed 31666 objects successfully and 0 objects had errors in 6 mins, 54 seconds</p>
+
+<p>Average : 75/s</p></div></div>
+<div class="comment" id="comment-22097"><div class="by">Danny Bernstein, 2021-02-20 06:10 UTC</div><div class="text"><p>Test #3 - same as 2 <br/>
+fcrepo.ocfl.reindex.threads: 20</p>
+
+<p>INFO 05:48:51.366 (IndexBuilderImpl) Index rebuild completed 31666 objects successfully and 0 objects had errors in 5 mins, 19 seconds</p>
+
+<p>Average : 99/s</p></div></div>
+<div class="comment" id="comment-22098"><div class="by">Danny Bernstein, 2021-02-20 06:12 UTC</div><div class="text"><p>Test #4 - same as 3</p>
+
+<p>Disk:  1000GB  / 3000 IOPS</p>
+
+<p>fcrepo.ocfl.reindex.threads: -1  ( on this machine = 7)</p>
+
+<p> </p>
+
+<p> </p>
+
+<p>INFO 08:05:42.425 (IndexBuilderImpl) Initiating index rebuild. This may take a while. Progress will be logged periodically.<br/>
+INFO 08:10:42.740 (ReindexManager) Index rebuild progress: Complete: 62300; Errored: 0; Time: 5 mins, 0 secs; Rate: 207/s</p></div></div>
+<div class="comment" id="comment-22099"><div class="by">Danny Bernstein, 2021-02-20 07:22 UTC</div><div class="text"><p>Test #5 - same as 4</p>
+
+<p>fcrepo.ocfl.reindex.threads: 15</p>
+
+<p>Disk:  1000GB  / 3000 IOPS</p></div></div>
+<p><a href="data/FCREPO-3612.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1302 Ingest degradation bulk load</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1302</span> Ingest degradation bulk load</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Critical</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-01-23 22:55 UTC</td></tr><tr><th>Updated</th><td>2015-09-03 14:42 UTC</td></tr><tr><th>Resolved</th><td>2015-06-04 16:02 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Affects versions</th><td>Fedora 4.0.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.3.0</td></tr><tr><th>Labels</th><td>non-issue</td></tr><tr><th>Addressed by</th><td><a href="FCREPO-1385.html">FCREPO-1385</a> Anonymous Blank Nodes</td></tr></table>
+<h2>Description</h2>
+<p>It has been observed that when ingesting 50,000 resources with the attached mods.rdf file, ingest performance drops between the creation of 30,000 and 40,000 resources. <br/>
+The attached mods.rdf includes 13 blanknodes.</p>
+
+<p>The following script can be used to reproduce the issue:<br/>
+===========<br/>
+curl -XPUT localhost:8080/fcrepo/rest/test/collection0</p>
+
+<p>time for x in </p>
+{0..50000}
+<p>; do if [ $(( $x % 500 )) == 0 ]; then d=`date`; echo "$d &#8212; $x" ; fi; curl -s -XPOST --data-binary @mods.ttl -H"Content-Type: text/turtle" <br/>
+localhost:8080/fcrepo/rest/test/collection0 &gt; /dev/null; done<br/>
+===========</p>
+
+<p>Tests should be performed that create resources that do and do not include RDF bodies.<br/>
+Additionally, tests should be performed in repository hierarchies that are initially empty and in those that already contain thousands of resources.</p>
+
+<p>Once a scenario is found to exhibit performance degradation, repeat the test while profiling the application with YourKit:<br/>
+<a href="https://wiki.duraspace.org/display/FF/Profiling+Fedora" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Profiling+Fedora</a></p>
+
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1302/10201_dams.xml">dams.xml</a>, 19398 bytes, added by Andrew Woods on 2015-02-09</li>
+<li><a href="attachments/FCREPO-1302/10202_mods.ttl">mods.ttl</a>, 2646 bytes, added by Andrew Woods on 2015-02-09</li>
+</ul>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-13354"><div class="by">Andrew Woods, 2015-02-07 19:45 UTC</div><div class="text"><p>These tests have been run on the instance (presently "stopped") on AWS, named "f4-test".<br/>
+<a href="https://duraspace.signin.aws.amazon.com/console" class="external-link" rel="nofollow noreferrer">https://duraspace.signin.aws.amazon.com/console</a></p>
+
+<p>It is a 64bit m1.medium, with insufficient (8GB) disk space.<br/>
+<a href="http://aws.amazon.com/ec2/previous-generation/" class="external-link" rel="nofollow noreferrer">http://aws.amazon.com/ec2/previous-generation/</a></p>
+
+<p>It has the 4.0.0 war deployed.</p></div></div>
+<div class="comment" id="comment-13355"><div class="by">Unknown, 2015-02-08 18:07 UTC</div><div class="text"><p>Andrew Woods could you add the mods.ttl file that you have been using to this ticket?</p></div></div>
+<div class="comment" id="comment-13356"><div class="by">Andrew Woods, 2015-02-09 07:05 UTC</div><div class="text"><p>The attached mods.ttl includes 13 blank nodes.<br/>
+The attached dams.xml includes resource properties.</p></div></div>
+<div class="comment" id="comment-13361"><div class="by">Unknown, 2015-02-09 17:34 UTC</div><div class="text"><p>Reproduced the issue after ingesting ~ 48,000 objects. Initially fcrepo ingested about 7-8 objects per seconds. The limiting factor appeared to be the CPU, as that ran consistently at 100%.</p>
+
+<p>Then, and this happened rather abruptly (it was not a gradual slowdown), each ingest request took about 5-10 seconds  to complete. CPU utilization dropped, and <tt>htop</tt> shows the application being memory-bound. I am suspicious of the skolemizedBnodeMap data structure.</p></div></div>
+<div class="comment" id="comment-13590"><div class="by">Unknown, 2015-03-02 19:53 UTC</div><div class="text"><p>Andrew Woods given the change in how blank nodes will be handled per <a href="https://jira.duraspace.org/browse/FCREPO-1385" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1385</a>, can we close this ticket?</p></div></div>
+<div class="comment" id="comment-13612"><div class="by">Andrew Woods, 2015-03-04 17:53 UTC</div><div class="text"><p>Once <a href="https://jira.duraspace.org/browse/FCREPO-1385" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1385</a> has been completed, this ticket (
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1302" >
+                <a href="FCREPO-1302.html" class="jira-issue-macro-key issue-link"  title="Ingest degradation bulk load" >
+            
+            FCREPO-1302
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+) should be verified.</p></div></div>
+<div class="comment" id="comment-14454"><div class="by">Unknown, 2015-06-04 16:02 UTC</div><div class="text"><p>This is a red herring &#8211; the bnode map is scoped to an individual document and does not persist across API requests.</p></div></div>
+<p><a href="data/FCREPO-1302.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

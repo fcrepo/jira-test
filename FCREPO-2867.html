@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2867 acl:append access on a LDP-RS describing an LDP-NR causes stacktrace</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2867</span> acl:append access on a LDP-RS describing an LDP-NR causes stacktrace</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2018-09-18 20:42 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 21:01 UTC</td></tr><tr><th>Resolved</th><td>2018-09-19 17:11 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>fall-2018-sprint-1</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Giving a user acl:Append access to a LDP-NR, properly denies POST, PUT and DELETE access from it.</p>
+
+<p>But its associated (ie. rel="describedby") LDP-RS cannot be accessed.</p>
+
+<p>&gt; curl -I -utestuser:testpass <a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7</a> <br/>
+ HTTP/1.1 200 OK<br/>
+ Date: Tue, 18 Sep 2018 20:35:08 GMT<br/>
+ Set-Cookie: JSESSIONID=pm8avfg06j73k5nmalttu6a5;Path=/<br/>
+ Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+ Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Mon, 17-Sep-2018 20:35:08 GMT<br/>
+ ETag: "c4d3fc08d3826258d691c697ea1533a4e4701028"<br/>
+ Last-Modified: Tue, 18 Sep 2018 20:34:01 GMT<br/>
+ Content-Type: text/plain;charset=iso-8859-1<br/>
+ Accept-Ranges: bytes<br/>
+ Content-Disposition: attachment; filename=""; creation-date="Tue, 18 Sep 2018 20:34:01 GMT"; modification-date="Tue, 18 Sep 2018 20:34:01 GMT"; size=10<br/>
+ Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+ Link: &lt;<a href="http://www.w3.org/ns/ldp#NonRDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#NonRDFSource</a>&gt;;rel="type"<br/>
+ Link: &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata</a>&gt;; rel="describedby"<br/>
+ Link: &lt;<a href="http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/NonRDFSourceConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+ Accept-External-Content-Handling: copy,redirect,proxy<br/>
+ Allow: DELETE,HEAD,GET,PUT,OPTIONS<br/>
+ Link: &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl</a>&gt;; rel="acl"<br/>
+ Content-Length: 10<br/>
+ Server: Jetty(9.3.1.v20150714)</p>
+
+<p> </p>
+
+<p> </p>
+
+<p>&gt; curl -i -utestuser:testpass <a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata</a><br/>
+ HTTP/1.1 500 Server Error<br/>
+ Date: Tue, 18 Sep 2018 20:37:26 GMT<br/>
+ Set-Cookie: JSESSIONID=1jdxk2yk13sg1g562k1x27nqz;Path=/<br/>
+ Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Mon, 17-Sep-2018 20:37:26 GMT<br/>
+ Content-Type: text/html;charset=iso-8859-1<br/>
+ Cache-Control: must-revalidate,no-cache,no-store<br/>
+ Content-Length: 9338<br/>
+ Connection: close<br/>
+ Server: Jetty(9.3.1.v20150714)}}&lt;html&gt;<br/>
+ &lt;head&gt;<br/>
+ &lt;meta http-equiv="Content-Type" content="text/html;charset=utf-8"/&gt;<br/>
+ &lt;title&gt;Error 500 Server Error&lt;/title&gt;<br/>
+ &lt;/head&gt;<br/>
+ &lt;body&gt;&lt;h2&gt;HTTP ERROR 500&lt;/h2&gt;<br/>
+ &lt;p&gt;Problem accessing /rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata. Reason:<br/>
+ &lt;pre&gt; Server Error&lt;/pre&gt;&lt;/p&gt;&lt;h3&gt;Caused by:&lt;/h3&gt;&lt;pre&gt;javax.servlet.ServletException: Filtered request failed.<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:384)<br/>
+ at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:262)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1667)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:581)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+ at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:513)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:226)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1113)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:511)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1047)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:213)<br/>
+ at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:109)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:119)<br/>
+ at org.eclipse.jetty.server.Server.handle(Server.java:517)<br/>
+ at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:302)<br/>
+ at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:242)<br/>
+ at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:238)<br/>
+ at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:95)<br/>
+ at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:57)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceAndRun(ExecuteProduceConsume.java:213)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:147)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:654)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:572)<br/>
+ at java.lang.Thread.run(Thread.java:745)<br/>
+ Caused by: java.lang.ClassCastException: org.fcrepo.kernel.modeshape.NonRdfSourceDescriptionImpl cannot be cast to org.fcrepo.kernel.modeshape.FedoraBinaryImpl<br/>
+ at org.fcrepo.auth.webac.WebACRolesProvider.getAgentRoles(WebACRolesProvider.java:190)<br/>
+ at org.fcrepo.auth.webac.WebACRolesProvider.getRoles(WebACRolesProvider.java:175)<br/>
+ at org.fcrepo.auth.webac.WebACAuthorizingRealm.doGetAuthorizationInfo(WebACAuthorizingRealm.java:129)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.getAuthorizationInfo(AuthorizingRealm.java:341)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.hasRole(AuthorizingRealm.java:573)<br/>
+ at org.apache.shiro.authz.ModularRealmAuthorizer.hasRole(ModularRealmAuthorizer.java:374)<br/>
+ at org.apache.shiro.mgt.AuthorizingSecurityManager.hasRole(AuthorizingSecurityManager.java:153)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.hasRole(DelegatingSubject.java:228)<br/>
+ at org.fcrepo.auth.webac.WebACFilter.doFilter(WebACFilter.java:93)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:84)<br/>
+ at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+ ... 27 more<br/>
+ &lt;/pre&gt;<br/>
+ &lt;h3&gt;Caused by:&lt;/h3&gt;&lt;pre&gt;java.lang.ClassCastException: org.fcrepo.kernel.modeshape.NonRdfSourceDescriptionImpl cannot be cast to org.fcrepo.kernel.modeshape.FedoraBinaryImpl<br/>
+ at org.fcrepo.auth.webac.WebACRolesProvider.getAgentRoles(WebACRolesProvider.java:190)<br/>
+ at org.fcrepo.auth.webac.WebACRolesProvider.getRoles(WebACRolesProvider.java:175)<br/>
+ at org.fcrepo.auth.webac.WebACAuthorizingRealm.doGetAuthorizationInfo(WebACAuthorizingRealm.java:129)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.getAuthorizationInfo(AuthorizingRealm.java:341)<br/>
+ at org.apache.shiro.realm.AuthorizingRealm.hasRole(AuthorizingRealm.java:573)<br/>
+ at org.apache.shiro.authz.ModularRealmAuthorizer.hasRole(ModularRealmAuthorizer.java:374)<br/>
+ at org.apache.shiro.mgt.AuthorizingSecurityManager.hasRole(AuthorizingSecurityManager.java:153)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.hasRole(DelegatingSubject.java:228)<br/>
+ at org.fcrepo.auth.webac.WebACFilter.doFilter(WebACFilter.java:93)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.AbstractPrincipalProvider.doFilter(AbstractPrincipalProvider.java:84)<br/>
+ at org.fcrepo.auth.common.HttpHeaderPrincipalProvider.doFilter(HttpHeaderPrincipalProvider.java:38)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.fcrepo.auth.common.ServletContainerAuthFilter.doFilter(ServletContainerAuthFilter.java:89)<br/>
+ at org.apache.shiro.web.servlet.ProxiedFilterChain.doFilter(ProxiedFilterChain.java:66)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.executeChain(AbstractShiroFilter.java:449)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter$1.call(AbstractShiroFilter.java:365)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.doCall(SubjectCallable.java:90)<br/>
+ at org.apache.shiro.subject.support.SubjectCallable.call(SubjectCallable.java:83)<br/>
+ at org.apache.shiro.subject.support.DelegatingSubject.execute(DelegatingSubject.java:387)<br/>
+ at org.apache.shiro.web.servlet.AbstractShiroFilter.doFilterInternal(AbstractShiroFilter.java:362)<br/>
+ at org.apache.shiro.web.servlet.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:125)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:346)<br/>
+ at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:262)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler$CachedChain.doFilter(ServletHandler.java:1667)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:581)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:143)<br/>
+ at org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:513)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doHandle(SessionHandler.java:226)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1113)<br/>
+ at org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:511)<br/>
+ at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:185)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1047)<br/>
+ at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)<br/>
+ at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:213)<br/>
+ at org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:109)<br/>
+ at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:119)<br/>
+ at org.eclipse.jetty.server.Server.handle(Server.java:517)<br/>
+ at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:302)<br/>
+ at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:242)<br/>
+ at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:238)<br/>
+ at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:95)<br/>
+ at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:57)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceAndRun(ExecuteProduceConsume.java:213)<br/>
+ at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:147)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:654)<br/>
+ at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:572)<br/>
+ at java.lang.Thread.run(Thread.java:745)<br/>
+ &lt;/pre&gt;<br/>
+ &lt;hr&gt;&lt;a href="http://eclipse.org/jetty"&gt;Powered by Jetty:// 9.3.1.v20150714&lt;/a&gt;&lt;hr/&gt;}}&lt;/body&gt;<br/>
+ &lt;/html&gt;</p>
+
+<p> </p>
+
+<p> </p>
+
+<p>Using an admin user works.</p>
+
+<p> </p>
+
+<p>&gt; curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata</a><br/>
+ HTTP/1.1 200 OK<br/>
+ Date: Tue, 18 Sep 2018 20:39:35 GMT<br/>
+ Set-Cookie: JSESSIONID=n99o798f8mpjflwcsk8eg4b7;Path=/<br/>
+ Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+ Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Mon, 17-Sep-2018 20:39:35 GMT<br/>
+ ETag: W/"4e1b0ff8d461828161230d8a74b8e4ddf56046c9"<br/>
+ Last-Modified: Tue, 18 Sep 2018 20:34:01 GMT<br/>
+ Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+ Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+ Link: &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7</a>&gt;; rel="describes"<br/>
+ Accept-External-Content-Handling: copy,redirect,proxy<br/>
+ Accept-Patch: application/sparql-update<br/>
+ Allow: HEAD,GET,DELETE,PUT,PATCH,OPTIONS<br/>
+ Link: &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl</a>&gt;; rel="acl"<br/>
+ Preference-Applied: return=representation<br/>
+ Vary: Prefer<br/>
+ Vary: Accept<br/>
+ Vary: Range<br/>
+ Vary: Accept-Encoding<br/>
+ Vary: Accept-Language<br/>
+ Content-Type: text/turtle;charset=utf-8<br/>
+ Content-Length: 2426<br/>
+ Server: Jetty(9.3.1.v20150714)}}@prefix premis: &lt;<a href="http://www.loc.gov/premis/rdf/v1#" class="external-link" rel="nofollow noreferrer">http://www.loc.gov/premis/rdf/v1#</a>&gt; .<br/>
+ @prefix test: &lt;info:fedora/test/&gt; .<br/>
+ @prefix memento: &lt;<a href="http://mementoweb.org/ns#" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#</a>&gt; .<br/>
+ @prefix rdfs: &lt;<a href="http://www.w3.org/2000/01/rdf-schema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/01/rdf-schema#</a>&gt; .<br/>
+ @prefix webac: &lt;<a href="http://fedora.info/definitions/v4/webac#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#</a>&gt; .<br/>
+ @prefix acl: &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt; .<br/>
+ @prefix vcard: &lt;<a href="http://www.w3.org/2006/vcard/ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2006/vcard/ns#</a>&gt; .<br/>
+ @prefix ns003: &lt;<a href="http://www.w3.org/ns/auth/acl#acl:" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#acl:</a>&gt; .<br/>
+ @prefix ns002: &lt;<a href="http://www.iana.org/assignments/relation/" class="external-link" rel="nofollow noreferrer">http://www.iana.org/assignments/relation/</a>&gt; .<br/>
+ @prefix ns001: &lt;<a href="http://example/" class="external-link" rel="nofollow noreferrer">http://example/</a>&gt; .<br/>
+ @prefix xsi: &lt;<a href="http://www.w3.org/2001/XMLSchema-instance" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema-instance</a>&gt; .<br/>
+ @prefix xmlns: &lt;<a href="http://www.w3.org/2000/xmlns/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/xmlns/</a>&gt; .<br/>
+ @prefix rdf: &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+ @prefix fedora: &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+ @prefix xml: &lt;<a href="http://www.w3.org/XML/1998/namespace" class="external-link" rel="nofollow noreferrer">http://www.w3.org/XML/1998/namespace</a>&gt; .<br/>
+ @prefix ebucore: &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#</a>&gt; .<br/>
+ @prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+ @prefix dcterms: &lt;<a href="http://purl.org/dc/terms/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/</a>&gt; .<br/>
+ @prefix xs: &lt;<a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a>&gt; .<br/>
+ @prefix fedoraconfig: &lt;<a href="http://fedora.info/definitions/v4/config#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/config#</a>&gt; .<br/>
+ @prefix foaf: &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt; .<br/>
+ @prefix dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p> &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7</a>&gt;<br/>
+ rdf:type fedora:NonRdfSourceDescription ;<br/>
+ rdf:type fedora:Binary ;<br/>
+ rdf:type fedora:Resource ;<br/>
+ fedora:lastModifiedBy "fedoraAdmin" ;<br/>
+ premis:hasSize "10"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#long" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#long</a>&gt; ;<br/>
+ ebucore:hasMimeType "text/plain;charset=ISO-8859-1" ;<br/>
+ fedora:createdBy "fedoraAdmin" ;<br/>
+ fedora:created "2018-09-18T20:34:01.861Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+ fedora:lastModified "2018-09-18T20:34:01.861Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+ premis:hasMessageDigest &lt;urn:sha1:203fee975fbd208c63d07f5c5ec42dbce4c21d84&gt; ;<br/>
+ ebucore:filename "" ;<br/>
+ rdf:type ldp:NonRDFSource ;<br/>
+ fedora:writable true ;<br/>
+ ns002:describedby &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:metadata</a>&gt; ;<br/>
+ fedora:hasFixityService &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:fixity" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:fixity</a>&gt; .</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20257"><div class="by">Jared Whiklo, 2018-09-18 20:46 UTC</div><div class="text"><p>&gt; curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl</a><br/>
+HTTP/1.1 200 OK<br/>
+Date: Tue, 18 Sep 2018 20:46:05 GMT<br/>
+Set-Cookie: JSESSIONID=1557nner1k30fl1zsy1lvzhy9;Path=/<br/>
+Expires: Thu, 01 Jan 1970 00:00:00 GMT<br/>
+Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Mon, 17-Sep-2018 20:46:05 GMT<br/>
+ETag: W/"2a40ef36a339d82493db7b481f73ddc5af842816"<br/>
+Last-Modified: Tue, 18 Sep 2018 20:35:05 GMT<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Resource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Resource</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#Container" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#Container</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#RDFSource" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#RDFSource</a>&gt;; rel="type"<br/>
+Link: &lt;<a href="http://www.w3.org/ns/ldp#BasicContainer" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#BasicContainer</a>&gt;;rel="type"<br/>
+Link: &lt;<a href="http://localhost:8080/static/constraints/ContainerConstraints.rdf" class="external-link" rel="nofollow noreferrer">http://localhost:8080/static/constraints/ContainerConstraints.rdf</a>&gt;; rel="http://www.w3.org/ns/ldp#constrainedBy"<br/>
+Accept-External-Content-Handling: copy,redirect,proxy<br/>
+Accept-Patch: application/sparql-update<br/>
+Accept-Post: text/turtle,text/rdf+n3,text/n3,application/rdf+xml,application/n-triples,application/ld+json<br/>
+Allow: MOVE,COPY,DELETE,POST,HEAD,GET,PUT,PATCH,OPTIONS<br/>
+Preference-Applied: return=representation<br/>
+Vary: Prefer<br/>
+Vary: Accept<br/>
+Vary: Range<br/>
+Vary: Accept-Encoding<br/>
+Vary: Accept-Language<br/>
+Content-Type: text/turtle;charset=utf-8<br/>
+Content-Length: 2473<br/>
+Server: Jetty(9.3.1.v20150714)</p>
+
+<p>@prefix premis: &lt;<a href="http://www.loc.gov/premis/rdf/v1#" class="external-link" rel="nofollow noreferrer">http://www.loc.gov/premis/rdf/v1#</a>&gt; .<br/>
+@prefix test: &lt;info:fedora/test/&gt; .<br/>
+@prefix memento: &lt;<a href="http://mementoweb.org/ns#" class="external-link" rel="nofollow noreferrer">http://mementoweb.org/ns#</a>&gt; .<br/>
+@prefix rdfs: &lt;<a href="http://www.w3.org/2000/01/rdf-schema#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/01/rdf-schema#</a>&gt; .<br/>
+@prefix webac: &lt;<a href="http://fedora.info/definitions/v4/webac#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/webac#</a>&gt; .<br/>
+@prefix acl: &lt;<a href="http://www.w3.org/ns/auth/acl#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#</a>&gt; .<br/>
+@prefix vcard: &lt;<a href="http://www.w3.org/2006/vcard/ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2006/vcard/ns#</a>&gt; .<br/>
+@prefix ns003: &lt;<a href="http://www.w3.org/ns/auth/acl#acl:" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/auth/acl#acl:</a>&gt; .<br/>
+@prefix ns002: &lt;<a href="http://www.iana.org/assignments/relation/" class="external-link" rel="nofollow noreferrer">http://www.iana.org/assignments/relation/</a>&gt; .<br/>
+@prefix ns001: &lt;<a href="http://example/" class="external-link" rel="nofollow noreferrer">http://example/</a>&gt; .<br/>
+@prefix xsi: &lt;<a href="http://www.w3.org/2001/XMLSchema-instance" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema-instance</a>&gt; .<br/>
+@prefix xmlns: &lt;<a href="http://www.w3.org/2000/xmlns/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2000/xmlns/</a>&gt; .<br/>
+@prefix rdf: &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora: &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix xml: &lt;<a href="http://www.w3.org/XML/1998/namespace" class="external-link" rel="nofollow noreferrer">http://www.w3.org/XML/1998/namespace</a>&gt; .<br/>
+@prefix ebucore: &lt;<a href="http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#" class="external-link" rel="nofollow noreferrer">http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#</a>&gt; .<br/>
+@prefix ldp: &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a>&gt; .<br/>
+@prefix dcterms: &lt;<a href="http://purl.org/dc/terms/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/terms/</a>&gt; .<br/>
+@prefix xs: &lt;<a href="http://www.w3.org/2001/XMLSchema" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema</a>&gt; .<br/>
+@prefix fedoraconfig: &lt;<a href="http://fedora.info/definitions/v4/config#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/config#</a>&gt; .<br/>
+@prefix foaf: &lt;<a href="http://xmlns.com/foaf/0.1/" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/</a>&gt; .<br/>
+@prefix dc: &lt;<a href="http://purl.org/dc/elements/1.1/" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl</a>&gt;<br/>
+ rdf:type fedora:Resource ;<br/>
+ rdf:type webac:Acl ;<br/>
+ fedora:lastModifiedBy "fedoraAdmin" ;<br/>
+ fedora:createdBy "fedoraAdmin" ;<br/>
+ fedora:created "2018-09-18T20:35:05.611Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; ;<br/>
+ fedora:lastModified "2018-09-18T20:35:05.611Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a>&gt; .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl#restricted" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl#restricted</a>&gt;<br/>
+ rdf:type acl:Authorization ;<br/>
+ acl:accessTo &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7</a>&gt; ;<br/>
+ acl:default &lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7</a>&gt; ;<br/>
+ acl:mode acl:Append ;<br/>
+ acl:mode acl:Read ;<br/>
+ acl:agent "testuser" .</p>
+
+<p>&lt;<a href="http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/testsuitecontainer09182018153343/95b75a87-e219-446a-bfa4-b497789a10a7/fcr:acl</a>&gt;<br/>
+ rdf:type ldp:RDFSource ;<br/>
+ rdf:type ldp:Container ;<br/>
+ rdf:type ldp:BasicContainer ;<br/>
+ fedora:writable true .</p></div></div>
+<div class="comment" id="comment-20261"><div class="by">Peter Matthew Eichman, 2018-09-19 17:11 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1413" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1413</a></p></div></div>
+<div class="comment" id="comment-20286"><div class="by">Danny Bernstein, 2018-09-21 20:14 UTC</div><div class="text"><p>Resolved by: <a href="https://github.com/fcrepo4/fcrepo4/commit/8a69ec1bab7177093be433e5bb79441105769132" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/8a69ec1bab7177093be433e5bb79441105769132</a></p></div></div>
+<p><a href="data/FCREPO-2867.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

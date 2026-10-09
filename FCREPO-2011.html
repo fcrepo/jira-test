@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2011 SQL error on first GET of a resource after idling</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2011</span> SQL error on first GET of a resource after idling</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>David Chandek-Stark (old account)</td></tr><tr><th>Created</th><td>2016-04-27 15:15 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:49 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:49 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr></table>
+<h2>Environment</h2>Fedora 4.5.1 RC3<br/>
+mysql  Ver 15.1 Distrib 5.5.47-MariaDB, for Linux (x86_64) using readline 5.1<br/>
+Tomcat 7.0.54<br/>
+RHEL 7
+<h2>Description</h2>
+<p>See fedora-tech: <a href="https://groups.google.com/d/topic/fedora-tech/HbA-9As89bs/discussion" class="external-link" rel="nofollow noreferrer">https://groups.google.com/d/topic/fedora-tech/HbA-9As89bs/discussion</a>.</p>
+
+<p>This partial traceback is returned by the Ruby LDP gem.  No error appears in the Catalina log.</p>
+
+<p>Error<br/>
+STATUS: 500 org.infinispan.persistence.spi.PersistenceException: SQL error while fetching stored entry with key: bae9606e-bd37-4549-8268-c200fcc230f5, lockingKey: bae9606e-bd37-4549-8268-c200fcc230f5 at org.infinispan.persistence.jdbc.stringbased.JdbcStringBasedStore.load(JdbcStringBasedStore.java:209) at org.infinispan.persistence.manager.PersistenceManagerImpl.loadFromAllStores(PersistenceManagerImpl.java:436) at org.infinispan.persistence.PersistenceUtil.loadAndCheckExpiration(PersistenceUtil.java:116) at org.infinispan.persistence.PersistenceUtil$4.compute(PersistenceUtil.java:100) at org.infinispan.container.DefaultDataContainer$BoundedEquivalentConcurrentExtendedMap$2.apply(DefaultDataContainer.java:539) at org.infinispan.container.DefaultDataContainer$BoundedEquivalentConcurrentExtendedMap$2.apply(DefaultDataContainer.java:536) at org.infinispan.commons.util.concurrent.jdk8backported.BoundedEquivalentConcurrentHashMapV8.compute(BoundedEquivalentConcurrentHashMapV8.java:3430) at org....</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-16634"><div class="by">David Chandek-Stark (old account), 2016-05-10 16:03 UTC</div><div class="text"><p>Still experiencing this problem with v4.5.1 final.</p></div></div>
+<div class="comment" id="comment-17032"><div class="by">David Chandek-Stark (old account), 2016-07-13 15:41 UTC</div><div class="text"><p>Is this issue going to be addressed?</p></div></div>
+<div class="comment" id="comment-17191"><div class="by">Michael Durbin, 2016-08-09 15:39 UTC</div><div class="text"><p>I had an issue that manifested similarly.  In the full fedora logs there was a BROKEN PIPE exception and I worked with networking to try to address the issue.  We couldn't, but we found a workaround that was suitable as as stopgap until the Modeshape5-based fedora.</p>
+
+<p>In our infinispan configuration we switched from a pool to a simple-connection....</p>
+
+<p>&lt;jdbc:simple-connection connection-url="jdbc:mysql://$</p>
+{fcrepo.ispn.mysql.host:localhost}
+<p>:$</p>
+{fcrepo.ispn.mysql.port:3306}
+<p>...</p>
+
+<p>This prevented the idle timeouts.  It seems that the infinispan connection pooling doesn't validate connections so when one has timed out, you get an exception.  It didn't <b>appear</b> to corrupt the DB if it occurred during a write, but I couldn't be sure.</p>
+
+<p>Not using pooling means that there's a new connection opened for every request.  This works in our case because our traffic is super light.  I can easily see how under heavy load this workaround would cause a different problem (running out of handles for not-yet-cleaned-up TCP connections to the database).</p>
+
+
+
+</div></div>
+<div class="comment" id="comment-17193"><div class="by">Michael Durbin, 2016-08-09 16:07 UTC</div><div class="text"><p>See simple-connection vs connection-pool here: <a href="http://docs.jboss.org/infinispan/7.0/configdocs/infinispan-cachestore-jdbc-config-7.0.html" class="external-link" rel="nofollow noreferrer">http://docs.jboss.org/infinispan/7.0/configdocs/infinispan-cachestore-jdbc-config-7.0.html</a></p></div></div>
+<div class="comment" id="comment-17304"><div class="by">Benjamin Armintor, 2016-08-31 12:46 UTC</div><div class="text"><p>The 4.6.0 release should allow you to specify finer logging levels 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2064" >
+                <a href="FCREPO-2064.html" class="jira-issue-macro-key issue-link"  title="Consistent logging in JAXRS exception mappers" >
+            
+            FCREPO-2064
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ for the ExceptionMapper implementations (in this case, I expect it's WildcardExceptionMapper) to see the rest of the stacktrace.</p>
+
+<p>We need to see a little more about the issue to sort out whether this is something we have any control over, or whether it's a mariaDB and/or ISPN problem.</p></div></div>
+<div class="comment" id="comment-17503"><div class="by">Corey Hinshaw, 2016-09-12 18:32 UTC</div><div class="text"><p>Just chiming in that I experienced this issue on a fresh installation of Fedora 4.6.0 (with RBACL).</p>
+
+<p>Environment: CentOS 7, Tomcat 7.0.54, Oracle Java 1.8u101, PostgreSQL 8.4.20</p>
+
+<p>I tried configuring a JNDI JDBC connection as noted here: <a href="https://wiki.duraspace.org/display/FEDORA46/Configuring+JDBC+Object+Store" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA46/Configuring+JDBC+Object+Store</a> but that ultimately resulted in the same errors.</p>
+
+<p>Ruby trace</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+I, [2016-09-12T14:03:08.191749 #16199]  INFO -- : Completed 500 Internal Server Error in 121ms (ActiveRecord: 17.2ms)
+F, [2016-09-12T14:03:08.195318 #16199] FATAL -- :
+Ldp::HttpError (STATUS: 500 javax.jcr.RepositoryException: org.infinispan.persistence.spi.PersistenceException: SQL error <span class="code-keyword">while</span> fetching stored entry with key: 87a0a8c7505d6490588cf0-27ae-4d3e-986c-deb1ce6f974a, lockingKey: 87a0a8c7505d6490588cf0-27ae-4d3e-986c-deb1ce6f974a
+	at org.modeshape.jcr.JcrSession.save(JcrSession.java:1190)
+	at org.fcrepo.http.api.FedoraLdp.createObject(FedoraLdp.java:570)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)
+	at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)
+	at org.glassfish.jersey.server.model.internal.AbstractJa...):
+  ldp (0.5.0) lib/ldp/client/methods.rb:119:in `block in check_for_errors'
+</pre>
+</div></div>
+
+<p>Fedora Catalina log</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+Sep 12 14:03:08 ********** server[13682]: INFO 14:03:08.137 (FedoraLdp) Ingest with path: /prod/0f/1a/ce/57/0f1ace57-6265-497a-a1d0-f6db610a3783
+Sep 12 14:03:08 ********** server[13682]: ERROR 14:03:08.183 (RepositoryExceptionMapper) Caught a repository exception: org.infinispan.persistence.spi.PersistenceException: SQL error <span class="code-keyword">while</span> fetching stored entry with key: 87a0a8c7505d6490588cf0-27ae-4d3e-986c-deb1ce6f974a, lockingKey: 87a0a8c7505d6490588cf0-27ae-4d3e-986c-deb1ce6f974a
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-22468"><div class="by">Danny Bernstein, 2021-09-17 17:49 UTC</div><div class="text"><p>Closing as part of a jira repository effort.  It is being closed for one of the following reasons:  1) it is no longer applicable,  2) it has been fixed in future version or 3) no one seems to be interested in it .</p></div></div>
+<p><a href="data/FCREPO-2011.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2483 Error importing export with inbound references</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2483</span> Error importing export with inbound references</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Jim Coble</td></tr><tr><th>Assignee</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2017-05-24 21:07 UTC</td></tr><tr><th>Updated</th><td>2017-05-26 13:52 UTC</td></tr><tr><th>Resolved</th><td>2017-05-26 13:52 UTC</td></tr><tr><th>Components</th><td>f4-import-export</td></tr><tr><th>Fix versions</th><td>fcrepo-importexport-0.2.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2496.html">FCREPO-2496</a> Document when Import/Export Arguments Ignored</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2497.html">FCREPO-2497</a> Import/Export: Scenarios Usage</td></tr></table>
+<h2>Description</h2>
+<p>Exported resources with inbound references (collection and its members).  An attempt to (re-)import the exported resources into an empty repo resulted in the following error:</p>
+
+<p>ERROR 16:45:04.689 (Importer) Error while importing /Users/coblej/Projects/F4-Import-Export-Sprint/import-export/export-SNAPSHOT-dulhydra-inbound/rest/dev/bc/6b/8d/ff/bc6b8dff-245b-478d-92b2-dee042b54862.ttl (403): <a href="http://localhost:8080/rest/dev/b2/5f/c7/b8/b25fc7b8-7864-49a2-b4f2-acfcdba32ec3" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/dev/b2/5f/c7/b8/b25fc7b8-7864-49a2-b4f2-acfcdba32ec3</a> is not in the topic of this RDF, which is <a href="http://localhost:8080/rest/dev/bc/6b/8d/ff/bc6b8dff-245b-478d-92b2-dee042b54862" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/dev/bc/6b/8d/ff/bc6b8dff-245b-478d-92b2-dee042b54862</a></p>
+<h2>Comments (11)</h2>
+<div class="comment" id="comment-18919"><div class="by">Jim Coble, 2017-05-24 21:12 UTC</div><div class="text"><p>The problem may just with the configuration options I used.</p>
+
+<p>Export configuration options were </p>
+
+<p> </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>mode: export
+inbound: true
+predicates: http://www.w3.org/ns/ldp#contains,info:fedora/fedora-system:def/relations-external#isMemberOfCollection
+resource: http://localhost:8080/rest/dev/bc/6b/8d/ff/bc6b8dff-245b-478d-92b2-dee042b54862
+dir: /Users/coblej/Projects/F4-Import-Export-Sprint/import-export/export-SNAPSHOT-dulhydra-inbound
+binaries: true
+rdfLang: text/turtle
+
+</pre>
+</div></div>
+<p>Import configuration options were exactly the same, except that `mode:` was changed to `import`</p>
+
+<p>Also, in case it matters, the exported collection resources contained also inbound references that used predicates other than the `info:fedora/fedora-system:def/relations-external#isMemberOfCollection` one specified in the configuration file.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-18941"><div class="by">Jim Coble, 2017-05-25 14:59 UTC</div><div class="text"><p>Esmé Cowles I ran another test with a different set of data this morning and got a similar error when attempting to import.  In case it helps, I noticed that the resource identified in the error message is one that does have an inbound relationship to the exported resource but not the inbound relationship specified in the export --predicates argument and thus was not included in the export.  That relationship is listed in the export .ttl for the main resource, though.  Perhaps the export should only include inbound relationships in the .ttl that match the one(s) specified in the --predicates option?</p></div></div>
+<div class="comment" id="comment-18948"><div class="by">Esmé Cowles, 2017-05-25 17:01 UTC</div><div class="text"><p>Jim Coble, I think part of the problem is that the inbound relationships are making the import fail, because they have a different subject and that fails the Modeshape impl. single-subject restriction.  I've created a PR to fix that issue:</p>
+
+<p><a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/93" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/93</a></p>
+
+<p>But it sounds like there may be other problems here, so we should continue testing this to make sure it really works as intended.</p></div></div>
+<div class="comment" id="comment-18954"><div class="by">Esmé Cowles, 2017-05-25 17:36 UTC</div><div class="text"><p>I just verified that I can roundtrip resources with inbound links — here's my script: <a href="https://gist.github.com/escowles/4f8b5a94093cde8232c1e117f65f1a72" class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/4f8b5a94093cde8232c1e117f65f1a72</a></p></div></div>
+<div class="comment" id="comment-18976"><div class="by">Andrew Woods, 2017-05-25 22:53 UTC</div><div class="text"><p>By filtering out the inbound references from what lands on disk, the implication is that the "members" will not necessarily be loaded on an import of the "collection". Is that the shared expectation?</p></div></div>
+<div class="comment" id="comment-18977"><div class="by">Andrew Woods, 2017-05-25 22:56 UTC</div><div class="text"><p>The PR looks good (pending a rebase on master), as long as there is a shared expectation about "members" not necessarily being imported due to the fact that the inbound triples are removed from the "collection" resource that is written to disk.</p></div></div>
+<div class="comment" id="comment-18979"><div class="by">Esmé Cowles, 2017-05-26 11:32 UTC</div><div class="text"><p>Andrew Woods, when I export a collection and it's inbound-linking members, I get a directory that contains the collection and the members at their respective paths.  If I want to import all of them, I can import the whole package (see <a href="https://gist.github.com/escowles/4f8b5a94093cde8232c1e117f65f1a72)." class="external-link" rel="nofollow noreferrer">https://gist.github.com/escowles/4f8b5a94093cde8232c1e117f65f1a72).</a></p>
+
+<p>The other option would be to leave the inbound reference triples that are materialized by the InboundReferences Prefer header in the collection RDF, and update the importer to filter them out.  All things being equal, I have two reasons for avoiding this approach:</p>
+<ol>
+	<li>On a practical level, it would shift the implementation from the Exporter to the Importer (which is larger and more complex).</li>
+	<li>On a more abstract level, the inbound references are triples from the members that are pulled into the collection with the InboundReferences Prefer header.  So I'd rather handle filtering them in the code that generates them, to lessen the amount of coordination that needs to happen between the export and import steps.  Right now, the option changes the export behavior, but then the import can happen with no knowledge of it.</li>
+</ol>
+
+
+<p>Jim Coble, do you have any thoughts about this?  If all things are not equal, and it's not working the way you expected it to, I'd be willing to change the implementation so importing the collection would automatically import the members.</p></div></div>
+<div class="comment" id="comment-18980"><div class="by">Jim Coble, 2017-05-26 12:16 UTC</div><div class="text"><p>Esmé Cowles, Andrew Woods I believe that the closest thing we currently have to a concrete use case for this functionality – exporting a collection from a production repository for importing into a testing or development repository – would be adequately covered by the proposed solution; namely, export the collection using the inbound option with the appropriate predicate(s) from repo A and then import the entire exported package into repo B.</p>
+
+<p>That said, I can see how someone could easily expect the import side of the tool, when run with exactly the same options as the export side except for the mode, to import exactly the same objects as the export side exported.  I don't think it's unreasonable to address that with documentation rather than functionality, at least until someone comes along with a stronger use case than I currently have.  I don't think there is anything in the current documentation that differentiates between the options that are meaningful on export and those that are meaningful on import – e.g., I presume that the "inbound" option is effectively meaningless in "import" mode.  If I'm right about that, it might be good to get that documented.  Also, I could see value in a "scenarios" document that presents a "how to" on various use cases (such as the one I described above).</p></div></div>
+<div class="comment" id="comment-18983"><div class="by">Andrew Woods, 2017-05-26 13:05 UTC</div><div class="text"><p>I am fine with the behavior implemented in this current PR... but wanted to make sure we were on the same page of understanding what that behavior actually is.</p>
+
+<p>I have created the following two documentation tickets based on your comments, Jim Coble:</p>
+<ul>
+	<li>"Document when Import/Export Arguments Ignored" - <a href="https://jira.duraspace.org/browse/FCREPO-2496" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2496</a></li>
+	<li>"Import/Export: Scenarios Usage" - <a href="https://jira.duraspace.org/browse/FCREPO-2497" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2497</a></li>
+</ul>
+
+
+<p> </p>
+
+<p>Note: PR#93 still needs to be rebased on master</p></div></div>
+<div class="comment" id="comment-18986"><div class="by">Esmé Cowles, 2017-05-26 13:36 UTC</div><div class="text"><p>I've rebased <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/pull/93" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/pull/93</a> </p></div></div>
+<div class="comment" id="comment-18990"><div class="by">Andrew Woods, 2017-05-26 13:52 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-labs/fcrepo-import-export/commit/0e42348f58eb776ec28b9fcec39395417fb79204" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-labs/fcrepo-import-export/commit/0e42348f58eb776ec28b9fcec39395417fb79204</a></p></div></div>
+<p><a href="data/FCREPO-2483.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

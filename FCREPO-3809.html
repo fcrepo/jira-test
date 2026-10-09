@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3809 Incomplete shutdown of Fedora in Docker environment</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3809</span> Incomplete shutdown of Fedora in Docker environment</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Ralf Claussnitzer</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2022-03-03 05:56 UTC</td></tr><tr><th>Updated</th><td>2024-01-11 22:01 UTC</td></tr><tr><th>Resolved</th><td>2022-06-09 14:53 UTC</td></tr><tr><th>Components</th><td>fcrepo-docker, fcrepo-webapp</td></tr></table>
+<h2>Environment</h2>Linux ldv155 5.4.0-100-generic #113-Ubuntu SMP Thu Feb 3 18:43:29 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux<br/>
+<br/>
+Client: Docker Engine - Community<br/>
+&nbsp;Version:           20.10.12<br/>
+&nbsp;API version:       1.41<br/>
+&nbsp;Go version:        go1.16.12<br/>
+&nbsp;Git commit:        e91ed57<br/>
+&nbsp;Built:             Mon Dec 13 11:45:48 2021<br/>
+&nbsp;OS/Arch:           linux/amd64<br/>
+&nbsp;Context:           default<br/>
+&nbsp;Experimental:      true<br/>
+<br/>
+Server: Docker Engine - Community<br/>
+&nbsp;Engine:<br/>
+&nbsp;&nbsp;Version:          20.10.12<br/>
+&nbsp;&nbsp;API version:      1.41 (minimum version 1.12)<br/>
+&nbsp;&nbsp;Go version:       go1.16.12<br/>
+&nbsp;&nbsp;Git commit:       459d0df<br/>
+&nbsp;&nbsp;Built:            Mon Dec 13 11:43:56 2021<br/>
+&nbsp;&nbsp;OS/Arch:          linux/amd64<br/>
+&nbsp;&nbsp;Experimental:     false<br/>
+&nbsp;containerd:<br/>
+&nbsp;&nbsp;Version:          1.4.12<br/>
+&nbsp;&nbsp;GitCommit:        7b11cfaabd73bb80907dd23182b9347b4245eb5d<br/>
+&nbsp;runc:<br/>
+&nbsp;&nbsp;Version:          1.0.2<br/>
+&nbsp;&nbsp;GitCommit:        v1.0.2-0-g52b36a2<br/>
+&nbsp;docker-init:<br/>
+&nbsp;&nbsp;Version:          0.19.0<br/>
+&nbsp;&nbsp;GitCommit:        de40ad0<br/>
+<br/>
+Docker Compose version v2.2.3
+<h2>Description</h2>
+<p>Application shutdown logs Exceptions and does not remove database lock file.</p>
+
+<p>Complete Docker log output attached.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3809/10361_docker-compose-test.yml">docker-compose-test.yml</a>, 284 bytes, added by Ralf Claussnitzer on 2022-03-03</li>
+<li><a href="attachments/FCREPO-3809/10360_fcrepo-docker.log.txt">fcrepo-docker.log.txt</a>, 20580 bytes, added by Ralf Claussnitzer on 2022-03-03</li>
+</ul>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-22605"><div class="by">Ralf Claussnitzer, 2022-03-03 06:01 UTC</div><div class="text"><p>Steps to reproduce:</p>
+
+<ul>
+	<li>docker-compose up -d fcrepo</li>
+	<li>docker-compose stop fcrepo</li>
+</ul>
+
+
+<p>You should see errors in the log and the file `/var/lib/docker/volumes/fedora_fcrepo-home/_data/data/fcrepo-h2.lock.db` still present.</p></div></div>
+<div class="comment" id="comment-22606"><div class="by">Danny Bernstein, 2022-03-03 16:51 UTC</div><div class="text"><p><a href="https://github.com/fcrepo-exts/fcrepo-docker/pull/15" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-docker/pull/15</a></p></div></div>
+<div class="comment" id="comment-22659"><div class="by">Danny Bernstein, 2022-06-09 14:51 UTC</div><div class="text"><p>The PR below was merged.  It prevents the tomcat serialization stacktrace by disabling session serialization/deserialization on shutdown/start up.</p>
+
+<p>The other issue with the h2 lock file I believe was resolved by other means which I can’t recall.</p></div></div>
+<p><a href="data/FCREPO-3809.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

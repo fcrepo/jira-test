@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-4110 On PostgreSQL 16+ the containment_idx5 LIKE index is silently never created</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-4110</span> On PostgreSQL 16+ the containment_idx5 LIKE index is silently never created</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Received</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>David Novák</td></tr><tr><th>Created</th><td>2026-09-17 13:22 UTC</td></tr><tr><th>Updated</th><td>2026-09-17 15:32 UTC</td></tr><tr><th>Affects versions</th><td>fcrepo 7.0.0</td></tr></table>
+<h2>Description</h2>
+<h2><a name="Summary"></a>Summary</h2>
+
+<p><tt>R__Create_containment.sql</tt> creates the index that makes <tt>fedora_id LIKE 'prefix%'</tt> lookups usable only when the database collation is not <tt>C</tt>. The check reads <tt>lc_collate</tt> from <tt>pg_settings</tt> — but that GUC was removed in PostgreSQL 16, so the subquery returns <tt>NULL</tt>, <tt>NULL &lt;&gt; 'C'</tt> is <tt>NULL</tt>, and PL/pgSQL treats that as false. The index is skipped with no error and no warning.</p>
+
+<p>The result is a silent, permanent performance cliff: every existence check on a resource falls back to a full scan of <tt>containment</tt>. On our repository (~809 000 rows in <tt>containment</tt>) that was a parallel sequential scan costing ~148 ms and three CPUs per query, at roughly 27 such queries per second — about 29 million rows scanned per second, and ~1000 % CPU on the database container. Creating the missing index by hand brought the same workload down to ~278 % CPU and 0.017 ms per query.</p>
+
+<p>Everything looks healthy while this happens: the schema is created "successfully", queries return correct results, and nothing is logged.</p>
+
+<h2><a name="Affectedversions"></a>Affected versions</h2>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>PostgreSQL</th>
+<th class='confluenceTh'><tt>lc_collate</tt> in <tt>pg_settings</tt></th>
+<th class='confluenceTh'>index created?</th>
+</tr>
+<tr>
+<td class='confluenceTd'>12 – 15</td>
+<td class='confluenceTd'>present</td>
+<td class='confluenceTd'>yes</td>
+</tr>
+<tr>
+<td class='confluenceTd'><b>16</b></td>
+<td class='confluenceTd'><b>absent</b></td>
+<td class='confluenceTd'><b>no</b></td>
+</tr>
+<tr>
+<td class='confluenceTd'><b>17</b></td>
+<td class='confluenceTd'><b>absent</b></td>
+<td class='confluenceTd'><b>no</b></td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>Verified by querying <tt>SELECT count FROM pg_settings WHERE name = 'lc_collate'</tt> on stock <tt>postgres:15</tt>, <tt>postgres:16</tt> and <tt>postgres:17</tt> images: 1, 0, 0.</p>
+
+<p>The affected code is unchanged on <tt>main</tt> as of today.</p>
+
+<h2><a name="Rootcause"></a>Root cause</h2>
+
+<p><tt>fcrepo-configs/src/main/resources/sql/postgresql/R__Create_containment.sql</tt>:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql"><span class="code-comment">--- <span class="code-keyword">Create</span> an <span class="code-keyword">index</span> <span class="code-keyword">to</span> speed searches <span class="code-keyword">for</span> fedora_id <span class="code-keyword">using</span> <span class="code-keyword">LIKE</span> <span class="code-keyword">if</span> your Locale <span class="code-keyword">is</span> <span class="code-keyword">not</span> <span class="code-keyword">C</span>.
+</span><span class="code-keyword">DO</span>
+  $$
+  <span class="code-keyword">BEGIN</span>
+  <span class="code-keyword">IF</span> (<span class="code-keyword">SELECT</span> setting <span class="code-keyword">FROM</span> pg_settings <span class="code-keyword">WHERE</span> <span class="code-keyword">name</span> = <span class="code-quote">'lc_collate'</span>) &lt;&gt; <span class="code-quote">'<span class="code-keyword">C</span>'</span> <span class="code-keyword">THEN</span>
+    RAISE NOTICE <span class="code-quote">'lc_collate <span class="code-keyword">is</span> <span class="code-keyword">not</span> <span class="code-keyword">C</span>, adding secondary <span class="code-keyword">index</span> <span class="code-keyword">to</span> resources.'</span>;
+    <span class="code-keyword">CREATE</span> <span class="code-keyword">INDEX</span> <span class="code-keyword">IF</span> <span class="code-keyword">NOT</span> <span class="code-keyword">EXISTS</span> containment_idx5 <span class="code-keyword">ON</span> containment (fedora_id varchar_pattern_ops);
+  <span class="code-keyword">END</span> <span class="code-keyword">IF</span>;
+  <span class="code-keyword">END</span>
+  $$ <span class="code-keyword">LANGUAGE</span> PLPGSQL;</pre>
+</div></div>
+
+<p>On PostgreSQL 16 and later:</p>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>step</th>
+<th class='confluenceTh'>result</th>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>SELECT setting FROM pg_settings WHERE name = 'lc_collate'</tt></td>
+<td class='confluenceTd'>no rows → <tt>NULL</tt></td>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>NULL &lt;&gt; 'C'</tt></td>
+<td class='confluenceTd'><tt>NULL</tt>, not <tt>TRUE</tt></td>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>IF NULL THEN</tt> in PL/pgSQL</td>
+<td class='confluenceTd'>treated as false</td>
+</tr>
+<tr>
+<td class='confluenceTd'><tt>containment_idx5</tt></td>
+<td class='confluenceTd'><b>not created, silently</b></td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>Reproduced verbatim on our instance (PostgreSQL 17.11, database collation <tt>en_US.utf8</tt>, so the index <em>should</em> be created):</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql"><span class="code-keyword">SELECT</span> (<span class="code-keyword">SELECT</span> setting <span class="code-keyword">FROM</span> pg_settings <span class="code-keyword">WHERE</span> <span class="code-keyword">name</span>=<span class="code-quote">'lc_collate'</span>) <span class="code-keyword">AS</span> <span class="code-keyword">value</span>,
+       ((<span class="code-keyword">SELECT</span> setting <span class="code-keyword">FROM</span> pg_settings <span class="code-keyword">WHERE</span> <span class="code-keyword">name</span>=<span class="code-quote">'lc_collate'</span>) &lt;&gt; <span class="code-quote">'<span class="code-keyword">C</span>'</span>) <span class="code-keyword">AS</span> <span class="code-keyword">condition</span>;
+<span class="code-comment">-- <span class="code-keyword">value</span>: <span class="code-keyword">NULL</span>   <span class="code-keyword">condition</span>: <span class="code-keyword">NULL</span></span></pre>
+</div></div>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql"><span class="code-keyword">SELECT</span> indexname <span class="code-keyword">FROM</span> pg_indexes <span class="code-keyword">WHERE</span> tablename = <span class="code-quote">'containment'</span> <span class="code-keyword">ORDER</span> <span class="code-keyword">BY</span> 1;
+<span class="code-comment">-- containment_idx1
+</span><span class="code-comment">-- containment_idx2
+</span><span class="code-comment">-- containment_idx3
+</span><span class="code-comment">-- containment_pkey        &lt;- containment_idx5 missing</span></pre>
+</div></div>
+
+<p>The same database created on PostgreSQL 12.3 has all five indexes.</p>
+
+<h2><a name="Impact"></a>Impact</h2>
+
+<p>Without <tt>containment_idx5</tt>, a b-tree index cannot serve <tt>LIKE 'prefix%'</tt> under a non-<tt>C</tt> collation, so <tt>SELECT_ID_LIKE_IN_TRANSACTION</tt> — issued by <tt>ContainmentIndexImpl.hasResourcesStartingWith</tt> for every resource existence check while a long-running transaction is open — scans the whole table:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql"><span class="code-keyword">SELECT</span> x.fedora_id <span class="code-keyword">FROM</span> (
+  <span class="code-keyword">SELECT</span> fedora_id <span class="code-keyword">FROM</span> containment <span class="code-keyword">WHERE</span> fedora_id <span class="code-keyword">LIKE</span> $1
+  <span class="code-keyword">UNION</span>
+  <span class="code-keyword">SELECT</span> fedora_id <span class="code-keyword">FROM</span> containment_transactions <span class="code-keyword">WHERE</span> fedora_id <span class="code-keyword">LIKE</span> $2 <span class="code-keyword">AND</span> transaction_id = $3 <span class="code-keyword">AND</span> <span class="code-keyword">operation</span> = <span class="code-quote">'<span class="code-keyword">add</span>'</span>
+) x
+<span class="code-keyword">WHERE</span> <span class="code-keyword">NOT</span> <span class="code-keyword">EXISTS</span> (<span class="code-keyword">SELECT</span> 1 <span class="code-keyword">FROM</span> containment_transactions <span class="code-keyword">WHERE</span> fedora_id <span class="code-keyword">LIKE</span> $4 <span class="code-keyword">AND</span> transaction_id = $5 <span class="code-keyword">AND</span> <span class="code-keyword">operation</span> = <span class="code-quote">'<span class="code-keyword">delete</span>'</span>)</pre>
+</div></div>
+
+<p>Measured on our instance with ~809 000 rows in <tt>containment</tt>, during a bulk ingest:</p>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'>&nbsp;</th>
+<th class='confluenceTh'>without <tt>containment_idx5</tt></th>
+<th class='confluenceTh'>with it</th>
+</tr>
+<tr>
+<td class='confluenceTd'>plan</td>
+<td class='confluenceTd'><tt>Parallel Seq Scan</tt> (2 workers + leader)</td>
+<td class='confluenceTd'><tt>Index Only Scan</tt></td>
+</tr>
+<tr>
+<td class='confluenceTd'>buffers per query</td>
+<td class='confluenceTd'>14 727</td>
+<td class='confluenceTd'>5</td>
+</tr>
+<tr>
+<td class='confluenceTd'>time per query</td>
+<td class='confluenceTd'>147.698 ms</td>
+<td class='confluenceTd'>0.017 ms</td>
+</tr>
+<tr>
+<td class='confluenceTd'>sequential scans per 30 s</td>
+<td class='confluenceTd'>2 471</td>
+<td class='confluenceTd'>0</td>
+</tr>
+<tr>
+<td class='confluenceTd'>rows read per 30 s</td>
+<td class='confluenceTd'>873 779 691</td>
+<td class='confluenceTd'>0</td>
+</tr>
+<tr>
+<td class='confluenceTd'>database container CPU</td>
+<td class='confluenceTd'>~1000 %</td>
+<td class='confluenceTd'>~278 %</td>
+</tr>
+</tbody></table>
+</div>
+
+
+<p>The cost grows with the table, so a new repository looks fine and degrades as it fills — which is what makes this hard to notice.</p>
+
+<h2><a name="Stepstoreproduce"></a>Steps to reproduce</h2>
+
+<ol>
+	<li>Start PostgreSQL 16 or 17 with any non-<tt>C</tt> collation (the stock <tt>postgres:17</tt> image defaults to <tt>en_US.utf8</tt>).</li>
+	<li>Point a fresh Fedora at it and let it create its schema.</li>
+	<li><tt>SELECT indexname FROM pg_indexes WHERE tablename = 'containment';</tt> — <tt>containment_idx5</tt> is absent.</li>
+	<li>On PostgreSQL 15 or earlier the same steps produce the index.</li>
+</ol>
+
+
+<h2><a name="Wheretheconditioncomesfrom"></a>Where the condition comes from</h2>
+
+<p>The condition is not accidental and was correct when written. It arrived with commit <tt>75ad227f27</tt> / PR <a href="https://github.com/fcrepo/fcrepo/pull/1780" class="external-link" rel="nofollow noreferrer">#1780</a> (merged 2020-10-16, JIRA "n/a"), which did two things at once:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>- FEDORA_ID_COLUMN + " = :resourceId AND " + TRANSACTION_ID_COLUMN + " = :transactionId AND " +
++ FEDORA_ID_COLUMN + " LIKE :resourceId AND " + TRANSACTION_ID_COLUMN + " = :transactionId AND " +</pre>
+</div></div>
+
+<p>Switching the lookup from <tt>=</tt> to <tt>LIKE</tt> meant the primary key index could no longer serve it under a non-<tt>C</tt> collation, so the same PR introduced a PostgreSQL-specific schema file adding <tt>varchar_pattern_ops</tt>. Making it conditional avoided creating a redundant index on <tt>C</tt>-collation databases — a reasonable call at the time, when PostgreSQL 12 was current and <tt>lc_collate</tt> was a perfectly good way to ask.</p>
+
+<p>The PR's own test instruction describes exactly the symptom this issue reports:</p>
+
+<blockquote><p>Build and run and watch that the <tt>hasResourcesStartingWith</tt> does not slow incrementally with database size.</p></blockquote>
+
+<p>That is precisely what stopped holding once PostgreSQL 16 removed the GUC: <tt>hasResourcesStartingWith</tt> now does slow incrementally with database size, on every deployment with a non-<tt>C</tt> collation.</p>
+
+<h2><a name="Suggestedfix"></a>Suggested fix</h2>
+
+<p>Read the collation of the current database rather than a server GUC. This works on every supported PostgreSQL version:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql"><span class="code-keyword">IF</span> (<span class="code-keyword">SELECT</span> datcollate <span class="code-keyword">FROM</span> pg_database <span class="code-keyword">WHERE</span> datname = current_database()) &lt;&gt; <span class="code-quote">'<span class="code-keyword">C</span>'</span> <span class="code-keyword">THEN</span></pre>
+</div></div>
+
+<p>Alternatively the condition could be dropped entirely and the index created unconditionally: on a <tt>C</tt>-collation database it is merely redundant, whereas its absence elsewhere costs a full table scan per lookup. That also removes the possibility of the same class of bug recurring.</p>
+
+<p>Since <tt>R__</tt> is a repeatable migration, existing deployments would pick the fix up on restart. Operators who cannot upgrade immediately can create it by hand under the same name:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-sql"><span class="code-keyword">CREATE</span> <span class="code-keyword">INDEX</span> CONCURRENTLY <span class="code-keyword">IF</span> <span class="code-keyword">NOT</span> <span class="code-keyword">EXISTS</span> containment_idx5 <span class="code-keyword">ON</span> containment (fedora_id varchar_pattern_ops);</pre>
+</div></div>
+
+<h2><a name="Note"></a>Note</h2>
+
+<p><tt>R__Create_containment.sql</tt> is the only file in the repository using this <tt>lc_collate</tt> pattern, so this appears to be the only place affected.</p>
+<p><a href="data/FCREPO-4110.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

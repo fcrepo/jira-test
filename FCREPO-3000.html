@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3000 ACL default behavior is not inherited correctly when referring to a child</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3000</span> ACL default behavior is not inherited correctly when referring to a child</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2019-05-31 04:04 UTC</td></tr><tr><th>Updated</th><td>2019-06-06 18:57 UTC</td></tr><tr><th>Resolved</th><td>2019-06-06 18:57 UTC</td></tr><tr><th>Components</th><td>f4-core, webac</td></tr><tr><th>Affects versions</th><td>Fedora 5.0.2</td></tr></table>
+<h2>Description</h2>
+<p>It appears that the inheritance algorithm is not working correctly with acl:default  when the authorization has an acl:default predicate that references a child resource of the acls owner.</p>
+
+<p>To illustrate: </p>
+
+<p>Create the following resources:</p>
+
+<p> </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -X PUT -u fedoraAdmin:fedoraAdmin http://localhost:8080/rest/box -i
+curl -X PUT -u fedoraAdmin:fedoraAdmin http://localhost:8080/rest/box/cookies -i
+curl -X PUT -u fedoraAdmin:fedoraAdmin http://localhost:8080/rest/box/cookies/cookie -i
+</pre>
+</div></div>
+<p>PUT the following acl to  <a href="http://localhost:8080/rest/box/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/box/fcr:acl</a></p>
+
+<p> </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>@prefix acl: &lt;http://www.w3.org/ns/auth/acl#&gt; .
+&lt;#authorization1&gt; a acl:Authorization;
+ acl:accessTo &lt;/rest/box/cookies&gt;;
+ acl:default &lt;/rest/box/cookies&gt;;
+ acl:mode acl:Read;
+ acl:agent "testuser".
+</pre>
+</div></div>
+<p>Using the following command:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>curl -X PUT -u fedoraAdmin:fedoraAdmin http://localhost:8080/rest/box/fcr:acl -H "Content-Type: text/turtle" -d "@acl.ttl"
+</pre>
+</div></div>
+<p>Then:</p>
+
+<p> </p>
+
+<p> </p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>
+# GET box produces 403 as expected
+curl -u testuser:testpass http://localhost:8080/rest/box -i
+
+# GET cookies produces 200 as expected
+curl -u testuser:testpass http://localhost:8080/rest/box/cookies -i
+
+# GET cookie produces 403 when it should return a 200 
+curl -u testuser:testpass http://localhost:8080/rest/box/cookies/cookie -i </pre>
+</div></div>
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+
+<p> </p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20691"><div class="by">Danny Bernstein, 2019-05-31 07:01 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1529" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1529</a></p></div></div>
+<div class="comment" id="comment-20692"><div class="by">Danny Bernstein, 2019-05-31 07:03 UTC</div><div class="text"><p>This fix should ensure that <a href="https://jira.duraspace.org/browse/FCREPO-2999" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-2999</a> be a viable solution.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20695"><div class="by">Jared Whiklo, 2019-06-05 15:07 UTC</div><div class="text"><p>This fix requires the addition of <tt>acl:default</tt> but for a specific Fedora only purpose. It is meant to say that things below inherit this ACL, but (and I'm doing some guessing here) because the ACL is actually on the parent the <tt>acl:default</tt> is the only important part. The system doesn't find an ACL on the child, then moves up to the parent and sees an <tt>acl:default</tt> so it passes it down.</p>
+
+<p>I'd say that either</p>
+
+<p>a) we change so that when the current resource doesn't have an ACL we move up the tree and check first for an acl:accessTo of the original resource and second for an acl:default for a parent. Having multiple AUTHZ in a single ACL means we need to ensure that the AUTHZ with acl:default is not for a child of the checked resource.</p>
+
+<p>b) We don't respect acl:accessTo that is not the current resource. So you have acl:accessTo and acl:default or acl:accessToClass and acl:default to affect nested resources.</p></div></div>
+<div class="comment" id="comment-20697"><div class="by">Danny Bernstein, 2019-06-06 18:57 UTC</div><div class="text"><p>We have decided not to support acl:accessTo and acl:default values that refer to children of the ACL's resource.</p></div></div>
+<p><a href="data/FCREPO-3000.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

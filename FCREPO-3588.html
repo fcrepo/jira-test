@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3588 Unable to PUT json-ld</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3588</span> Unable to PUT json-ld</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Ready for Test</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Jared Whiklo</td></tr><tr><th>Created</th><td>2020-12-21 15:06 UTC</td></tr><tr><th>Updated</th><td>2021-03-10 23:44 UTC</td></tr><tr><th>Resolved</th><td>2021-01-22 17:00 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>This bug can be reproduced by:</p>
+<ul class="alternate" type="square">
+	<li>Start f6</li>
+	<li>Try to create a container:<br/>
+&gt; curl -i -XPUT --data-binary @data.json -H"Content-Type: application/ld+json" localhost:8080/rest/box</li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>Where the content of "data.json" is:<br/>
+```
+{
+  "@context": "https://json-ld.org/contexts/person.jsonld",
+  "@id": "http://dbpedia.org/resource/John_Lennon",
+  "name": "John Lennon",
+  "born": "1940-10-09"
+}
+<p>```</p></li>
+</ul>
+
+
+<p>The error response is:<br/>
+&gt; 400 Bad Request<br/>
+&gt; RDF was not parsable: loading remote context failed: info:fedora/<a href="https://json-ld.org/contexts/person.jsonld" class="external-link" rel="nofollow noreferrer">https://json-ld.org/contexts/person.jsonld</a></p>
+
+<p>The issue appears to be related to prepending the the json-ld context URL with "info:fedora"</p>
+<h2>Comments (6)</h2>
+<div class="comment" id="comment-21853"><div class="by">Andrew Woods, 2020-12-21 15:06 UTC</div><div class="text"><p>This is a production blocker, not a beta-blocker.</p></div></div>
+<div class="comment" id="comment-21855"><div class="by">Jared Whiklo, 2021-01-07 22:20 UTC</div><div class="text"><p>I did some debugging and I'm not sure if this is our fault or not. But essentially the problem is in jsonld-java. Once the object is parsed which looks correct.</p>
+
+<p>elem = {LinkedHashMap@15880} size = 4<br/>
+ "@context" -&gt; "https://json-ld.org/contexts/person.jsonld"<br/>
+ "@id" -&gt; "http://dbpedia.org/resource/John_Lennon"<br/>
+ "name" -&gt; "John Lennon"<br/>
+ "born" -&gt; "1940-10-09"</p>
+
+<p>it hits here <a href="https://github.com/jsonld-java/jsonld-java/blob/master/core/src/main/java/com/github/jsonldjava/core/JsonLdApi.java#L550" class="external-link" rel="nofollow noreferrer">https://github.com/jsonld-java/jsonld-java/blob/master/core/src/main/java/com/github/jsonldjava/core/JsonLdApi.java#L550</a> parsing the <tt>@context</tt></p>
+
+<p>which goes here and tries to resolve it to the baseUri <br/>
+<a href="https://github.com/jsonld-java/jsonld-java/blob/master/core/src/main/java/com/github/jsonldjava/core/Context.java#L190-L191" class="external-link" rel="nofollow noreferrer">https://github.com/jsonld-java/jsonld-java/blob/master/core/src/main/java/com/github/jsonldjava/core/Context.java#L190-L191</a></p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21856"><div class="by">Jared Whiklo, 2021-01-08 17:00 UTC</div><div class="text"><p>Ok I wrote a <a href="https://gist.github.com/whikloj/29f61a883dd14cb0cf17e2f292621957" class="external-link" rel="nofollow noreferrer">little java app</a> to try parsing this out.</p>
+
+<p>It works with a valid URI as the baseUri</p>
+
+<p>&gt; java -jar build/libs/JsonLdTest-1.0-SNAPSHOT-all.jar 'http://fedora/jared' '{ "@context": "https://json-ld.org/contexts/person.jsonld", "@id": "http://dbpedia.org/resource/John_Lennon", "name": "John Lennon", "born": "1940-10-09" }'<br/>
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".<br/>
+SLF4J: Defaulting to no-operation (NOP) logger implementation<br/>
+SLF4J: See <a href="http://www.slf4j.org/codes.html#StaticLoggerBinder" class="external-link" rel="nofollow noreferrer">http://www.slf4j.org/codes.html#StaticLoggerBinder</a> for further details.<br/>
+Triples<br/>
+<a href="http://dbpedia.org/resource/John_Lennon" class="external-link" rel="nofollow noreferrer">http://dbpedia.org/resource/John_Lennon</a> @<a href="http://schema.org/birthDate" class="external-link" rel="nofollow noreferrer">http://schema.org/birthDate</a> "1940-10-09"^^<a href="http://www.w3.org/2001/XMLSchema#date" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#date</a><br/>
+<a href="http://dbpedia.org/resource/John_Lennon" class="external-link" rel="nofollow noreferrer">http://dbpedia.org/resource/John_Lennon</a> @<a href="http://xmlns.com/foaf/0.1/name" class="external-link" rel="nofollow noreferrer">http://xmlns.com/foaf/0.1/name</a> "John Lennon"<br/>
+Quads</p>
+
+<p>But fails with our opaque ID.</p>
+
+<p>java -jar build/libs/JsonLdTest-1.0-SNAPSHOT-all.jar 'info:fedora/jared' '{ "@context": "https://json-ld.org/contexts/person.jsonld", "@id": "http://dbpedia.org/resource/John_Lennon", "name": "John Lennon", "born": "1940-10-09" }'<br/>
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".<br/>
+SLF4J: Defaulting to no-operation (NOP) logger implementation<br/>
+SLF4J: See <a href="http://www.slf4j.org/codes.html#StaticLoggerBinder" class="external-link" rel="nofollow noreferrer">http://www.slf4j.org/codes.html#StaticLoggerBinder</a> for further details.<br/>
+Exception in thread "main" com.github.jsonldjava.core.JsonLdError: loading remote context failed: info:fedora/<a href="https://json-ld.org/contexts/person.jsonld" class="external-link" rel="nofollow noreferrer">https://json-ld.org/contexts/person.jsonld</a><br/>
+ at com.github.jsonldjava.core.DocumentLoader.loadDocument(DocumentLoader.java:74)<br/>
+ at com.github.jsonldjava.core.Context.parse(Context.java:199)<br/>
+ at com.github.jsonldjava.core.Context.parse(Context.java:146)<br/>
+ at com.github.jsonldjava.core.Context.parse(Context.java:299)<br/>
+ at com.github.jsonldjava.core.JsonLdApi.expand(JsonLdApi.java:550)<br/>
+ at com.github.jsonldjava.core.JsonLdApi.expand(JsonLdApi.java:1027)<br/>
+ at com.github.jsonldjava.core.JsonLdProcessor.expand(JsonLdProcessor.java:139)<br/>
+ at com.github.jsonldjava.core.JsonLdProcessor.toRDF(JsonLdProcessor.java:528)<br/>
+ at Tester.parse(Tester.java:85)<br/>
+ at Tester.main(Tester.java:37)<br/>
+Caused by: java.net.MalformedURLException: unknown protocol: info<br/>
+ at java.base/java.net.URL.&lt;init&gt;(URL.java:634)<br/>
+ at java.base/java.net.URL.&lt;init&gt;(URL.java:523)<br/>
+ at java.base/java.net.URL.&lt;init&gt;(URL.java:470)<br/>
+ at com.github.jsonldjava.core.DocumentLoader.loadDocument(DocumentLoader.java:72)<br/>
+ ... 9 more</p>
+
+<p> </p>
+
+<p>It could be because they are expecting a URI and we are using an IRI. Not exactly sure of all the semantic differences.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-21857"><div class="by">Jared Whiklo, 2021-01-08 17:09 UTC</div><div class="text"><p>Raised this with the jsonld-java folks to see what they say.</p>
+
+<p><a href="https://github.com/jsonld-java/jsonld-java/issues/304" class="external-link" rel="nofollow noreferrer">https://github.com/jsonld-java/jsonld-java/issues/304</a></p></div></div>
+<div class="comment" id="comment-21948"><div class="by">Jared Whiklo, 2021-01-22 17:00 UTC</div><div class="text"><p>Due to recent change in tactic on 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-3598" >
+                <a href="FCREPO-3598.html" class="jira-issue-macro-key issue-link"  title="URIs in RDF beginning with / are producing invalid URIs" >
+            
+            FCREPO-3598
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+ that PR seems to fix this issue.<br/>
+<a href="https://github.com/fcrepo/fcrepo/pull/1847" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/pull/1847</a></p></div></div>
+<div class="comment" id="comment-22131"><div class="by">Danny Bernstein, 2021-03-10 23:44 UTC</div><div class="text"><p>Addressed by another ticket.</p></div></div>
+<p><a href="data/FCREPO-3588.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

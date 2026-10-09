@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-370 Fix bug 2037924:  Enabling journalling causes startup failure</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-370</span> Fix bug 2037924:  Enabling journalling causes startup failure</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Aaron Birkland</td></tr><tr><th>Created</th><td>2008-09-05 05:00 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2008-10-24 22:02 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.1</td></tr><tr><th>Addresses</th><td><a href="FCREPO-237.html">FCREPO-237</a> Enabling journalling causes startup failure</td></tr></table>
+<h2>Description</h2>
+<p>Presumably, just due to missing managementDelegate marker interface.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-10744"><div class="by">Bill Branan, 2008-10-01 17:34 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Task&#93;</span><br/>
+Task Submitter: birkland<br/>
+Task #: 150858<br/>
+SF URL: <a href="http://sourceforge.net/pm/task.php?func=detailtask&amp;group_id=177054&amp;group_project_id=53865&amp;project_task_id=150858" class="external-link" rel="nofollow noreferrer">http://sourceforge.net/pm/task.php?func=detailtask&amp;group_id=177054&amp;group_project_id=53865&amp;project_task_id=150858</a></p></div></div>
+<div class="comment" id="comment-10751"><div class="by">Aaron Birkland, 2008-10-07 16:35 UTC</div><div class="text"><p>Journal playback does NOT function correctly.  </p>
+
+<p>Running system tests (config B) with journalling enabled works OK, but the resulting journal file cannot be played back successfully on an empty repository.  </p>
+
+<p>Specifically, on modification of demo:MultiOwnerObject from journal entry:</p>
+
+<p>2008-10-06T17:15:34.171-0400: PROBLEM: fedora.server.errors.authorization.AuthzDeniedException: <br/>
+        at fedora.server.security.PolicyEnforcementPoint.enforce(PolicyEnforcementPoint.java:458)<br/>
+        at fedora.server.security.DefaultAuthorization.enforceModifyObject(DefaultAuthorization.java:1284)<br/>
+        at fedora.server.management.DefaultManagement.modifyObject(DefaultManagement.java:182)<br/>
+        at sun.reflect.GeneratedMethodAccessor60.invoke(Unknown Source)<br/>
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)<br/>
+        at java.lang.reflect.Method.invoke(Method.java:585)<br/>
+        at fedora.server.messaging.NotificationInvocationHandler.invoke(NotificationInvocationHandler.java:70)<br/>
+        at $Proxy0.modifyObject(Unknown Source)<br/>
+        at fedora.server.management.ManagementModule.modifyObject(ManagementModule.java:399)<br/>
+        at fedora.server.journal.managementmethods.ModifyObjectMethod.invoke(ModifyObjectMethod.java:26)<br/>
+        at fedora.server.journal.entry.ConsumerJournalEntry.invokeMethod(ConsumerJournalEntry.java:34)<br/>
+        at fedora.server.journal.JournalConsumerThread.run(JournalConsumerThread.java:84)</p></div></div>
+<div class="comment" id="comment-10752"><div class="by">Aaron Birkland, 2008-10-07 16:47 UTC</div><div class="text"><p>PDP is evaluating modifyObject request from journal playback to "not applicable".   It looks like the PDP is not asking for certain attributes when playing back from journal.  For example</p>
+
+<p>Live:<br/>
+(ResourceAttributeFinderModule) ResourceAttributeFinder.getAttributeLocally using ownerIdSeparator==<span class="error">&#91;,&#93;</span><br/>
+(ResourceAttributeFinderModule) got urn:fedora:names:fedora:2.1:resource:object:owner= <span class="error">&#91;fedoraAdmin&#93;</span> <span class="error">&#91;testuser1&#93;</span><br/>
+(AttributeFinder) urn:fedora:names:fedora:2.1:resource:object:owner += fedoraAdmin<br/>
+(AttributeFinder) urn:fedora:names:fedora:2.1:resource:object:owner += testuser<br/>
+(ResourceAttributeFinderModule) got urn:fedora:names:fedora:2.1:resource:object:state=A<br/>
+(AttributeFinder) urn:fedora:names:fedora:2.1:resource:object:state += A<br/>
+(AttributeFinder) fedoraRole += administrator</p>
+
+<p>Journal:<br/>
+(ResourceAttributeFinderModule) got urn:fedora:names:fedora:2.1:resource:object:state=A<br/>
+(AttributeFinder) urn:fedora:names:fedora:2.1:resource:object:state += A<br/>
+(AttributeFinder) fedoraRole += administrator</p>
+
+<p>So.. it appears that the PDP is not requesting the value of the urn:fedora:names:fedora:2.1:resource:object:owner attribute in the journal playback case Had it requested the attribute, the request would have been logged.   The request context in both cases is the same:<br/>
+&lt;Request&gt;<br/>
+ &lt;Subject SubjectCategory="urn:oasis:names:tc:xacml:1.0:subject-category:access-subject"&gt;<br/>
+  &lt;Attribute AttributeId="urn:oasis:names:tc:xacml:1.0:subject:subject-id"  DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;&lt;/AttributeValue&gt;&lt;/Attribute&gt;<br/>
+  &lt;Attribute AttributeId="urn:fedora:names:fedora:2.1:subject:loginId" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;fedoraAdmin&lt;/AttributeValue&gt;&lt;/Attribute&gt;<br/>
+ &lt;/Subject&gt;<br/>
+ &lt;Resource&gt;<br/>
+  &lt;Attribute AttributeId="urn:fedora:names:fedora:2.1:resource:object:pid" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;demo:MultiOwnerObject&lt;/AttributeValue&gt;&lt;/Attribute&gt;<br/>
+  &lt;Attribute AttributeId="urn:fedora:names:fedora:2.1:resource:object:namespace" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;demo&lt;/AttributeValue&gt;&lt;/Attribute&gt;<br/>
+  &lt;Attribute AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;&lt;/AttributeValue&gt;&lt;/Attribute&gt;<br/>
+ &lt;/Resource&gt;<br/>
+ &lt;Action&gt;<br/>
+  &lt;Attribute AttributeId="urn:fedora:names:fedora:2.1:action:api" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;urn:fedora:names:fedora:2.1:action:api-m&lt;/AttributeValue&gt;&lt;/Attri<br/>
+bute&gt;<br/>
+  &lt;Attribute AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;&lt;/AttributeValue&gt;&lt;/Attribute&gt;<br/>
+  &lt;Attribute AttributeId="urn:fedora:names:fedora:2.1:action:contextId" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;1521&lt;/AttributeValue&gt;&lt;/Attribute&gt;<br/>
+  &lt;Attribute AttributeId="urn:fedora:names:fedora:2.1:action:id" DataType="http://www.w3.org/2001/XMLSchema#string"&gt;&lt;AttributeValue&gt;urn:fedora:names:fedora:2.1:action:id-modifyObject&lt;/AttributeValu<br/>
+e&gt;&lt;/Attribute&gt;<br/>
+ &lt;/Action&gt;<br/>
+&lt;/Request&gt;</p></div></div>
+<div class="comment" id="comment-10753"><div class="by">Aaron Birkland, 2008-10-07 22:16 UTC</div><div class="text"><p>It looks like the authz problem is ultimately due to a missing policy upon journal replay.  Policy 'permit-if-owner.xml' matched during the live run, but wasn't present in the journal replay run.  Looks like this policy (among others) is loaded at runtime, then later removed as part of a junit test.  Since policies may be stored/managed externally, they don't fall under the journalling umbrella.  </p>
+
+<p>Thus, I'm wondering if policy evaluation is appropriate for journal replay at all.   Since the existence of a journal entry implies that an operation successfully passed the policy evaluation, there really is no point in re-evaluating the policies upon replay. At best, it will succeed at slightly increasing the entropy of the universe.  At worst, fail (as we've seen).  Thus, it may be worthwhile to see if it's easy to disable policy evaluation at journal replay...  that would be the most straightforward thing to do.</p></div></div>
+<p><a href="data/FCREPO-370.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

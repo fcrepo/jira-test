@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1640 Subject of triples in GET request of NonRdfSourceDescription</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1640</span> Subject of triples in GET request of NonRdfSourceDescription</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>A. Soroka</td></tr><tr><th>Created</th><td>2015-07-17 13:15 UTC</td></tr><tr><th>Updated</th><td>2016-11-18 19:27 UTC</td></tr><tr><th>Resolved</th><td>2015-08-26 21:28 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.2.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.4.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1474.html">FCREPO-1474</a> Subject of triples in GET request</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1678.html">FCREPO-1678</a> NonRdfSourceDescription etags not updated</td></tr></table>
+<h2>Description</h2>
+<p>RDF triples that are returned on a GET request to a resource that describes another resource should contain only subjects that are the described resource itself, unless explicitly requested otherwise via Prefer headers.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-1640/10232_screen.png">screen.png</a>, 194995 bytes, added by A. Soroka on 2015-07-24</li>
+</ul>
+<h2>Comments (63)</h2>
+<div class="comment" id="comment-14757"><div class="by">A. Soroka, 2015-07-17 17:10 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/844" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/844</a></p></div></div>
+<div class="comment" id="comment-14759"><div class="by">Andrew Woods, 2015-07-17 20:11 UTC</div><div class="text"><p>When creating a "binary" resource in the HTML UI, nothing is shown on the landing page.</p>
+
+<p>I am also seeing this unwanted triple when requesting:<br/>
+GET <a href="http://localhost:8080/rest/book/page/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/page/fcr:metadata</a><br/>
+...<br/>
+fedora:hasVersions &lt;<a href="http://localhost:8080/rest/book/page/jcr:content/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/book/page/jcr:content/fcr:versions</a>&gt;<br/>
+...<br/>
+Note: 'jcr:content'</p></div></div>
+<div class="comment" id="comment-14760"><div class="by">A. Soroka, 2015-07-17 20:56 UTC</div><div class="text"><p>"jcr:content"!</p>
+
+<p>I will examine this at the top of the week.</p></div></div>
+<div class="comment" id="comment-14784"><div class="by">A. Soroka, 2015-07-22 15:28 UTC</div><div class="text"><p>What is supposed to be shown for a binary resource? I thought it would go right to the bitstream.</p></div></div>
+<div class="comment" id="comment-14785"><div class="by">Andrew Woods, 2015-07-22 15:34 UTC</div><div class="text"><p>If you are talking about the HTML UI, both GET requests to the binary redirect to the description, which shows the properties.</p></div></div>
+<div class="comment" id="comment-14786"><div class="by">A. Soroka, 2015-07-22 15:36 UTC</div><div class="text"><p>Wait, so a GET request for the bitstream gives you the HTML display of the metadata? That doesn't sound right.</p></div></div>
+<div class="comment" id="comment-14787"><div class="by">Andrew Woods, 2015-07-22 15:42 UTC</div><div class="text"><p>Give the HTML UI a look, it will make more sense. There is also a "Download" button for getting the content itself.</p></div></div>
+<div class="comment" id="comment-14788"><div class="by">A. Soroka, 2015-07-22 15:44 UTC</div><div class="text"><p>Do we have a demo site up somewhere?</p></div></div>
+<div class="comment" id="comment-14789"><div class="by">Andrew Woods, 2015-07-22 15:47 UTC</div><div class="text"><p>No, but the "one-click run" you established works nicely.</p></div></div>
+<div class="comment" id="comment-14790"><div class="by">A. Soroka, 2015-07-22 15:49 UTC</div><div class="text"><p>What happened to the demo site that Oxford ran?</p></div></div>
+<div class="comment" id="comment-14791"><div class="by">Andrew Woods, 2015-07-22 15:57 UTC</div><div class="text"><p>They dropped support... Ladd at Texas is standing up a new one as we speak.</p></div></div>
+<div class="comment" id="comment-14792"><div class="by">A. Soroka, 2015-07-22 15:59 UTC</div><div class="text"><p>Oh, that's nice of Hanson, Ladd. Are they using Fedora?</p></div></div>
+<div class="comment" id="comment-14793"><div class="by">Andrew Woods, 2015-07-22 16:01 UTC</div><div class="text"><p>Hanson, Ladd can speak for himself... but I believe some of their services are moving in that direction.</p></div></div>
+<div class="comment" id="comment-14794"><div class="by">A. Soroka, 2015-07-22 16:17 UTC</div><div class="text"><p>No, using a "stock" Fedora, when I go to the URI of a bitstream in the HTML view, I get what I would expect: the bitstream. Not properties.</p></div></div>
+<div class="comment" id="comment-14795"><div class="by">Andrew Woods, 2015-07-22 16:22 UTC</div><div class="text"><p>you mean the bitstream downloads??</p></div></div>
+<div class="comment" id="comment-14796"><div class="by">A. Soroka, 2015-07-22 16:24 UTC</div><div class="text"><p>Yes, of course. If I make a bitstream at <tt>uri</tt> and point my browser at <tt>uri</tt> the bitstream downloads, which is just what I expect and want. Why would I want to be redirected to a properties page?</p></div></div>
+<div class="comment" id="comment-14797"><div class="by">Andrew Woods, 2015-07-22 16:42 UTC</div><div class="text"><p>For me, if I put the binary uri in the browser, it downloads. However, if I navigate to the binary, I am redirected to the description.</p></div></div>
+<div class="comment" id="comment-14799"><div class="by">A. Soroka, 2015-07-22 18:59 UTC</div><div class="text"><p>Navigate from what page?</p></div></div>
+<div class="comment" id="comment-14800"><div class="by">Hanson, Ladd, 2015-07-22 19:28 UTC</div><div class="text"><p>hope to have the demo site up in the next day or so.  Yes!  we have big plans for Fedora. &lt;smile&gt;</p></div></div>
+<div class="comment" id="comment-14801"><div class="by">Andrew Woods, 2015-07-22 20:09 UTC</div><div class="text"><p>A. Soroka, navigate in the HTML from anywhere in the repository... say for example, from the root resource.</p></div></div>
+<div class="comment" id="comment-14802"><div class="by">A. Soroka, 2015-07-22 20:17 UTC</div><div class="text"><p>When I do that, I get the properties page you describe as being the expected result.</p></div></div>
+<div class="comment" id="comment-14803"><div class="by">Andrew Woods, 2015-07-22 20:23 UTC</div><div class="text"><p>With PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/844" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/844</a><br/>
+That properties page renders empty.</p></div></div>
+<div class="comment" id="comment-14804"><div class="by">A. Soroka, 2015-07-22 20:29 UTC</div><div class="text"><p>Why is that link going to the properties page at all? That seems totally wrong to me.</p></div></div>
+<div class="comment" id="comment-14805"><div class="by">Andrew Woods, 2015-07-22 20:34 UTC</div><div class="text"><p>Because the notion of "describedby" <span class="error">&#91;1&#93;</span> defined in the LDP maps nicely onto what a UI user would likely want to see when navigating in the HTML UI to a NonRdfSource, i.e. a description of that resource. <br/>
+It is a very annoying user experience to be navigating in the HTML UI and constantly, and unintentionally, hitting resource downloads.</p>
+
+<p><span class="error">&#91;1&#93;</span> <a href="http://www.w3.org/TR/ldp/#link-relation-describedby" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/ldp/#link-relation-describedby</a></p></div></div>
+<div class="comment" id="comment-14806"><div class="by">A. Soroka, 2015-07-22 20:39 UTC</div><div class="text"><p>That's not my point: I don't care what links are provided in the UI. My point is that the URI in that link (on which I clicked) is (e.g.) <a href="http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4</a>. How is that getting redirected to <a href="http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4/fcr:metadata?" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4/fcr:metadata?</a> That is what seems to me to be flatly wrong.</p></div></div>
+<div class="comment" id="comment-14807"><div class="by">Andrew Woods, 2015-07-22 20:44 UTC</div><div class="text"><p>Here is the answer to "how" it is getting redirected:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.js#L24" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.js#L24</a></p></div></div>
+<div class="comment" id="comment-14808"><div class="by">A. Soroka, 2015-07-22 20:48 UTC</div><div class="text"><p>I understand none of that. Are you telling me that it has something to do with the JavaScript in the HTML? Why aren't we just using the right URI to begin with?</p></div></div>
+<div class="comment" id="comment-14809"><div class="by">Andrew Woods, 2015-07-22 20:56 UTC</div><div class="text"><p>I am telling you that the JavaScript checks if the resource is a binary, and if that binary has a Link header of "describedby", and if so it redirects to that view.<br/>
+What are you suggesting?</p></div></div>
+<div class="comment" id="comment-14811"><div class="by">A. Soroka, 2015-07-23 13:43 UTC</div><div class="text"><p>I do not understand your explanation. When I go to <a href="http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4</a> there is no redirect, and when I go to <a href="http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/97/ec/60/bc/97ec60bc-65c4-46ba-9d09-91666574e1e4/fcr:metadata</a> there is no redirect. When does the redirect occur?</p></div></div>
+<div class="comment" id="comment-14812"><div class="by">Andrew Woods, 2015-07-23 13:45 UTC</div><div class="text"><p>The redirect occurs when you <b>navigate</b> to the binary resource from somewhere else within the HTML UI.</p></div></div>
+<div class="comment" id="comment-14813"><div class="by">A. Soroka, 2015-07-23 13:47 UTC</div><div class="text"><p>Then why aren't we just using the correct URI to begin with in that link in HTML? Why are we putting in the <em>wrong</em> URI and then redirecting?</p></div></div>
+<div class="comment" id="comment-14814"><div class="by">Andrew Woods, 2015-07-23 13:53 UTC</div><div class="text"><p>The navigation in the HTML UI is "follow-your-nose". We do not know the resource is a binary until it is actually requested.</p></div></div>
+<div class="comment" id="comment-14815"><div class="by">A. Soroka, 2015-07-23 13:54 UTC</div><div class="text"><p>Certainly we can. If we can do AJAX requests to get the type after the resource is requested, we can do them before to get its type.</p></div></div>
+<div class="comment" id="comment-14816"><div class="by">Andrew Woods, 2015-07-23 13:59 UTC</div><div class="text"><p>Is there a reason to change the current approach?</p></div></div>
+<div class="comment" id="comment-14817"><div class="by">A. Soroka, 2015-07-23 14:01 UTC</div><div class="text"><p>I don't understand how it works or why it is there. If you do, and you think it is a good approach, then please supply a PR to #844 to reinstate it so that I can work on the weird <tt>jcr:content</tt> triple and we can get this done.</p></div></div>
+<div class="comment" id="comment-14834"><div class="by">A. Soroka, 2015-07-24 15:30 UTC</div><div class="text"><p>Andrew Woods I cannot duplicate the weird triple you saw or the blank screen. When I create a binary resource, I get the landing page you expect (the properties page) and when I look at the properties, I don't see the weird version triple you saw. I'm now using a rebased version of the PR (rebased after your fix for 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1649" >
+                <a href="FCREPO-1649.html" class="jira-issue-macro-key issue-link"  title="cannot create child objects at root node through web interface" >
+            
+            FCREPO-1649
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+). Can you check again and give me a really precise set of steps to follow to duplicate your results? (Ideally, I'd like to write an integration test against whatever weird failure is happening here, if it's still here...)</p></div></div>
+<div class="comment" id="comment-14835"><div class="by">Andrew Woods, 2015-07-24 15:36 UTC</div><div class="text"><p>A. Soroka, please push your rebase commit so I can retest it.</p></div></div>
+<div class="comment" id="comment-14836"><div class="by">A. Soroka, 2015-07-24 15:39 UTC</div><div class="text"><p>Sorry!</p></div></div>
+<div class="comment" id="comment-14837"><div class="by">A. Soroka, 2015-07-24 15:58 UTC</div><div class="text"><p>Switch PRs to:</p>
+
+<p><a href="https://github.com/fcrepo4/fcrepo4/pull/855" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/855</a></p></div></div>
+<div class="comment" id="comment-14839"><div class="by">Andrew Woods, 2015-07-24 16:18 UTC</div><div class="text"><p>Here are the steps:</p>
+<ul class="alternate" type="square">
+	<li>Go to the top of the code base
+	<ul>
+		<li>cd &lt;whatever&gt;/fcrepo4</li>
+	</ul>
+	</li>
+	<li>Clear out existing data
+	<ul>
+		<li>rm -rf fcrepo4-data</li>
+	</ul>
+	</li>
+	<li>Start fcrepo
+	<ul>
+		<li>mvn jetty:run -pl fcrepo-webapp</li>
+	</ul>
+	</li>
+	<li>Go to the HTML UI, in browser
+	<ul>
+		<li><a href="http://localhost:8080/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/</a></li>
+	</ul>
+	</li>
+	<li>Create a binary resource named "image"
+	<ul>
+		<li>Boom &#8211; no properties</li>
+	</ul>
+	</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-14840"><div class="by">A. Soroka, 2015-07-24 16:23 UTC</div><div class="text"><p>That is not what I get after that series of steps. I get the props page (see attachment).</p></div></div>
+<div class="comment" id="comment-14841"><div class="by">Andrew Woods, 2015-07-24 16:25 UTC</div><div class="text"><p>yes, but no props!</p>
+
+<p>Do the same thing from a build of the master branch, and you will see props.</p></div></div>
+<div class="comment" id="comment-14842"><div class="by">A. Soroka, 2015-07-24 16:29 UTC</div><div class="text"><p>Oh, this is about what's in the props box? I took your remark "When creating a "binary" resource in the HTML UI, nothing is shown on the landing page." at face value.</p>
+
+<p>I checked this with <tt>curl</tt> and <tt><a href="http://localhost:8080/rest/image/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/image/fcr:metadata</a></tt> returns appropriate triples, so this is in the HTML/JS stuff, which means I'm off the ticket. I'm not prepared to debug JS. If you can verify the funky triple, I will try and track that down (I'm not seeing it in the RDF.)</p></div></div>
+<div class="comment" id="comment-14846"><div class="by">Andrew Woods, 2015-07-24 21:31 UTC</div><div class="text"><p>To get the funky triple, perform the steps mentioned above to create the binary resource "image". <br/>
+Then, create a version (v0) of that resource:<br/>
+curl -i -XPOST -H"slug: v0" <a href="http://localhost:8080/rest/image/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/image/fcr:versions</a></p>
+
+<p>When you perform a GET request on the "image".... funkadelic:<br/>
+curl <a href="http://localhost:8080/rest/image/fcr:metadata" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/image/fcr:metadata</a></p></div></div>
+<div class="comment" id="comment-14847"><div class="by">A. Soroka, 2015-07-24 22:00 UTC</div><div class="text"><p>Okay, once again I will check it out at the top of the coming week.</p></div></div>
+<div class="comment" id="comment-14848"><div class="by">Andrew Woods, 2015-07-25 00:14 UTC</div><div class="text"><p>The issue with the empty properties panel is here:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.vsl#L9" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-api/src/main/resources/views/common.vsl#L9</a></p>
+
+<p>The subject, $sub, is &lt;resource&gt;/fcr:metadata, we need to add some logic to instead find the triples of the NonRdfSource that is being described.</p></div></div>
+<div class="comment" id="comment-14883"><div class="by">A. Soroka, 2015-07-31 11:33 UTC</div><div class="text"><p>What is <tt>$helpers.getSortedTriples</tt> and what is <tt>$rdf.find</tt>?</p></div></div>
+<div class="comment" id="comment-14884"><div class="by">A. Soroka, 2015-07-31 11:40 UTC</div><div class="text"><p>This gives real impetus to 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1594" >
+                <a href="FCREPO-1594.html" class="jira-issue-macro-key issue-link"  title="Use LDPath Template for HTML views" >
+            
+            FCREPO-1594
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+.</p></div></div>
+<div class="comment" id="comment-14885"><div class="by">A. Soroka, 2015-07-31 13:50 UTC</div><div class="text"><p>Andrew Woods can you check <a href="https://github.com/fcrepo4/fcrepo4/pull/864" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/864</a> and confirm that the funky triple has been de-funkificated?</p></div></div>
+<div class="comment" id="comment-14888"><div class="by">Andrew Woods, 2015-08-03 19:49 UTC</div><div class="text"><p>The funky versions resource now looks good:<br/>
+-------<br/>
+ fedora:hasVersions &lt;<a href="http://localhost:8080/rest/image/fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/image/fcr:versions</a>&gt; .<br/>
+-------</p>
+
+<p>We can wrap up this ticket once the properties return to the HTML UI.</p></div></div>
+<div class="comment" id="comment-14889"><div class="by">A. Soroka, 2015-08-03 19:51 UTC</div><div class="text"><p>Okay, I'll  unassign myself.</p></div></div>
+<div class="comment" id="comment-14914"><div class="by">Andrew Woods, 2015-08-05 14:37 UTC</div><div class="text"><p>A. Soroka, Here is a PR against your PR-864 that addresses the HTML UI impacts:<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/869" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/869</a></p></div></div>
+<div class="comment" id="comment-14915"><div class="by">A. Soroka, 2015-08-05 14:39 UTC</div><div class="text"><p>Thank you, but I cannot review that. I do not understand how the HTML views work. Someone else who does must review that.</p></div></div>
+<div class="comment" id="comment-14916"><div class="by">Andrew Woods, 2015-08-05 14:55 UTC</div><div class="text"><p>Unknown, do you have time to review this?</p></div></div>
+<div class="comment" id="comment-14974"><div class="by">Unknown, 2015-08-09 00:38 UTC</div><div class="text"><p>I looked at Andrew Woods's PR and made some comments. I believe it needs some additional work.</p></div></div>
+<div class="comment" id="comment-14980"><div class="by">Andrew Woods, 2015-08-10 12:40 UTC</div><div class="text"><p>No changes... see response to code review comments.</p></div></div>
+<div class="comment" id="comment-14996"><div class="by">A. Soroka, 2015-08-12 14:08 UTC</div><div class="text"><p>What's going on with this ticket?</p></div></div>
+<div class="comment" id="comment-15020"><div class="by">Andrew Woods, 2015-08-14 15:05 UTC</div><div class="text"><p>This ticket is back on my plate to address Unknown's comments.</p></div></div>
+<div class="comment" id="comment-15021"><div class="by">A. Soroka, 2015-08-14 15:07 UTC</div><div class="text"><p>Yeah, Unknown is pretty cool.</p></div></div>
+<div class="comment" id="comment-15030"><div class="by">Andrew Woods, 2015-08-16 18:29 UTC</div><div class="text"><p>I have added a commit to the previous PR that removes the unnecessary "Other Resources" section from nt-resource.vsl. <br/>
+<a href="https://github.com/fcrepo4/fcrepo4/pull/864" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/864</a><br/>
+p.s. That PR needs to be rebased on master (hopefully this one last time). A. Soroka?</p>
+
+<p>The version-related issues can safely be worked under their own tickets. I have created three:<br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1702" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1702</a><br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1703" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1703</a><br/>
+<a href="https://jira.duraspace.org/browse/FCREPO-1704" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1704</a></p></div></div>
+<div class="comment" id="comment-15048"><div class="by">Andrew Woods, 2015-08-19 18:40 UTC</div><div class="text"><p>Related to: <a href="https://github.com/fcrepo4/fcrepo4/issues/888" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/issues/888</a></p></div></div>
+<div class="comment" id="comment-15072"><div class="by">Andrew Woods, 2015-08-21 22:54 UTC</div><div class="text"><p>Unknown, This ticket should be good to go, pending your second-round review.</p></div></div>
+<div class="comment" id="comment-15098"><div class="by">Unknown, 2015-08-26 21:28 UTC</div><div class="text"><p>Merged with the fcrepo4 master branch via <a href="https://github.com/fcrepo4/fcrepo4/commit/3bee67c3aed9076742e385aa347a36adfe46a907" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/3bee67c3aed9076742e385aa347a36adfe46a907</a></p></div></div>
+<p><a href="data/FCREPO-1640.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

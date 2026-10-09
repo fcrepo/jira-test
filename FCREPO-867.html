@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-867 findObjects search does not allow including an apostrophe</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-867</span> findObjects search does not allow including an apostrophe</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Rebecca Sutton Koeser</td></tr><tr><th>Assignee</th><td>frank asseg</td></tr><tr><th>Created</th><td>2011-03-01 22:50 UTC</td></tr><tr><th>Updated</th><td>2012-08-24 18:26 UTC</td></tr><tr><th>Resolved</th><td>2012-08-24 18:26 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Fix versions</th><td>Fedora 3.6.1</td></tr></table>
+<h2>Description</h2>
+<p>It seems like there should be some way to escape an apostrophe for inclusion in a findObjects search, but none of the obvious ways for escaping an apostrophe work.</p>
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-12413"><div class="by">frank asseg, 2012-08-23 17:58 UTC</div><div class="text"><p>Hmm in FieldSearchResultSQLImpl.java there is this bit:</p>
+
+<p>        if (terms.indexOf("'") != -1) </p>
+{
+            throw new QueryParseException("Query cannot contain the ' character.");
+        }
+
+<p>which suggests that using single quotes is a no-no.</p></div></div>
+<div class="comment" id="comment-12426"><div class="by">frank asseg, 2012-08-24 18:06 UTC</div><div class="text"><p>As discussed yesterday in the committer meeting this should not be a problem since fedora switched to using PreparedStatements.<br/>
+PreparedStatement is used in FieldSearchResultSQLImpl.java but single quotes were escaped with a backslash instead of a second single quote, which lead to a invalid query.<br/>
+source: <a href="http://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-CONSTANTS" class="external-link" rel="nofollow noreferrer">http://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-CONSTANTS</a><br/>
+Note: although link goes to postgresql doc using a second single quote to escape single quotes is ANSI sql.</p></div></div>
+<div class="comment" id="comment-12427"><div class="by">frank asseg, 2012-08-24 18:26 UTC</div><div class="text"><p>fix merged into master</p></div></div>
+<p><a href="data/FCREPO-867.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

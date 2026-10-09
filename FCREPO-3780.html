@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3780 LDPath and Marmotta path over blank nodes in fcrepo-camel-toolbox 6.0.0</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3780</span> LDPath and Marmotta path over blank nodes in fcrepo-camel-toolbox 6.0.0</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>High</td></tr><tr><th>Reporter</th><td>Marko Cundeković</td></tr><tr><th>Created</th><td>2021-10-04 12:28 UTC</td></tr><tr><th>Updated</th><td>2022-09-22 15:30 UTC</td></tr><tr><th>Resolved</th><td>2022-09-22 15:30 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>Fedora 6.0.0</td></tr><tr><th>Labels</th><td>fcrepo-camel-toolbox-6.0.0</td></tr></table>
+<h2>Environment</h2>Fedora 6.0.0<br/>
+Fcrepo-camel-toolbox 6.0.0<br/>
+Solr 8.9<br/>
+Fuseki 4.2.0
+<h2>Description</h2>
+<p>I have pushed new object in Fedora with RDF properties:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ [^demo.rdf] 
+</pre>
+</div></div>
+
+<p>Now the fcrepo-camel-toolbox is triggered, filling Fuseki and there are all triplets from Fedora, so I can get dabar:oib over blank node like this:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+SELECT * WHERE { &lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/karaka3:892&gt; dabar:author[dabar:oib ?i]  }</span>
+</pre>
+</div></div>
+
+<p>or</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+SELECT * WHERE { &lt;http:<span class="code-comment">//localhost:8080/fcrepo/<span class="code-keyword">rest</span>/karaka3:892&gt; dabar:author/dabar:oib ?i  }</span>
+</pre>
+</div></div>
+
+
+<p>but the problem is in LDPath and Marmotta, Solr. I added custom paths in .ldpath custom template like this:</p>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+@prefix dabar : &lt;http:<span class="code-comment">//dabar.srce.hr/standards/schema/1.0#&gt;
+</span>
+title_ss = dabar:title :: xsd:string ;
+author_ss = dabar:author/fn:concat(dabar:givenName,<span class="code-quote">" "</span>,dabar:familyName) :: xsd:string ;
+oib_ss = dabar:author/dabar:oib :: xsd:string ;
+</pre>
+</div></div>
+
+
+<p>and this is indexed part of document in Solr:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+{
+...
+  <span class="code-quote">"title_ss"</span>:[<span class="code-quote">"title"</span>,
+    <span class="code-quote">"naslov"</span>],
+  <span class="code-quote">"author_ss"</span>:[<span class="code-quote">" "</span>],
+...
+}
+</pre>
+</div></div>
+
+
+<p>as you can see, direct links (titles) are indexed, but values over blank nodes aren't (family name, given name and oib). </p>
+
+<p>if I add .ldpath custom path like this:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+author_ss = dabar:author :: xsd:string ;
+</pre>
+</div></div>
+
+
+<p>in Solr I get those blank nodes:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+...
+<span class="code-quote">"title_ss"</span>:[<span class="code-quote">"title"</span>,
+  <span class="code-quote">"naslov"</span>],
+<span class="code-quote">"author_ss"</span>:[<span class="code-quote">"genid-b0ea664530f8427497f148bef9aa9be2-b0"</span>,
+  <span class="code-quote">"genid-b0ea664530f8427497f148bef9aa9be2-b1"</span>],
+...
+</pre>
+</div></div>
+
+
+<p>So my question is is it possible to get values over blank nodes with LDPath and Marmotta in fcrepo-camel-toolbox?</p>
+
+<p>I've checked documentation on <a href="http://marmotta.apache.org/ldpath/language.html" class="external-link" rel="nofollow noreferrer">http://marmotta.apache.org/ldpath/language.html</a> but there isn't any specific mention of blank nodes.<br/>
+But that example for concating givenName and familyName is mentioned in documentation so i guess there is support for something like this?</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-3780/10357_demo.rdf">demo.rdf</a>, 1091 bytes, added by Marko Cundeković on 2021-10-04</li>
+</ul>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-22511"><div class="by">Marko Cundeković, 2021-10-04 12:39 UTC</div><div class="text"><div class="panel" style="background-color: #eae6ff;border-width: 1px;"><div class="panelContent" style="background-color: #eae6ff;">
+<p>Part of Curl response from Fedora</p>
+
+<p>@prefix rdf:   &lt;<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/1999/02/22-rdf-syntax-ns#</a>&gt; .<br/>
+@prefix fedora: &lt;<a href="http://fedora.info/definitions/v4/repository#" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#</a>&gt; .<br/>
+@prefix dabar: &lt;<a href="http://dabar.srce.hr/standards/schema/1.0#" class="external-link" rel="nofollow noreferrer">http://dabar.srce.hr/standards/schema/1.0#</a>&gt; .<br/>
+@prefix ldp:   &lt;<a href="http://www.w3.org/ns/ldp#" class="external-link" rel="nofollow noreferrer">http://www.w3.org/ns/ldp#</a> &gt; .</p>
+
+<p>_:b0    dabar:givenName   "firstname2" ;<br/>
+          dabar:familyName  "lastname2" ;<br/>
+          dabar:oib         "876543210" .</p>
+
+<p>_:b1    dabar:givenName   "firstname1" ;<br/>
+          dabar:familyName  "lastname1" ;<br/>
+          dabar:oib         "012345678" .</p>
+
+<p>&lt;<a href="http://localhost:8080/fcrepo/rest/karaka3:892" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/karaka3:892</a>&gt;<br/>
+dabar:author           _:b0 ;<br/>
+dabar:author           _:b1 ;<br/>
+dabar:title            "title"@eng ;<br/>
+dabar:title            "naslov"@hrv ;<br/>
+fedora:created         "2020-07-29T13:59:54.588Z"^^&lt;<a href="http://www.w3.org/2001/XMLSchema#dateTime" class="external-link" rel="nofollow noreferrer">http://www.w3.org/2001/XMLSchema#dateTime</a> &gt; ;<br/>
+…</p>
+</div></div></div></div>
+<div class="comment" id="comment-22512"><div class="by">Danny Bernstein, 2021-10-04 15:05 UTC</div><div class="text"><p>Thanks Marko Cundeković </p></div></div>
+<div class="comment" id="comment-22518"><div class="by">Danny Bernstein, 2021-10-06 19:57 UTC</div><div class="text"><p>I took a look at this one and I too was unable to formulate an ld path  expression that would retrieve the contents of the blank nodes.  The solution may require us to swap out marmotta, which is no longer maintained, for something else.  But the root of the problem appears to be Marmotta’s handling (or non-handling) of blank nodes.</p></div></div>
+<div class="comment" id="comment-22703"><div class="by">Danny Bernstein, 2022-09-22 15:30 UTC</div><div class="text"><p>We're moving away from LDPath:  This ticket describes the way forward: <a href="FCREPO-3834.html" class="external-link" rel="nofollow noreferrer">https://fedora-repository.atlassian.net/browse/FCREPO-3834</a></p></div></div>
+<p><a href="data/FCREPO-3780.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

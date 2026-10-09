@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-479 No SPARQL Support for ASK </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-479</span> No SPARQL Support for ASK </h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Ben O&#x27;Steen</td></tr><tr><th>Created</th><td>2009-04-20 12:54 UTC</td></tr><tr><th>Updated</th><td>2012-08-24 10:14 UTC</td></tr><tr><th>Resolved</th><td>2012-08-24 10:12 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1023.html">FCREPO-1023</a> No Support for Latest W3C SPARQL Query Results XML Format</td></tr><tr><th>Is related to</th><td><a href="FCREPO-480.html">FCREPO-480</a> No SPARQL Support for DESCRIBE</td></tr></table>
+<h2>Environment</h2>Ubuntu JeOS Hardy Heron, JDK 1.5, run via included Tomcat - Fedora 3.1 
+<h2>Description</h2>
+<p>SPARQL ASK queries return False, regardless to actual match and the response format is not compliant to the SPARQL guidelines for ASK responses.</p>
+
+<p>Spec:<br/>
+<a href="http://www.w3.org/TR/rdf-sparql-query/#ask" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/rdf-sparql-query/#ask</a></p>
+
+<p>From a basic query, the following is found (manually) to exist in the triplestore:</p>
+
+<p>&lt;info:fedora/dataset:1&gt; &lt;<a href="http://purl.org/dc/elements/1.1/identifier" class="external-link" rel="nofollow noreferrer">http://purl.org/dc/elements/1.1/identifier</a>&gt; "dataset:1" .</p>
+
+<p>Performing a SPARQL query:</p>
+
+<p>ASK </p>
+{ &lt;info:fedora/dataset:1&gt; dc:identifier "dataset:1" }
+
+<p>via: <a href="http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=sparql&amp;format=sparql&amp;type=tuples&amp;query=ASK%20" class="external-link" rel="nofollow noreferrer">http://databank.ouls.ox.ac.uk:8080/fedora/risearch?lang=sparql&amp;format=sparql&amp;type=tuples&amp;query=ASK%20</a></p>
+{%20%3Cinfo:fedora/dataset:1%3E%20dc:identifier%20%22dataset:1%22%20}
+
+<p>Response:<br/>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;<br/>
+&lt;sparql xmlns="http://www.w3.org/2001/sw/DataAccess/rf1/result"&gt;<br/>
+  &lt;head&gt;<br/>
+    &lt;variable name="k0"/&gt;<br/>
+  &lt;/head&gt;<br/>
+  &lt;results&gt;<br/>
+    &lt;result&gt;<br/>
+      &lt;k0 datatype="http://www.w3.org/2001/XMLSchema#boolean"&gt;false&lt;/k0&gt;<br/>
+    &lt;/result&gt;<br/>
+  &lt;/results&gt;<br/>
+&lt;/sparql&gt;</p>
+
+<p>Expected response (from the SPARQL spec):<br/>
+&lt;?xml version="1.0"?&gt;<br/>
+&lt;sparql xmlns="http://www.w3.org/2005/sparql-results#"<br/>
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"<br/>
+        xsi:schemaLocation="http://www.w3.org/2001/sw/DataAccess/rf1/result2.xsd"&gt;<br/>
+  &lt;head&gt;<br/>
+  &lt;/head&gt;</p>
+
+<p>  &lt;boolean&gt;true&lt;/boolean&gt;</p>
+
+<p>&lt;/sparql&gt;</p>
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-10928"><div class="by">Chris Wilper, 2009-05-12 15:25 UTC</div><div class="text"><p>Hi Ben, We're checking into these SPARQL issues.  Thanks, Chris</p></div></div>
+<div class="comment" id="comment-10930"><div class="by">Chris Wilper, 2009-05-12 22:26 UTC</div><div class="text"><p>verified w/paul that construct is supported in mulgara</p></div></div>
+<div class="comment" id="comment-12418"><div class="by">eddie, 2012-08-24 10:11 UTC</div><div class="text"><p>Per yesterday's review of orphaned issues, I took a quick look at this:</p>
+
+<p>SPARQL query: <br/>
+ASK </p>
+{ &lt;info:fedora/fedora-system:ServiceDefinition-3.0&gt; &lt;dc:identifier&gt; "fedora-system:ServiceDefinition-3.0" }
+
+<p>Result:<br/>
+&lt;sparql xmlns="http://www.w3.org/2001/sw/DataAccess/rf1/result"&gt;<br/>
+  &lt;head&gt;<br/>
+    &lt;variable name="k0"/&gt;<br/>
+  &lt;/head&gt;<br/>
+  &lt;results&gt;<br/>
+    &lt;result&gt;<br/>
+      &lt;k0 datatype="http://www.w3.org/2001/XMLSchema#boolean"&gt;true&lt;/k0&gt;<br/>
+    &lt;/result&gt;<br/>
+  &lt;/results&gt;<br/>
+&lt;/sparql&gt;</p>
+
+<p>So, it's correctly returning true, but the response format is not SPARQL Query Results XML Format (<a href="http://www.w3.org/TR/rdf-sparql-XMLres/" class="external-link" rel="nofollow noreferrer">http://www.w3.org/TR/rdf-sparql-XMLres/</a>), see: 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-1023" >
+                <a href="FCREPO-1023.html" class="jira-issue-macro-key issue-link"  title="No Support for Latest W3C SPARQL Query Results XML Format" >
+            
+            FCREPO-1023
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p>
+
+<p>Going to close this issue, although I'm not sure what the correct fix version is. Looks like it was addressed 4 years ago in Mulgara: <a href="http://code.mulgara.org/issues/113" class="external-link" rel="nofollow noreferrer">http://code.mulgara.org/issues/113</a></p></div></div>
+<p><a href="data/FCREPO-479.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

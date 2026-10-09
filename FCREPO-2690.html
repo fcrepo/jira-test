@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2690 Binary timemaps don&#x27;t translate their paths correctly</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2690</span> Binary timemaps don&#x27;t translate their paths correctly</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Jared Whiklo</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2018-03-02 22:59 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-03-05 22:08 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>2018-spring-api-alignment-sprint, versioning</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>Revealed when solving 
+    <span class="jira-issue-macro resolved" data-jira-key="FCREPO-2681" >
+                <a href="FCREPO-2681.html" class="jira-issue-macro-key issue-link"  title="GET on LDPCv returns 500 on Binary Resource" >
+            
+            FCREPO-2681
+        </a>
+                                                    <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Closed</span>
+            </span>
+</p>
+
+<p>The URL of the Timemap is incorrect. It displays as </p>
+
+<p>&lt;<a href="http://localhost:8080/rest//fcr:versions" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest//fcr:versions</a>&gt;</p>
+
+<p>This is because here (<a href="https://github.com/fcrepo4/fcrepo4/blob/memento-versioning/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L263" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/memento-versioning/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/api/rdf/HttpResourceConverter.java#L263</a>) the getContainer from the timemap returns the container holding the binary. We need the binary itself.</p>
+
+<p>I'm not sure the easiest way to get that.</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-19654"><div class="by">Danny Bernstein, 2018-03-05 19:02 UTC</div><div class="text"><p>Jared Whiklo: I'm unable to reproduce this issue.  Here's what I'm seeing with the following commands.  Tell me what I'm missing:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+curl -v -XPUT   -H <span class="code-quote">"Content-Type: text/plain"</span> -H <span class="code-quote">"Link: &lt;http:<span class="code-comment">//fedora.info/definitions/fcrepo#VersionedResource&gt;; rel=\"</span>type\<span class="code-quote">"" "</span>http://localhost:8080/<span class="code-keyword">rest</span>/test-resource-1" -u fedoraAdmin:fedoraAdmin</span></pre>
+</div></div>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+* Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+* Server auth using Basic with user <span class="code-quote">'fedoraAdmin'</span>
+&gt; PUT /<span class="code-keyword">rest</span>/test-resource-1 HTTP/1.1
+&gt; Host: localhost:8080
+&gt; Authorization: Basic ZmVkb3JhQWRtaW46ZmVkb3JhQWRtaW4=
+&gt; User-Agent: curl/7.43.0
+&gt; Accept: */*
+&gt; Content-Type: text/plain
+&gt; Link: &lt;http:<span class="code-comment">//fedora.info/definitions/fcrepo#VersionedResource&gt;; rel=<span class="code-quote">"type"</span>
+</span>&gt; 
+&lt; HTTP/1.1 201 Created
+&lt; Date: Mon, 05 Mar 2018 19:00:44 GMT
+&lt; ETag: <span class="code-quote">"70499803f67c24558dc5dbe1dfae6aa0eeb4d5bf"</span>
+&lt; Last-Modified: Mon, 05 Mar 2018 19:00:44 GMT
+&lt; Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test-resource-1/fcr:metadata&gt;; rel=<span class="code-quote">"describedby"</span>; anchor=<span class="code-quote">"http://localhost:8080/<span class="code-keyword">rest</span>/test-resource-1"</span>
+</span>&lt; Link: &lt;http:<span class="code-comment">//fedora.info/definitions/fcrepo#VersionedResource&gt;; rel=<span class="code-quote">"type"</span>
+</span>&lt; Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test-resource-1&gt;; rel=<span class="code-quote">"timegate"</span>
+</span>&lt; Link: &lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test-resource-1/fcr:versions&gt;; rel=<span class="code-quote">"timemap"</span>
+</span>&lt; Location: http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test-resource-1
+</span>&lt; Content-Type: text/plain
+&lt; Content-Length: 42
+&lt; Server: Jetty(9.2.3.v20140905)
+&lt; 
+* Connection #0 to host localhost left intact
+http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test-resource-1</span></pre>
+</div></div>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+ curl -v http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test-resource-1/fcr:versions</span>
+</pre>
+</div></div>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+* Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+&gt; GET /<span class="code-keyword">rest</span>/test-resource-1/fcr:versions HTTP/1.1
+&gt; Host: localhost:8080
+&gt; User-Agent: curl/7.43.0
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 200 OK
+&lt; Date: Mon, 05 Mar 2018 19:02:13 GMT
+&lt; ETag: W/<span class="code-quote">"33b867a52ad1ff06cc022ec0a74adaccfd35e8ac"</span>
+&lt; Last-Modified: Mon, 05 Mar 2018 19:00:44 GMT
+&lt; Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;; rel=<span class="code-quote">"type"</span>
+</span>&lt; Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#RDFSource&gt;; rel=<span class="code-quote">"type"</span>
+</span>&lt; Link: &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#TimeMap&gt;; rel=<span class="code-quote">"type"</span>
+</span>&lt; Vary-Post: Memento-Datetime
+&lt; Allow: POST,HEAD,GET,OPTIONS
+&lt; Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#Resource&gt;;rel=<span class="code-quote">"type"</span>
+</span>&lt; Link: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#RDFSource&gt;;rel=<span class="code-quote">"type"</span>
+</span>&lt; Vary: Accept
+&lt; Vary: Range
+&lt; Vary: Accept-Encoding
+&lt; Vary: Accept-Language
+&lt; Preference-Applied: <span class="code-keyword">return</span>=representation
+&lt; Vary: Prefer
+&lt; Content-Type: text/turtle;charset=utf-8
+&lt; Content-Length: 1309
+&lt; Server: Jetty(9.2.3.v20140905)
+&lt; 
+@prefix premis: &lt;http:<span class="code-comment">//www.loc.gov/premis/rdf/v1#&gt; .
+</span>@prefix test: &lt;info:fedora/test/&gt; .
+@prefix rdfs: &lt;http:<span class="code-comment">//www.w3.org/2000/01/rdf-schema#&gt; .
+</span>@prefix xsi: &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema-instance&gt; .
+</span>@prefix xmlns: &lt;http:<span class="code-comment">//www.w3.org/2000/xmlns/&gt; .
+</span>@prefix rdf: &lt;http:<span class="code-comment">//www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+</span>@prefix fedora: &lt;http:<span class="code-comment">//fedora.info/definitions/v4/repository#&gt; .
+</span>@prefix xml: &lt;http:<span class="code-comment">//www.w3.org/XML/1998/namespace&gt; .
+</span>@prefix ebucore: &lt;http:<span class="code-comment">//www.ebu.ch/metadata/ontologies/ebucore/ebucore#&gt; .
+</span>@prefix ldp: &lt;http:<span class="code-comment">//www.w3.org/ns/ldp#&gt; .
+</span>@prefix xs: &lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema&gt; .
+</span>@prefix fedoraconfig: &lt;http:<span class="code-comment">//fedora.info/definitions/v4/config#&gt; .
+</span>@prefix foaf: &lt;http:<span class="code-comment">//xmlns.com/foaf/0.1/&gt; .
+</span>@prefix dc: &lt;http:<span class="code-comment">//purl.org/dc/elements/1.1/&gt; .
+</span>
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>//fcr:versions&gt;
+</span>rdf:type fedora:TimeMap ;
+rdf:type fedora:Resource ;
+fedora:lastModifiedBy <span class="code-quote">"bypassAdmin"</span> ;
+fedora:createdBy <span class="code-quote">"bypassAdmin"</span> ;
+fedora:created <span class="code-quote">"2018-03-05T19:00:44.681Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>fedora:lastModified <span class="code-quote">"2018-03-05T19:00:44.681Z"</span>^^&lt;http:<span class="code-comment">//www.w3.org/2001/XMLSchema#dateTime&gt; ;
+</span>rdf:type ldp:RDFSource ;
+fedora:writable <span class="code-keyword">true</span> .
+* Connection #0 to host localhost left intact
+</pre>
+</div></div>
+<p> </p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-19655"><div class="by">Jared Whiklo, 2018-03-05 19:13 UTC</div><div class="text"><p>Danny Bernstein check the returned triples in your GET above. You requested</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>/test-resource-1/fcr:versions</span></pre>
+</div></div>
+<p>but the graph starts with</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+&lt;http:<span class="code-comment">//localhost:8080/<span class="code-keyword">rest</span>//fcr:versions&gt;</span></pre>
+</div></div>
+<p> </p>
+
+<p>If you try with a the TimeMap of a RDFSource the correct URL is returned.</p></div></div>
+<div class="comment" id="comment-19657"><div class="by">Danny Bernstein, 2018-03-05 19:26 UTC</div><div class="text"><p>Jared Whiklo:  ah - okay - thanks for the clarification.</p></div></div>
+<div class="comment" id="comment-19659"><div class="by">Danny Bernstein, 2018-03-05 22:08 UTC</div><div class="text"><p>PR ready for review: <a href="https://github.com/fcrepo4/fcrepo4/pull/1286" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1286</a></p></div></div>
+<div class="comment" id="comment-19661"><div class="by">Jared Whiklo, 2018-03-06 00:09 UTC</div><div class="text"><p>Resolved with <a href="https://github.com/fcrepo4/fcrepo4/commit/62f09e2e9d4d0b3275636e168d15720ec4a0d3ab" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/62f09e2e9d4d0b3275636e168d15720ec4a0d3ab</a></p>
+
+<p> </p>
+
+<p>Sorry Randall Floyd I didn't realize your were reviewing this until after I merged it.</p></div></div>
+<p><a href="data/FCREPO-2690.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

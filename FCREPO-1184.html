@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1184 FESL&#x27;s log patterns in server/config/logback.xml don&#x27;t log useful information</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1184</span> FESL&#x27;s log patterns in server/config/logback.xml don&#x27;t log useful information</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Trivial</td></tr><tr><th>Reporter</th><td>Peter Murray (test/user account)</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2012-12-15 07:37 UTC</td></tr><tr><th>Updated</th><td>2013-07-26 20:35 UTC</td></tr><tr><th>Resolved</th><td>2013-07-26 20:35 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.6.2</td></tr><tr><th>Fix versions</th><td>Fedora 3.7</td></tr></table>
+<h2>Description</h2>
+<p>The current FeSL debug message definition (commented out by default):</p>
+
+<p>    &lt;layout class="ch.qos.logback.classic.PatternLayout"&gt;<br/>
+      &lt;Pattern&gt;%p %d</p>
+{yyyy-MM-dd' 'HH:mm:ss.SSS}
+<p> <span class="error">&#91;%t&#93;</span> (%c</p>
+{0}<br class="atl-forced-newline" />) %m%n&lt;/Pattern&gt;<br/>
+    &lt;/layout&gt;<br/>
+<br/>
+...does not log useful information:<br/>
+<br/>
+INFO 2012-12-14 10:40:16.546 <span class="error">&#91;localhost-startStop-1&#93;</span> (AuthFilterJAAS\INFO 2012-12-14 10:40:16.547 <span class="error">&#91;localhost-startStop-1&#93;</span> (AuthFilterJAAS\DEBUG 2012-12-14 10:40:50.783 <span class="error">&#91;http-bio-8080-exec-1&#93;</span> (AuthFilterJAAS\DEBUG 2012-12-14 10:40:50.822 <span class="error">&#91;http-bio-8080-exec-1&#93;</span> (AuthFilterJAAS\DEBUG 2012-12-14 10:41:05.232 <span class="error">&#91;http-bio-8080-exec-2&#93;</span> (AuthFilterJAAS\DEBUG 2012-12-14 10:41:05.232 <span class="error">&#91;http-bio-8080-exec-2&#93;</span> (AuthFilterJAAS\DEBUG 2012-12-14 10:41:05.237 [http-bio-<br/>
+<br/>
+If the &lt;layout&gt; stanza is changed to the &lt;encoder&gt; pattern used earlier in the file:<br/>
+<br/>
+    &lt;encoder&gt;                                                           <br/>
+      &lt;pattern&gt;%p %d{yyyy-MM-dd' 'HH:mm:ss.SSS} <span class="error">&#91;%t&#93;</span> &#40;%c{0}
+<p>&#41; %m%n&lt;/pattern&gt;<br/>
+    &lt;/encoder&gt;</p>
+
+<p>...then useful log information is shown:</p>
+
+<p>INFO 2012-12-14 10:49:43.737 <span class="error">&#91;localhost-startStop-1&#93;</span> (AuthFilterJAAS) initialised servlet filter: org.fcrepo.server.security.jaas.AuthFilterJAAS<br/>
+DEBUG 2012-12-14 10:50:12.552 <span class="error">&#91;http-bio-8080-exec-1&#93;</span> (AuthFilterJAAS) incoming filter: org.fcrepo.server.security.jaas.AuthFilterJAAS<br/>
+DEBUG 2012-12-14 10:50:12.559 <span class="error">&#91;http-bio-8080-exec-1&#93;</span> (AuthFilterJAAS) session-id: E5CDACC6C976F548887FAB498B7E717D<br/>
+DEBUG 2012-12-14 10:50:12.564 <span class="error">&#91;http-bio-8080-exec-1&#93;</span> (AuthFilterJAAS) auth username: admin</p>
+<h2>Comments (1)</h2>
+<div class="comment" id="comment-12544"><div class="by">Benjamin Armintor, 2013-07-26 20:35 UTC</div><div class="text"><p><a href="https://github.com/fcrepo/fcrepo/commit/d4a9ec589aeecd64ba78c0b648710f49cde2e745" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo/fcrepo/commit/d4a9ec589aeecd64ba78c0b648710f49cde2e745</a></p></div></div>
+<p><a href="data/FCREPO-1184.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

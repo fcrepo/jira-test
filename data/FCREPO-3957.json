@@ -1,0 +1,574 @@
+{
+ "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations,customfield_10010.requestTypePractice",
+ "fields": {
+  "aggregateprogress": {
+   "progress": 0,
+   "total": 0
+  },
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "attrs": {
+           "url": "https://github.com/fcrepo/fcrepo-storage-ocfl/pull/61"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": " ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "attrs": {
+           "url": "https://github.com/fcrepo/fcrepo/pull/2099"
+          },
+          "type": "inlineCard"
+         },
+         {
+          "text": " ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "I’ve tried the PR with local filesystem binaries, and with fedora using s3 as its storage. There was a very significant performance improvement with s3 when dealing with a 100mb TIFF file and requesting the last 10 bytes of the file. There was no noticeable difference when requesting the first part of the file, or downloading the whole file of course:",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       },
+       {
+        "content": [
+         {
+          "text": "# Against aws 100mb file, download whole thing\ntime curl http://localhost:8080/rest/large_tiff -v -o /dev/null  -ufedoraAdmin:fedoraAdmin \n\n100 96.2M  100 96.2M    0     0  12.4M      0  0:00:07  0:00:07 --:--:-- 14.2M\ncurl http://localhost:8080/rest/large_tiff -v -o /dev/null   0.06s user 0.14s system 2% cpu 7.738 total\n\n# Without range updates, get last 10bytes\ntime curl http://localhost:8080/rest/large_tiff -H\"Range: bytes=100924970-100924980\" -v -o /dev/null  -ufedoraAdmin:fedoraAdmin\n\n100    10  100    10    0     0      1      0  0:00:10  0:00:08  0:00:02     2\ncurl http://localhost:8080/rest/large_tiff  -v -o /dev/null   0.01s user 0.01s system 0% cpu 8.058 total\n\n# WITH range updates, get last 10bytes\ntime curl http://localhost:8080/rest/large_tiff -H\"Range: bytes=100924970-100924980\" -v -o /dev/null  -ufedoraAdmin:fedoraAdmin\n\n100    10  100    10    0     0     31      0 --:--:-- --:--:-- --:--:--    31\ncurl http://localhost:8080/rest/large_tiff  -v -o /dev/null   0.01s user 0.01s system 4% cpu 0.333 total",
+          "type": "text"
+         }
+        ],
+        "type": "codeBlock"
+       },
+       {
+        "content": [
+         {
+          "text": "With local storage, the retrieval times are already very short on my personal laptop, but there is some difference when getting the last 10 bytes. Without these changes it took 0.108s, and with these changes it took 0.030s. Getting the first 10 bytes took around 0.030 either way.",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-10-23T18:40:35.107-0300",
+     "id": "23746",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13896/comment/23746",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "2024-10-23T18:40:35.107-0300"
+    },
+    {
+     "author": {
+      "accountId": "6089a594bb0b0500707c78d8",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/48"
+      },
+      "displayName": "Dan Field",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a594bb0b0500707c78d8",
+      "timeZone": "Europe/London"
+     },
+     "body": {
+      "content": [
+       {
+        "content": [
+         {
+          "text": "PRs merged ",
+          "type": "text"
+         }
+        ],
+        "type": "paragraph"
+       }
+      ],
+      "type": "doc",
+      "version": 1
+     },
+     "created": "2024-10-25T12:12:12.875-0300",
+     "id": "23812",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13896/comment/23812",
+     "updateAuthor": {
+      "accountId": "6089a594bb0b0500707c78d8",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/48"
+      },
+      "displayName": "Dan Field",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a594bb0b0500707c78d8",
+      "timeZone": "Europe/London"
+     },
+     "updated": "2024-10-25T12:12:12.875-0300"
+    }
+   ],
+   "maxResults": 2,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13896/comment",
+   "startAt": 0,
+   "total": 2
+  },
+  "components": [],
+  "created": "2024-09-12T13:32:07.430-0300",
+  "creator": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "customfield_10000": "{}",
+  "customfield_10001": null,
+  "customfield_10002": [],
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": null,
+  "customfield_10019": "0|103d6w:",
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "2024-10-25T12:12:12.875-0300",
+  "customfield_10025": "1_*:*_1_*:*_2530_*|*_3_*:*_1_*:*_76324936_*|*_10002_*:*_1_*:*_0_*|*_10003_*:*_1_*:*_3557274941",
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": [],
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": {
+   "content": [
+    {
+     "content": [
+      {
+       "text": "ocfl-java-client v2.2.1 supports range requests at the ocfl level. Once fcrepo us updated to this version, we should see if we can make use of this in fedora in order to only retrieve the parts of the file that a user is requesting, then they make a request with an HTTP Range header.",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    },
+    {
+     "type": "paragraph"
+    },
+    {
+     "content": [
+      {
+       "attrs": {
+        "url": "https://github.com/OCFL/ocfl-java/issues/118"
+       },
+       "type": "inlineCard"
+      },
+      {
+       "text": " ",
+       "type": "text"
+      }
+     ],
+     "type": "paragraph"
+    }
+   ],
+   "type": "doc",
+   "version": 1
+  },
+  "duedate": null,
+  "environment": null,
+  "fixVersions": [
+   {
+    "archived": false,
+    "description": "",
+    "id": "10175",
+    "name": "fcrepo 6.6.0",
+    "released": false,
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/version/10175"
+   }
+  ],
+  "issuelinks": [],
+  "issuerestriction": {
+   "issuerestrictions": {},
+   "shouldDisplay": false
+  },
+  "issuetype": {
+   "avatarId": 10300,
+   "description": "An improvement or enhancement to an existing feature or task. (Migrated on 28 Apr 2021 18:14 UTC)",
+   "hierarchyLevel": 0,
+   "iconUrl": "https://fedora-repository.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10300?size=medium",
+   "id": "10009",
+   "name": "Improvement",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issuetype/10009",
+   "subtask": false
+  },
+  "labels": [],
+  "lastViewed": null,
+  "priority": {
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/priorities/minor.svg",
+   "id": "10004",
+   "name": "Minor",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/priority/10004"
+  },
+  "progress": {
+   "progress": 0,
+   "total": 0
+  },
+  "project": {
+   "avatarUrls": {
+    "16x16": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=xsmall",
+    "24x24": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=small",
+    "32x32": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409?size=medium",
+    "48x48": "https://fedora-repository.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10409"
+   },
+   "id": "10001",
+   "key": "FCREPO",
+   "name": "Fedora Repository Project",
+   "projectCategory": {
+    "description": "The Fedora Commons Repository, Frontends, and Extensions",
+    "id": "10003",
+    "name": "Fedora Commons Software",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/projectCategory/10003"
+   },
+   "projectTypeKey": "software",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/project/10001",
+   "simplified": false
+  },
+  "reporter": {
+   "accountId": "5bba58f3eb6f6e2ccfd097c6",
+   "accountType": "atlassian",
+   "active": true,
+   "avatarUrls": {
+    "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+    "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+   },
+   "displayName": "Ben Pennell",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+   "timeZone": "America/Halifax"
+  },
+  "resolution": {
+   "description": "Work has been completed on this issue.",
+   "id": "10000",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/resolution/10000"
+  },
+  "resolutiondate": "2024-10-25T12:12:48.569-0300",
+  "security": null,
+  "status": {
+   "description": "The issue is considered finished, the resolution is correct. Issues which are closed can be reopened.",
+   "iconUrl": "https://fedora-repository.atlassian.net/images/icons/statuses/closed.png",
+   "id": "6",
+   "name": "Closed",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/status/6",
+   "statusCategory": {
+    "colorName": "green",
+    "id": 3,
+    "key": "done",
+    "name": "Done",
+    "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+   }
+  },
+  "statusCategory": {
+   "colorName": "green",
+   "id": 3,
+   "key": "done",
+   "name": "Done",
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/statuscategory/3"
+  },
+  "statuscategorychangedate": "2024-10-25T12:12:48.656-0300",
+  "subtasks": [],
+  "summary": "Range requests in OCFL java layer",
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "2024-10-25T12:12:48.642-0300",
+  "versions": [],
+  "votes": {
+   "hasVoted": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-3957/votes",
+   "votes": 0
+  },
+  "watches": {
+   "isWatching": false,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/FCREPO-3957/watchers",
+   "watchCount": 2
+  },
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": -1
+ },
+ "id": "13896",
+ "key": "FCREPO-3957",
+ "renderedFields": {
+  "aggregateprogress": null,
+  "aggregatetimeestimate": null,
+  "aggregatetimeoriginalestimate": null,
+  "aggregatetimespent": null,
+  "assignee": null,
+  "attachment": [],
+  "comment": {
+   "comments": [
+    {
+     "author": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "body": "<p><a href=\"https://github.com/fcrepo/fcrepo-storage-ocfl/pull/61\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo/fcrepo-storage-ocfl/pull/61</a> </p>\n\n<p><a href=\"https://github.com/fcrepo/fcrepo/pull/2099\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/fcrepo/fcrepo/pull/2099</a> </p>\n\n<p>I’ve tried the PR with local filesystem binaries, and with fedora using s3 as its storage. There was a very significant performance improvement with s3 when dealing with a 100mb TIFF file and requesting the last 10 bytes of the file. There was no noticeable difference when requesting the first part of the file, or downloading the whole file of course:</p>\n\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre># Against aws 100mb file, download whole thing\ntime curl http://localhost:8080/rest/large_tiff -v -o /dev/null  -ufedoraAdmin:fedoraAdmin \n\n100 96.2M  100 96.2M    0     0  12.4M      0  0:00:07  0:00:07 --:--:-- 14.2M\ncurl http://localhost:8080/rest/large_tiff -v -o /dev/null   0.06s user 0.14s system 2% cpu 7.738 total\n\n# Without range updates, get last 10bytes\ntime curl http://localhost:8080/rest/large_tiff -H\"Range: bytes=100924970-100924980\" -v -o /dev/null  -ufedoraAdmin:fedoraAdmin\n\n100    10  100    10    0     0      1      0  0:00:10  0:00:08  0:00:02     2\ncurl http://localhost:8080/rest/large_tiff  -v -o /dev/null   0.01s user 0.01s system 0% cpu 8.058 total\n\n# WITH range updates, get last 10bytes\ntime curl http://localhost:8080/rest/large_tiff -H\"Range: bytes=100924970-100924980\" -v -o /dev/null  -ufedoraAdmin:fedoraAdmin\n\n100    10  100    10    0     0     31      0 --:--:-- --:--:-- --:--:--    31\ncurl http://localhost:8080/rest/large_tiff  -v -o /dev/null   0.01s user 0.01s system 4% cpu 0.333 total</pre>\n</div></div>\n\n<p>With local storage, the retrieval times are already very short on my personal laptop, but there is some difference when getting the last 10 bytes. Without these changes it took 0.108s, and with these changes it took 0.030s. Getting the first 10 bytes took around 0.030 either way.</p>",
+     "created": "23/Oct/24 6:40 PM",
+     "id": "23746",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13896/comment/23746",
+     "updateAuthor": {
+      "accountId": "5bba58f3eb6f6e2ccfd097c6",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "24x24": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "32x32": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png",
+       "48x48": "https://secure.gravatar.com/avatar/0f212807d7bbe91a49a7c4620c5bfdac?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FBP-1.png"
+      },
+      "displayName": "Ben Pennell",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=5bba58f3eb6f6e2ccfd097c6",
+      "timeZone": "America/Halifax"
+     },
+     "updated": "23/Oct/24 6:40 PM"
+    },
+    {
+     "author": {
+      "accountId": "6089a594bb0b0500707c78d8",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/48"
+      },
+      "displayName": "Dan Field",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a594bb0b0500707c78d8",
+      "timeZone": "Europe/London"
+     },
+     "body": "<p>PRs merged </p>",
+     "created": "25/Oct/24 12:12 PM",
+     "id": "23812",
+     "jsdPublic": true,
+     "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13896/comment/23812",
+     "updateAuthor": {
+      "accountId": "6089a594bb0b0500707c78d8",
+      "accountType": "atlassian",
+      "active": true,
+      "avatarUrls": {
+       "16x16": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/16",
+       "24x24": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/24",
+       "32x32": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/32",
+       "48x48": "https://avatar-management--avatars.us-west-2.prod.public.atl-paas.net/6089a594bb0b0500707c78d8/e0c89ba4-1407-406d-af50-dc665f216277/48"
+      },
+      "displayName": "Dan Field",
+      "self": "https://fedora-repository.atlassian.net/rest/api/3/user?accountId=6089a594bb0b0500707c78d8",
+      "timeZone": "Europe/London"
+     },
+     "updated": "25/Oct/24 12:12 PM"
+    }
+   ],
+   "maxResults": 2,
+   "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13896/comment",
+   "startAt": 0,
+   "total": 2
+  },
+  "components": null,
+  "created": "12/Sep/24 1:32 PM",
+  "creator": null,
+  "customfield_10000": null,
+  "customfield_10001": null,
+  "customfield_10002": null,
+  "customfield_10003": null,
+  "customfield_10004": null,
+  "customfield_10005": null,
+  "customfield_10006": null,
+  "customfield_10007": null,
+  "customfield_10008": null,
+  "customfield_10009": null,
+  "customfield_10010": null,
+  "customfield_10014": null,
+  "customfield_10015": null,
+  "customfield_10016": null,
+  "customfield_10017": "",
+  "customfield_10019": null,
+  "customfield_10020": null,
+  "customfield_10021": null,
+  "customfield_10022": null,
+  "customfield_10023": null,
+  "customfield_10024": "25/Oct/24 12:12 PM",
+  "customfield_10025": null,
+  "customfield_10029": null,
+  "customfield_10030": null,
+  "customfield_10037": null,
+  "customfield_10041": null,
+  "customfield_10042": null,
+  "customfield_10043": null,
+  "customfield_10044": null,
+  "customfield_10045": null,
+  "customfield_10047": null,
+  "customfield_10048": null,
+  "customfield_10049": null,
+  "customfield_10050": null,
+  "customfield_10051": null,
+  "customfield_10052": null,
+  "customfield_10053": null,
+  "customfield_10054": null,
+  "customfield_10087": null,
+  "customfield_10121": null,
+  "customfield_10154": null,
+  "customfield_10187": null,
+  "description": "<p>ocfl-java-client v2.2.1 supports range requests at the ocfl level. Once fcrepo us updated to this version, we should see if we can make use of this in fedora in order to only retrieve the parts of the file that a user is requesting, then they make a request with an HTTP Range header.</p>\n\n\n\n<p><a href=\"https://github.com/OCFL/ocfl-java/issues/118\" title=\"smart-link\" class=\"external-link\" rel=\"nofollow noreferrer\">https://github.com/OCFL/ocfl-java/issues/118</a> </p>",
+  "duedate": null,
+  "environment": "",
+  "fixVersions": null,
+  "issuelinks": null,
+  "issuerestriction": null,
+  "issuetype": null,
+  "labels": null,
+  "lastViewed": null,
+  "priority": null,
+  "progress": null,
+  "project": null,
+  "reporter": null,
+  "resolution": null,
+  "resolutiondate": "25/Oct/24 12:12 PM",
+  "security": null,
+  "status": null,
+  "statusCategory": null,
+  "statuscategorychangedate": "25/Oct/24 12:12 PM",
+  "subtasks": null,
+  "summary": null,
+  "timeestimate": null,
+  "timeoriginalestimate": null,
+  "timespent": null,
+  "timetracking": {},
+  "updated": "25/Oct/24 12:12 PM",
+  "versions": null,
+  "votes": null,
+  "watches": null,
+  "worklog": {
+   "maxResults": 20,
+   "startAt": 0,
+   "total": 0,
+   "worklogs": []
+  },
+  "workratio": null
+ },
+ "self": "https://fedora-repository.atlassian.net/rest/api/3/issue/13896"
+}

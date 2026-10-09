@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-228 Batch Modify Parser mangles some input XML</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-228</span> Batch Modify Parser mangles some input XML</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Wilper</td></tr><tr><th>Created</th><td>2008-07-11 19:02 UTC</td></tr><tr><th>Updated</th><td>2009-02-22 18:20 UTC</td></tr><tr><th>Resolved</th><td>2008-11-13 16:19 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 2.2.4, Fedora 3.1</td></tr><tr><th>Fix versions</th><td>Fedora 3.2, Fedora maintenance-2.2</td></tr><tr><th>Depends on</th><td><a href="FCREPO-167.html">FCREPO-167</a> Refactor of BatchModifyParser</td></tr></table>
+<h2>Description</h2>
+<p>When the batch modify parser encounters an inline xml datastream that looks like:</p>
+
+<p>&lt;a:element xmlns:a="urn:example:a"&gt;<br/>
+  &lt;b:subelement xmlns:b="urn:example:b"&gt;<br/>
+  &lt;/b:subelement&gt;<br/>
+&lt;/a:element&gt;</p>
+
+<p>...the output it sends to Fedora is not well-formed.  In particular, the namespace declarations are moved to the root, but still present in the sub-elements, minus the attribute name, like so:</p>
+
+<p>&lt;a:element xmlns:a="urn:example:a" xmlns:b="urn:example:b"&gt;<br/>
+  &lt;b:subelement ="urn:example:b"&gt;<br/>
+  &lt;/b:subelement&gt;<br/>
+&lt;/a:element&gt;</p>
+
+<p>Ideally, the output that the batch modify utility sends to Fedora should be exactly the XML that occurs within the xmlContent element.</p>
+
+<p>This was originally reported by Deborah Kaplan at Tufts on May 27th, 2008.  It was thought to have been fixed by bugfix #1838750, but on July 11th, Deborah reported that wasn't the case and I verified.</p>
+
+<p>A fix should ensure any well-formed inline XML, regardless of how namespaces are declared, arrives to Fedora in the same way it was given in the batch modify directives file &#8211; without changing where namespaces are declared.</p>
+
+<p>This bug needs to be fixed in trunk and maintenance-2.2, with appropriate tests.</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-228/10039_fcrepo-228-fix-for-2.2.4.jar">fcrepo-228-fix-for-2.2.4.jar</a>, 950100 bytes, added by Chris Wilper on 2009-02-03</li>
+<li><a href="attachments/FCREPO-228/10040_fcrepo-228-fix-for-3.1.jar">fcrepo-228-fix-for-3.1.jar</a>, 924725 bytes, added by Chris Wilper on 2009-02-03</li>
+</ul>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-10478"><div class="by">Chris Wilper, 2008-09-12 01:36 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: cwilper<br/>
+Item #: 2016238<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=2016238" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=2016238</a></p></div></div>
+<div class="comment" id="comment-10822"><div class="by">Chris Wilper, 2009-02-03 03:37 UTC</div><div class="text"><p>The attached .jar files are fedora-client.jar replacements that fix this issue for Fedora 2.2.4 and 3.1, respectively.  To apply:</p>
+
+<p>1) Back up your existing fedora/client/fedora-client.jar file<br/>
+2) Download the appropriate jar and save it as fedora/client/fedora-client.jar (over the existing file)</p>
+
+<p>If you use a source distribution, you can find the relevant source code for the class that changed (BatchModifyParser) at:</p>
+
+<p>For applying to 2.2.4:<br/>
+<a href="http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/fedora/branches/maintenance-2.2/src/java/fedora/client/batch/BatchModifyParser.java?revision=7910" class="external-link" rel="nofollow noreferrer">http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/fedora/branches/maintenance-2.2/src/java/fedora/client/batch/BatchModifyParser.java?revision=7910</a></p>
+
+<p>For applying to 3.1:<br/>
+<a href="http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/fedora/trunk/src/java/fedora/client/batch/BatchModifyParser.java?revision=7902" class="external-link" rel="nofollow noreferrer">http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/fedora/trunk/src/java/fedora/client/batch/BatchModifyParser.java?revision=7902</a></p></div></div>
+<p><a href="data/FCREPO-228.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

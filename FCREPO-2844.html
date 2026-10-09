@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2844 Stacktrace on /fcr:acl PUT with undefined RDF prefix</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2844</span> Stacktrace on /fcr:acl PUT with undefined RDF prefix</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Andrew Woods</td></tr><tr><th>Assignee</th><td>Situ, Longshou</td></tr><tr><th>Created</th><td>2018-08-20 20:19 UTC</td></tr><tr><th>Updated</th><td>2018-10-01 19:01 UTC</td></tr><tr><th>Resolved</th><td>2018-08-29 18:20 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-2582.html">FCREPO-2582</a> API Alignment</td></tr></table>
+<h2>Description</h2>
+<p>When creating an ACL with PUT and an RDF body with undefined prefix, Fedora returns a stacktrace to the client.</p>
+
+<p>To reproduce:</p>
+<ol>
+	<li>Create resource:<br/>
+curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test</a> -XPUT</li>
+</ol>
+
+
+<ol>
+	<li>Create ACL:<br/>
+curl -i -ufedoraAdmin:fedoraAdmin <a href="http://localhost:8080/rest/test/fcr:acl" class="external-link" rel="nofollow noreferrer">http://localhost:8080/rest/test/fcr:acl</a> -XPUT -H"Content-Type: text/turtle" --data-binary @body.ttl</li>
+</ol>
+
+
+<p>..where body.ttl is:<br/>
+&lt;&gt; a junk:Object ;</p>
+
+<ul>
+	<li>
+	<ul>
+		<li>BOOM!<br/>
+Notice: When creating a non-ACL RDF-Source with the same "body.ttl", no stacktrace is returned.</li>
+	</ul>
+	</li>
+</ul>
+
+<h2>Comments (3)</h2>
+<div class="comment" id="comment-20160"><div class="by">Situ, Longshou, 2018-08-29 18:20 UTC</div><div class="text"><p>PR <a href="https://github.com/fcrepo4/fcrepo4/pull/1392" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1392</a></p></div></div>
+<div class="comment" id="comment-20163"><div class="by">Andrew Woods, 2018-08-30 14:57 UTC</div><div class="text"><p>Looks good by me. Thanks!</p></div></div>
+<div class="comment" id="comment-20166"><div class="by">Peter Matthew Eichman, 2018-08-30 16:04 UTC</div><div class="text"><p>Merged at <a href="https://github.com/fcrepo4/fcrepo4/commit/1a78f73a5241f535f812d3f28bb53577f221bdf1" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/1a78f73a5241f535f812d3f28bb53577f221bdf1</a></p></div></div>
+<p><a href="data/FCREPO-2844.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

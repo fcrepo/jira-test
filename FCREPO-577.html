@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-577 Make XACML policies first-class Fedora digital objects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-577</span> Make XACML policies first-class Fedora digital objects</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>eddie</td></tr><tr><th>Assignee</th><td>Stephen Bayliss</td></tr><tr><th>Created</th><td>2009-11-08 02:24 UTC</td></tr><tr><th>Updated</th><td>2011-10-18 22:58 UTC</td></tr><tr><th>Resolved</th><td>2010-08-17 13:42 UTC</td></tr><tr><th>Components</th><td>legacy - FeSL</td></tr><tr><th>Fix versions</th><td>Fedora 3.4 Milestone 4, Fedora 3.4</td></tr><tr><th>Is related to</th><td><a href="FCREPO-771.html">FCREPO-771</a> FeSL - conversion of policy &quot;name&quot; to PID incorrect</td></tr></table>
+<h2>Description</h2>
+<p>Currently, policies are stored in dbxml. Policies should be first-class Fedora objects in the repository.</p>
+
+<p>General feedback about the namespace for policy objects would be most welcome.</p>
+<h2>Comments (2)</h2>
+<div class="comment" id="comment-11492"><div class="by">Stephen Bayliss, 2010-07-28 18:09 UTC</div><div class="text"><p>Implementation notes:</p>
+<ul>
+	<li>Any Fedora object can have a FESLPOLICY datastream with a XACML policy</li>
+	<li>Policy management is through the Fedora API, modifying these FESLPOLICY datastreams</li>
+	<li>There is no implicit relationship between the FESLPOLICY datastream and the object containing the datastream - the XACML policy must specify resources to which it applies explicitly (this is different to the existing XACML implementation, where a XACML POLICY datastream implicitly refers to the object containing the datastream)</li>
+	<li>Policies can be disabled by setting the object or datastream state to deleted</li>
+	<li>If FeSL AuthZ is installed, a new management decorator is installed (fedora.fcfg) so that any modifications to FESLPOLICY datastreams are propagated to DBXML and thus available to the XACML PolicyFinderModule</li>
+	<li>Bootstrap (system) policies are loaded when the PDP is instantiated, from the same directory as before.  Fedora objects are created in the "fedora-policy" namespace with FESLPOLICY datastreams containing the policies from the pdp/policies directory</li>
+	<li>Rebuilder now includes a policy index rebuilder, so if DBXML becomes corrupt the database can be deleted and the rebuilder used to rebuild the DBXML database from Fedora objects with FESLPOLICY datastreams</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-11506"><div class="by">Stephen Bayliss, 2010-08-09 11:31 UTC</div><div class="text"><p>Permissions:</p>
+<ul>
+	<li>in addition to the usual  permissions to modify the FESLPOLICY datastream itself, admin permission is required to modify policies (ie the "admin" action must be specified in the Actions section of a policy to grant this permission).  Care must be taken granting this permission - there are currently no restrictions on what resources are specified in FESLPOLICY,</li>
+</ul>
+</div></div>
+<p><a href="data/FCREPO-577.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

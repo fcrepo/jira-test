@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2533 repository ingest exeception</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2533</span> repository ingest exeception</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Answered</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Josh Gum</td></tr><tr><th>Assignee</th><td>Josh Gum</td></tr><tr><th>Created</th><td>2017-07-12 14:59 UTC</td></tr><tr><th>Updated</th><td>2017-07-13 16:57 UTC</td></tr><tr><th>Resolved</th><td>2017-07-13 16:54 UTC</td></tr><tr><th>Affects versions</th><td>Fedora 4.7.1</td></tr></table>
+<h2>Environment</h2>Centos 7, Fedora running in Tomcat 8.0.32
+<h2>Description</h2>
+<p>Using the Hyrax web application, when creating a new work we get failures. The problem seems to come from the following exception:</p>
+
+<p>INFO 07:37:00.196 (FedoraLdp) HEAD for: prod<br/>
+INFO 07:37:00.206 (FedoraLdp) Ingest with path: /prod/4e/bc/d4/e2/4ebcd4e2-e7b8-4630-9ea3-d30aad051666<br/>
+ERROR 07:37:00.832 (RepositoryExceptionMapper) Caught a repository exception: org.modeshape.persistence.file.FileProviderException: cannot write new value for the first time<br/>
+ERROR 07:37:09.070 (RepositoryExceptionMapper) Caught a repository exception: org.modeshape.persistence.file.FileProviderException: cannot write new value for the first time</p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-19183"><div class="by">Josh Gum, 2017-07-12 15:11 UTC</div><div class="text"><p>Fedora has been working fine and we've been ingesting works, currently around 10k, for the past couple of days before this error started.</p>
+
+<p> </p>
+
+<p>Our repository file:</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+-rw-rw-r-- 1 tomcat tomcat 19522039808 Jul 12 07:37 modeshape.repository
+</pre>
+</div></div>
+<p>Here's a copy of our repository.json </p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+{
+<span class="code-quote">"name"</span> : <span class="code-quote">"repo"</span>,
+<span class="code-quote">"jndiName"</span> : "",
+<span class="code-quote">"workspaces"</span> : {
+  <span class="code-quote">"predefined"</span> : [<span class="code-quote">"<span class="code-keyword">default</span>"</span>],
+  <span class="code-quote">"<span class="code-keyword">default</span>"</span> : <span class="code-quote">"<span class="code-keyword">default</span>"</span>,
+  <span class="code-quote">"allowCreation"</span> : <span class="code-keyword">true</span>
+},
+<span class="code-quote">"storage"</span> : {
+  <span class="code-quote">"persistence"</span>: {
+  <span class="code-quote">"type"</span>: <span class="code-quote">"file"</span>,
+  <span class="code-quote">"path"</span> : <span class="code-quote">"${fcrepo.object.directory:target/objects}"</span>
+},
+<span class="code-quote">"binaryStorage"</span> : {
+  <span class="code-quote">"type"</span> : <span class="code-quote">"file"</span>,
+  <span class="code-quote">"directory"</span> : <span class="code-quote">"${fcrepo.binary.directory:target/binaries}"</span>,
+  <span class="code-quote">"minimumBinarySizeInBytes"</span> : 4096
+}
+},
+<span class="code-quote">"security"</span> : {
+  <span class="code-quote">"anonymous"</span> : {
+    <span class="code-quote">"roles"</span> : [<span class="code-quote">"readonly"</span>,<span class="code-quote">"readwrite"</span>,<span class="code-quote">"admin"</span>],
+    <span class="code-quote">"useOnFailedLogin"</span> : <span class="code-keyword">false</span>
+  },
+  <span class="code-quote">"providers"</span> : [
+    { <span class="code-quote">"classname"</span> : <span class="code-quote">"org.fcrepo.auth.common.BypassSecurityServletAuthenticationProvider"</span> }
+  ]
+},
+<span class="code-quote">"node-types"</span> : [<span class="code-quote">"fedora-node-types.cnd"</span>]
+}
+
+</pre>
+</div></div>
+<p> </p>
+
+<p>I saw reference to best practices allocating RAM for Fedora, and currently we have much more allocated to Tomcat than what the documentation suggests as a "maximum". Could this be causing the problem?</p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+/usr/java/latest/bin/java 
+-Djava.util.logging.config.file=/usr/local/tomcat/conf/logging.properties 
+-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager 
+-Xminf0.1 
+-Xmaxf0.3 
+-Xmx4096M 
+-Xms3072M 
+-XX:NewSize=1200M 
+-Dfcrepo.home=/data0/fedora 
+-Dfcrepo.modeshape.configuration=file:/usr/local/tomcat/conf/repository.json 
+-Dhydra 
+-Djava.awt.headless=<span class="code-keyword">true</span> 
+-XX:+UseParallelOldGC 
+-javaagent:/usr/local/tomcat/newrelic/newrelic.jar 
+-Djava.endorsed.dirs=/usr/local/tomcat/common/endorsed 
+-classpath /usr/local/tomcat/bin/bootstrap.jar:/usr/local/tomcat/bin/tomcat-juli.jar 
+-Dcatalina.base=/usr/local/tomcat 
+-Dcatalina.home=/usr/local/tomcat 
+-Djava.io.tmpdir=/usr/local/tomcat/temp 
+org.apache.catalina.startup.Bootstrap start
+
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-19184"><div class="by">Andrew Woods, 2017-07-12 15:21 UTC</div><div class="text"><p>Josh Gum</p>
+<ul>
+	<li>Can you provide the full stacktrace?</li>
+	<li>Do you have suggestions on how to reproduce this error?</li>
+	<li>Two recommendations:
+	<ul>
+		<li>please use Fedora 4.7.3 (<a href="https://wiki.duraspace.org/display/FF/Fedora+4.7.3+Release+Notes)" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FF/Fedora+4.7.3+Release+Notes)</a></li>
+		<li>please use a database storage for you objects (<a href="https://wiki.duraspace.org/display/FEDORA473/Configuring+JDBC+Object+Store" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA473/Configuring+JDBC+Object+Store</a>)</li>
+	</ul>
+	</li>
+</ul>
+</div></div>
+<div class="comment" id="comment-19186"><div class="by">Josh Gum, 2017-07-12 19:37 UTC</div><div class="text"><p>Here's the pertinent log for the failure:</p>
+
+<p> </p>
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="code-java">
+DEBUG 12:26:47.226 (SessionFactory) Returning an authenticated session in the <span class="code-keyword">default</span> workspace
+TRACE 12:26:47.227 (SessionProvider) Providing <span class="code-keyword">new</span> session org.fcrepo.http.commons.session.HttpSession@33f2cb50
+DEBUG 12:26:47.230 (FedoraBaseResource) setting baseURL = http:<span class="code-comment">//127.0.0.1:8080/fcrepo/<span class="code-keyword">rest</span>/
+</span>INFO 12:26:47.230 (FedoraLdp) HEAD <span class="code-keyword">for</span>: prod
+TRACE 12:26:47.231 (NamespaceConverter) Converting identifier /prod from internal to external...
+TRACE 12:26:47.231 (NamespaceConverter) Replacing namespace: http:<span class="code-comment">//www.jcp.org/jcr/1.0 with: http://fedora.info/definitions/v4/repository#
+</span>TRACE 12:26:47.231 (NamespaceConverter) Converted identifier /prod from internal to external /prod...
+TRACE 12:26:47.231 (FedoraResourceImpl) Using jcr:created date
+TRACE 12:26:47.231 (FedoraResourceImpl) Using fedora:lastModified date
+TRACE 12:26:47.232 (FedoraResourceImpl) Using jcr:created date
+TRACE 12:26:47.232 (FedoraResourceImpl) Using fedora:lastModified date
+TRACE 12:26:47.232 (FedoraResourceImpl) Using jcr:created date
+TRACE 12:26:47.232 (FedoraResourceImpl) Using fedora:lastModified date
+TRACE 12:26:47.232 (FedoraResourceImpl) Using jcr:created date
+TRACE 12:26:47.232 (FedoraResourceImpl) Using fedora:lastModified date
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: text/turtle
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: text/rdf+n3
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: text/n3
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: application/rdf+xml
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: application/n-triples
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: text/plain
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: application/x-turtle
+DEBUG 12:26:47.233 (RdfStreamProvider) Checking to see <span class="code-keyword">if</span> we can serialize type: javax.ws.rs.core.Response to mimeType: application/ld+json
+DEBUG 12:26:47.233 (StreamingBaseHtmlProvider) Checking to see <span class="code-keyword">if</span> type: javax.ws.rs.core.Response is serializable to mimeType: text/html;charset=utf-8
+TRACE 12:26:47.234 (SessionProvider) Disposing session org.fcrepo.http.commons.session.HttpSession@33f2cb50
+DEBUG 12:26:47.240 (SessionFactory) Returning an authenticated session in the <span class="code-keyword">default</span> workspace
+TRACE 12:26:47.241 (SessionProvider) Providing <span class="code-keyword">new</span> session org.fcrepo.http.commons.session.HttpSession@2f32785
+DEBUG 12:26:47.243 (FedoraBaseResource) setting baseURL = http:<span class="code-comment">//127.0.0.1:8080/fcrepo/<span class="code-keyword">rest</span>/
+</span>TRACE 12:26:47.252 (NamespaceConverter) Converting identifier /prod from internal to external...
+TRACE 12:26:47.253 (NamespaceConverter) Replacing namespace: http:<span class="code-comment">//www.jcp.org/jcr/1.0 with: http://fedora.info/definitions/v4/repository#
+</span>TRACE 12:26:47.253 (NamespaceConverter) Converted identifier /prod from internal to external /prod...
+TRACE 12:26:47.256 (FedoraLdp) Using external identifier 2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 to create <span class="code-keyword">new</span> resource.
+TRACE 12:26:47.256 (FedoraLdp) Using prefixed external identifier http:<span class="code-comment">//127.0.0.1:8080/fcrepo/<span class="code-keyword">rest</span>//2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 to create <span class="code-keyword">new</span> resource.
+</span>TRACE 12:26:47.256 (NamespaceConverter) Converting identifier /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 from internal to external...
+TRACE 12:26:47.257 (NamespaceConverter) Replacing namespace: http:<span class="code-comment">//www.jcp.org/jcr/1.0 with: http://fedora.info/definitions/v4/repository#
+</span>TRACE 12:26:47.257 (NamespaceConverter) Converted identifier /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 from internal to external /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3...
+TRACE 12:26:47.257 (FedoraLdp) Using internal identifier /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 to create <span class="code-keyword">new</span> resource.
+TRACE 12:26:47.264 (DefaultPathLockManager) <span class="code-object">Thread</span> 64 requesting write lock on /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3.
+TRACE 12:26:47.265 (DefaultPathLockManager) <span class="code-object">Thread</span> 64 requesting write lock on /prod/2c/46/3b/ed.
+TRACE 12:26:47.265 (DefaultPathLockManager) <span class="code-object">Thread</span> 64 requesting write lock on /prod/2c/46/3b.
+TRACE 12:26:47.265 (DefaultPathLockManager) <span class="code-object">Thread</span> 64 requesting write lock on /prod/2c/46.
+DEBUG 12:26:47.266 (DefaultPathLockManager) Acquired all necessary path locks (<span class="code-object">Thread</span> 64)
+INFO 12:26:47.272 (FedoraLdp) Ingest with path: /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3
+TRACE 12:26:47.272 (ContainerServiceImpl) Executing findOrCreateObject() with path: /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3
+DEBUG 12:26:47.289 (ContainerServiceImpl) Setting object properties on node /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3...
+TRACE 12:26:47.296 (NamespaceConverter) Converting identifier from external to internal...
+TRACE 12:26:47.296 (NamespaceConverter) Replacing namespace: http:<span class="code-comment">//fedora.info/definitions/v4/repository# with: http://www.jcp.org/jcr/1.0
+</span>TRACE 12:26:47.297 (FedoraLdp) Received createObject with a request body and content type <span class="code-quote">"text/turtle"</span>
+TRACE 12:26:47.297 (NamespaceConverter) Converting identifier from external to internal...
+TRACE 12:26:47.297 (NamespaceConverter) Replacing namespace: http:<span class="code-comment">//fedora.info/definitions/v4/repository# with: http://www.jcp.org/jcr/1.0
+</span>TRACE 12:26:47.346 (NamespaceConverter) Converting identifier from external to internal...
+TRACE 12:26:47.346 (NamespaceConverter) Replacing namespace: http:<span class="code-comment">//fedora.info/definitions/v4/repository# with: http://www.jcp.org/jcr/1.0
+</span>DEBUG 12:26:47.360 (PersistingRdfStreamConsumer) Discovered a Fedora-relevant subject in triple: http:<span class="code-comment">//127.0.0.1:8080/fcrepo/<span class="code-keyword">rest</span>/prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 @info:fedora/fedora-system:def/model#hasModel <span class="code-quote">"Hydra::AccessControl"</span>.
+</span>DEBUG 12:26:47.363 (PersistingRdfStreamConsumer) Operating on triple [http:<span class="code-comment">//127.0.0.1:8080/fcrepo/<span class="code-keyword">rest</span>/prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3, info:fedora/fedora-system:def/model#hasModel, <span class="code-quote">"Hydra::AccessControl"</span>].
+</span>TRACE 12:26:47.363 (NamespaceConverter) Converting identifier /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 from internal to external...
+TRACE 12:26:47.363 (NamespaceConverter) Replacing namespace: http:<span class="code-comment">//www.jcp.org/jcr/1.0 with: http://fedora.info/definitions/v4/repository#
+</span>TRACE 12:26:47.363 (NamespaceConverter) Converted identifier /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 from internal to external /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3...
+DEBUG 12:26:47.363 (PersistingRdfStreamConsumer) Operating on node: /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 {jcr:uuid=9dcee964-47e7-44a2-9b96-46a62d1b2db8, jcr:primaryType=nt:folder, fedora:lastModified=2017-07-12T19:26:47.294Z, jcr:mixinTypes=[fedora:Container,fedora:Resource]} from triple: [http:<span class="code-comment">//127.0.0.1:8080/fcrepo/<span class="code-keyword">rest</span>/prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3, info:fedora/fedora-system:def/model#hasModel, <span class="code-quote">"Hydra::AccessControl"</span>].
+</span>DEBUG 12:26:47.366 (RdfAdder) Adding property from triple: [http:<span class="code-comment">//127.0.0.1:8080/fcrepo/<span class="code-keyword">rest</span>/prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3, info:fedora/fedora-system:def/model#hasModel, <span class="code-quote">"Hydra::AccessControl"</span>] to resource: /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3.
+</span>DEBUG 12:26:47.369 (PropertyConverter) Discovered namespace: info:fedora/fedora-system:def/model# in namespace registry.
+DEBUG 12:26:47.369 (PropertyConverter) Took RDF predicate info:fedora/fedora-system:def/model# and translated it to JCR property ns001:hasModel
+DEBUG 12:26:47.369 (FedoraTypesUtils) Getting type of property: ns001:hasModel from node: /prod/2c/46/3b/ed/2c463bed-14ac-42b2-9afb-018a275e2ff3 {jcr:uuid=9dcee964-47e7-44a2-9b96-46a62d1b2db8, jcr:primaryType=nt:folder, fedora:lastModified=2017-07-12T19:26:47.294Z, jcr:mixinTypes=[fedora:Container,fedora:Resource]}
+DEBUG 12:26:47.369 (FedoraTypesUtils) Looking <span class="code-keyword">for</span> property name: ns001:hasModel
+DEBUG 12:26:47.375 (FedoraTypesUtils) Looking <span class="code-keyword">for</span> property name: ns001:hasModel
+DEBUG 12:26:47.376 (NodePropertiesTools) Creating <span class="code-keyword">new</span> multivalued <span class="code-object">String</span> property ns001:hasModel with initial value [Hydra::AccessControl^^http:<span class="code-comment">//www.w3.org/2001/XMLSchema#string]
+</span>TRACE 12:26:48.121 (DefaultPathLockManager) <span class="code-object">Thread</span> 64 released locks.
+ERROR 12:26:48.124 (RepositoryExceptionMapper) Caught a repository exception: org.modeshape.persistence.file.FileProviderException: cannot write <span class="code-keyword">new</span> value <span class="code-keyword">for</span> the first time
+DEBUG 12:26:48.127 (RepositoryExceptionMapper) RepositoryExceptionMapper intercepted exception:{}
+
+javax.jcr.RepositoryException: org.modeshape.persistence.file.FileProviderException: cannot write <span class="code-keyword">new</span> value <span class="code-keyword">for</span> the first time
+at org.modeshape.jcr.JcrSession.save(JcrSession.java:1196)
+at org.fcrepo.kernel.modeshape.FedoraSessionImpl.commit(FedoraSessionImpl.java:95)
+at org.fcrepo.http.commons.session.HttpSession.commit(HttpSession.java:55)
+at org.fcrepo.http.api.FedoraLdp.createObject(FedoraLdp.java:535)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)
+at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)
+at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:161)
+at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:160)
+at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:99)
+at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:389)
+at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:347)
+at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:102)
+at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:326)
+at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)
+at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)
+at org.glassfish.jersey.internal.Errors.process(Errors.java:315)
+at org.glassfish.jersey.internal.Errors.process(Errors.java:297)
+at org.glassfish.jersey.internal.Errors.process(Errors.java:267)
+at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)
+at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)
+at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)
+at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)
+at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)
+at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)
+at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)
+at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:292)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:207)
+at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:240)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:207)
+at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:212)
+at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:106)
+at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:502)
+at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:141)
+at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:79)
+at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:616)
+at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:88)
+at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:522)
+at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1095)
+at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:672)
+at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1500)
+at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.run(NioEndpoint.java:1456)
+at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+at java.lang.<span class="code-object">Thread</span>.run(<span class="code-object">Thread</span>.java:745)
+Caused by: org.modeshape.persistence.file.FileProviderException: cannot write <span class="code-keyword">new</span> value <span class="code-keyword">for</span> the first time
+at org.modeshape.persistence.file.FileDb.editContent(FileDb.java:146)
+at org.modeshape.jcr.cache.document.LocalDocumentStore.edit(LocalDocumentStore.java:178)
+at org.modeshape.jcr.cache.document.WritableSessionCache.persistChanges(WritableSessionCache.java:1096)
+at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:722)
+at org.modeshape.jcr.JcrSession.save(JcrSession.java:1177)
+... 50 common frames omitted
+TRACE 12:26:48.128 (RepositoryExceptionMapper) org.modeshape.persistence.file.FileProviderException: cannot write <span class="code-keyword">new</span> value <span class="code-keyword">for</span> the first time
+javax.jcr.RepositoryException: org.modeshape.persistence.file.FileProviderException: cannot write <span class="code-keyword">new</span> value <span class="code-keyword">for</span> the first time
+at org.modeshape.jcr.JcrSession.save(JcrSession.java:1196)
+at org.fcrepo.kernel.modeshape.FedoraSessionImpl.commit(FedoraSessionImpl.java:95)
+at org.fcrepo.http.commons.session.HttpSession.commit(HttpSession.java:55)
+at org.fcrepo.http.api.FedoraLdp.createObject(FedoraLdp.java:535)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+at org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory$1.invoke(ResourceMethodInvocationHandlerFactory.java:81)
+at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:144)
+at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:161)
+at org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:160)
+at org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:99)
+at org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:389)
+at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:347)
+at org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:102)
+at org.glassfish.jersey.server.ServerRuntime$2.run(ServerRuntime.java:326)
+at org.glassfish.jersey.internal.Errors$1.call(Errors.java:271)
+at org.glassfish.jersey.internal.Errors$1.call(Errors.java:267)
+at org.glassfish.jersey.internal.Errors.process(Errors.java:315)
+at org.glassfish.jersey.internal.Errors.process(Errors.java:297)
+at org.glassfish.jersey.internal.Errors.process(Errors.java:267)
+at org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:317)
+at org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:305)
+at org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:1154)
+at org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:473)
+at org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:427)
+at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:388)
+at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:341)
+at org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:228)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:292)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:207)
+at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:240)
+at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:207)
+at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:212)
+at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:106)
+at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:502)
+at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:141)
+at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:79)
+at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:616)
+at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:88)
+at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:522)
+at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1095)
+at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:672)
+at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1500)
+at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.run(NioEndpoint.java:1456)
+at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+at java.lang.<span class="code-object">Thread</span>.run(<span class="code-object">Thread</span>.java:745)
+Caused by: org.modeshape.persistence.file.FileProviderException: cannot write <span class="code-keyword">new</span> value <span class="code-keyword">for</span> the first time
+at org.modeshape.persistence.file.FileDb.editContent(FileDb.java:146)
+at org.modeshape.jcr.cache.document.LocalDocumentStore.edit(LocalDocumentStore.java:178)
+at org.modeshape.jcr.cache.document.WritableSessionCache.persistChanges(WritableSessionCache.java:1096)
+at org.modeshape.jcr.cache.document.WritableSessionCache.save(WritableSessionCache.java:722)
+at org.modeshape.jcr.JcrSession.save(JcrSession.java:1177)
+... 50 common frames omitted
+TRACE 12:26:48.142 (SessionProvider) Disposing session org.fcrepo.http.commons.session.HttpSession@2f32785
+
+</pre>
+</div></div></div></div>
+<div class="comment" id="comment-19187"><div class="by">Andrew Woods, 2017-07-12 20:11 UTC</div><div class="text"><p>I am happy to explore this issue with the underlying ModeShape team, but in any case, you are highly recommended to use a database instead of the file-store for your objects. The file-store is provided for simple testing, not production.</p>
+
+<p>You may not, but if you have a scripted set of commands that reproduce this situation from an empty repository, it would likely make it easier for the ModeShape team to address the issue.</p>
+
+<p>If, however, you plan on moving to a database backend, I would be inclined to lower the priority of this issue.</p></div></div>
+<div class="comment" id="comment-19188"><div class="by">Josh Gum, 2017-07-12 20:14 UTC</div><div class="text"><p>I'm going to get the database created, and migrate the objects over before we take it any further. Thanks for your time work thus far!</p></div></div>
+<div class="comment" id="comment-19189"><div class="by">Josh Gum, 2017-07-13 16:53 UTC</div><div class="text"><p>Migrating from the flat file to the database using details at (<a href="https://wiki.duraspace.org/display/FEDORA471/RESTful+HTTP+API+-+Backup+and+Restore)" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA471/RESTful+HTTP+API+-+Backup+and+Restore</a>) solved the problem. </p>
+
+<p> </p>
+
+<p>I'm guessing we bumped up against a limitation of the size of a file based modeshape repository.</p></div></div>
+<div class="comment" id="comment-19190"><div class="by">Josh Gum, 2017-07-13 16:57 UTC</div><div class="text"><p>I think we can close this ticket.</p></div></div>
+<p><a href="data/FCREPO-2533.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1963 LDP Batch Implementation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1963</span> LDP Batch Implementation</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Do</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Esmé Cowles</td></tr><tr><th>Created</th><td>2016-03-22 17:10 UTC</td></tr><tr><th>Updated</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Resolved</th><td>2021-09-17 17:37 UTC</td></tr><tr><th>Components</th><td>f4-ldp</td></tr><tr><th>Affects versions</th><td>Fedora 4.5.1</td></tr><tr><th>Is related to</th><td><a href="FCREPO-1913.html">FCREPO-1913</a> Initial drafting of specification: Atomic Batch Operations</td></tr></table>
+<h2>Description</h2>
+<p>Implement LDP Batch functionality as specified in expired IETF draft: <a href="https://tools.ietf.org/id/draft-snell-http-batch-00.html" class="external-link" rel="nofollow noreferrer">https://tools.ietf.org/id/draft-snell-http-batch-00.html</a></p>
+
+<p>Possibly relevant is the Fedora batch processing functionality removed in this PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/519" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/519</a></p>
+<h2>Comments (7)</h2>
+<div class="comment" id="comment-16382"><div class="by">A. Soroka, 2016-03-22 17:59 UTC</div><div class="text"><p>Is the intent to push this into the forthcoming specifications?</p></div></div>
+<div class="comment" id="comment-16389"><div class="by">Unknown, 2016-03-24 00:50 UTC</div><div class="text"><p>I wonder if much of this would simply be part of the HTTP/2 spec, which will be folded into version 4.0 of the servlet API in JDK 9. I would feel weird about adopting an expired spec whose goals have largely been addressed with a much newer spec (and one that is being adopted).</p></div></div>
+<div class="comment" id="comment-16390"><div class="by">A. Soroka, 2016-03-24 13:35 UTC</div><div class="text"><p>Amen to what Unknown says! I'm also not very comfortable with the way this idea was introduced. I'm not sure how well it works to introduce implementation ideas like this without reference to the ongoing spec process and without the input of a larger segment of the community; I have the same <em>very</em> unpleasant feeling I had about the introduction of PCDM.</p></div></div>
+<div class="comment" id="comment-16391"><div class="by">Esmé Cowles, 2016-03-24 14:32 UTC</div><div class="text"><p>Unknown, thanks for bringing up the HTTP/2 multiplexing feature &#8211; I hadn't heard of that, and nobody brought it up at the LDXC session where this idea was discussed (see <a href="https://ldcx2016.sched.org/event/6Wrj/4c-ldp-batch" class="external-link" rel="nofollow noreferrer">https://ldcx2016.sched.org/event/6Wrj/4c-ldp-batch</a>).</p>
+
+<p>I see server support (Apache, Jetty, and Nginx but not Tomcat) and client support for many languages, but not Apache HttpClient, or Ruby's Net::HTTP, or any of the other Ruby HTTP clients that can be plugged into Faraday.  Similarly, you mention JDK 9, but AFAICT, that's going to released more than a year from now.  So I'm not sure what the timeline is for when people would be able to actually use HTTP/2 multiplexing in their applications.</p>
+
+<p>A. Soroka, I thought the batch use case was sufficiently well-known, given the previous implementation and the existing ticket (<a href="https://jira.duraspace.org/browse/FCREPO-1530" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1530</a>) to revive it.  I took a look at the documented Use Cases and they are very old and nebulous.  I'd be happy to write up the Hydra/PCDM/Works use case, but you can read the LDCX session notes for more info now.</p></div></div>
+<div class="comment" id="comment-16392"><div class="by">A. Soroka, 2016-03-24 15:00 UTC</div><div class="text"><p>Esmé Cowles, no, I don't agree that the batch use case is straightforward or well-known. I'm not sure which use cases to which you are referring-- the ones that we gathered way back when, or the ones much more recently gathered in connection with the API spec effort?</p>
+
+<p>I'm more concerned about the impact a wholesale adoption of what Unknown rightly describes as "an expired spec whose goals have largely been addressed with a much newer spec" will have on the process going on <a href="https://wiki.duraspace.org/display/FEDORAAPI/Atomic+Batch+Operations" class="external-link" rel="nofollow noreferrer">here</a>. </p>
+
+<p>Let's get this discussed on a public venue (LDCX is anything <em>but</em> public, it is particularly exclusive) like the tech call or the mailing list.</p></div></div>
+<div class="comment" id="comment-16399"><div class="by">Unknown, 2016-03-24 17:03 UTC</div><div class="text"><p>+1 on discussing this in a public forum.</p>
+
+<p>I was in the LDCX session where LDP-Batch was discussed. I didn't raise the concerns I have about this for two reasons:</p>
+
+<p>1) I do not (and will not) have a use case for this sort of thing and didn't want to rain on everyone's party (personally, I feel that there are better ways to address this from a performance perspective), and<br/>
+2) I had the distinct impression that this would fall under LDP Next and is therefore out of scope for Fedora qua Fedora-API.</p>
+
+<p>Either way, as this feature is currently described, I have very significant reservations about enshrining it in the Fedora API. </p>
+
+<p>On the other hand, if the intention is to define and implement this in some external module or with an external service, I wouldn't want to stand in someone's way.</p></div></div>
+<div class="comment" id="comment-22405"><div class="by">Danny Bernstein, 2021-09-17 17:37 UTC</div><div class="text"><p>I'm closing this issue as part of a jira repository scrubbing.  It appears to be out of date, no longer applicable, or addressed by future versions of Fedora.</p></div></div>
+<p><a href="data/FCREPO-1963.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

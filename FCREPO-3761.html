@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3761 Upgrade audit service in Camel Toolbox to Camel 3.9</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3761</span> Upgrade audit service in Camel Toolbox to Camel 3.9</h1>
+<table class="meta"><tr><th>Type</th><td>New Feature</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Medium</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2021-09-10 18:28 UTC</td></tr><tr><th>Updated</th><td>2021-10-06 16:06 UTC</td></tr><tr><th>Resolved</th><td>2021-10-06 16:06 UTC</td></tr><tr><th>Components</th><td>fcrepo-camel-toolbox</td></tr><tr><th>Affects versions</th><td>fcrepo-camel-toolbox-6.0.0-SNAPSHOT</td></tr><tr><th>Fix versions</th><td>fcrepo-camel-toolbox-6.0.0-SNAPSHOT</td></tr><tr><th>Labels</th><td>fcrepo-camel-toolbox-6.0.0</td></tr><tr><th>Clones</th><td><a href="FCREPO-3760.html">FCREPO-3760</a> Upgrade Fixity service in Camel Toolbox to Camel 3.9 </td></tr></table>
+<h2>Description</h2>
+<p>The task here is to upgrade fcrepo-audit-triplestore  in the camel toolbox by doing the following:<br/>
+1. upgrade to camel 3.9.0 and fix tests (following the pattern in fcrepo-indexing-solr)<br/>
+2. ensure compatible with java 11<br/>
+3. remove karaf / osgi dependencies and tests.<br/>
+4. remove blueprint/fcrepo-audit-triplestore-blueprint</p>
+<h2>Comments (5)</h2>
+<div class="comment" id="comment-22488"><div class="by">Danny Bernstein, 2021-09-23 05:26 UTC</div><div class="text"><p><a href="https://github.com/fcrepo-exts/fcrepo-camel-toolbox/pull/165" title="smart-link" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel-toolbox/pull/165</a> </p></div></div>
+<div class="comment" id="comment-22500"><div class="by">Danny Bernstein, 2021-09-30 14:52 UTC</div><div class="text"><p>This should wait until the fixity PR is ready.</p></div></div>
+<div class="comment" id="comment-22514"><div class="by">Calvin Xu, 2021-10-05 17:36 UTC</div><div class="text"><p>followed the test protocol on an AWS test instance running on centos 7 and was able to get result in triplestore with the link:</p>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&lt;sparql xmlns="http://www.w3.org/2005/sparql-results#"&gt;
+
+&lt;head&gt;&lt;variable name="s"/&gt;&lt;variable name="o"/&gt;&lt;variable name="p"/&gt;&lt;/head&gt;
+
+&lt;results&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.loc.gov/premis/rdf/v1#hasEventDateTime&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;literal datatype="http://www.w3.org/2001/XMLSchema#dateTime"&gt;2021-10-05T17:27:54.291408Z&lt;/literal&gt;&lt;/binding&gt;&lt;/result&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.loc.gov/premis/rdf/v1#hasEventType&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;uri&gt;http://id.loc.gov/vocabulary/preservation/eventType/ing&lt;/uri&gt;&lt;/binding&gt;&lt;/result&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;uri&gt;http://fedora.info/definitions/v4/audit#InternalEvent&lt;/uri&gt;&lt;/binding&gt;&lt;/result&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;uri&gt;http://www.w3.org/ns/prov#InstantaneousEvent&lt;/uri&gt;&lt;/binding&gt;&lt;/result&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;uri&gt;http://www.loc.gov/premis/rdf/v1#Event&lt;/uri&gt;&lt;/binding&gt;&lt;/result&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.loc.gov/premis/rdf/v1#hasEventRelatedObject&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;uri&gt;http://localhost:8080/fcrepo/rest/hello-world&lt;/uri&gt;&lt;/binding&gt;&lt;/result&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.loc.gov/premis/rdf/v1#hasEventRelatedAgent&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;literal&gt;curl/7.29.0&lt;/literal&gt;&lt;/binding&gt;&lt;/result&gt;&lt;result&gt;&lt;binding name="s"&gt;&lt;uri&gt;http://example.com/event/urn:uuid:a6011f6f-ee2e-4dd9-ac5d-460c15595294&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="o"&gt;&lt;uri&gt;http://www.loc.gov/premis/rdf/v1#hasEventRelatedAgent&lt;/uri&gt;&lt;/binding&gt;&lt;binding name="p"&gt;&lt;literal&gt;info:fedora/local-user#fedoraAdmin&lt;/literal&gt;&lt;/binding&gt;&lt;/result&gt;&lt;/results&gt;
+
+&lt;/sparql&gt;</pre>
+</div></div></div></div>
+<div class="comment" id="comment-22515"><div class="by">Danny Bernstein, 2021-10-05 22:51 UTC</div><div class="text"><p>Great.  Thanks for testing it.</p></div></div>
+<div class="comment" id="comment-22517"><div class="by">Danny Bernstein, 2021-10-06 16:06 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo-exts/fcrepo-camel-toolbox/commit/9416c8fb24f03698cf96fa73e71b980dc9544e4b" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo-exts/fcrepo-camel-toolbox/commit/9416c8fb24f03698cf96fa73e71b980dc9544e4b</a></p></div></div>
+<p><a href="data/FCREPO-3761.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

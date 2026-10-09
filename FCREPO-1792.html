@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-1792 Use a filesystem-based ACL backstop for resources w/o defined accessControls</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-1792</span> Use a filesystem-based ACL backstop for resources w/o defined accessControls</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Unknown</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2015-10-26 15:56 UTC</td></tr><tr><th>Updated</th><td>2016-01-29 18:31 UTC</td></tr><tr><th>Resolved</th><td>2015-11-01 02:22 UTC</td></tr><tr><th>Components</th><td>f4-auth</td></tr><tr><th>Affects versions</th><td>Fedora 4.4.0</td></tr><tr><th>Fix versions</th><td>Fedora 4.5.0</td></tr><tr><th>Labels</th><td>webac</td></tr></table>
+<h2>Description</h2>
+<p>This is a ticket to enforce ACL controls on ACL resources for non-admin agents. This has two parts: the first is to implement the acl:Control mode, which controls read/write access to ACLs. The second part is to have a file-based backstop (expressed in ACL rdf) for ACLs that don't contain (and whose parents don't contain) the acl:accessControl property.</p>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-15588"><div class="by">Unknown, 2015-10-28 04:51 UTC</div><div class="text"><p>A PR is here: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/39" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/pull/39</a></p>
+
+<p>We should discuss the contents of <tt>./src/main/resources/root-acl.rdf</tt></p></div></div>
+<div class="comment" id="comment-15592"><div class="by">Unknown, 2015-10-28 14:59 UTC</div><div class="text"><p>In order to be correct, the associated PR should include an implementation of the acl:Control mode</p></div></div>
+<div class="comment" id="comment-15603"><div class="by">Andrew Woods, 2015-10-29 14:02 UTC</div><div class="text"><p>Unknown, based on yesterday's Sprint conversation, is your above comment still true?</p></div></div>
+<div class="comment" id="comment-15605"><div class="by">Unknown, 2015-10-29 14:14 UTC</div><div class="text"><p>Andrew Woods you are correct, an implementation of acl:Control is not necessary at this point.</p></div></div>
+<div class="comment" id="comment-15606"><div class="by">Andrew Woods, 2015-10-29 14:22 UTC</div><div class="text"><p>Please either create some documentation for Fedora administrators on how to use this feature, or create a new ticket for said documentation.</p></div></div>
+<div class="comment" id="comment-15608"><div class="by">Andrew Woods, 2015-10-29 14:56 UTC</div><div class="text"><p>Pending response to code review comments.</p></div></div>
+<div class="comment" id="comment-15615"><div class="by">Unknown, 2015-10-29 21:55 UTC</div><div class="text"><p>PR has been updated to address code review comments. The default authorization also now denies access to resources (rather than granting them to the foaf:Agent agent).</p>
+
+<p>A related issue has been created to address documenting this feature: <a href="https://jira.duraspace.org/browse/FCREPO-1806" class="external-link" rel="nofollow noreferrer">https://jira.duraspace.org/browse/FCREPO-1806</a></p></div></div>
+<div class="comment" id="comment-15619"><div class="by">Andrew Woods, 2015-10-30 00:55 UTC</div><div class="text"><p>More code review comments</p></div></div>
+<div class="comment" id="comment-15620"><div class="by">Unknown, 2015-10-30 04:13 UTC</div><div class="text"><p>The open question now is whether the system ACL file should use internal or external identifiers for acl:accessTo triples.</p>
+
+<p>It currently expects this:</p>
+
+<p>&lt;&gt; acl:accessTo &lt;info:fedora/&gt;</p>
+
+<p>But it could be changed to this:</p>
+
+<p>&lt;&gt; acl:accessTo &lt;<a href="http://localhost:8080/fcrepo/rest/" class="external-link" rel="nofollow noreferrer">http://localhost:8080/fcrepo/rest/</a>&gt;</p>
+
+<p>There are pros and cons either way, and I don't have a strong opinion one way or the other.</p></div></div>
+<div class="comment" id="comment-15660"><div class="by">Andrew Woods, 2015-10-31 23:41 UTC</div><div class="text"><p>Looks good, pending code comment update.</p></div></div>
+<div class="comment" id="comment-15668"><div class="by">Unknown, 2015-11-01 02:10 UTC</div><div class="text"><p>I have attempted to clarify the code a bit &#8211; the confusing bit was pulled out into its own function (with its own comment), and the relevant inline comment was clarified.</p></div></div>
+<div class="comment" id="comment-15670"><div class="by">Andrew Woods, 2015-11-01 02:22 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/7d9cf0d466bf7be2ddea7415a308bacdc0932d8a" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo-module-auth-webac/commit/7d9cf0d466bf7be2ddea7415a308bacdc0932d8a</a></p></div></div>
+<p><a href="data/FCREPO-1792.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

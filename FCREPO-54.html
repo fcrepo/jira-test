@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-54 Improve shutdown behavior with long-running requests</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-54</span> Improve shutdown behavior with long-running requests</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Won&#x27;t Fix</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Sourceforge User</td></tr><tr><th>Created</th><td>2007-02-19 20:05 UTC</td></tr><tr><th>Updated</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Resolved</th><td>2015-01-16 21:01 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr></table>
+<h2>Description</h2>
+<p>Fedora's webapp  shutdown currently relies on servlet container to ensure all requests are complete.  However, the servlet container doesn't always wait until requests are finished in order to call destroy().  For long-running requests, this can be problematic because the resources (the db, etc) might be closed before the requests have a chance to finish.</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-10080"><div class="by">Sandy Payette, 2007-04-27 19:01 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: payette<br/>
+Logged In: YES <br/>
+user_id=1704937<br/>
+Originator: NO</p>
+
+<p>consider as part of ACID work</p></div></div>
+<div class="comment" id="comment-10081"><div class="by">Daniel Davis, 2007-09-06 20:14 UTC</div><div class="text"><p><span class="error">&#91;Followup from Sourceforge Tracker&#93;</span><br/>
+Followup Submitter: fcswa<br/>
+Logged In: YES <br/>
+user_id=1855086<br/>
+Originator: NO</p>
+
+<p>According to</p>
+
+<p><a href="http://java.sun.com/j2ee/tutorial/1_3-fcs/doc/Servlets12.html" class="external-link" rel="nofollow noreferrer">http://java.sun.com/j2ee/tutorial/1_3-fcs/doc/Servlets12.html</a></p>
+
+<p>...this is not a good assumption.  It can cause a long-running (over 2 seconds<br/>
+in Tomcat, by default) API-M request to be abnormally terminated if shutdown is<br/>
+occurring at the same time.</p>
+
+
+<p>------- Additional Comment #1 From Chris Wilper 2006-05-12 13:24 <span class="error">&#91;reply&#93;</span> -------</p>
+
+<p>Workaround:</p>
+
+<p>1) Disallow new API-M requests.<br/>
+2) Wait for any existing requests to complete.<br/>
+3) Stop the server.</p>
+
+<p>For #1, this strategy should work:</p>
+
+<p>You can stop any new requests from getting through to Fedora by putting a policy<br/>
+in play (at runtime) that temporarily restricts access to API-M and API-A.</p>
+
+<p>The following policy can be used as a starting point:<br/>
+<a href="http://www.fedora.info/download/2.1.1/userdocs/server/security/xacml-policies/default/repository-wide/deny-apim-if-not-localhost.xml" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/download/2.1.1/userdocs/server/security/xacml-policies/default/repository-wide/deny-apim-if-not-localhost.xml</a></p>
+
+<p>After putting it in the correct place, use the fedora-reload-policies tool to<br/>
+put it into play without stopping the server:<br/>
+<a href="http://www.fedora.info/download/2.1.1/userdocs/server/cmd-line/index.html#reload" class="external-link" rel="nofollow noreferrer">http://www.fedora.info/download/2.1.1/userdocs/server/cmd-line/index.html#reload</a></p>
+
+<p>NOTE: Be sure to remove the "disallow API-M" policy before restarting the server<br/>
+again.</p>
+
+<p>Bug List: (11 of 17) First Last Prev Next   Show list      Search page      Enter new bug</p></div></div>
+<div class="comment" id="comment-10082"><div class="by">Chris Wilper, 2008-09-12 01:35 UTC</div><div class="text"><p><span class="error">&#91;Issue Migrated from Sourceforge Tracker&#93;</span><br/>
+Item Submitter: sjw46<br/>
+Item #: 1663736<br/>
+SF URL: <a href="https://sourceforge.net/support/tracker.php?aid=1663736" class="external-link" rel="nofollow noreferrer">https://sourceforge.net/support/tracker.php?aid=1663736</a></p></div></div>
+<div class="comment" id="comment-12986"><div class="by">Andrew Woods, 2015-01-16 21:01 UTC</div><div class="text"><p>No further releases planned for 3.x</p></div></div>
+<p><a href="data/FCREPO-54.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

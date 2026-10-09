@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2280 Jena 2 and 3 clash when deployed in the same Karaf container</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2280</span> Jena 2 and 3 clash when deployed in the same Karaf container</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Aaron Birkland</td></tr><tr><th>Assignee</th><td>Unknown</td></tr><tr><th>Created</th><td>2016-10-28 13:12 UTC</td></tr><tr><th>Updated</th><td>2016-11-02 20:34 UTC</td></tr><tr><th>Resolved</th><td>2016-11-02 20:34 UTC</td></tr><tr><th>Components</th><td>f4-camel</td></tr><tr><th>Affects versions</th><td>fcrepo-camel-4.4.4</td></tr><tr><th>Required by</th><td><a href="FCREPO-2071.html">FCREPO-2071</a> Update fcrepo-camel to handle new event serialization</td></tr></table>
+<h2>Environment</h2>Karaf
+<h2>Description</h2>
+<p>fcrepo-camel depends on Jena 2.13.  When Jena 3.x is present elsewhere in a Karaf container, SparqlUpdateProcessor will fail with stack traces that conflate the two jena versions.  Note the transition between com.hpl.jena and org.apache.jena the stack trace.  It looks like Jena might use system properties to maintain a mapping between languages and parsers, which are overwritten or otherwise clash between the two versions (??)  </p>
+
+<p>Caused by: java.lang.NoClassDefFoundError: Could not initialize class org.apache.jena.riot.system.RiotLib<br/>
+        at org.apache.jena.riot.RiotReader.createParserNTriples(RiotReader.java:416)<br/>
+        at org.apache.jena.riot.RiotReader.createParser(RiotReader.java:175)<br/>
+        at org.apache.jena.riot.RiotReader.createParser(RiotReader.java:141)<br/>
+        at org.apache.jena.riot.RDFParserRegistry$ReaderRIOTLang.read(RDFParserRegistry.java:180)<br/>
+        at org.apache.jena.riot.RDFDataMgr.process(RDFDataMgr.java:906)<br/>
+        at org.apache.jena.riot.RDFDataMgr.read(RDFDataMgr.java:257)<br/>
+        at org.apache.jena.riot.RDFDataMgr.read(RDFDataMgr.java:243)<br/>
+        at org.apache.jena.riot.adapters.RDFReaderRIOT.read(RDFReaderRIOT.java:70)<br/>
+        at com.hp.hpl.jena.rdf.model.impl.ModelCom.read(ModelCom.java:277)<br/>
+        at org.fcrepo.camel.processor.SparqlUpdateProcessor.process(SparqlUpdateProcessor.java:54)<span class="error">&#91;147:org.fcrepo.camel.fcrepo-camel:4.4.4&#93;</span><br/>
+        at org.apache.camel.processor.DelegateSyncProcessor.process(DelegateSyncProcessor.java:63)</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-17905"><div class="by">Aaron Birkland, 2016-10-28 13:13 UTC</div><div class="text"><p>The solution may be to release a Jena 3.x-based version of fcrepo-camel?</p></div></div>
+<div class="comment" id="comment-17937"><div class="by">Unknown, 2016-11-02 13:03 UTC</div><div class="text"><p>Yes, the solution is to upgrade fcrepo-camel to the latest version of Jena.</p></div></div>
+<div class="comment" id="comment-17938"><div class="by">Unknown, 2016-11-02 15:38 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4-exts/fcrepo-camel/pull/129" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/pull/129</a></p></div></div>
+<div class="comment" id="comment-17945"><div class="by">Nick Ruest, 2016-11-02 20:34 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4-exts/fcrepo-camel/commit/166bd19e0ad2c3ee1556c538c7ff39aa4696f440" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4-exts/fcrepo-camel/commit/166bd19e0ad2c3ee1556c538c7ff39aa4696f440</a></p></div></div>
+<p><a href="data/FCREPO-2280.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

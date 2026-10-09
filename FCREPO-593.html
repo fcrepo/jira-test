@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-593 RI and SQL rebuilds fail due to classloader issues</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-593</span> RI and SQL rebuilds fail due to classloader issues</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Blocker</td></tr><tr><th>Reporter</th><td>Benjamin Armintor</td></tr><tr><th>Assignee</th><td>Benjamin Armintor</td></tr><tr><th>Created</th><td>2009-12-08 00:15 UTC</td></tr><tr><th>Updated</th><td>2009-12-19 01:28 UTC</td></tr><tr><th>Resolved</th><td>2009-12-16 00:47 UTC</td></tr><tr><th>Components</th><td>legacy - Fedora</td></tr><tr><th>Affects versions</th><td>Fedora 3.x trunk</td></tr><tr><th>Fix versions</th><td>Fedora 3.3</td></tr></table>
+<h2>Environment</h2>Windows Vista; Java 6 (64 bit)<br/>
+OS X; Java 5 (32 bit)
+<h2>Description</h2>
+<p>Rebuilding the resource index fails due to null pointer exceptions.  This appears to be traceable to the fedora classes being loaded by the bootstrap loader (via the endorsed override), which causes calls to Class.getLoader to return null ( see <a href="http://java.sun.com/javase/6/docs/api/java/lang/Class.html#getClassLoader%28%29" class="external-link" rel="nofollow noreferrer">http://java.sun.com/javase/6/docs/api/java/lang/Class.html#getClassLoader%28%29</a> ).</p>
+<h2>Attachments</h2><ul>
+<li><a href="attachments/FCREPO-593/10071_RebuildWrapper.class">RebuildWrapper.class</a>, 2007 bytes, added by Benjamin Armintor on 2009-12-08</li>
+<li><a href="attachments/FCREPO-593/10072_RebuildWrapper.java">RebuildWrapper.java</a>, 1670 bytes, added by Benjamin Armintor on 2009-12-08</li>
+</ul>
+<h2>Comments (12)</h2>
+<div class="comment" id="comment-11141"><div class="by">Benjamin Armintor, 2009-12-08 00:17 UTC</div><div class="text"><p>I've got a fix for my development environment (failing over to Class.getResourceAsStream if getClassLoader returns null), but I'd like some corroboration of the issue before I act on it.</p></div></div>
+<div class="comment" id="comment-11142"><div class="by">Chris Wilper, 2009-12-08 04:35 UTC</div><div class="text"><p>I'm having the same problem with Java 5 on OS X (I could only tell after changing one of the exception-throwing clauses in llstore to properly include the cause exception rather than just .getMessage() of the cause)</p>
+
+<p>I just tried doing a SQL rebuild and it failed for a similar reason.  This time it was a failure to read the .dbspec file from the classpath.  It also currently uses getClass().getClassLoader(), so that it can .getResourceAsStream().</p>
+
+<p>Since in this case, there's a need to .getResourceAsStream() from a classloader, it looks like the problem of actually getting a robust reference to a classloader needs to be solved.</p>
+
+<p>I'm going to generalize this to cover RI and SQL rebuilds and raise the priority.</p></div></div>
+<div class="comment" id="comment-11143"><div class="by">Chris Wilper, 2009-12-08 13:39 UTC</div><div class="text"><p>Just some more thoughts on this:</p>
+
+<p>This reason this is now happening (vs with 3.2.1) is that the server classes are now put into the war as a .jar in lib/, and not in classes/ &#8211; so they're loaded via the bootstrap loader.</p>
+
+<p>The java.endorsed.dirs hack in the scripts was really just a way to get around the need to specify each .jar that might be needed in WEB-INF/lib.  Java 6 now allows one to specify a pattern for jars to include in the classpath, but since we're still Java 5-friendly, we can't rely on this capability.  If we could, I would certainly favor it.</p>
+
+<p>Two other options for avoiding java.endorsed.dirs, to exclude from consideration:<br/>
+1) Hardcode the lib filenames in the server jar's manifest.<br/>
+2) Hardcode the classpath in the scripts<br/>
+Both of these wouldn't be good options because we don't know all the filenames beforehand...for example, the user may be using a different JDBC driver than we had anticipated.</p>
+
+<p>So this leaves two options:<br/>
+a) Dynamically build up the classpath within the scripts (.sh and .bat), based on the content of lib/<br/>
+b) Modify the code to use Class.forName and (required for the SQLRebuilder case) somehow get a robust reference to an appropriate classloader.</p>
+
+<p>It seems like other people may done a)...I'm going to look around and see what I can find.</p></div></div>
+<div class="comment" id="comment-11144"><div class="by">Chris Wilper, 2009-12-08 14:58 UTC</div><div class="text"><p>a) wouldn't work very reliably because the length of a single command (or environment variable) in windows is limited to ~8k.  Consider that we've got ~115 jars in lib/ and the path to each on a given user's system may well exceed 71 characters.<br/>
+b) works if all we need is to do Class.forName, but I am unsure of a way to get a resource from the bootstrap classloader as a stream, as is needed in the SQLRebuilder case.</p>
+
+<p>Another option:</p>
+
+<p>c) just explode fcrepo-server-version.jar into /classes within the webapp when it's built (and don't put it in lib/).  Basically, restore it to how it was originally. I just tested this and it works for both the RI rebuilder and SQL rebuilder, with Mulgara and Derby, respectively.</p>
+
+<p>I am still somewhat troubled by the use of the bootstrap classloader here, though.  As soon as we depend on a jar that needs to getResourceAsStream (or tries to get a reference to the classloader), things could still break...and then it will be out of our control.  For example, if an Akubra plugin or JDBC driver that was used for rebuilds happened to want to load some localized messages via ResourceBundle.getBundle(..)</p></div></div>
+<div class="comment" id="comment-11145"><div class="by">Benjamin Armintor, 2009-12-08 15:35 UTC</div><div class="text"><p>If we use an absolute path to the dbspec files (that is, prepend a slash to the package name), Class.getResourceAsStream  ( <a href="http://java.sun.com/javase/6/docs/api/java/lang/Class.html#getResourceAsStream(java.lang.String" class="external-link" rel="nofollow noreferrer">http://java.sun.com/javase/6/docs/api/java/lang/Class.html#getResourceAsStream(java.lang.String</a>) ) should work well enough, shouldn't it?  The RI rebuild is working on from my working copy, and it loads a dbspec as well.</p></div></div>
+<div class="comment" id="comment-11146"><div class="by">Benjamin Armintor, 2009-12-08 15:57 UTC</div><div class="text"><p>Might another option, though stickier, be to have the main class for the rebuild load the jars in its own ClassLoader?</p>
+
+<p>As for your ResourceBundle concern: I wish it weren't so, but <a href="http://issues.apache.org/jira/browse/JDO-178" class="external-link" rel="nofollow noreferrer">http://issues.apache.org/jira/browse/JDO-178</a> makes it look likely.</p></div></div>
+<div class="comment" id="comment-11147"><div class="by">Benjamin Armintor, 2009-12-08 20:27 UTC</div><div class="text"><p>I have to run to a meeting, but I wanted to post that I'm getting some positive results with my admittedly primitive driver (attached), and modifications to env-server scripts that:<br/>
+1. remove the web inf lib from endorsed overrides<br/>
+2. add a -Dfedora.web.inf.lib="%WEBINF%\lib" command line arg</p>
+
+<p>I'll be back on this later in the afternoon.</p>
+
+<p>edit: Positive as in, "Windows can rebuild the RI and SQL index with the trunk source"</p></div></div>
+<div class="comment" id="comment-11150"><div class="by">Chris Wilper, 2009-12-08 22:24 UTC</div><div class="text"><p>That's great...can you also attach the source?  Now we've got the less interesting deployment problem of how to make this class available in the right place (wherever that is) after the install process has run.  Any ideas on that?  Nothing obvious comes to mind.</p></div></div>
+<div class="comment" id="comment-11151"><div class="by">Benjamin Armintor, 2009-12-08 22:30 UTC</div><div class="text"><p>Yeesh, am I scattered today.  There's the source.</p>
+
+<p>I'm looking at the fcrepo-server pom now.  I was thinking a jar in $FEDORA_HOME/server/bin with a class like that one (probably parameterize the "real" main class), but I'm not sure how to wedge it into the maven config (yet).</p></div></div>
+<div class="comment" id="comment-11152"><div class="by">Chris Wilper, 2009-12-09 09:33 UTC</div><div class="text"><p>Just wanted to confirm that this worked fine for me too...successfully rebuilt the RI and SQL db with it.</p>
+
+<p>I agree with having the wrapper jar in $FEDORA_HOME/server/bin.  Also, if building the jar as part of the build is too awkward, perhaps just including the jar (which includes the source) as a resource, similar to the others in scripts/, would be ok.</p></div></div>
+<div class="comment" id="comment-11153"><div class="by">Benjamin Armintor, 2009-12-10 00:08 UTC</div><div class="text"><p>Ok, the branch for this issue is working on Windows/Java 6/Derby.  I'll try a unix build ASAP.</p>
+
+<p><a href="http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/fedora/branches/FCREPO-593/" class="external-link" rel="nofollow noreferrer">http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons/fedora/branches/FCREPO-593/</a></p>
+</div></div>
+<div class="comment" id="comment-11166"><div class="by">Benjamin Armintor, 2009-12-16 00:47 UTC</div><div class="text"><p>Merged to trunk in rev. 8428<br/>
+<a href="http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons?view=rev&amp;revision=8428" class="external-link" rel="nofollow noreferrer">http://fedora-commons.svn.sourceforge.net/viewvc/fedora-commons?view=rev&amp;revision=8428</a></p></div></div>
+<p><a href="data/FCREPO-593.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2938 remove fedora:writable triple?</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2938</span> remove fedora:writable triple?</h1>
+<table class="meta"><tr><th>Type</th><td>Bug</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Minor</td></tr><tr><th>Reporter</th><td>Bethany Seeger</td></tr><tr><th>Assignee</th><td>Peter Matthew Eichman</td></tr><tr><th>Created</th><td>2018-11-12 22:01 UTC</td></tr><tr><th>Updated</th><td>2018-11-28 18:17 UTC</td></tr><tr><th>Resolved</th><td>2018-11-16 18:42 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Is related to</th><td><a href="FCREPO-2956.html">FCREPO-2956</a> fedora:writeable Import/Export compatibility</td></tr></table>
+<h2>Description</h2>
+
+<p>Is this triple still necessary given the changes in 5.0?   If not, it'd be great to remove it as it only adds confusion (especially in the context of a memento). </p>
+
+<p>Ben Pennell Peter Matthew Eichman</p>
+<h2>Comments (4)</h2>
+<div class="comment" id="comment-20522"><div class="by">Ben Pennell, 2018-11-12 22:04 UTC</div><div class="text"><p>I see two references to it<br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/impl/AclRdfContext.java#L57" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-kernel-modeshape/src/main/java/org/fcrepo/kernel/modeshape/rdf/impl/AclRdfContext.java#L57</a><br/>
+<a href="https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/responses/ViewHelpers.java#L202" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/blob/master/fcrepo-http-commons/src/main/java/org/fcrepo/http/commons/responses/ViewHelpers.java#L202</a></p>
+
+<p>Apparently `fedora:writable` controls if the “Update Content” panel appears in the html ui.</p>
+
+<p>It also appears to be telling us if modeshape is giving any of the following permissions “add_node,set_property,remove”. That seems a little out dated given that we are not relying on modeshape permissions anymore. I’m not sure if others feel that it is still necessary to provide a triple that tells the user if they can write to a resource, but the current implementation is inaccurate. We will probably need to update how the “Update Content” panel gets rendered too if I’m reading things correctly (edited)</p></div></div>
+<div class="comment" id="comment-20530"><div class="by">Peter Matthew Eichman, 2018-11-15 16:46 UTC</div><div class="text"><p>My feeling is that we should figure out a way to fix <tt>fedora:writable</tt> so a client application or a user can know in advance if they can write to a resource. Also, with the support of <tt>acl:Appends</tt> mode in WebAC, should we think about adding a <tt>fedora:appendable</tt> triple as well, to differentiate these two use cases?</p>
+
+<p>As an alternative, if there was a way for the resource to return an HTTP header that indicates what modes the requesting user has permission on the current resource, that would help. Something like this for read-only access:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Access-Mode: &lt;http://www.w3.org/ns/auth/acl#Read&gt; </pre>
+</div></div>
+<p>read/append (but not write):</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Access-Mode: &lt;http://www.w3.org/ns/auth/acl#Read&gt;,
+    &lt;http://www.w3.org/ns/auth/acl#Append&gt;</pre>
+</div></div>
+<p>read/append/write (but not control):</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Access-Mode: &lt;http://www.w3.org/ns/auth/acl#Read&gt;,
+    &lt;http://www.w3.org/ns/auth/acl#Append&gt;,
+    &lt;http://www.w3.org/ns/auth/acl#Write&gt;</pre>
+</div></div>
+<p>all modes:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Access-Mode: &lt;http://www.w3.org/ns/auth/acl#Read&gt;,
+    &lt;http://www.w3.org/ns/auth/acl#Append&gt;,
+    &lt;http://www.w3.org/ns/auth/acl#Write&gt;,
+    &lt;http://www.w3.org/ns/auth/acl#Control&gt;</pre>
+</div></div></div></div>
+<div class="comment" id="comment-20538"><div class="by">Peter Matthew Eichman, 2018-11-16 16:15 UTC</div><div class="text"><p>PR: <a href="https://github.com/fcrepo4/fcrepo4/pull/1479" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1479</a></p></div></div>
+<div class="comment" id="comment-20539"><div class="by">Danny Bernstein, 2018-11-16 18:43 UTC</div><div class="text"><p>Resolved by <a href="https://github.com/fcrepo4/fcrepo4/commit/cd42e542b3aed7ca0ccd1bf263e86c7903dbdafc" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/cd42e542b3aed7ca0ccd1bf263e86c7903dbdafc</a></p></div></div>
+<p><a href="data/FCREPO-2938.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

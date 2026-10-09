@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-2544 Time to first byte of response is too long for containers with many contained resources</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-2544</span> Time to first byte of response is too long for containers with many contained resources</h1>
+<table class="meta"><tr><th>Type</th><td>Improvement</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Answered</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Chris Colvard</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2017-08-01 18:35 UTC</td></tr><tr><th>Updated</th><td>2018-01-12 15:26 UTC</td></tr><tr><th>Resolved</th><td>2018-01-12 15:26 UTC</td></tr><tr><th>Components</th><td>f4-core</td></tr><tr><th>Fix versions</th><td>Fedora 5.0.0</td></tr><tr><th>Labels</th><td>api-spec</td></tr></table>
+<h2>Description</h2>
+<p>Our Fedora has ~250,000 objects hanging off of the root node.  When doing a total reindex we need to walk the entire tree of the repository starting with requesting the root node.  This get request takes 10-15 minutes to return its first byte by which time our load balancer has timed out the request.</p>
+
+<p>After discussion with Andrew Woods, he provided us with a hand rolled Fedora that did not recurse to find good children but just returned the PairTree node children of the container being requested.  This would reduce request times in favor of more requests to walk the repository tree.</p>
+
+<p>Preliminary testing we did of this was favorable.  We use ActiveFedora to interact with Fedora and ran into an issue where ActiveFedora threw errors when it tried to retrieve contained children that it expected to be of a certain type and model but got PairTree nodes instead.  So we need per-request toggling of PairTree node vs. actual child objects being returned with ldp:contains.</p>
+
+<p>Conversations in the Samvera fcrepo slack channel suggest using Prefer headers:</p>
+
+<p>I could see something along the lines of:<br/>
+`Prefer: return=representation; include=\"http://www.w3.org/ns/ldp#PreferContainment <a href="http://fedora.info/definitions/v4/repository#PairTreeResources" class="external-link" rel="nofollow noreferrer">http://fedora.info/definitions/v4/repository#PairTreeResources\</a>"`</p>
+
+<p>...being the patched behavior, and:</p>
+
+<p>`Prefer: return=representation; include=\"http://www.w3.org/ns/ldp#PreferContainment\"; omit=\"http://fedora.info/definitions/v4/repository#PairTreeResources\"`</p>
+
+<p>...being the current behavior.</p>
+<h2>Comments (17)</h2>
+<div class="comment" id="comment-19240"><div class="by">Jared Whiklo, 2017-08-03 15:29 UTC</div><div class="text"><p>Andrew Woods's hand rolled code. <a href="https://github.com/fcrepo4/fcrepo4/compare/4.7.4-RC...awoods:aw-no-pairtree" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/compare/4.7.4-RC...awoods:aw-no-pairtree</a></p></div></div>
+<div class="comment" id="comment-19247"><div class="by">Andrew Woods, 2017-08-18 13:54 UTC</div><div class="text"><p>War file from the above branch is available here: <a href="https://s3.amazonaws.com/f4-artifacts/fcrepo-webapp-4.7.4-SNAPSHOT.war" class="external-link" rel="nofollow noreferrer">https://s3.amazonaws.com/f4-artifacts/fcrepo-webapp-4.7.4-SNAPSHOT.war</a></p></div></div>
+<div class="comment" id="comment-19284"><div class="by">Danny Bernstein, 2017-09-05 05:55 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1223" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1223</a></p></div></div>
+<div class="comment" id="comment-19285"><div class="by">Unknown, 2017-09-05 15:10 UTC</div><div class="text"><p>Why would this go into master? Wouldn't it be better to apply this only to 4.7.x and fix master correctly? I.e. if master is supposed to be aligned with the API specification, where in the API specification is the concept of PairTrees mentioned? There are ways to eliminate the need for pairtrees, but it will be a breaking change, and the move from 4.7.x -&gt; 5.x is the time to do that. </p></div></div>
+<div class="comment" id="comment-19286"><div class="by">Danny Bernstein, 2017-09-06 14:46 UTC</div><div class="text"><p>@awoods:  is there any plan to eliminate pairtrees in 5.x?  This is the first I've heard of it.  But then again I'm the new committer on the block. </p></div></div>
+<div class="comment" id="comment-19289"><div class="by">Aaron Birkland, 2017-09-07 13:11 UTC</div><div class="text"><p>Danny Bernstein If you can fill in a little more detail in the PR form (like a recipe to follow for testing this out, including writing down values of prefer headers that should include/exclude pair trees), I can take a look at this.</p>
+
+<p>This PR adds new behaviour to the API, which is somewhat counter to the spirit of the maintenance branch.  Looking at the description of the problem, it looks like this fix goes beyond a workaround for Modeshape quirks, but rather leverages the workaround already in place (pairtrees) to partition the work of iterating through a resource's children. This really couples the client to pairtrees as a high level modeling construct, I'm not sure we want to go there.  At the very least, it should probably be discussed on the tech call now that we have a PR and it's a bit more concrete.</p>
+
+<p>As far as pairtrees in 5.0.0; there should probably be serious thought to getting rid of them.  Adding new pairtree interaction capabilities in the API suggests embracing them.    They are definitely not an LDP concept, not part of any Fedora specification, and are unique to the modeshape implementation of Fedora.  I'm not sure what import/export does with regard to pairtrees and the consequences of migration.  Is it expected that they'll survive a migration from 4.7.4 to 5.0.0?  How about a migration out of the Modeshape Fedora impl and into another?   </p></div></div>
+<div class="comment" id="comment-19292"><div class="by">Jared Whiklo, 2017-09-07 16:22 UTC</div><div class="text"><p>We discussed this at today's tech call and the consensus was to hold off merging this into master and see if there might be a better solution (ie: fix/remove pairtrees). Possibly during the API alignment sprints as this would be a breaking change and we'd like to avoid having lots of those.</p></div></div>
+<div class="comment" id="comment-19509"><div class="by">Aaron Birkland, 2017-10-20 17:03 UTC</div><div class="text"><p>Re-visiting this, the time to first byte is probably due to choice of rdf serialization format.  Try requesting application/n-triples and see what happens.  Locally testing this with 20k children, I saw:</p>
+
+<p>application/n-triples:  started streaming immediately</p>
+
+<p>text/turtle (default): started streaming after 12s</p>
+
+<p> </p>
+
+<p>The text/turtle serializer is buffering triples in order to group them by subject for pretty printing.  Fedora is internally using the "block" serialization variant in Jena, which is supposed to group them on a best-effort basis for a small window of triples.  In theory, that should allow turtle to support streaming too.   Clearly it is not doing that.  My guess is that because all triples in the response have the same subject, Jena is not smart enough to chop a huge continuous block of triples with the same subject into little pieces that can be streamed.  </p>
+
+<p> </p>
+
+<p>But n-triples streams fine, and appears to give instantly streaming results.  Just make sure the application (and rdf parsing library) also parses triples in a stream-like fashion, and you should be good.  I have no idea what ActiveFedora does internally.</p></div></div>
+<div class="comment" id="comment-19510"><div class="by">Andrew Woods, 2017-10-20 19:53 UTC</div><div class="text"><p>That is very helpful news, Aaron Birkland. Thank you for digging in more deeply.</p>
+
+<p>Chris Colvard: Would you be able to verify the effect on your reindexing scenario by requesting "application/n-triples" instead of the default "text/turtle"?<br/>
+<a href="https://wiki.duraspace.org/display/FEDORA4x/RESTful+HTTP+API+-+Containers#RESTfulHTTPAPI-Containers-GETRetrievethecontentoftheresource" class="external-link" rel="nofollow noreferrer">https://wiki.duraspace.org/display/FEDORA4x/RESTful+HTTP+API+-+Containers#RESTfulHTTPAPI-Containers-GETRetrievethecontentoftheresource</a></p></div></div>
+<div class="comment" id="comment-19515"><div class="by">Chris Colvard, 2017-10-23 15:35 UTC</div><div class="text"><p>I tested this out and found the time to first byte is indeed much faster for n-triples for GET requests as shown below.  I monkey-patched ActiveFedora and am running a reindex test right now but it might take a day to complete.</p>
+
+<p> </p>
+
+<p>HEAD "/rest/objects/avalon/"</p>
+
+<p>time_namelookup=0.004<br/>
+time_appconnect=0.000<br/>
+time_connect=0.006<br/>
+time_redirect=0.000<br/>
+time_pretransfer=0.006<br/>
+time_starttransfer=11.274<br/>
+time_total=11.274</p>
+
+<p>curl: (18) transfer closed with outstanding read data remaining</p>
+
+<p> </p>
+
+<p>HEAD -H 'Accept: application/n-triples' "/rest/objects/avalon/"</p>
+
+<p>time_namelookup=0.004<br/>
+time_appconnect=0.000<br/>
+time_connect=0.006<br/>
+time_redirect=0.000<br/>
+time_pretransfer=0.006<br/>
+time_starttransfer=10.891<br/>
+time_total=10.891</p>
+
+<p>curl: (18) transfer closed with outstanding read data remaining</p>
+
+
+<p>GET "/rest/objects/avalon/"</p>
+
+<p>time_namelookup=0.004<br/>
+time_appconnect=0.000<br/>
+time_connect=0.006<br/>
+time_redirect=0.000<br/>
+time_pretransfer=0.006<br/>
+time_starttransfer=902.623<br/>
+time_total=902.623</p>
+
+<p>curl: (52) Empty reply from server</p>
+
+<p> </p>
+
+<p>GET -H 'Accept: application/n-triples' "/rest/objects/avalon/"</p>
+
+<p>time_namelookup=0.004<br/>
+time_appconnect=0.000<br/>
+time_connect=0.006<br/>
+time_redirect=0.000<br/>
+time_pretransfer=0.007<br/>
+time_starttransfer=1.126<br/>
+time_total=2078.311</p></div></div>
+<div class="comment" id="comment-19571"><div class="by">Andrew Woods, 2017-11-30 15:46 UTC</div><div class="text"><p>Chris Colvard: Did your indexing successfully complete?</p></div></div>
+<div class="comment" id="comment-19572"><div class="by">Chris Colvard, 2017-12-01 16:21 UTC</div><div class="text"><p>It did not but I believe due to a local issue and not anything having to do with fedora or the active-fedora patch.  I've been off on other things and haven't had time to cycle back around to this.  It might still be a while until I'll be able to do so.</p></div></div>
+<div class="comment" id="comment-19585"><div class="by">Danny Bernstein, 2017-12-14 16:48 UTC</div><div class="text"><p>Using N-Triples seems to eliminate this problem.  We may need to punt on this issue until we move beyond Modeshape.</p></div></div>
+<div class="comment" id="comment-19594"><div class="by">Andrew Woods, 2018-01-11 15:21 UTC</div><div class="text"><p>Chris Colvard: Would you be able to run another indexing test to see if the n-triples solution works in your use case?</p></div></div>
+<div class="comment" id="comment-19597"><div class="by">Peter Matthew Eichman, 2018-01-11 21:12 UTC</div><div class="text"><p>Andrew Woods, we were able to successfully use the N-Triples to request a container with a large number of children (~1.1 million), and got the first byte back soon enough that it did not time out our proxy server.</p></div></div>
+<div class="comment" id="comment-19598"><div class="by">Andrew Woods, 2018-01-12 15:01 UTC</div><div class="text"><p>Thanks, Peter Matthew Eichman. That said, I am inclined to close this ticket. Thoughts, Chris Colvard?</p></div></div>
+<div class="comment" id="comment-19599"><div class="by">Chris Colvard, 2018-01-12 15:18 UTC</div><div class="text"><p>Andrew Woods, I'm okay with that.  My initial tests were positive and I think this approach will work but I haven't had the time to come back to doing the full reindex test.  Sorry about letting this linger so long.</p></div></div>
+<p><a href="data/FCREPO-2544.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>

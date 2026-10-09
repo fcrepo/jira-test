@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FCREPO-3082 Remove PathLockManager and its dependencies if advisable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<a href="index.html">Fedora Repository Jira archive</a>
+<span>Read-only. Report new issues at <a href="https://github.com/fcrepo/fcrepo/issues">github.com/fcrepo/fcrepo</a>.</span>
+</header>
+<main>
+<h1><span class="key">FCREPO-3082</span> Remove PathLockManager and its dependencies if advisable</h1>
+<table class="meta"><tr><th>Type</th><td>Story</td></tr><tr><th>Status</th><td>Closed</td></tr><tr><th>Resolution</th><td>Fixed</td></tr><tr><th>Priority</th><td>Major</td></tr><tr><th>Reporter</th><td>Danny Bernstein</td></tr><tr><th>Assignee</th><td>Danny Bernstein</td></tr><tr><th>Created</th><td>2019-09-25 23:14 UTC</td></tr><tr><th>Updated</th><td>2019-12-17 20:04 UTC</td></tr><tr><th>Resolved</th><td>2019-12-10 18:51 UTC</td></tr><tr><th>Fix versions</th><td>Fedora 6.0.0</td></tr><tr><th>Parent</th><td><a href="FCREPO-3142.html">FCREPO-3142</a> Modeshape out,  OCFL In.</td></tr></table>
+<h2>Description</h2>
+<p>There are two dependent tasks associated with this ticket.  The first part is to determine whether or not it makes sense for us to remove the PathLockManager and its dependencies.  If it is determined that this is the way to go, the second part is to remove the interfaces, classes, and lines of code that depend on this utility.</p>
+<h2>Comments (8)</h2>
+<div class="comment" id="comment-20819"><div class="by">Peter Matthew Eichman, 2019-09-26 19:25 UTC</div><div class="text"><p>Is this part of a switch to an "optimistic locking" model? That is, we don't lock resources in advance of changes, we just check ETags/StateTokens at update time?</p>
+
+<p>If so, we can get rid of the PathLockManager and associated code. There will need to be something to replace it, though, to handle actual conflicts.</p></div></div>
+<div class="comment" id="comment-20820"><div class="by">Peter Matthew Eichman, 2019-09-26 20:04 UTC</div><div class="text"><p>On the other hand, if we want to keep the semantics of path-based conflict assessment, even in our optimistic locking scenario, then we would need to traverse a resource's hierarchy, correct? I guess what I'm saying is that knowing whether we can rip out the PathLockManager classes wholesale depends on how we intend to implement optimistic locking.</p></div></div>
+<div class="comment" id="comment-20829"><div class="by">Peter Matthew Eichman, 2019-09-27 15:07 UTC</div><div class="text"><p>Ben Pennell, are we planning on handling conflicts between multiple writes in the persistence layer?</p></div></div>
+<div class="comment" id="comment-20855"><div class="by">Danny Bernstein, 2019-11-06 16:51 UTC</div><div class="text"><p>I think what we're planning is a sort of two phased commit in the OCFLPersistentStorageLayer that would ensure that all OCFLObjects affected by a transaction  are locked before the first write occurs.   </p>
+
+<p>In the case that we are stamping new object versions, rollback is possible in the case of a write failure.   However we don't have a good rollback solution when  writing to the mutable head.</p>
+
+<p> </p></div></div>
+<div class="comment" id="comment-20856"><div class="by">Ben Pennell, 2019-11-06 17:43 UTC</div><div class="text"><p>Yes rollbacks are trickier with mutable head, they probably aren't really possible without duplication of data if a commit fails partway through. Hopefully by locking all the OCFL objects in a transaction just prior to committing these should be a very rare situation, caused by system error rather than user. But I suspect we will do pessimistic locking at the persistence layer during commits to minimize the chance of a rollback.</p>
+
+<p>It seems like locking by path could still be relevant, and with suitable indexing might not be too costly. I feel like we need to think through and document a more holistic perspective of how we want to handle conflicts now that we are responsible for pretty much everything. The persistence layer can handle locking at the OCFL object level, but I don't know if it'll be the appropriate place to handle conflicts. The kernel level would have a better view of resources as a whole, while the persistence level if looking at things more at the filesystem level.</p></div></div>
+<div class="comment" id="comment-20931"><div class="by">Danny Bernstein, 2019-12-10 18:08 UTC</div><div class="text"><p>In working through <a href="https://jira.lyrasis.org/browse/FCREPO-3154" class="external-link" rel="nofollow noreferrer">https://jira.lyrasis.org/browse/FCREPO-3154</a>,  it is making sense to remove the PathLockManager.  If we want to revive it in the future,  we can always bring it back.  </p></div></div>
+<div class="comment" id="comment-20934"><div class="by">Danny Bernstein, 2019-12-10 18:51 UTC</div><div class="text"><p><a href="https://github.com/fcrepo4/fcrepo4/pull/1598" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/pull/1598</a></p></div></div>
+<div class="comment" id="comment-20938"><div class="by">Andrew Woods, 2019-12-17 20:04 UTC</div><div class="text"><p>Resolved with: <a href="https://github.com/fcrepo4/fcrepo4/commit/05d42c4e1707a6c4e69d6129b33e8d433efe13cb" class="external-link" rel="nofollow noreferrer">https://github.com/fcrepo4/fcrepo4/commit/05d42c4e1707a6c4e69d6129b33e8d433efe13cb</a></p></div></div>
+<p><a href="data/FCREPO-3082.json">Raw Jira JSON</a></p>
+</main>
+<footer>Exported from https://fedora-repository.atlassian.net on 2026-09-29.</footer>
+</body>
+</html>
